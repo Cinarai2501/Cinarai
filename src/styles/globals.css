@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Safe area support for mobile */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-50;
+}
+
+/* Touch target minimum */
+button,
+a,
+input[type='checkbox'],
+input[type='radio'] {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-primary-500;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Remove default link underline in specific contexts */
+a {
+  @apply no-underline;
+}
+
+a:hover {
+  @apply underline;
+}
