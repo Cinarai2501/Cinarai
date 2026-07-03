@@ -9,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSnackbar } from '@/context/SnackbarContext';
 import { createInitialProgressState } from '@/lib/progressEngine';
 import type { ComicProgressState, Sintaks } from '@/types/progress';
 import type { Comic } from '@/types/comic';
@@ -42,6 +43,7 @@ interface LearningEngineProviderProps {
 
 export function LearningEngineProvider({ comic, children }: LearningEngineProviderProps) {
   const { user } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const comicId = comic.id;
 
   const [progress, setProgress] = useState<ComicProgressState>(
@@ -95,17 +97,24 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     if (!canAdvance || stageIndex >= totalStages - 1) return;
 
     const sintaks = stageToSintaks(currentStage);
-    if (user && sintaks) {
+    if (user?.uid && sintaks) {
       try {
         const next = await persistCompleteStage(user.uid, progress, sintaks);
         setProgress(next);
       } catch (error) {
-        console.error('[LearningEngine] nextStage — persistCompleteStage failed', { userId: user.uid, sintaks, error });
+        console.error('Save Progress Error', error);
+        const msg = error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.';
+        showSnackbar(`Gagal menyimpan progress: ${msg}`, 'error');
+        return; // jangan maju stage jika save gagal
       }
+    } else if (!user?.uid) {
+      console.error('Save Progress Error: userId tidak tersedia.');
+      showSnackbar('Gagal menyimpan progress: sesi tidak ditemukan.', 'error');
+      return;
     }
 
     setStageIndex((i) => Math.min(i + 1, totalStages - 1));
-  }, [user, stageIndex, totalStages, currentStage, progress, canAdvance]);
+  }, [user, stageIndex, totalStages, currentStage, progress, canAdvance, showSnackbar]);
 
   const previousStage = useCallback(() => {
     setCanAdvance(true); // reset gate saat mundur

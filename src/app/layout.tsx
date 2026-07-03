@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { SnackbarProvider } from '@/context/SnackbarContext';
 
 export const metadata: Metadata = {
   title: 'CINARAI - Critical Numeracy with AR & AI',
@@ -23,7 +24,9 @@ export default function RootLayout({
     <html lang="id">
       <body>
         <AuthProvider>
-          {children}
+          <SnackbarProvider>
+            {children}
+          </SnackbarProvider>
         </AuthProvider>
       </body>
     </html>

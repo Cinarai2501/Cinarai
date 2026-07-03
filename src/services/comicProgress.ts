@@ -4,7 +4,6 @@ import { serverTimestamp } from 'firebase/firestore';
 import { getAllComics } from '@/lib/comicRepository';
 import { createInitialProgressState, restoreProgressState } from '@/lib/progressEngine';
 import {
-  setFirestoreDocument,
   mergeFirestoreDocument,
   subscribeToFirestoreDocument,
   subscribeToFirestoreCollection,
@@ -65,9 +64,9 @@ export async function initializeUserProgress(userId: string): Promise<void> {
         if (existing) return;
 
         const state = createInitialProgressState(comic.id);
-        await setFirestoreDocument('comic_progress', id, toDocument(userId, state));
+        await mergeFirestoreDocument('comic_progress', id, toDocument(userId, state));
       } catch (error) {
-        console.error(`[Firestore] initializeUserProgress error — userId: ${userId}, comicId: ${comic.id}, docId: ${id}`, error);
+        console.error('Save Progress Error', error);
       }
     })
   );
@@ -77,19 +76,31 @@ export async function initializeUserProgress(userId: string): Promise<void> {
 
 /** Persist updated progress state to Firestore.
  *  Pakai setDoc + merge:true agar aman untuk dokumen baru maupun yang sudah ada.
+ *  Setelah save, baca kembali dokumen untuk memverifikasi data tersimpan.
  */
 export async function saveComicProgress(
   userId: string,
   state: ComicProgressState
 ): Promise<void> {
+  if (!userId) {
+    console.error('Save Progress Error: userId tidak tersedia, progress tidak disimpan.');
+    throw new Error('userId tidak tersedia');
+  }
+
   const id = docId(userId, state.comicId);
   try {
     await mergeFirestoreDocument('comic_progress', id, {
       ...toDocument(userId, state),
       ...(state.isCompleted ? { completedAt: serverTimestamp() as ComicProgressDocument['updatedAt'] } : {}),
     });
+
+    // Read-back: verifikasi data benar-benar tersimpan
+    const saved = await getFirestoreDocument('comic_progress', id);
+    if (!saved) {
+      throw new Error(`Dokumen ${id} tidak ditemukan setelah disimpan.`);
+    }
   } catch (error) {
-    console.error(`[Firestore] saveComicProgress error — userId: ${userId}, comicId: ${state.comicId}, docId: ${id}`, error);
+    console.error('Save Progress Error', error);
     throw error;
   }
 }

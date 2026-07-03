@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSnackbar } from '@/context/SnackbarContext';
 import { subscribeToAllComicProgress } from '@/services/comicProgress';
 import type { ComicProgressState } from '@/types/progress';
 
 export function useAllComicProgress() {
   const { user } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const [states, setStates] = useState<ComicProgressState[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -15,23 +17,21 @@ export function useAllComicProgress() {
       setIsLoading(false);
       return;
     }
-    console.log('[Dashboard] Auth User Loaded', { uid: user.uid, email: user.email });
-    console.log('[Dashboard] Dashboard Start Loading');
     const unsub = subscribeToAllComicProgress(
       user.uid,
       (s) => {
-        console.log('[Dashboard] Firestore Progress Loaded', { count: s.length, states: s });
         setStates(s);
         setIsLoading(false);
-        console.log('[Dashboard] Dashboard Finished Loading');
       },
       (error) => {
-        console.error('[Dashboard] Dashboard Error', error);
+        console.error('Save Progress Error', error);
+        const msg = error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.';
+        showSnackbar(`Gagal memuat progress: ${msg}`, 'error');
         setIsLoading(false);
       },
     );
     return () => unsub();
-  }, [user]);
+  }, [user, showSnackbar]);
 
   const getProgress = (comicId: number): ComicProgressState | undefined =>
     states.find((s) => s.comicId === comicId);
