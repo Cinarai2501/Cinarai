@@ -18,6 +18,7 @@ export interface Comic {
   synopsis: string;
   characters: ComicCharacter[];
   learningTargets: string[];
+  estimatedMinutes: number;
   pdfPath: string | null;
   cover: string;
   thumbnail: string;

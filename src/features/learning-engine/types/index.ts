@@ -53,4 +53,8 @@ export interface LearningContextValue {
 
   // Actions
   finishLearning: () => void;
+
+  // Stage gate — stage dapat mengunci/membuka tombol Next
+  canAdvance: boolean;
+  setCanAdvance: (value: boolean) => void;
 }

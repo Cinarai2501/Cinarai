@@ -11,25 +11,22 @@ import ResolutionStage from './stages/ResolutionStage';
 import ApplicationStage from './stages/ApplicationStage';
 import IntrospectionStage from './stages/IntrospectionStage';
 import FinishStage from './stages/FinishStage';
-import type { ReactElement } from 'react';
-
-/** Map setiap Stage enum ke komponen-nya — tidak ada string hardcode */
-const STAGE_COMPONENTS: Record<Stage, ReactElement> = {
-  [Stage.Cover]:             <CoverStage />,
-  [Stage.Contextualization]: <ContextualizationStage />,
-  [Stage.Identification]:    <IdentificationStage />,
-  [Stage.Navigation]:        <NavigationStage />,
-  [Stage.Argumentation]:     <ArgumentationStage />,
-  [Stage.Resolution]:        <ResolutionStage />,
-  [Stage.Application]:       <ApplicationStage />,
-  [Stage.Introspection]:     <IntrospectionStage />,
-  [Stage.Finish]:            <FinishStage />,
-};
 
 export default function StageRouter() {
   const { currentStage, isLoading } = useLearningEngine();
 
   if (isLoading) return null;
 
-  return STAGE_COMPONENTS[currentStage] ?? null;
+  switch (currentStage) {
+    case Stage.Cover:             return <CoverStage />;
+    case Stage.Contextualization: return <ContextualizationStage />;
+    case Stage.Identification:    return <IdentificationStage />;
+    case Stage.Navigation:        return <NavigationStage />;
+    case Stage.Argumentation:     return <ArgumentationStage />;
+    case Stage.Resolution:        return <ResolutionStage />;
+    case Stage.Application:       return <ApplicationStage />;
+    case Stage.Introspection:     return <IntrospectionStage />;
+    case Stage.Finish:            return <FinishStage />;
+    default:                      return null;
+  }
 }

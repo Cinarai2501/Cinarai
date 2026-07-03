@@ -49,6 +49,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   );
   const [isLoading, setIsLoading] = useState(true);
   const [stageIndex, setStageIndex] = useState(0);
+  const [canAdvance, setCanAdvance] = useState(true);
 
   // Subscribe to Firestore progress
   useEffect(() => {
@@ -91,7 +92,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
 
   /** Complete current stage in Firestore then advance to next stage. */
   const nextStage = useCallback(async () => {
-    if (stageIndex >= totalStages - 1) return;
+    if (!canAdvance || stageIndex >= totalStages - 1) return;
 
     const sintaks = stageToSintaks(currentStage);
     if (user && sintaks) {
@@ -100,9 +101,10 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     }
 
     setStageIndex((i) => Math.min(i + 1, totalStages - 1));
-  }, [user, stageIndex, totalStages, currentStage, progress]);
+  }, [user, stageIndex, totalStages, currentStage, progress, canAdvance]);
 
   const previousStage = useCallback(() => {
+    setCanAdvance(true); // reset gate saat mundur
     setStageIndex((i) => Math.max(i - 1, 0));
   }, []);
 
@@ -130,6 +132,8 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       previousStage,
       goToStage,
       finishLearning,
+      canAdvance,
+      setCanAdvance,
     }),
     [
       comicId,
@@ -145,6 +149,8 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       previousStage,
       goToStage,
       finishLearning,
+      canAdvance,
+      setCanAdvance,
     ]
   );
 
