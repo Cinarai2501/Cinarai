@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Timestamp, FieldValue } from 'firebase/firestore';
 import type { SintaksProgress } from '@/types/progress';
 
 export type FirestoreTimestamp = Timestamp;
@@ -43,15 +43,17 @@ export interface ProgressDocument extends FirestoreBaseDocument {
   completedAt?: FirestoreTimestamp;
 }
 
-export interface ComicProgressDocument extends FirestoreBaseDocument {
-  userId: string;
+export interface ComicProgressDocument {
+  id?: string;
+  createdAt?: FirestoreTimestamp;
   comicId: number;
-  stage: string;
+  completedStage: string;
+  completedPages: number;
   percentage: number;
   status: 'not_started' | 'in_progress' | 'completed';
   sintaksList: SintaksProgress[];
   completedAt?: FirestoreTimestamp;
-  updatedAt: FirestoreTimestamp;
+  updatedAt: FirestoreTimestamp | FieldValue;
 }
 
 export interface ReflectionDocument extends FirestoreBaseDocument {
@@ -130,7 +132,6 @@ export interface ComicDocument extends FirestoreBaseDocument {
 export interface FirestoreCollectionMap {
   users: UserDocument;
   progress: ProgressDocument;
-  comic_progress: ComicProgressDocument;
   reflection: ReflectionDocument;
   leaderboard: LeaderboardDocument;
   badge: BadgeDocument;

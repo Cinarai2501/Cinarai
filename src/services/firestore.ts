@@ -31,7 +31,6 @@ import type { FirestoreCollectionMap, UserDocument } from '@/types/firestore';
 export const FIRESTORE_COLLECTIONS = {
   users: 'users',
   progress: 'progress',
-  comicProgress: 'comic_progress',
   reflection: 'reflection',
   leaderboard: 'leaderboard',
   badge: 'badge',
