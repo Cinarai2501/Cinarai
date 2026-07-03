@@ -51,16 +51,20 @@ export default function ComicPageClient({ comicId }: ComicPageClientProps) {
 
   if (!comic || comic.availability === "COMING_SOON") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-neutral-50">
-        <div className="text-center">
-          <p className="text-neutral-500">Komik belum tersedia.</p>
-          <Link
-            href="/dashboard"
-            className="mt-4 inline-block text-sm text-primary-600 hover:underline"
-          >
-            ← Kembali ke Dashboard
-          </Link>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#f0f7ff] px-6 gap-5 text-center">
+        <span className="text-6xl">🛠️</span>
+        <div>
+          <h2 className="text-xl font-black text-neutral-800">Segera Hadir!</h2>
+          <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
+            {comic?.subtitle ?? 'Komik ini sedang dalam persiapan.'}
+          </p>
         </div>
+        <Link
+          href="/dashboard"
+          className="rounded-2xl bg-primary-600 px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-primary-700 active:scale-[0.98] transition-all"
+        >
+          ← Kembali ke Dashboard
+        </Link>
       </main>
     );
   }
@@ -68,16 +72,20 @@ export default function ComicPageClient({ comicId }: ComicPageClientProps) {
   return (
     <main className="flex flex-col min-h-screen bg-gray-900">
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white flex-shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div
+        className="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white flex-shrink-0"
+        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+      >
         <Link
           href="/dashboard"
-          className="text-sm text-gray-300 hover:text-white"
+          className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors flex-shrink-0"
           aria-label="Kembali ke dashboard"
         >
-          ← Kembali
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
         </Link>
-        <span className="text-gray-500">|</span>
-        <span className="text-sm font-medium truncate">{comic.title}</span>
+        <span className="text-sm font-semibold truncate text-gray-100">{comic.title}</span>
       </div>
 
       {/* Reader */}

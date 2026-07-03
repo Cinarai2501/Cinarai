@@ -23,23 +23,41 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
 
   if (!comic) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-neutral-50">
-        <p className="text-neutral-500">Komik tidak ditemukan.</p>
+      <main className="flex min-h-screen items-center justify-center bg-[#f0f7ff]">
+        <div className="text-center px-6">
+          <span className="text-5xl">📭</span>
+          <p className="mt-3 text-base font-bold text-neutral-700">Komik tidak ditemukan.</p>
+          <Link href="/dashboard" className="mt-4 inline-block rounded-2xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-700 transition-colors">
+            ← Kembali ke Dashboard
+          </Link>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 text-neutral-900">
-      <div className="px-4 py-3 sm:px-6">
-        <Link href="/dashboard" className="text-sm text-primary-600 hover:underline">
-          ← Kembali
-        </Link>
+    <main className="min-h-screen bg-[#f0f7ff] text-neutral-900">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-neutral-100 px-4 py-3 sm:px-6"
+        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+      >
+        <div className="mx-auto max-w-2xl flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="flex items-center justify-center h-9 w-9 rounded-xl bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors flex-shrink-0"
+            aria-label="Kembali ke dashboard"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <span className="text-sm font-bold text-neutral-700 truncate">{comic.title}</span>
+        </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 pb-16 sm:px-6">
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 animate-fade-in-up">
         {/* Cover Image */}
-        <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-lg">
+        <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-lg">
           <CoverImage
             src={comic.cover}
             alt={`Cover ${comic.title}`}
@@ -50,46 +68,52 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
 
         {/* Judul */}
         <div className="mt-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary-600">
-            Kelas {comic.kelas} · {comic.lokasi}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-neutral-950 sm:text-3xl">
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className="rounded-full bg-primary-100 px-3 py-1 text-xs font-bold text-primary-700">
+              Kelas {comic.kelas}
+            </span>
+            <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-bold text-secondary-700">
+              📍 {comic.lokasi}
+            </span>
+          </div>
+          <h1 className="text-2xl font-black text-neutral-950 sm:text-3xl leading-tight">
             {comic.title}
           </h1>
-          <p className="mt-1 text-base text-neutral-500">{comic.subtitle}</p>
+          <p className="mt-1.5 text-base text-neutral-500 leading-relaxed">{comic.subtitle}</p>
         </div>
 
         {/* Progress indicator */}
-        <div className="mt-4 flex items-center gap-3">
-          <div className="flex-1 h-1.5 rounded-full bg-neutral-200">
+        <div className="mt-4 rounded-2xl bg-white shadow-sm px-4 py-3 flex items-center gap-3">
+          <span className="text-sm font-bold text-neutral-600">Progress</span>
+          <div className="flex-1 h-2 rounded-full bg-neutral-100 overflow-hidden">
             <div
-              className="h-1.5 rounded-full bg-primary-600 transition-all"
+              className="h-2 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700"
               style={{ width: `${state.percentage}%` }}
             />
           </div>
-          <span className="text-xs font-semibold text-neutral-500">{state.percentage}%</span>
+          <span className="text-sm font-black text-primary-600 flex-shrink-0">{state.percentage}%</span>
         </div>
 
         {/* Sinopsis */}
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-neutral-400">
+        <section className="mt-6 rounded-3xl bg-white shadow-sm px-5 py-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mb-2">
             Sinopsis
           </h2>
-          <p className="mt-2 text-base leading-relaxed text-neutral-700">{comic.synopsis}</p>
+          <p className="text-sm leading-relaxed text-neutral-700">{comic.synopsis}</p>
         </section>
 
         {/* Profil Tokoh */}
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-neutral-400">
+        <section className="mt-4">
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mb-3 px-1">
             Profil Tokoh
           </h2>
-          <ul className="mt-3 flex flex-col gap-3">
+          <ul className="flex flex-col gap-2">
             {comic.characters.map((char) => (
-              <li key={char.name} className="flex items-center gap-4 rounded-xl bg-white p-4 shadow-sm">
+              <li key={char.name} className="flex items-center gap-4 rounded-2xl bg-white px-4 py-3.5 shadow-sm">
                 <AvatarImage src={char.avatar} name={char.name} />
-                <div>
-                  <p className="font-semibold text-neutral-900">{char.name}</p>
-                  <p className="text-sm text-neutral-500">{char.description}</p>
+                <div className="min-w-0">
+                  <p className="font-bold text-neutral-900 leading-tight">{char.name}</p>
+                  <p className="text-sm text-neutral-500 mt-0.5 leading-snug">{char.description}</p>
                 </div>
               </li>
             ))}
@@ -97,33 +121,33 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
         </section>
 
         {/* Target Pembelajaran */}
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-neutral-400">
+        <section className="mt-4">
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mb-3 px-1">
             Target Pembelajaran
           </h2>
-          <ul className="mt-3 flex flex-col gap-2">
+          <ul className="flex flex-col gap-2">
             {comic.learningTargets.map((target, i) => (
-              <li key={i} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
-                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">
+              <li key={i} className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-sm">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700 mt-0.5">
                   {i + 1}
                 </span>
-                <p className="text-sm text-neutral-700">{target}</p>
+                <p className="text-sm text-neutral-700 leading-relaxed">{target}</p>
               </li>
             ))}
           </ul>
         </section>
 
         {/* Tombol */}
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
             href={`/comic/${comicId}`}
-            className="flex-1 rounded-xl bg-primary-600 px-6 py-4 text-center text-base font-semibold text-white shadow-sm hover:bg-primary-700"
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-6 py-4 text-base font-black text-white shadow-sm hover:bg-primary-700 active:scale-[0.98] transition-all"
           >
-            Mulai Belajar
+            <span>▶</span> Mulai Belajar
           </Link>
           <button
             disabled
-            className="flex-1 rounded-xl border border-neutral-200 bg-white px-6 py-4 text-center text-base font-semibold text-neutral-400 shadow-sm cursor-not-allowed"
+            className="flex-1 rounded-2xl border-2 border-dashed border-neutral-200 bg-white px-6 py-4 text-base font-semibold text-neutral-400 cursor-not-allowed"
             title="Segera hadir"
           >
             Pretest

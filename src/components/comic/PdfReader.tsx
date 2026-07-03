@@ -200,12 +200,12 @@ export default function PdfReader({
 
       {/* Complete CTA — shown only on last page when enabled */}
       {isLastPage && showCompleteButton && onComplete && (
-        <div className="flex-shrink-0 px-4 py-3 bg-gray-800 border-t border-gray-700">
+        <div className="flex-shrink-0 px-4 py-4 bg-gray-800 border-t border-gray-700">
           <button
             onClick={onComplete}
-            className="w-full min-h-[48px] rounded-xl bg-primary-600 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-primary-700 active:bg-primary-800 transition-colors"
+            className="w-full min-h-[52px] rounded-2xl bg-primary-600 px-4 py-3.5 text-base font-black text-white shadow-md hover:bg-primary-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
-            {completeButtonLabel}
+            <span>✅</span> {completeButtonLabel}
           </button>
         </div>
       )}
@@ -232,8 +232,10 @@ function PageSkeleton({ width }: { width?: number }) {
 
 function ErrorMessage() {
   return (
-    <div className="flex items-center justify-center w-full h-64 text-red-400 text-sm px-4 text-center">
-      Gagal memuat PDF. Pastikan file tersedia.
+    <div className="flex flex-col items-center justify-center w-full h-64 gap-3 px-4 text-center">
+      <span className="text-4xl">🚨</span>
+      <p className="text-sm font-semibold text-red-400">Gagal memuat PDF.</p>
+      <p className="text-xs text-gray-400">Pastikan koneksi internet kamu stabil dan coba lagi.</p>
     </div>
   );
 }

@@ -14,7 +14,7 @@ interface LearningLayoutProps {
 export default function LearningLayout({ children }: LearningLayoutProps) {
   return (
     <div
-      className="flex flex-col bg-neutral-50"
+      className="flex flex-col bg-[#f0f7ff]"
       style={{
         minHeight: '100dvh',
         paddingTop: 'env(safe-area-inset-top)',

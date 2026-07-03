@@ -16,6 +16,17 @@ const STAGE_LABELS: Record<Stage, string> = {
   Finish:            'Selesai',
 };
 
+const STAGE_EMOJI: Record<string, string> = {
+  Cover:             '📖',
+  Contextualization: '📚',
+  Identification:    '🔍',
+  Navigation:        '🧭',
+  Argumentation:     '💬',
+  Resolution:        '💡',
+  Application:       '🎯',
+  Introspection:     '🪞',
+};
+
 export default function FinishStage() {
   const router = useRouter();
   const { comic, progress, completedStages } = useLearningEngine();
@@ -23,94 +34,102 @@ export default function FinishStage() {
   const hours = Math.floor(comic.estimatedMinutes / 60);
   const minutes = comic.estimatedMinutes % 60;
   const waktuLabel = hours > 0
-    ? `${hours} jam${minutes > 0 ? ` ${minutes} menit` : ''}`
+    ? `${hours} jam${minutes > 0 ? ` ${minutes} mnt` : ''}`
     : `${minutes} menit`;
 
   const completedSet = new Set<string>(completedStages);
+  const xpEarned = completedStages.length * 15;
 
   return (
     <div
-      className="flex flex-col bg-neutral-50"
+      className="flex flex-col bg-[#f0f7ff]"
       style={{
         minHeight: '100dvh',
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
       }}
     >
-      <div className="flex flex-1 flex-col items-center justify-start px-4 py-10 sm:px-6">
-        <div className="w-full max-w-md flex flex-col gap-6">
+      {/* Celebration header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 px-4 pt-12 pb-20 text-center">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute -left-6 bottom-4 h-28 w-28 rounded-full bg-secondary-400/20" />
 
-          {/* Hero */}
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100">
-              <svg className="w-10 h-10 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-neutral-950 leading-snug">
-                Learning Journey Selesai!
-              </h1>
-              <p className="mt-1 text-sm text-neutral-500">{comic.title}</p>
-            </div>
+        <div className="relative">
+          <div className="inline-flex h-24 w-24 items-center justify-center rounded-full bg-white/20 text-5xl shadow-lg ring-4 ring-white/30 mb-4">
+            🏆
           </div>
-
-          {/* Statistik */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white shadow-xs px-4 py-4 flex flex-col items-center gap-1">
-              <span className="text-2xl font-bold text-primary-600">{progress.percentage}%</span>
-              <span className="text-xs text-neutral-500 text-center">Persentase Selesai</span>
-            </div>
-            <div className="rounded-2xl bg-white shadow-xs px-4 py-4 flex flex-col items-center gap-1">
-              <span className="text-2xl font-bold text-primary-600">{waktuLabel}</span>
-              <span className="text-xs text-neutral-500 text-center">Estimasi Waktu</span>
-            </div>
-          </div>
-
-          {/* Tahapan Selesai */}
-          <section className="rounded-2xl bg-white shadow-xs overflow-hidden">
-            <div className="px-4 py-3 border-b border-neutral-100 sm:px-5">
-              <h2 className="text-sm font-bold text-neutral-800">Tahapan yang Diselesaikan</h2>
-            </div>
-            <ul className="px-4 py-3 sm:px-5 flex flex-col gap-1">
-              {LEARNING_STAGES.map((stage) => {
-                const done = completedSet.has(stage);
-                return (
-                  <li key={stage} className="flex items-center gap-3 py-2">
-                    <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${done ? 'bg-primary-100' : 'bg-neutral-100'}`}>
-                      {done ? (
-                        <svg className="w-3.5 h-3.5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      ) : (
-                        <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      )}
-                    </span>
-                    <span className={`text-sm ${done ? 'text-neutral-800 font-medium' : 'text-neutral-400'}`}>
-                      {STAGE_LABELS[stage]}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          {/* Tombol */}
-          <button
-            type="button"
-            onClick={() => router.push('/dashboard')}
-            className="w-full flex items-center justify-center gap-2 min-h-[44px] rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-xs hover:bg-primary-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Kembali ke Dashboard
-          </button>
-
+          <h1 className="text-2xl font-black text-white leading-tight">
+            Luar Biasa! 🎉
+          </h1>
+          <p className="mt-1 text-sm text-primary-200 leading-snug px-4">
+            Kamu telah menyelesaikan<br />
+            <span className="font-bold text-white">{comic.title}</span>
+          </p>
         </div>
       </div>
+
+      {/* Content floats over header */}
+      <div className="relative -mt-12 mx-auto w-full max-w-md px-4 space-y-4">
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard emoji="📊" label="Progress" value={`${progress.percentage}%`} color="bg-primary-600" />
+          <StatCard emoji="⭐" label="XP Didapat" value={`+${xpEarned}`} color="bg-secondary-500" />
+          <StatCard emoji="⏱️" label="Estimasi" value={waktuLabel} color="bg-accent-500" />
+        </div>
+
+        {/* Stage checklist */}
+        <div className="rounded-3xl bg-white shadow-md overflow-hidden">
+          <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">Tahapan</p>
+            <h2 className="text-base font-black text-neutral-900">Yang Sudah Diselesaikan</h2>
+          </div>
+          <ul className="px-5 py-3 space-y-1">
+            {LEARNING_STAGES.map((stage) => {
+              const done = completedSet.has(stage);
+              return (
+                <li key={stage} className="flex items-center gap-3 py-1.5">
+                  <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-sm ${
+                    done ? 'bg-accent-100' : 'bg-neutral-100'
+                  }`}>
+                    {done ? '✅' : (STAGE_EMOJI[stage] ?? '○')}
+                  </span>
+                  <span className={`text-sm ${done ? 'text-neutral-800 font-semibold' : 'text-neutral-400'}`}>
+                    {STAGE_LABELS[stage]}
+                  </span>
+                  {done && (
+                    <span className="ml-auto text-[10px] font-bold text-accent-600">+15 XP</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* CTA */}
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-4 text-base font-black text-white shadow-md hover:bg-primary-700 active:scale-[0.98] transition-all"
+        >
+          🏠 Kembali ke Dashboard
+        </button>
+
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ emoji, label, value, color }: {
+  emoji: string; label: string; value: string; color: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-white shadow-md px-3 py-4 flex flex-col items-center gap-1 text-center">
+      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${color} text-lg`}>
+        {emoji}
+      </span>
+      <span className="text-sm font-black text-neutral-900 leading-tight">{value}</span>
+      <span className="text-[10px] text-neutral-400 leading-tight">{label}</span>
     </div>
   );
 }

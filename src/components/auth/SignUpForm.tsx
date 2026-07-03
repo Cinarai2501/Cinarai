@@ -21,11 +21,11 @@ export const SignUpForm: React.FC = () => {
     setValidationError('');
 
     if (password !== confirmPassword) {
-      setValidationError('Password tidak cocok');
+      setValidationError('Password tidak cocok. Coba lagi ya! 😊');
       return;
     }
     if (password.length < 6) {
-      setValidationError('Password minimal 6 karakter');
+      setValidationError('Password minimal 6 karakter.');
       return;
     }
 
@@ -40,27 +40,26 @@ export const SignUpForm: React.FC = () => {
     }
   };
 
+  const inputClass =
+    'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:opacity-60 transition-colors';
+
   return (
-    <div className="w-full max-w-md mx-auto space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-neutral-900">Daftar</h1>
-        <p className="text-neutral-600">Bergabunglah dengan CINARAI</p>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-black text-neutral-900">Daftar</h2>
+        <p className="text-sm text-neutral-500 mt-0.5">Bergabunglah dengan CINARAI! 🎉</p>
       </div>
 
-      {error && (
-        <div className="p-4 bg-error-50 border border-error-200 rounded-lg">
-          <p className="text-sm text-error-700">{error}</p>
-        </div>
-      )}
-      {validationError && (
-        <div className="p-4 bg-warning-50 border border-warning-200 rounded-lg">
-          <p className="text-sm text-warning-700">{validationError}</p>
+      {(error || validationError) && (
+        <div className="flex items-start gap-3 rounded-2xl bg-error-50 border border-error-200 px-4 py-3">
+          <span className="text-lg flex-shrink-0">😕</span>
+          <p className="text-sm text-error-700 leading-snug">{error || validationError}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="displayName" className="block text-sm font-medium text-neutral-700">
+        <div className="space-y-1.5">
+          <label htmlFor="displayName" className="block text-sm font-semibold text-neutral-700">
             Nama Lengkap
           </label>
           <input
@@ -68,15 +67,15 @@ export const SignUpForm: React.FC = () => {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Nama Anda"
+            placeholder="Nama kamu"
             required
-            className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
+            className={inputClass}
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-sm font-semibold text-neutral-700">
             Email
           </label>
           <input
@@ -84,15 +83,15 @@ export const SignUpForm: React.FC = () => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="kamu@contoh.com"
             required
-            className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
+            className={inputClass}
           />
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium text-neutral-700">
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-sm font-semibold text-neutral-700">
             Password
           </label>
           <input
@@ -102,14 +101,14 @@ export const SignUpForm: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
+            className={inputClass}
           />
-          <p className="text-xs text-neutral-500">Minimal 6 karakter</p>
+          <p className="text-xs text-neutral-400">Minimal 6 karakter</p>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-700">
+        <div className="space-y-1.5">
+          <label htmlFor="confirmPassword" className="block text-sm font-semibold text-neutral-700">
             Konfirmasi Password
           </label>
           <input
@@ -119,23 +118,23 @@ export const SignUpForm: React.FC = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
             required
-            className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             disabled={isLoading}
+            className={inputClass}
           />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full px-4 py-3 bg-primary-500 hover:bg-primary-600 disabled:bg-neutral-300 text-white font-medium rounded-lg transition-colors"
+          className="w-full rounded-2xl bg-primary-600 px-4 py-3.5 text-sm font-black text-white shadow-sm hover:bg-primary-700 active:scale-[0.98] disabled:bg-neutral-300 disabled:cursor-not-allowed transition-all"
         >
-          {isLoading ? 'Sedang memproses...' : 'Daftar'}
+          {isLoading ? 'Mendaftar...' : 'Daftar Sekarang 🚀'}
         </button>
       </form>
 
-      <p className="text-center text-neutral-600">
+      <p className="text-center text-sm text-neutral-500">
         Sudah punya akun?{' '}
-        <Link href="/auth/login" className="text-primary-600 hover:text-primary-700 font-medium">
+        <Link href="/auth/login" className="font-bold text-primary-600 hover:text-primary-700">
           Masuk di sini
         </Link>
       </p>

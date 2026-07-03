@@ -14,8 +14,8 @@ interface StudiKasusProps {
 
 function StudiKasusCard({ index, target, lokasi }: StudiKasusProps) {
   return (
-    <div className="rounded-2xl bg-white shadow-xs overflow-hidden">
-      <div className="bg-secondary-600 px-4 py-3 sm:px-5 flex items-center gap-2">
+    <div className="rounded-3xl bg-white shadow-sm overflow-hidden">
+      <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 py-3 sm:px-5 flex items-center gap-2">
         <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white">
           {index + 1}
         </span>
@@ -121,11 +121,11 @@ export default function ApplicationStage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 animate-fade-in">
       {/* Judul */}
       <div>
-        <h2 className="text-lg font-bold text-neutral-950 leading-snug">Penerapan Konsep</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <h2 className="text-lg font-black text-neutral-950 leading-snug">Penerapan Konsep</h2>
+        <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
           Terapkan apa yang kamu pelajari dari {comic.lokasi} pada situasi baru.
         </p>
       </div>

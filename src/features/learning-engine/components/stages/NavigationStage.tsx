@@ -10,9 +10,9 @@ function PanelMateri() {
   const { comic } = useLearningEngine();
 
   return (
-    <section className="rounded-2xl bg-white shadow-xs overflow-hidden">
+    <section className="rounded-3xl bg-white shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-primary-600 px-4 py-3 sm:px-5">
+      <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3 sm:px-5">
         <h2 className="text-sm font-bold text-white">Materi Pembelajaran</h2>
         <p className="mt-0.5 text-xs text-primary-100">{comic.lokasi} · Kelas {comic.kelas}</p>
       </div>
@@ -132,7 +132,7 @@ export default function NavigationStage() {
   }, [setCanAdvance]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 animate-fade-in">
       <PanelMateri />
       <PanelAktivitas />
     </div>

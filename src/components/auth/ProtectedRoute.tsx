@@ -17,27 +17,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
-    }
+    if (!loading && !user) router.push('/auth/login');
   }, [user, loading, router]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
-        <div className="space-y-4 text-center">
-          <div className="animate-spin">
-            <div className="h-12 w-12 border-4 border-primary-200 border-t-primary-500 rounded-full mx-auto" />
-          </div>
-          <p className="text-neutral-600">Loading...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-primary-500 to-primary-600">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-3xl shadow-lg">
+          🎓
         </div>
+        <div className="h-10 w-10 rounded-full border-4 border-white/30 border-t-white animate-spin" />
+        <p className="text-sm font-semibold text-primary-100">Memuat petualangan...</p>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return <>{children}</>;
 };

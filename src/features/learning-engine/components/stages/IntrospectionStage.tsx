@@ -30,7 +30,7 @@ interface ChecklistProps {
 function Checklist({ checked, onChange }: ChecklistProps) {
   const { comic } = useLearningEngine();
   return (
-    <section className="rounded-2xl bg-white shadow-xs overflow-hidden">
+    <section className="rounded-3xl bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 sm:px-5 border-b border-neutral-100">
         <h3 className="text-sm font-bold text-neutral-800">Apa yang sudah kamu kuasai?</h3>
         <p className="mt-0.5 text-xs text-neutral-400">Centang semua yang sudah kamu pahami.</p>
@@ -216,7 +216,7 @@ export default function IntrospectionStage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 animate-fade-in">
       <Refleksi />
       <Checklist checked={checked} onChange={handleCheck} />
       <RatingPemahaman value={rating} onChange={setRating} />

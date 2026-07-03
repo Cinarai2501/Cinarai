@@ -30,7 +30,7 @@ export default function LearningBottomNav() {
           onClick={previousStage}
           disabled={isFirst}
           aria-label="Stage sebelumnya"
-          className="flex items-center justify-center gap-2 min-h-touch rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-600 shadow-xs hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center justify-center gap-1.5 min-h-[48px] rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -43,12 +43,14 @@ export default function LearningBottomNav() {
           onClick={nextStage}
           disabled={!canAdvance}
           aria-label={isLastLearningStage ? 'Selesaikan pembelajaran' : 'Stage berikutnya'}
-          className="flex flex-1 items-center justify-center gap-2 min-h-touch rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-xs hover:bg-primary-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-colors"
+          className="flex flex-1 items-center justify-center gap-1.5 min-h-[48px] rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm hover:bg-primary-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
         >
-          {isLastLearningStage ? 'Selesai' : 'Berikutnya'}
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+          {isLastLearningStage ? 'Selesai 🏆' : 'Berikutnya'}
+          {!isLastLearningStage && (
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          )}
         </button>
       </div>
     </nav>
