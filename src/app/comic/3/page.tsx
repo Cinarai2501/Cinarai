@@ -1,5 +1,5 @@
-import ComicPlaceholder from '@/components/comic/ComicPlaceholder';
+import ComicPageClient from "@/components/comic/ComicPageClient";
 
-export default function ComicThreePage(): React.ReactNode {
-  return <ComicPlaceholder comicNumber={3} />;
+export default function ComicThreePage() {
+  return <ComicPageClient comicId={3} />;
 }

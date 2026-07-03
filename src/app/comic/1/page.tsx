@@ -1,5 +1,5 @@
-import ComicPlaceholder from '@/components/comic/ComicPlaceholder';
+import ComicPageClient from "@/components/comic/ComicPageClient";
 
-export default function ComicOnePage(): React.ReactNode {
-  return <ComicPlaceholder comicNumber={1} />;
+export default function ComicOnePage() {
+  return <ComicPageClient comicId={1} />;
 }
