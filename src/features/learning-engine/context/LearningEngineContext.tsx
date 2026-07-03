@@ -96,8 +96,12 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
 
     const sintaks = stageToSintaks(currentStage);
     if (user && sintaks) {
-      const next = await persistCompleteStage(user.uid, progress, sintaks);
-      setProgress(next);
+      try {
+        const next = await persistCompleteStage(user.uid, progress, sintaks);
+        setProgress(next);
+      } catch (error) {
+        console.error('[LearningEngine] nextStage — persistCompleteStage failed', { userId: user.uid, sintaks, error });
+      }
     }
 
     setStageIndex((i) => Math.min(i + 1, totalStages - 1));

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { getAllComics } from "@/lib/comicRepository";
 import { getAllUnlockStatuses } from "@/lib/unlockEngine";
@@ -11,6 +11,16 @@ const comics = getAllComics();
 export default function LearningJourney() {
   const { states, getProgress, isLoading } = useAllComicProgress();
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
+
+  useEffect(() => {
+    console.log('[Dashboard] Firestore User Loaded');
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      console.log('[Dashboard] Learning Journey Loaded', { comicCount: comics.length, progressCount: states.length });
+    }
+  }, [isLoading, states]);
 
   if (isLoading) {
     return (

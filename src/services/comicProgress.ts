@@ -5,7 +5,7 @@ import { getAllComics } from '@/lib/comicRepository';
 import { createInitialProgressState, restoreProgressState } from '@/lib/progressEngine';
 import {
   setFirestoreDocument,
-  updateFirestoreDocument,
+  mergeFirestoreDocument,
   subscribeToFirestoreDocument,
   subscribeToFirestoreCollection,
   getFirestoreDocument,
@@ -59,30 +59,39 @@ export async function initializeUserProgress(userId: string): Promise<void> {
 
   await Promise.all(
     comics.map(async (comic) => {
-      const existing = await getFirestoreDocument('comic_progress', docId(userId, comic.id));
-      if (existing) return;
+      const id = docId(userId, comic.id);
+      try {
+        const existing = await getFirestoreDocument('comic_progress', id);
+        if (existing) return;
 
-      const state = createInitialProgressState(comic.id);
-      await setFirestoreDocument('comic_progress', docId(userId, comic.id), toDocument(userId, state));
+        const state = createInitialProgressState(comic.id);
+        await setFirestoreDocument('comic_progress', id, toDocument(userId, state));
+      } catch (error) {
+        console.error(`[Firestore] initializeUserProgress error — userId: ${userId}, comicId: ${comic.id}, docId: ${id}`, error);
+      }
     })
   );
 }
 
 // ─── Update ──────────────────────────────────────────────────────────────────
 
-/** Persist updated progress state to Firestore. */
+/** Persist updated progress state to Firestore.
+ *  Pakai setDoc + merge:true agar aman untuk dokumen baru maupun yang sudah ada.
+ */
 export async function saveComicProgress(
   userId: string,
   state: ComicProgressState
 ): Promise<void> {
-  await updateFirestoreDocument('comic_progress', docId(userId, state.comicId), {
-    stage: currentStage(state),
-    percentage: state.percentage,
-    status: deriveStatus(state),
-    sintaksList: state.sintaksList,
-    updatedAt: serverTimestamp(),
-    ...(state.isCompleted ? { completedAt: serverTimestamp() } : {}),
-  });
+  const id = docId(userId, state.comicId);
+  try {
+    await mergeFirestoreDocument('comic_progress', id, {
+      ...toDocument(userId, state),
+      ...(state.isCompleted ? { completedAt: serverTimestamp() as ComicProgressDocument['updatedAt'] } : {}),
+    });
+  } catch (error) {
+    console.error(`[Firestore] saveComicProgress error — userId: ${userId}, comicId: ${state.comicId}, docId: ${id}`, error);
+    throw error;
+  }
 }
 
 // ─── Subscribe ───────────────────────────────────────────────────────────────
@@ -93,9 +102,16 @@ export function subscribeToComicProgress(
   comicId: number,
   callback: (state: ComicProgressState) => void
 ): Unsubscribe {
-  return subscribeToFirestoreDocument('comic_progress', docId(userId, comicId), (data) => {
-    callback(data ? fromDocument(comicId, data) : createInitialProgressState(comicId));
-  });
+  return subscribeToFirestoreDocument(
+    'comic_progress',
+    docId(userId, comicId),
+    (data) => {
+      callback(data ? fromDocument(comicId, data) : createInitialProgressState(comicId));
+    },
+    (error) => {
+      console.error(`[Firestore] subscribeToComicProgress error — userId: ${userId}, comicId: ${comicId}`, error);
+    }
+  );
 }
 
 /** Subscribe to all comics' progress for a user in realtime. */

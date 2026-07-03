@@ -16,6 +16,7 @@ import {
   where,
   type DocumentData,
   type FirestoreDataConverter,
+  type PartialWithFieldValue,
   type QueryConstraint,
   type QueryDocumentSnapshot,
   type SnapshotOptions,
@@ -146,6 +147,17 @@ export const setFirestoreDocument = async <
   await setDoc(getTypedDoc(collectionName, docId), data);
 };
 
+/** setDoc dengan merge:true — aman untuk dokumen baru maupun yang sudah ada. */
+export const mergeFirestoreDocument = async <
+  TCollectionName extends FirestoreCollectionName,
+>(
+  collectionName: TCollectionName,
+  docId: string,
+  data: PartialWithFieldValue<FirestoreCollectionMap[TCollectionName]>
+): Promise<void> => {
+  await setDoc(getTypedDoc(collectionName, docId), data, { merge: true });
+};
+
 export const updateFirestoreDocument = async <
   TCollectionName extends FirestoreCollectionName,
 >(
@@ -170,11 +182,19 @@ export const subscribeToFirestoreDocument = <
 >(
   collectionName: TCollectionName,
   docId: string,
-  callback: (data: FirestoreCollectionMap[TCollectionName] | null) => void
+  callback: (data: FirestoreCollectionMap[TCollectionName] | null) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe => {
-  return onSnapshot(getTypedDoc(collectionName, docId), (snapshot) => {
-    callback(snapshot.exists() ? snapshot.data() : null);
-  });
+  return onSnapshot(
+    getTypedDoc(collectionName, docId),
+    (snapshot) => {
+      callback(snapshot.exists() ? snapshot.data() : null);
+    },
+    (error) => {
+      console.error(`[Firestore] subscribeToFirestoreDocument error — collection: ${collectionName}, docId: ${docId}`, error);
+      onError?.(error);
+    }
+  );
 };
 
 // ─── users helpers ───────────────────────────────────────────────────────────

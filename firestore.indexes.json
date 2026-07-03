@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "comic_progress",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "comicId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "comic_progress",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

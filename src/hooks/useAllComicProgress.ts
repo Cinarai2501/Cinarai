@@ -15,13 +15,18 @@ export function useAllComicProgress() {
       setIsLoading(false);
       return;
     }
+    console.log('[Dashboard] Auth User Loaded', { uid: user.uid, email: user.email });
+    console.log('[Dashboard] Dashboard Start Loading');
     const unsub = subscribeToAllComicProgress(
       user.uid,
       (s) => {
+        console.log('[Dashboard] Firestore Progress Loaded', { count: s.length, states: s });
         setStates(s);
         setIsLoading(false);
+        console.log('[Dashboard] Dashboard Finished Loading');
       },
-      () => {
+      (error) => {
+        console.error('[Dashboard] Dashboard Error', error);
         setIsLoading(false);
       },
     );
