@@ -10,7 +10,6 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   type User,
-  type Auth,
   type UserCredential,
   type Unsubscribe,
 } from 'firebase/auth';

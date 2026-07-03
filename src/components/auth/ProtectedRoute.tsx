@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  requiredRole,
+  requiredRole: _requiredRole,
 }) => {
   const { user, loading } = useAuth();
   const router = useRouter();

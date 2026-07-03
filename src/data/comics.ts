@@ -41,6 +41,7 @@ export const COMICS: Comic[] = [
     cover: `${BASE}/komik-1/cover.png`,
     thumbnail: `${BASE}/komik-1/thumbnail.png`,
     stages: DEFAULT_STAGES,
+    availability: "ACTIVE",
   },
   {
     id: 2,
@@ -72,6 +73,7 @@ export const COMICS: Comic[] = [
     cover: `${BASE}/komik-2/cover.png`,
     thumbnail: `${BASE}/komik-2/thumbnail.png`,
     stages: DEFAULT_STAGES,
+    availability: "ACTIVE",
   },
   {
     id: 3,
@@ -103,6 +105,7 @@ export const COMICS: Comic[] = [
     cover: `${BASE}/komik-3/cover.png`,
     thumbnail: `${BASE}/komik-3/thumbnail.png`,
     stages: DEFAULT_STAGES,
+    availability: "ACTIVE",
   },
   {
     id: 4,
@@ -134,6 +137,7 @@ export const COMICS: Comic[] = [
     cover: `${BASE}/komik-4/cover.png`,
     thumbnail: `${BASE}/komik-4/thumbnail.png`,
     stages: DEFAULT_STAGES,
+    availability: "COMING_SOON",
   },
   {
     id: 5,
@@ -165,5 +169,6 @@ export const COMICS: Comic[] = [
     cover: `${BASE}/komik-5/cover.png`,
     thumbnail: `${BASE}/komik-5/thumbnail.png`,
     stages: DEFAULT_STAGES,
+    availability: "COMING_SOON",
   },
 ];

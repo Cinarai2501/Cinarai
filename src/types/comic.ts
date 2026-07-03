@@ -1,3 +1,5 @@
+export type ComicAvailability = "ACTIVE" | "COMING_SOON";
+
 export type ComicStatus = "locked" | "available" | "in_progress" | "completed";
 
 export type ComicStage = "comic" | "quiz" | "ar" | "reflection";
@@ -22,6 +24,7 @@ export interface Comic {
   cover: string;
   thumbnail: string;
   stages: ComicStage[];
+  availability: ComicAvailability;
 }
 
 export interface ComicProgress {

@@ -3,112 +3,81 @@
 import {
   ref,
   uploadBytes,
-  uploadString,
-  downloadURL,
+  uploadString as fbUploadString,
+  getDownloadURL,
   deleteObject,
   listAll,
   getBytes,
-  type StorageReference,
 } from 'firebase/storage';
 import { storage } from './client';
 
-/**
- * Upload file to storage
- */
 export const uploadFile = async (
   path: string,
   file: File,
-  metadata?: any
+  metadata?: Parameters<typeof uploadBytes>[2]
 ): Promise<string> => {
   try {
     const storageRef = ref(storage, path);
     const snapshot = await uploadBytes(storageRef, file, metadata);
-    const downloadUrl = await downloadURL(snapshot.ref);
-    return downloadUrl;
+    return await getDownloadURL(snapshot.ref);
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;
   }
 };
 
-/**
- * Upload string to storage (e.g., JSON, text)
- */
-export const uploadString = async (
+export const uploadStringData = async (
   path: string,
   data: string,
   format: 'raw' | 'base64' | 'data_url' | 'base64url' = 'raw'
 ): Promise<string> => {
   try {
     const storageRef = ref(storage, path);
-    const snapshot = await uploadString(storageRef, data, format);
-    const downloadUrl = await downloadURL(snapshot.ref);
-    return downloadUrl;
+    const snapshot = await fbUploadString(storageRef, data, format);
+    return await getDownloadURL(snapshot.ref);
   } catch (error) {
     console.error('Error uploading string:', error);
     throw error;
   }
 };
 
-/**
- * Get download URL for a file
- */
 export const getFileUrl = async (path: string): Promise<string> => {
   try {
-    const storageRef = ref(storage, path);
-    return await downloadURL(storageRef);
+    return await getDownloadURL(ref(storage, path));
   } catch (error) {
     console.error('Error getting file URL:', error);
     throw error;
   }
 };
 
-/**
- * Download file as bytes
- */
 export const downloadFile = async (path: string): Promise<ArrayBuffer> => {
   try {
-    const storageRef = ref(storage, path);
-    return await getBytes(storageRef);
+    return await getBytes(ref(storage, path));
   } catch (error) {
     console.error('Error downloading file:', error);
     throw error;
   }
 };
 
-/**
- * Delete file from storage
- */
 export const deleteFile = async (path: string): Promise<void> => {
   try {
-    const storageRef = ref(storage, path);
-    await deleteObject(storageRef);
+    await deleteObject(ref(storage, path));
   } catch (error) {
     console.error('Error deleting file:', error);
     throw error;
   }
 };
 
-/**
- * List files in a directory
- */
 export const listFiles = async (path: string): Promise<string[]> => {
   try {
-    const storageRef = ref(storage, path);
-    const result = await listAll(storageRef);
-    const urls = await Promise.all(
-      result.items.map((itemRef) => downloadURL(itemRef))
-    );
-    return urls;
+    const result = await listAll(ref(storage, path));
+    return await Promise.all(result.items.map((itemRef) => getDownloadURL(itemRef)));
   } catch (error) {
     console.error('Error listing files:', error);
     throw error;
   }
 };
 
-/**
- * Check if file exists
- */
 export const fileExists = async (path: string): Promise<boolean> => {
   try {
     await getFileUrl(path);

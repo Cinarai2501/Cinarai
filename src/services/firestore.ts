@@ -66,7 +66,7 @@ const firestoreConverter = <TDocument extends DocumentData>(): FirestoreDataConv
     return {
       id: snapshot.id,
       ...snapshot.data(options),
-    } as TDocument;
+    } as unknown as TDocument;
   },
 });
 

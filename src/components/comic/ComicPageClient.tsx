@@ -1,8 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { getComicById } from "@/lib/comicRepository";
-import PdfReader from "./PdfReader";
+
+const PdfReader = dynamic(() => import("./PdfReader"), { ssr: false });
 
 interface ComicPageClientProps {
   comicId: number;
