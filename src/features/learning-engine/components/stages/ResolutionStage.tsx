@@ -130,10 +130,6 @@ export default function ResolutionStage() {
 
   // Gate: tombol Next aktif hanya jika jawaban tidak kosong
   useEffect(() => {
-    setCanAdvance(false);
-  }, [setCanAdvance]);
-
-  useEffect(() => {
     setCanAdvance(answer.trim().length > 0);
   }, [answer, setCanAdvance]);
 

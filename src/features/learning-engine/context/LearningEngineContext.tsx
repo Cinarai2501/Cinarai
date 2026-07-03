@@ -110,7 +110,10 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
 
   const goToStage = useCallback((stage: Stage) => {
     const idx = ALL_STAGES.indexOf(stage);
-    if (idx !== -1) setStageIndex(idx);
+    if (idx !== -1) {
+      setCanAdvance(true); // reset gate saat navigasi via breadcrumb
+      setStageIndex(idx);
+    }
   }, []);
 
   const finishLearning = useCallback(() => {

@@ -44,16 +44,38 @@ export function calculatePercentage(completedCount: number): number {
   return Math.round((completedCount / TOTAL) * 1000) / 10;
 }
 
-/** Restore a ComicProgressState from a plain sintaksList (e.g. from Firestore). */
+/** Restore a ComicProgressState from a plain sintaksList (e.g. from Firestore).
+ *  Tolerant of schema changes: filters to only known SINTAKS, rebuilds missing entries.
+ */
 export function restoreProgressState(
   comicId: number,
   sintaksList: SintaksProgress[]
 ): ComicProgressState {
-  // Guard: if stored list doesn't match SINTAKS, rebuild from scratch
-  if (sintaksList.length !== TOTAL || !SINTAKS.every((s, i) => sintaksList[i]?.sintaks === s)) {
-    return createInitialProgressState(comicId);
+  const validSet = new Set<string>(SINTAKS);
+
+  // Keep only entries whose sintaks is still in the current SINTAKS list
+  const filtered = sintaksList.filter((s) => validSet.has(s.sintaks));
+
+  // Build a map from stored data
+  const storedMap = new Map(filtered.map((s) => [s.sintaks, s.status]));
+
+  // Reconstruct full list in canonical SINTAKS order
+  const restored: SintaksProgress[] = SINTAKS.map((sintaks) => ({
+    sintaks,
+    status: storedMap.get(sintaks) ?? 'LOCKED',
+  }));
+
+  // Ensure at least one stage is CURRENT if none is (e.g. all LOCKED after migration)
+  const hasCurrent = restored.some((s) => s.status === 'CURRENT');
+  const hasCompleted = restored.some((s) => s.status === 'COMPLETED');
+  if (!hasCurrent && !buildState(comicId, restored).isCompleted) {
+    // Find first non-COMPLETED stage and mark it CURRENT
+    const firstLocked = restored.findIndex((s) => s.status === 'LOCKED');
+    if (firstLocked !== -1) restored[firstLocked] = { ...restored[firstLocked], status: 'CURRENT' };
+    else if (!hasCompleted) restored[0] = { ...restored[0], status: 'CURRENT' };
   }
-  return buildState(comicId, sintaksList);
+
+  return buildState(comicId, restored);
 }
 
 // ─── Internal ────────────────────────────────────────────────────────────────

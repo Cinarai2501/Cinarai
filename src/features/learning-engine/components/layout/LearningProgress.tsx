@@ -1,14 +1,26 @@
 'use client';
 
-import { LEARNING_STAGES } from '../../types';
+import { Stage, LEARNING_STAGES } from '../../types';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+
+const STAGE_LABELS: Record<Stage, string> = {
+  [Stage.Cover]:             'Cover',
+  [Stage.Contextualization]: 'Kontekstualisasi',
+  [Stage.Identification]:    'Identifikasi',
+  [Stage.Navigation]:        'Navigasi',
+  [Stage.Argumentation]:     'Argumentasi',
+  [Stage.Resolution]:        'Resolusi',
+  [Stage.Application]:       'Aplikasi',
+  [Stage.Introspection]:     'Introspeksi',
+  [Stage.Finish]:            'Selesai',
+};
 
 export default function LearningProgress() {
   const { currentStage, progress } = useLearningEngine();
 
-  const totalLearningStages = LEARNING_STAGES.length;
-  const completedCount = progress.completedCount;
-  const remainingCount = totalLearningStages - completedCount;
+  const total = LEARNING_STAGES.length;
+  const completedCount = Math.min(progress.completedCount, total);
+  const remainingCount = total - completedCount;
   const percentage = progress.percentage;
 
   return (
@@ -16,7 +28,7 @@ export default function LearningProgress() {
       {/* Stage aktif + persentase */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-neutral-900 truncate">
-          {currentStage}
+          {STAGE_LABELS[currentStage]}
         </span>
         <span className="text-xs font-bold text-primary-600 ml-3 flex-shrink-0">
           {percentage}%

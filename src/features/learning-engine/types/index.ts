@@ -22,7 +22,6 @@ export const LEARNING_STAGES: Stage[] = [
   Stage.Contextualization,
   Stage.Identification,
   Stage.Navigation,
-  Stage.Argumentation,
   Stage.Resolution,
   Stage.Application,
   Stage.Introspection,
