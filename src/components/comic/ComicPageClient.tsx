@@ -20,8 +20,16 @@ export default function ComicPageClient({ comicId }: ComicPageClientProps) {
   const router = useRouter();
   const { state, complete } = useComicProgress(comicId);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  // Lifted page state — displayed in the top bar
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   // Prevent double-tap / double-fire
   const savingRef = useRef(false);
+
+  const handlePageChange = useCallback((page: number, numPages: number) => {
+    setCurrentPage(page);
+    setTotalPages(numPages);
+  }, []);
 
   const handleComplete = useCallback(async () => {
     // Already saved or in-flight — do nothing
@@ -56,7 +64,7 @@ export default function ComicPageClient({ comicId }: ComicPageClientProps) {
         <div>
           <h2 className="text-xl font-black text-neutral-800">Segera Hadir!</h2>
           <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
-            {comic?.subtitle ?? 'Komik ini sedang dalam persiapan.'}
+            {comic?.subtitle ?? "Komik ini sedang dalam persiapan."}
           </p>
         </div>
         <Link
@@ -71,29 +79,42 @@ export default function ComicPageClient({ comicId }: ComicPageClientProps) {
 
   return (
     <main className="flex flex-col min-h-screen bg-gray-900">
-      {/* Top bar */}
+      {/* ── Top bar: back + title + page counter ──────────────────────────── */}
       <div
-        className="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white flex-shrink-0"
-        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+        className="flex items-center gap-3 px-3 py-2 bg-gray-800 text-white flex-shrink-0"
+        style={{ paddingTop: "max(0.625rem, env(safe-area-inset-top))" }}
       >
+        {/* Back button */}
         <Link
           href="/dashboard"
-          className="flex items-center justify-center h-9 w-9 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors flex-shrink-0"
+          className="flex items-center justify-center h-10 w-10 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors flex-shrink-0"
           aria-label="Kembali ke dashboard"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <span className="text-sm font-semibold truncate text-gray-100">{comic.title}</span>
+
+        {/* Title — truncated, fills available space */}
+        <span className="flex-1 text-sm font-semibold text-gray-100 truncate min-w-0">
+          {comic.title}
+        </span>
+
+        {/* Page counter — right-aligned, never wraps */}
+        {totalPages > 0 && (
+          <span className="flex-shrink-0 text-xs font-bold tabular-nums text-gray-300 bg-gray-700 rounded-lg px-2.5 py-1.5 leading-none">
+            {currentPage} / {totalPages}
+          </span>
+        )}
       </div>
 
-      {/* Reader */}
+      {/* ── Reader ────────────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0">
         {comic.pdfPath ? (
           <PdfReader
             pdfPath={comic.pdfPath}
             onComplete={handleComplete}
+            onPageChange={handlePageChange}
             showCompleteButton
             completeButtonLabel={
               saveStatus === "saving"

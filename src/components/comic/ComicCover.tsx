@@ -1,10 +1,27 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { getComicById } from "@/lib/comicRepository";
 import { useComicProgress } from "@/hooks/useComicProgress";
+
+// Loaded client-only: pdfjs-dist requires browser APIs (DOMMatrix, Canvas)
+const PdfCoverCanvas = dynamic(() => import("./PdfCoverCanvas"), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="relative w-full rounded-3xl overflow-hidden shadow-lg bg-neutral-100"
+      style={{ aspectRatio: "3 / 4" }}
+    >
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 rounded-full border-4 border-primary-200 border-t-primary-600 animate-spin" />
+        <p className="text-xs font-semibold text-neutral-400">Memuat cover...</p>
+      </div>
+    </div>
+  ),
+});
 
 interface ComicCoverProps {
   comicId: number;
@@ -27,7 +44,10 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
         <div className="text-center px-6">
           <span className="text-5xl">📭</span>
           <p className="mt-3 text-base font-bold text-neutral-700">Komik tidak ditemukan.</p>
-          <Link href="/dashboard" className="mt-4 inline-block rounded-2xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-700 transition-colors">
+          <Link
+            href="/dashboard"
+            className="mt-4 inline-block rounded-2xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-700 transition-colors"
+          >
             ← Kembali ke Dashboard
           </Link>
         </div>
@@ -38,8 +58,9 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
   return (
     <main className="min-h-screen bg-[#f0f7ff] text-neutral-900">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-neutral-100 px-4 py-3 sm:px-6"
-        style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
+      <div
+        className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-neutral-100 px-4 py-3 sm:px-6"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
       >
         <div className="mx-auto max-w-2xl flex items-center gap-3">
           <Link
@@ -56,15 +77,8 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
       </div>
 
       <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 animate-fade-in-up">
-        {/* Cover Image */}
-        <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-lg">
-          <CoverImage
-            src={comic.cover}
-            alt={`Cover ${comic.title}`}
-            pdfPath={comic.pdfPath}
-            title={comic.title}
-          />
-        </div>
+        {/* Cover — PDF page 1 thumbnail, rendered client-side */}
+        <PdfCoverCanvas pdfPath={comic.pdfPath} title={comic.title} />
 
         {/* Judul */}
         <div className="mt-6">
@@ -155,85 +169,6 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
         </div>
       </div>
     </main>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// CoverImage — tries static cover, falls back to PDF page 1, then placeholder
-// ---------------------------------------------------------------------------
-function CoverImage({
-  src,
-  alt,
-  pdfPath,
-  title,
-}: {
-  src: string;
-  alt: string;
-  pdfPath: string | null;
-  title: string;
-}) {
-  const [status, setStatus] = useState<"img" | "pdf" | "placeholder">("img");
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // When status flips to "pdf", render PDF page 1 onto the canvas
-  useEffect(() => {
-    if (status !== "pdf" || !pdfPath) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist");
-        GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs`;
-        const pdf = await getDocument(pdfPath).promise;
-        const page = await pdf.getPage(1);
-        const canvas = canvasRef.current;
-        if (!canvas || cancelled) return;
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = canvas.width / viewport.width;
-        const scaled = page.getViewport({ scale });
-        canvas.height = scaled.height;
-        const ctx = canvas.getContext("2d")!;
-        await page.render({ canvasContext: ctx, canvas, viewport: scaled }).promise;
-      } catch {
-        if (!cancelled) setStatus("placeholder");
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [status, pdfPath]);
-
-  if (status === "img") {
-    return (
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        className="object-cover"
-        priority
-        onError={() => setStatus(pdfPath ? "pdf" : "placeholder")}
-      />
-    );
-  }
-
-  if (status === "pdf") {
-    return (
-      <canvas
-        ref={canvasRef}
-        width={600}
-        className="w-full h-full object-cover"
-        aria-label={alt}
-      />
-    );
-  }
-
-  // Placeholder — styled card with title initials
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary-100 to-primary-200 gap-3">
-      <span className="text-5xl font-black text-primary-600 select-none">
-        {title.charAt(0)}
-      </span>
-      <span className="text-xs text-primary-500 text-center px-6 line-clamp-2">{title}</span>
-    </div>
   );
 }
 
