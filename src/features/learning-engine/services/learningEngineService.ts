@@ -10,9 +10,10 @@ import type { Unsubscribe } from 'firebase/firestore';
 export function subscribeToLearningProgress(
   userId: string,
   comicId: number,
-  callback: (state: ComicProgressState) => void
+  callback: (state: ComicProgressState) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
-  return subscribeToComicProgress(userId, comicId, callback);
+  return subscribeToComicProgress(userId, comicId, callback, onError);
 }
 
 /** Mark a stage as complete and persist to Firestore. */

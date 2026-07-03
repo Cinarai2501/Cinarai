@@ -68,6 +68,7 @@ export default function ComicPageClient({ comicId }: ComicPageClientProps) {
       router.push(`/comic/${comicId}/learn`);
     } catch {
       setSaveStatus('error');
+    } finally {
       savingRef.current = false;
     }
   }, [state, complete, comicId, router]);

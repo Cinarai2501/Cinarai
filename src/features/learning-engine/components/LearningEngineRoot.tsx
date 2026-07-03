@@ -20,6 +20,10 @@ export default function LearningEngineRoot({ comicId }: LearningEngineRootProps)
     setLoading(true);
     setError(null);
 
+    const timeout = setTimeout(() => {
+      if (!cancelled) setError('Koneksi terlalu lama. Periksa internet kamu dan muat ulang halaman.');
+    }, 15_000);
+
     fetchComicById(comicId)
       .then((data) => {
         if (cancelled) return;
@@ -33,10 +37,16 @@ export default function LearningEngineRoot({ comicId }: LearningEngineRootProps)
         if (!cancelled) setError('Gagal memuat data komik. Periksa koneksi internet kamu.');
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          clearTimeout(timeout);
+          setLoading(false);
+        }
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [comicId]);
 
   if (loading) {

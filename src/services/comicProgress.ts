@@ -117,7 +117,8 @@ export async function saveComicProgress(
 export function subscribeToComicProgress(
   userId: string,
   comicId: number,
-  callback: (state: ComicProgressState) => void
+  callback: (state: ComicProgressState) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   return onSnapshot(
     progressDocRef(userId, comicId),
@@ -130,6 +131,7 @@ export function subscribeToComicProgress(
     },
     (error) => {
       console.error(`[Firestore] subscribeToComicProgress error — userId: ${userId}, comicId: ${comicId}`, error);
+      onError?.(error);
     }
   );
 }

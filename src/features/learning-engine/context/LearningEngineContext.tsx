@@ -42,7 +42,7 @@ interface LearningEngineProviderProps {
 }
 
 export function LearningEngineProvider({ comic, children }: LearningEngineProviderProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showSnackbar } = useSnackbar();
   const comicId = comic.id;
 
@@ -55,17 +55,43 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   const [isSaving, setIsSaving] = useState(false);
 
   // Subscribe to Firestore progress
+  // Wait for auth to resolve before deciding what to do.
   useEffect(() => {
+    // Auth still initialising — keep isLoading true, don't subscribe yet
+    if (authLoading) return;
+
+    // Definitely unauthenticated — nothing to load
     if (!user) {
       setIsLoading(false);
       return;
     }
-    const unsub = subscribeToLearningProgress(user.uid, comicId, (state) => {
-      setProgress(state);
+
+    setIsLoading(true);
+
+    // Safety net: if the first snapshot never arrives, stop spinning after 10s
+    const timeout = setTimeout(() => {
       setIsLoading(false);
-    });
-    return () => unsub();
-  }, [user, comicId]);
+    }, 10_000);
+
+    const unsub = subscribeToLearningProgress(
+      user.uid,
+      comicId,
+      (state) => {
+        clearTimeout(timeout);
+        setProgress(state);
+        setIsLoading(false);
+      },
+      (error) => {
+        clearTimeout(timeout);
+        console.error('[LearningEngine] Firestore progress subscription error', error);
+        setIsLoading(false);
+      }
+    );
+    return () => {
+      clearTimeout(timeout);
+      unsub();
+    };
+  }, [authLoading, user, comicId]);
 
   // Sync stageIndex to Firestore progress on initial load
   useEffect(() => {
