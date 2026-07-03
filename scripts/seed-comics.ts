@@ -1,16 +1,14 @@
 /**
  * Seed script — jalankan SATU KALI untuk mengisi collection `comics` di Firestore.
  *
+ * Data bersumber langsung dari isi PDF masing-masing komik.
+ *
  * LANGKAH SEBELUM MENJALANKAN:
  * 1. Buka Firebase Console → Firestore → Rules
- * 2. Ubah rule `comics` menjadi: allow write: if true;
+ * 2. Pastikan rule comics: allow write: if true;
  * 3. Klik Publish
  * 4. Jalankan: npm run seed
- * 5. Setelah selesai, kembalikan rule: allow write: if false;
- * 6. Klik Publish lagi
- *
- * Atau jika punya Firebase Admin SDK key:
- *   Tambahkan FIREBASE_ADMIN_SDK_KEY ke .env.local lalu jalankan npm run seed
+ * 5. Setelah selesai, kembalikan: allow write: if false; lalu Publish lagi
  */
 
 import { readFileSync } from 'fs';
@@ -43,34 +41,54 @@ const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY!;
 
 if (!PROJECT_ID || !API_KEY) {
-  console.error('❌  NEXT_PUBLIC_FIREBASE_PROJECT_ID atau NEXT_PUBLIC_FIREBASE_API_KEY tidak ditemukan di .env.local');
+  console.error('❌  NEXT_PUBLIC_FIREBASE_PROJECT_ID atau NEXT_PUBLIC_FIREBASE_API_KEY tidak ditemukan.');
   process.exit(1);
 }
 
-// ─── Comic data ───────────────────────────────────────────────────────────────
+// ─── Comic data — bersumber dari isi PDF ─────────────────────────────────────
 
 const BASE_COVER = '/comics';
 const BASE_AVATAR = '/assets/avatars';
 
 const COMICS = [
+  // ── Komik 1 ──────────────────────────────────────────────────────────────
+  // Sumber: public/comics/komik-1/comic.pdf
+  // Halaman pengenalan tokoh (hal. 9): Kak Najwa, Aris, Ara
+  // Tujuan pembelajaran (hal. 4): identifikasi & konstruksi bangun ruang Candi Jawi
   {
     docId: 'comic-1',
     comicId: 1,
     slug: 'komik-1',
     title: 'Petualangan Bangun Ruang Candi Jawi',
-    subtitle: 'Mengenal Bangun Ruang',
+    subtitle: 'Etnomatematika Bangun Ruang',
     kelas: 'VI',
-    lokasi: 'Candi Jawi',
-    synopsis: 'Arka dan teman-temannya mengunjungi Candi Jawi di Pasuruan. Di sana mereka menemukan misteri bentuk-bentuk bangunan candi yang ternyata menyimpan rahasia bangun ruang. Bersama Pak Guru, mereka menjelajahi kubus, balok, prisma, dan limas yang tersembunyi di setiap sudut candi.',
+    lokasi: 'Candi Jawi, Pasuruan',
+    synopsis: 'Aris dan Ara mengikuti tur edukasi ke Candi Jawi di Prigen, Pasuruan, dipandu oleh Kak Najwa. Awalnya Aris merasa tur ini akan membosankan dan mengaku tidak suka matematika. Namun Kak Najwa memperkenalkan tablet AR yang mampu menampilkan bentuk asli candi secara tiga dimensi. Melalui petualangan di dunia AR, mereka menjelajahi lima bangun ruang yang tersembunyi di arsitektur candi: kubus, balok, prisma segi empat, limas segi empat, dan kerucut. Setiap bangun ruang dipelajari melalui tantangan menghitung volume. Ketika tablet tiba-tiba error, Kak Najwa mengajarkan bahwa nenek moyang kita pun bisa membangun candi megah hanya dengan mata dan tangan — tanpa teknologi. Dari hari itu, Aris dan Ara tidak lagi takut matematika.',
     characters: [
-      { name: 'Arka', role: 'Tokoh Utama', description: 'Siswa kelas VI yang penasaran dan suka matematika.', avatar: `${BASE_AVATAR}/arka.png` },
-      { name: 'Sari', role: 'Sahabat', description: 'Sahabat Arka yang teliti dan suka mencatat.', avatar: `${BASE_AVATAR}/sari.png` },
-      { name: 'Pak Guru', role: 'Pembimbing', description: 'Guru yang bijak dan selalu memberi petunjuk.', avatar: `${BASE_AVATAR}/pak-guru.png` },
+      {
+        name: 'Kak Najwa',
+        role: 'Tour Guide',
+        description: 'Tour guide pendidikan Candi Jawi, perempuan, ramah, dan ahli matematika.',
+        avatar: `${BASE_AVATAR}/kak-najwa.png`,
+      },
+      {
+        name: 'Aris',
+        role: 'Tokoh Utama',
+        description: 'Anak laki-laki SD aktif, tetapi kurang suka matematika.',
+        avatar: `${BASE_AVATAR}/aris.png`,
+      },
+      {
+        name: 'Ara',
+        role: 'Tokoh Utama',
+        description: 'Anak perempuan SD, rajin dan benar tetapi pemalu.',
+        avatar: `${BASE_AVATAR}/ara.png`,
+      },
     ],
     learningTargets: [
-      'Mengenal jenis-jenis bangun ruang (kubus, balok, prisma, limas)',
-      'Mengidentifikasi sisi, rusuk, dan titik sudut bangun ruang',
-      'Menghubungkan bentuk bangun ruang dengan benda nyata di sekitar',
+      'Mengidentifikasi dan menjelaskan ciri-ciri bangun ruang (kubus, balok, prisma, limas, dan kerucut) melalui pengamatan arsitektur Candi Jawi',
+      'Menghitung volume beberapa jenis bangun ruang (kubus, balok, prisma, limas, dan kerucut)',
+      'Mengonstruksi model sederhana bangun ruang dan mengaitkannya dengan unsur arsitektur Candi Jawi',
+      'Memahami visualisasi spasial bangun ruang dari berbagai sisi',
     ],
     estimatedMinutes: 30,
     pdfUrl: `${BASE_COVER}/komik-1/comic.pdf`,
@@ -79,23 +97,45 @@ const COMICS = [
     order: 1,
     availability: 'ACTIVE',
   },
+
+  // ── Komik 2 ──────────────────────────────────────────────────────────────
+  // Sumber: public/comics/komik-2/comic.pdf
+  // Halaman pengenalan tokoh (hal. 9): Wili, Miya, Kara
+  // Tujuan pembelajaran (hal. 3): simetri lipat, simetri putar, luas bangun datar
   {
     docId: 'comic-2',
     comicId: 2,
     slug: 'komik-2',
     title: 'Petualangan Simetri Candi Penataran',
-    subtitle: 'Mengenal Simetri',
+    subtitle: 'Etnomatematika Bangun Datar: Simetri Lipat dan Simetri Putar',
     kelas: 'V',
-    lokasi: 'Candi Penataran',
-    synopsis: 'Di Candi Penataran, Blitar, Arka dan Sari terpesona oleh ukiran-ukiran indah yang ternyata memiliki pola simetri. Mereka belajar bahwa seni dan matematika berjalan beriringan melalui konsep simetri lipat dan simetri putar.',
+    lokasi: 'Candi Penataran, Blitar',
+    synopsis: 'Wili, Miya, dan Kara mengunjungi Candi Penataran di Blitar — kompleks candi Hindu terbesar di Jawa Timur yang dibangun pada masa Kerajaan Majapahit. Wili dan Miya bersemangat menemukan rahasia matematika di balik arsitektur candi, sementara Kara awalnya skeptis dan menganggap candi hanya bangunan tua. Mereka menjelajahi berbagai bangun datar pada struktur candi: persegi pada alas umpang, persegi panjang pada Bale Agung, segitiga pada atap, dan trapesium pada relief. Melalui pengamatan langsung, mereka memahami konsep simetri lipat dan simetri putar yang tersembunyi di setiap sudut candi. Kara yang awalnya tidak percaya akhirnya ikut belajar bersama dan memahami bahwa arsitektur kuno menyimpan kecerdasan matematika yang luar biasa.',
     characters: [
-      { name: 'Arka', role: 'Tokoh Utama', description: 'Siswa kelas V yang suka mengamati pola.', avatar: `${BASE_AVATAR}/arka.png` },
-      { name: 'Sari', role: 'Sahabat', description: 'Sahabat Arka yang kreatif dan suka menggambar.', avatar: `${BASE_AVATAR}/sari.png` },
+      {
+        name: 'Wili',
+        role: 'Tokoh Utama',
+        description: 'Anak laki-laki kelas 5 SD yang pintar dan penasaran. Suka matematika dan selalu ingin tahu lebih dalam. Berani, sabar, dan suka membantu teman. Menjadi pemimpin dalam petualangan.',
+        avatar: `${BASE_AVATAR}/wili.png`,
+      },
+      {
+        name: 'Miya',
+        role: 'Sahabat',
+        description: 'Anak perempuan kelas 5 SD yang ceria dan kreatif. Suka menggambar dan membantu Wili dengan ide-ide lucu. Ramah, lucu, dan cepat berpikir, tapi kadang takut dengan hal-hal aneh.',
+        avatar: `${BASE_AVATAR}/miya.png`,
+      },
+      {
+        name: 'Kara',
+        role: 'Sahabat',
+        description: 'Anak perempuan kelas 5 SD yang suka bercanda, tidak suka pelajaran matematika, sering salah paham dan mengganggu. Namun pada akhirnya Kara mau belajar bersama Wili dan Miya.',
+        avatar: `${BASE_AVATAR}/kara.png`,
+      },
     ],
     learningTargets: [
-      'Memahami konsep simetri lipat pada bangun datar',
-      'Menentukan sumbu simetri suatu bangun',
-      'Mengenal simetri putar dan orde putarnya',
+      'Mengidentifikasi dan mengenali berbagai bentuk bangun datar pada relief dan arsitektur Candi Penataran',
+      'Menjelaskan konsep simetri lipat dan simetri putar pada bangun datar',
+      'Menghitung luas bangun datar (persegi, persegi panjang, dan segitiga) menggunakan contoh nyata dari candi',
+      'Bekerja sama dan berdiskusi dalam kelompok untuk memecahkan masalah matematika',
     ],
     estimatedMinutes: 30,
     pdfUrl: `${BASE_COVER}/komik-2/comic.pdf`,
@@ -104,23 +144,52 @@ const COMICS = [
     order: 2,
     availability: 'ACTIVE',
   },
+
+  // ── Komik 3 ──────────────────────────────────────────────────────────────
+  // Sumber: public/comics/komik-3/comic.pdf
+  // Halaman pengenalan tokoh (hal. 5): Bu Rere, Damar, Bima, Sari
+  // Sinopsis (hal. 4): tersurat langsung di PDF
+  // Tujuan pembelajaran (hal. 3): mengenal bangun datar, komposisi & dekomposisi
   {
     docId: 'comic-3',
     comicId: 3,
     slug: 'komik-3',
     title: 'Petualangan di Rumah Gajah Mungkur',
-    subtitle: 'Mengenal Bilangan',
+    subtitle: 'Etnomatematika Bangun Datar — Kelas II SD',
     kelas: 'II',
-    lokasi: 'Gajah Mungkur',
-    synopsis: 'Arka kecil mengunjungi Waduk Gajah Mungkur bersama keluarganya. Di sana ia bertemu dengan nelayan yang mengajarinya cara menghitung ikan menggunakan bilangan. Petualangan seru mengenal bilangan 1 sampai 100 dimulai!',
+    lokasi: 'Rumah Gajah Mungkur, Gresik',
+    synopsis: 'Tiga murid kelas 2 SD — Damar, Bima, dan Sari — merasa matematika membosankan. Bu Rere lalu mengajak mereka belajar di Rumah Gajah Mungkur, bangunan bersejarah di Gresik yang dibangun sejak tahun 1896 oleh Haji Djaelani. Rumah ini memadukan tiga kebudayaan: Eropa, Tionghoa, dan Jawa, dengan patung gajah yang membelakangi di depan pintu utama. Di sana, mereka menjadi "Detektif Bangun Datar" dan mencari bentuk-bentuk seperti persegi, persegi panjang, segitiga, trapesium, belah ketupat, jajargenjang, hingga lingkaran pada bangunan bersejarah tersebut. Awalnya bingung membedakan bentuk yang mirip, ketiganya akhirnya paham berkat bimbingan Bu Rere dan kerja sama mereka. Petualangan ini mengajarkan bahwa matematika menyenangkan dan bisa ditemukan di sekitar kita.',
     characters: [
-      { name: 'Arka', role: 'Tokoh Utama', description: 'Siswa kelas II yang ceria dan suka berhitung.', avatar: `${BASE_AVATAR}/arka.png` },
-      { name: 'Pak Nelayan', role: 'Pembimbing', description: 'Nelayan ramah yang suka berbagi ilmu.', avatar: `${BASE_AVATAR}/pak-nelayan.png` },
+      {
+        name: 'Bu Rere',
+        role: 'Guru',
+        description: 'Guru matematika kelas II SD yang kreatif dan mengajak siswa belajar di luar kelas.',
+        avatar: `${BASE_AVATAR}/bu-rere.png`,
+      },
+      {
+        name: 'Damar',
+        role: 'Tokoh Utama',
+        description: 'Siswa yang jeli dan suka tantangan.',
+        avatar: `${BASE_AVATAR}/damar.png`,
+      },
+      {
+        name: 'Bima',
+        role: 'Tokoh Utama',
+        description: 'Siswa yang suka bersaing, terburu-buru, ingin jadi yang terbaik, kurang teliti.',
+        avatar: `${BASE_AVATAR}/bima.png`,
+      },
+      {
+        name: 'Sari',
+        role: 'Tokoh Utama',
+        description: 'Siswi yang teliti, suka bekerja sama, sabar, dan perhatian pada teman.',
+        avatar: `${BASE_AVATAR}/sari.png`,
+      },
     ],
     learningTargets: [
-      'Membilang dan menulis bilangan 1 sampai 100',
-      'Membandingkan dua bilangan (lebih besar, lebih kecil, sama dengan)',
-      'Mengurutkan bilangan dari terkecil ke terbesar',
+      'Menyebutkan berbagai bentuk bangun datar dan menemukannya pada benda-benda di sekitar',
+      'Mengenal berbagai bangun datar (segitiga, segiempat, segibanyak, lingkaran)',
+      'Menyusun (komposisi) dan mengurai (dekomposisi) suatu bangun datar',
+      'Menentukan posisi benda terhadap benda lain (kanan, kiri, depan, belakang)',
     ],
     estimatedMinutes: 25,
     pdfUrl: `${BASE_COVER}/komik-3/comic.pdf`,
@@ -129,24 +198,20 @@ const COMICS = [
     order: 3,
     availability: 'ACTIVE',
   },
+
+  // ── Komik 4 ──────────────────────────────────────────────────────────────
+  // PDF belum tersedia — data akan diperbarui setelah PDF diterima
   {
     docId: 'comic-4',
     comicId: 4,
     slug: 'komik-4',
     title: 'Petualangan di Jembatan Merah',
-    subtitle: 'Mengenal Pengukuran',
+    subtitle: 'Etnomatematika Pengukuran',
     kelas: 'IV',
-    lokasi: 'Jembatan Merah',
-    synopsis: 'Di kawasan bersejarah Jembatan Merah Surabaya, Arka dan teman-teman mendapat tantangan mengukur panjang jembatan tanpa penggaris. Mereka belajar satuan panjang baku dan tidak baku sambil menjelajahi sejarah kota.',
-    characters: [
-      { name: 'Arka', role: 'Tokoh Utama', description: 'Siswa kelas IV yang suka tantangan.', avatar: `${BASE_AVATAR}/arka.png` },
-      { name: 'Sari', role: 'Sahabat', description: 'Sahabat Arka yang selalu membawa alat tulis.', avatar: `${BASE_AVATAR}/sari.png` },
-    ],
-    learningTargets: [
-      'Memahami satuan panjang baku (cm, m, km) dan tidak baku',
-      'Mengkonversi satuan panjang',
-      'Mengukur panjang benda menggunakan alat ukur yang tepat',
-    ],
+    lokasi: 'Jembatan Merah, Surabaya',
+    synopsis: 'Komik ini sedang dalam persiapan. Data akan diperbarui setelah PDF tersedia.',
+    characters: [],
+    learningTargets: [],
     estimatedMinutes: 30,
     pdfUrl: null,
     coverUrl: `${BASE_COVER}/komik-4/cover.png`,
@@ -154,24 +219,20 @@ const COMICS = [
     order: 4,
     availability: 'COMING_SOON',
   },
+
+  // ── Komik 5 ──────────────────────────────────────────────────────────────
+  // PDF belum tersedia — data akan diperbarui setelah PDF diterima
   {
     docId: 'comic-5',
     comicId: 5,
     slug: 'komik-5',
     title: 'Serunya Belajar Bangun Datar di Keraton Sumenep',
-    subtitle: 'Mengenal Bangun Datar',
+    subtitle: 'Etnomatematika Bangun Datar',
     kelas: 'II',
-    lokasi: 'Keraton Sumenep',
-    synopsis: 'Arka mengunjungi Keraton Sumenep di Madura dan terkagum-kagum dengan arsitekturnya. Gerbang, jendela, dan lantai keraton ternyata penuh dengan bentuk-bentuk bangun datar. Bersama pemandu keraton, Arka belajar mengenal segitiga, persegi, dan lingkaran.',
-    characters: [
-      { name: 'Arka', role: 'Tokoh Utama', description: 'Siswa kelas II yang suka bertanya.', avatar: `${BASE_AVATAR}/arka.png` },
-      { name: 'Kak Pemandu', role: 'Pembimbing', description: 'Pemandu keraton yang ramah dan berpengetahuan luas.', avatar: `${BASE_AVATAR}/kak-pemandu.png` },
-    ],
-    learningTargets: [
-      'Mengenal bangun datar: segitiga, persegi, persegi panjang, lingkaran',
-      'Membedakan bangun datar berdasarkan ciri-cirinya',
-      'Menemukan bangun datar pada benda-benda di sekitar',
-    ],
+    lokasi: 'Keraton Sumenep, Madura',
+    synopsis: 'Komik ini sedang dalam persiapan. Data akan diperbarui setelah PDF tersedia.',
+    characters: [],
+    learningTargets: [],
     estimatedMinutes: 25,
     pdfUrl: null,
     coverUrl: `${BASE_COVER}/komik-5/cover.png`,
@@ -219,15 +280,11 @@ function toFirestoreFields(obj: Record<string, unknown>): Record<string, Firesto
 
 async function writeDocument(docId: string, data: Record<string, unknown>): Promise<void> {
   const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/comics/${docId}?key=${API_KEY}`;
-
-  const body = JSON.stringify({ fields: toFirestoreFields(data) });
-
   const res = await fetch(url, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body,
+    body: JSON.stringify({ fields: toFirestoreFields(data) }),
   });
-
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`HTTP ${res.status}: ${err}`);
@@ -238,6 +295,7 @@ async function writeDocument(docId: string, data: Record<string, unknown>): Prom
 
 async function seed(): Promise<void> {
   console.log(`\n🌱  Seeding Firestore project: ${PROJECT_ID}\n`);
+  console.log('   Data bersumber dari isi PDF komik.\n');
 
   for (const comic of COMICS) {
     const { docId, ...data } = comic;
@@ -246,7 +304,7 @@ async function seed(): Promise<void> {
   }
 
   console.log('\n🎉  Seed selesai. Collection `comics` berisi 5 dokumen.');
-  console.log('⚠️   Jangan lupa kembalikan Firestore rules: allow write: if false;\n');
+  console.log('⚠️   Kembalikan Firestore rules: allow write: if false;\n');
   process.exit(0);
 }
 
@@ -254,8 +312,8 @@ seed().catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);
   if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
     console.error('\n❌  PERMISSION_DENIED');
-    console.error('   Pastikan Firestore rules sudah diubah: allow write: if true;');
-    console.error('   Buka: https://console.firebase.google.com/project/' + PROJECT_ID + '/firestore/rules\n');
+    console.error('   Ubah Firestore rules: allow write: if true;');
+    console.error('   https://console.firebase.google.com/project/' + PROJECT_ID + '/firestore/rules\n');
   } else {
     console.error('❌  Seed gagal:', msg);
   }

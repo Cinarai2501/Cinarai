@@ -34,10 +34,10 @@ service cloud.firestore {
     }
 
     // ── comics ────────────────────────────────────────────────────────────
-    // Metadata komik: read publik, write hanya dari server (Admin SDK)
+    // Metadata komik: read publik, write hanya via Admin SDK / seed script
     match /comics/{docId} {
       allow read: if true;
-      allow write: if true;  // SEMENTARA: hapus setelah seed selesai
+      allow write: if false;
     }
 
     // ── Semua collection lain: tolak ─────────────────────────────────────────
