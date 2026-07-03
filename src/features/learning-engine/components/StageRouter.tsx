@@ -34,20 +34,19 @@ export default function StageRouter() {
   const { currentStage, isLoading, isFinished } = useLearningEngine();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to top of the scrollable content area on every stage change
+  // Reset scroll to top on every stage change
   useEffect(() => {
     if (isLoading) return;
-    // Walk up the DOM to find the nearest overflow-y-auto ancestor
     let el: HTMLElement | null = wrapperRef.current?.parentElement ?? null;
     while (el) {
       const overflow = window.getComputedStyle(el).overflowY;
       if (overflow === 'auto' || overflow === 'scroll') {
-        el.scrollTo({ top: 0, behavior: 'smooth' });
+        el.scrollTo({ top: 0, behavior: 'instant' });
         return;
       }
       el = el.parentElement;
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentStage, isLoading]);
 
   // FinishStage renders full-screen without layout wrapper

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
 const SWIPE_THRESHOLD = 48;   // min horizontal px to count as swipe
@@ -12,6 +12,12 @@ interface LearningContentProps {
 
 export default function LearningContent({ children }: LearningContentProps) {
   const { nextStage, previousStage, canAdvance, isSaving, stageIndex } = useLearningEngine();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Reset scroll to top on mount — prevents inheriting scroll position from PDF reader
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -50,6 +56,7 @@ export default function LearningContent({ children }: LearningContentProps) {
 
   return (
     <main
+      ref={mainRef}
       className="flex-1 overflow-y-auto bg-[#f0f7ff]"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
