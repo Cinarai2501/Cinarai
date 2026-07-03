@@ -1,31 +1,38 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
-import type { Comic } from "@/types/comic";
-import type { Sintaks, SintaksStatus } from "@/types/progress";
-import { SINTAKS } from "@/types/progress";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { createInitialProgressState } from '@/lib/progressEngine';
+import type { ComicProgressState, Sintaks } from '@/types/progress';
+import type { Comic } from '@/types/comic';
 import {
-  LEARNING_STAGES,
-  FINISH_STAGE,
-  type LearningStage,
-  type LearningEngineState,
-  type LearningEngineActions,
-} from "../types";
+  subscribeToLearningProgress,
+  completeStage as persistCompleteStage,
+} from '../services/learningEngineService';
+import {
+  Stage,
+  ALL_STAGES,
+  type LearningContextValue,
+} from '../types';
 
-type LearningEngineContextValue = LearningEngineState & LearningEngineActions;
+const LearningContext = createContext<LearningContextValue | null>(null);
 
-const LearningEngineContext = createContext<LearningEngineContextValue | null>(null);
+/** Map Stage enum → Sintaks string (Firestore uses Sintaks strings) */
+function stageToSintaks(stage: Stage): Sintaks | null {
+  if (stage === Stage.Finish) return null;
+  return stage as unknown as Sintaks;
+}
 
-const ALL_STAGES: LearningStage[] = [...LEARNING_STAGES, FINISH_STAGE];
-
-function buildInitialStatus(): Record<Sintaks, SintaksStatus> {
-  return SINTAKS.reduce(
-    (acc, s, i) => {
-      acc[s] = i === 0 ? "CURRENT" : "LOCKED";
-      return acc;
-    },
-    {} as Record<Sintaks, SintaksStatus>,
-  );
+/** Map Sintaks string → Stage enum */
+function sintaksToStage(sintaks: Sintaks): Stage {
+  return Stage[sintaks as keyof typeof Stage] ?? Stage.Cover;
 }
 
 interface LearningEngineProviderProps {
@@ -34,60 +41,118 @@ interface LearningEngineProviderProps {
 }
 
 export function LearningEngineProvider({ comic, children }: LearningEngineProviderProps) {
-  const [stageIndex, setStageIndex] = useState(0);
-  const [stageStatus, setStageStatus] = useState<Record<Sintaks, SintaksStatus>>(buildInitialStatus);
+  const { user } = useAuth();
+  const comicId = comic.id;
 
-  const currentStage = ALL_STAGES[stageIndex];
+  const [progress, setProgress] = useState<ComicProgressState>(
+    createInitialProgressState(comicId)
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [stageIndex, setStageIndex] = useState(0);
+
+  // Subscribe to Firestore progress
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    const unsub = subscribeToLearningProgress(user.uid, comicId, (state) => {
+      setProgress(state);
+      setIsLoading(false);
+    });
+    return () => unsub();
+  }, [user, comicId]);
+
+  // Sync stageIndex to Firestore progress on initial load
+  useEffect(() => {
+    if (isLoading) return;
+    if (progress.isCompleted) {
+      setStageIndex(ALL_STAGES.indexOf(Stage.Finish));
+      return;
+    }
+    const currentSintaks = progress.sintaksList.find((s) => s.status === 'CURRENT')?.sintaks;
+    if (currentSintaks) {
+      const stage = sintaksToStage(currentSintaks);
+      const idx = ALL_STAGES.indexOf(stage);
+      if (idx !== -1) setStageIndex(idx);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
+  const currentStage = ALL_STAGES[stageIndex] ?? Stage.Cover;
   const totalStages = ALL_STAGES.length;
 
-  const goNext = useCallback(() => {
-    setStageIndex((i) => Math.min(i + 1, totalStages - 1));
-  }, [totalStages]);
+  const completedStages: Sintaks[] = useMemo(
+    () => progress.sintaksList.filter((s) => s.status === 'COMPLETED').map((s) => s.sintaks),
+    [progress.sintaksList]
+  );
 
-  const goPrev = useCallback(() => {
+  const isFinished = currentStage === Stage.Finish || progress.isCompleted;
+
+  /** Complete current stage in Firestore then advance to next stage. */
+  const nextStage = useCallback(async () => {
+    if (stageIndex >= totalStages - 1) return;
+
+    const sintaks = stageToSintaks(currentStage);
+    if (user && sintaks) {
+      const next = await persistCompleteStage(user.uid, progress, sintaks);
+      setProgress(next);
+    }
+
+    setStageIndex((i) => Math.min(i + 1, totalStages - 1));
+  }, [user, stageIndex, totalStages, currentStage, progress]);
+
+  const previousStage = useCallback(() => {
     setStageIndex((i) => Math.max(i - 1, 0));
   }, []);
 
-  const goToStage = useCallback((stage: LearningStage) => {
+  const goToStage = useCallback((stage: Stage) => {
     const idx = ALL_STAGES.indexOf(stage);
     if (idx !== -1) setStageIndex(idx);
   }, []);
 
-  const completeStage = useCallback((stage: Sintaks) => {
-    setStageStatus((prev) => {
-      const next = { ...prev };
-      next[stage] = "COMPLETED";
-      const idx = SINTAKS.indexOf(stage);
-      const nextSintaks = SINTAKS[idx + 1];
-      if (nextSintaks && next[nextSintaks] === "LOCKED") {
-        next[nextSintaks] = "CURRENT";
-      }
-      return next;
-    });
+  const finishLearning = useCallback(() => {
+    setStageIndex(ALL_STAGES.indexOf(Stage.Finish));
   }, []);
 
-  const value = useMemo<LearningEngineContextValue>(
+  const value = useMemo<LearningContextValue>(
     () => ({
+      comicId,
       comic,
+      progress,
       currentStage,
+      completedStages,
+      isFinished,
+      isLoading,
       stageIndex,
       totalStages,
-      isFirstStage: stageIndex === 0,
-      isLastStage: stageIndex === totalStages - 1,
-      stageStatus,
-      goNext,
-      goPrev,
+      nextStage,
+      previousStage,
       goToStage,
-      completeStage,
+      finishLearning,
     }),
-    [comic, currentStage, stageIndex, totalStages, stageStatus, goNext, goPrev, goToStage, completeStage],
+    [
+      comicId,
+      comic,
+      progress,
+      currentStage,
+      completedStages,
+      isFinished,
+      isLoading,
+      stageIndex,
+      totalStages,
+      nextStage,
+      previousStage,
+      goToStage,
+      finishLearning,
+    ]
   );
 
-  return <LearningEngineContext.Provider value={value}>{children}</LearningEngineContext.Provider>;
+  return <LearningContext.Provider value={value}>{children}</LearningContext.Provider>;
 }
 
-export function useLearningEngine(): LearningEngineContextValue {
-  const ctx = useContext(LearningEngineContext);
-  if (!ctx) throw new Error("useLearningEngine must be used within LearningEngineProvider");
+export function useLearningEngine(): LearningContextValue {
+  const ctx = useContext(LearningContext);
+  if (!ctx) throw new Error('useLearningEngine must be used within LearningEngineProvider');
   return ctx;
 }

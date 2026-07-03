@@ -1,42 +1,56 @@
-import type { Comic } from "@/types/comic";
-import type { Sintaks, SintaksStatus } from "@/types/progress";
+import type { Comic } from '@/types/comic';
+import type { ComicProgressState, Sintaks, SintaksStatus } from '@/types/progress';
 
 export type { Sintaks, SintaksStatus };
 
-export const LEARNING_STAGES: Sintaks[] = [
-  "Cover",
-  "Contextualization",
-  "Identification",
-  "Navigation",
-  "Argumentation",
-  "Resolution",
-  "Application",
-  "Introspection",
+/** Enum — sumber kebenaran untuk Stage Router. Tidak ada string hardcode di router. */
+export enum Stage {
+  Cover           = 'Cover',
+  Contextualization = 'Contextualization',
+  Identification  = 'Identification',
+  Navigation      = 'Navigation',
+  Argumentation   = 'Argumentation',
+  Resolution      = 'Resolution',
+  Application     = 'Application',
+  Introspection   = 'Introspection',
+  Finish          = 'Finish',
+}
+
+/** Urutan stage pembelajaran (tanpa Finish) — dipakai context & Firestore */
+export const LEARNING_STAGES: Stage[] = [
+  Stage.Cover,
+  Stage.Contextualization,
+  Stage.Identification,
+  Stage.Navigation,
+  Stage.Argumentation,
+  Stage.Resolution,
+  Stage.Application,
+  Stage.Introspection,
 ];
 
-export const FINISH_STAGE = "Finish" as const;
-export type FinishStage = typeof FINISH_STAGE;
-export type LearningStage = Sintaks | FinishStage;
+/** Semua stage termasuk Finish — dipakai untuk navigasi index */
+export const ALL_STAGES: Stage[] = [...LEARNING_STAGES, Stage.Finish];
 
-export interface StageProps {
+export type LearningStage = Stage;
+
+/** Full context value exposed to all stages — no prop drilling needed */
+export interface LearningContextValue {
+  // Data
+  comicId: number;
   comic: Comic;
-  onNext: () => void;
-  onPrev: () => void;
-}
-
-export interface LearningEngineState {
-  comic: Comic | null;
-  currentStage: LearningStage;
+  progress: ComicProgressState;
+  currentStage: Stage;
+  completedStages: Sintaks[];
+  isFinished: boolean;
+  isLoading: boolean;
   stageIndex: number;
   totalStages: number;
-  isFirstStage: boolean;
-  isLastStage: boolean;
-  stageStatus: Record<Sintaks, SintaksStatus>;
-}
 
-export interface LearningEngineActions {
-  goNext: () => void;
-  goPrev: () => void;
-  goToStage: (stage: LearningStage) => void;
-  completeStage: (stage: Sintaks) => void;
+  // Navigation
+  nextStage: () => void;
+  previousStage: () => void;
+  goToStage: (stage: Stage) => void;
+
+  // Actions
+  finishLearning: () => void;
 }

@@ -1,11 +1,9 @@
-"use client";
+'use client';
 
-import type { Comic } from "@/types/comic";
+// Stage content goes here.
+// Access all learning data via: const { comic, progress, finishLearning, ... } = useLearningEngine();
+// import { useLearningEngine } from '../../hooks/useLearningEngine';
 
-interface FinishStageProps {
-  comic: Comic;
-}
-
-export default function FinishStage({ comic: _comic }: FinishStageProps) {
+export default function FinishStage() {
   return null;
 }

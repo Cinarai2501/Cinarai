@@ -1,7 +1,9 @@
-"use client";
+'use client';
 
-import type { StageProps } from "../../types";
+// Stage content goes here.
+// Access all learning data via: const { comic, progress, nextStage, ... } = useLearningEngine();
+// import { useLearningEngine } from '../../hooks/useLearningEngine';
 
-export default function CoverStage({ comic: _comic, onNext: _onNext, onPrev: _onPrev }: StageProps) {
+export default function CoverStage() {
   return null;
 }
