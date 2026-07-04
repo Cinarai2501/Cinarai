@@ -28,8 +28,8 @@ export default function LearningBottomNav() {
       style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}
     >
       {showValidationMessage && (
-        <p className="text-center text-[11px] text-warning-600 font-semibold mb-2">
-          Selesaikan aktivitas Identification terlebih dahulu.
+        <p className="text-center text-xs text-warning-700 font-bold bg-warning-50 border border-warning-200 rounded-xl px-3 py-2 mb-2">
+          ⚠️ Jawab semua pertanyaan terlebih dahulu
         </p>
       )}
 

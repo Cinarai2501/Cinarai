@@ -10,11 +10,9 @@ interface SaveButtonProps {
 export default function SaveButton({ itemId, canSave, isSaved, onSave }: SaveButtonProps) {
   if (isSaved) {
     return (
-      <div className="flex items-center gap-2 text-accent-600">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-500 text-white text-xs font-black">
-          ✓
-        </span>
-        <span className="text-sm font-bold">Jawaban tersimpan</span>
+      <div className="flex items-center gap-2 text-accent-700">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-500 text-white text-xs font-black">✓</span>
+        <span className="text-sm font-bold">Jawaban tersimpan!</span>
       </div>
     );
   }
@@ -24,9 +22,9 @@ export default function SaveButton({ itemId, canSave, isSaved, onSave }: SaveBut
       type="button"
       disabled={!canSave}
       onClick={() => onSave(itemId)}
-      className="flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-black text-white shadow-sm transition-all hover:bg-primary-700 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed active:scale-[0.97] min-h-[44px]"
+      className="flex w-full items-center justify-center gap-2 min-h-[52px] rounded-2xl bg-primary-600 px-5 py-3 text-base font-black text-white shadow-sm transition-all hover:bg-primary-700 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed active:scale-[0.97]"
     >
-      Simpan Jawaban
+      {canSave ? '💾 Simpan Jawaban' : 'Pilih jawaban dulu ya!'}
     </button>
   );
 }
