@@ -12,6 +12,10 @@ const MAX_PAGE_WIDTH = 1000;
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
 
+// Height of the bottom nav bar (mobile/tablet) — used in fit calculation
+// 56px button + 12px pt + 12px pb + 1px border ≈ 81px; use 88 for safety
+const BOTTOM_NAV_H = 88;
+
 interface PdfReaderProps {
   pdfPath: string;
   onComplete?: () => void;
@@ -33,15 +37,12 @@ export default function PdfReader({
   const [numPages, setNumPages] = useState<number>(0);
   const [page, setPage] = useState(1);
   const [userScale, setUserScale] = useState(1);
-
-  // Measured dimensions of the scroll viewport
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
-
-  // Actual aspect ratio of the current PDF page (width / height), from react-pdf
   const [pageAspectRatio, setPageAspectRatio] = useState<number | null>(null);
-
   const [showZoom, setShowZoom] = useState(false);
+  // true when viewport is lg+ (≥1024px) — side-nav mode
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
@@ -57,22 +58,23 @@ export default function PdfReader({
     setWorkerReady(true);
   }, []);
 
-  // ── Measure viewport (both width AND height) via ResizeObserver ────────────
+  // ── Measure viewport + detect desktop breakpoint ───────────────────────────
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
-      setViewportWidth(entry.contentRect.width);
-      setViewportHeight(entry.contentRect.height);
+      const w = entry.contentRect.width;
+      const h = entry.contentRect.height;
+      setViewportWidth(w);
+      setViewportHeight(h);
+      setIsDesktop(w >= 1024);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // Reset aspect ratio when page changes so we don't flash wrong size
-  useEffect(() => {
-    setPageAspectRatio(null);
-  }, [page]);
+  // Reset aspect ratio on page change
+  useEffect(() => { setPageAspectRatio(null); }, [page]);
 
   // ── Notify parent ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -129,9 +131,7 @@ export default function PdfReader({
     setPage(1);
   }, []);
 
-  // ── Capture actual page aspect ratio after react-pdf renders it ────────────
-  // react-pdf fires onRenderSuccess with the Page proxy; we read width/height
-  // from the rendered canvas element instead to avoid internal API coupling.
+  // ── Capture actual page aspect ratio ──────────────────────────────────────
   const pageRef = useRef<HTMLDivElement>(null);
   const onPageRenderSuccess = useCallback(() => {
     const canvas = pageRef.current?.querySelector("canvas");
@@ -141,30 +141,20 @@ export default function PdfReader({
   }, []);
 
   // ── Fit-to-contain width calculation ──────────────────────────────────────
-  // Goal: the page fits entirely inside the viewport (no cropping, no overflow)
-  // at userScale = 1. User zoom is applied on top.
+  // Desktop (isDesktop): no bottom bar — full viewport height available.
+  //   PADDING_V = 24px (py-3 top+bottom of scroll area)
+  // Mobile/tablet: bottom bar takes BOTTOM_NAV_H.
+  //   PADDING_V = 24 + BOTTOM_NAV_H
   //
-  // Available space (with small vertical padding):
-  //   availW = viewportWidth  (full column width)
-  //   availH = viewportHeight - 24px (top+bottom py-3 padding)
-  //
-  // If we know the aspect ratio (w/h):
-  //   fitByWidth  = availW
-  //   fitByHeight = availH * aspectRatio
-  //   baseWidth   = min(fitByWidth, fitByHeight, MAX_PAGE_WIDTH)
-  //
-  // If aspect ratio not yet known, fall back to width-only sizing.
-  const PADDING_V = 24; // py-3 top + bottom = 12+12
+  // baseWidth = min(fitByWidth, fitByHeight, MAX_PAGE_WIDTH)
+  const PADDING_V = isDesktop ? 24 : 24 + BOTTOM_NAV_H;
   const availW = Math.max(viewportWidth || 320, 1);
   const availH = Math.max((viewportHeight || 600) - PADDING_V, 100);
 
   let baseWidth: number;
   if (pageAspectRatio !== null && pageAspectRatio > 0) {
-    const fitByWidth  = availW;
-    const fitByHeight = availH * pageAspectRatio;
-    baseWidth = Math.min(fitByWidth, fitByHeight, MAX_PAGE_WIDTH);
+    baseWidth = Math.min(availW, availH * pageAspectRatio, MAX_PAGE_WIDTH);
   } else {
-    // Before aspect ratio is known: use width-only, capped
     baseWidth = Math.min(availW, MAX_PAGE_WIDTH);
   }
 
@@ -182,6 +172,20 @@ export default function PdfReader({
       </div>
     );
   }
+
+  // ── Complete button (last page) ────────────────────────────────────────────
+  const completeButton = isLastPage && showCompleteButton && onComplete ? (
+    <button
+      onClick={() => onCompleteRef.current?.()}
+      disabled={completeButtonDisabled}
+      className="w-full min-h-[56px] rounded-2xl bg-gradient-to-r from-green-500 to-green-600 px-4 py-3.5 text-lg font-black text-white shadow-md hover:from-green-600 hover:to-green-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      {completeButtonDisabled
+        ? <><span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+        : completeButtonLabel
+      }
+    </button>
+  ) : null;
 
   return (
     <div className="flex flex-col h-full bg-[#f0f7ff]">
@@ -227,18 +231,20 @@ export default function PdfReader({
 
       {/* ── PDF viewport ─────────────────────────────────────────────────────── */}
       {/*
-        viewportRef measures available width AND height.
-        At userScale=1 the page is sized to fit entirely within this area.
-        When zoomed in, overflow-auto allows scrolling.
+        Mobile/tablet: viewport is flex-1, bottom nav is flex-shrink-0 below.
+        Desktop (lg+): viewport is flex-1 and fills ALL remaining height.
+          Side nav arrows are absolutely positioned inside the viewport.
+          Complete button on last page appears as a sticky footer inside viewport.
       */}
       <div
         ref={viewportRef}
-        className="flex-1 min-h-0 overflow-auto bg-[#f0f7ff] select-none"
+        className="relative flex-1 min-h-0 overflow-auto bg-[#f0f7ff] select-none"
         style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        {/* PDF page — centered */}
         <div className="flex flex-col items-center py-3 min-h-full">
           <div ref={pageRef}>
             <Document
@@ -259,26 +265,56 @@ export default function PdfReader({
             </Document>
           </div>
         </div>
+
+        {/* ── Desktop: side nav arrows (absolutely positioned) ── */}
+        {isDesktop && !completeButton && (
+          <>
+            {/* Prev — left side */}
+            <button
+              onClick={() => goTo(page - 1)}
+              disabled={isFirstPage}
+              aria-label="Halaman sebelumnya"
+              className="fixed-side-btn left-0 ml-2 xl:ml-4"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Next — right side */}
+            <button
+              onClick={() => goTo(page + 1)}
+              disabled={isLastPage}
+              aria-label="Halaman berikutnya"
+              className="fixed-side-btn right-0 mr-2 xl:mr-4"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
+        )}
+
+        {/* ── Desktop: complete button as sticky footer inside viewport ── */}
+        {isDesktop && completeButton && (
+          <div
+            className="sticky bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-neutral-100 px-6 py-3"
+            style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+          >
+            <div className="mx-auto max-w-[1000px]">
+              {completeButton}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Bottom navigation ────────────────────────────────────────────────── */}
+      {/* ── Mobile / Tablet bottom nav (hidden on desktop) ───────────────────── */}
       <div
-        className="flex-shrink-0 bg-white border-t border-neutral-100"
+        className="lg:hidden flex-shrink-0 bg-white border-t border-neutral-100"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto w-full max-w-[1000px] px-3 pt-3 md:px-6">
-          {isLastPage && showCompleteButton && onComplete ? (
-            <button
-              onClick={() => onCompleteRef.current?.()}
-              disabled={completeButtonDisabled}
-              className="w-full min-h-[56px] rounded-2xl bg-gradient-to-r from-green-500 to-green-600 px-4 py-3.5 text-lg font-black text-white shadow-md hover:from-green-600 hover:to-green-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {completeButtonDisabled
-                ? <><span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-                : completeButtonLabel
-              }
-            </button>
-          ) : (
+          {completeButton ?? (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => goTo(page - 1)}

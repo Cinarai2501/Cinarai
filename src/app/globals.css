@@ -104,3 +104,36 @@ body {
 a, button {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ── PDF side-nav arrows (desktop) ────────────────────────────────────── */
+.fixed-side-btn {
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;   /* 44px */
+  height: 2.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e5e5e5;
+  color: #404040;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  transition: background 150ms, box-shadow 150ms, transform 100ms;
+  cursor: pointer;
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+}
+.fixed-side-btn:hover {
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+}
+.fixed-side-btn:active {
+  transform: translateY(-50%) scale(0.94);
+}
+.fixed-side-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
