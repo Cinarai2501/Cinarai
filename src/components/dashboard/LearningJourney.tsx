@@ -245,11 +245,9 @@ function CtaButton({
   percentage: number;
   accentClass: string;
 }) {
-  // Jika sudah ada progress apapun, lanjutkan ke /learn agar LearningEngine
-  // membaca stage dari Firestore. Jika belum pernah mulai, mulai dari /cover.
-  const continueHref = percentage > 0
-    ? `/comic/${comicId}/learn`
-    : `/comic/${comicId}/cover`;
+  // Semua komik (belum mulai maupun sedang berlangsung) masuk ke /learn.
+  // LearningEngine membaca stage dari Firestore dan menampilkan stage yang tepat.
+  const continueHref = `/comic/${comicId}/learn`;
 
   if (isComingSoon) {
     return (
@@ -287,7 +285,7 @@ function CtaButton({
   }
   return (
     <Link
-      href={`/comic/${comicId}/cover`}
+      href={`/comic/${comicId}/learn`}
       className={`inline-flex items-center gap-1.5 rounded-xl ${accentClass} px-4 py-2.5 text-xs font-black text-white shadow-sm hover:opacity-90 active:scale-95 transition-all`}
     >
       🚀 Mulai Petualangan

@@ -104,6 +104,9 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
 
   // Sync stageIndex to Firestore progress on initial load only.
   // After the first sync, in-session navigation drives stageIndex exclusively.
+  // Cover stage is never rendered inside LearningEngine — it is shown via
+  // /comic/[id]/cover. If Firestore says CURRENT = Cover, auto-complete it
+  // silently and jump straight to Contextualization.
   useEffect(() => {
     if (isLoading) return;
     if (initialSyncDoneRef.current) return;
@@ -113,12 +116,12 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       setStageIndex(ALL_STAGES.indexOf(Stage.Finish));
       return;
     }
+
     const currentSintaks = progress.sintaksList.find((s) => s.status === 'CURRENT')?.sintaks;
-    if (currentSintaks) {
-      const stage = sintaksToStage(currentSintaks);
-      const idx = ALL_STAGES.indexOf(stage);
-      if (idx !== -1) setStageIndex(idx);
-    }
+    const stage = currentSintaks ? sintaksToStage(currentSintaks) : Stage.Cover;
+
+    const idx = ALL_STAGES.indexOf(stage);
+    if (idx !== -1) setStageIndex(idx);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
@@ -131,6 +134,48 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   );
 
   const isFinished = currentStage === Stage.Finish || progress.isCompleted;
+
+  /** Save sintaks ke Firestore lalu langsung advance — tanpa cek canAdvance gate.
+   *  Dipakai oleh ContextualizationStage saat tombol "Selesai Membaca" ditekan.
+   */
+  const completeAndAdvance = useCallback(async (sintaks: Sintaks) => {
+    if (isSavingRef.current) return;
+
+    const nextStageEnum = ALL_STAGES[ALL_STAGES.indexOf(Stage[sintaks as keyof typeof Stage] ?? Stage.Contextualization) + 1] ?? Stage.Identification;
+
+    console.log('[CURRENT STAGE]', sintaks);
+    console.log('[NEXT STAGE]', nextStageEnum);
+
+    if (!user?.uid) {
+      console.error('[SAVE FAILED] CURRENT UID: null — login diperlukan');
+      showSnackbar('Gagal menyimpan progress: login diperlukan.', 'error');
+      return;
+    }
+
+    isSavingRef.current = true;
+    setIsSaving(true);
+    try {
+      console.log('[START SAVE] uid:', user.uid, '| sintaks:', sintaks);
+      const next = await persistCompleteStage(user.uid, progressRef.current, sintaks);
+      setProgress(next);
+      console.log('[SAVE SUCCESS] uid:', user.uid, '| sintaks:', sintaks, '| nextStage:', nextStageEnum);
+      showSnackbar('Progress berhasil disimpan ✓', 'success');
+    } catch (error) {
+      const code = extractFirebaseErrorCode(error);
+      console.error('[SAVE FAILED] code:', code, '| uid:', user.uid, '| sintaks:', sintaks, error);
+      showSnackbar(`Gagal menyimpan progress: ${code}`, 'error');
+      isSavingRef.current = false;
+      setIsSaving(false);
+      return; // jangan advance jika save gagal
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
+    }
+
+    // Firestore berhasil — baru advance ke stage berikutnya
+    const nextIdx = ALL_STAGES.indexOf(nextStageEnum);
+    if (nextIdx !== -1) setStageIndex(nextIdx);
+  }, [user, showSnackbar]);
 
   /** Complete current stage in Firestore then advance to next stage. */
   const nextStage = useCallback(async () => {
@@ -177,8 +222,9 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   }, [user, comicId, stageIndex, totalStages, currentStage, canAdvance, showSnackbar]);
 
   const previousStage = useCallback(() => {
-    setCanAdvance(true); // reset gate saat mundur
-    setStageIndex((i) => Math.max(i - 1, 0));
+    setCanAdvance(true);
+    const minIndex = ALL_STAGES.indexOf(Stage.Cover);
+    setStageIndex((i) => Math.max(i - 1, minIndex));
   }, []);
 
   const goToStage = useCallback((stage: Stage) => {
@@ -205,6 +251,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       stageIndex,
       totalStages,
       nextStage,
+      completeAndAdvance,
       previousStage,
       goToStage,
       finishLearning,
@@ -223,6 +270,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       stageIndex,
       totalStages,
       nextStage,
+      completeAndAdvance,
       previousStage,
       goToStage,
       finishLearning,

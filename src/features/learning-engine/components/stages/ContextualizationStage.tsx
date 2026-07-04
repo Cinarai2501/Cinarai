@@ -1,27 +1,31 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
 const PdfReader = dynamic(() => import('@/components/comic/PdfReader'), { ssr: false });
 
 export default function ContextualizationStage() {
-  const { comic, progress, setCanAdvance } = useLearningEngine();
+  const { comic, progress, setCanAdvance, completeAndAdvance, isSaving } = useLearningEngine();
 
   const alreadyCompleted = progress.sintaksList.some(
     (s) => s.sintaks === 'Contextualization' && s.status === 'COMPLETED'
   );
 
   useEffect(() => {
-    // If already completed (e.g. user returns to this stage), unlock immediately
     setCanAdvance(alreadyCompleted);
     return () => setCanAdvance(true);
   }, [alreadyCompleted, setCanAdvance]);
 
-  const handlePdfComplete = () => {
-    setCanAdvance(true);
-  };
+  // Saat tombol "Selesai Membaca" ditekan:
+  // 1. Simpan Contextualization ke Firestore
+  // 2. Tunggu berhasil
+  // 3. Baru pindah ke Identification
+  const handlePdfComplete = useCallback(async () => {
+    console.log('[PDF COMPLETE] comicId:', comic.id, '| currentStage: Contextualization | nextStage: Identification');
+    await completeAndAdvance('Contextualization');
+  }, [comic.id, completeAndAdvance]);
 
   if (!comic.pdfPath) {
     return (
@@ -41,6 +45,7 @@ export default function ContextualizationStage() {
         onComplete={handlePdfComplete}
         showCompleteButton={!alreadyCompleted}
         completeButtonLabel="Saya Sudah Membaca ✅"
+        completeButtonDisabled={isSaving}
       />
     </div>
   );

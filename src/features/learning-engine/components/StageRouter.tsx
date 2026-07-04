@@ -3,8 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { Stage } from '../types';
 import { useLearningEngine } from '../hooks/useLearningEngine';
-import CoverStage from './stages/CoverStage';
 import ContextualizationStage from './stages/ContextualizationStage';
+import CoverStage from './stages/CoverStage';
 import IdentificationStage from './stages/IdentificationStage';
 import NavigationStage from './stages/NavigationStage';
 import ArgumentationStage from './stages/ArgumentationStage';
@@ -17,7 +17,7 @@ function StageContent() {
   const { currentStage, isLoading } = useLearningEngine();
   if (isLoading) return null;
   switch (currentStage) {
-    case Stage.Cover:             return <CoverStage />;
+    case Stage.Cover:            return <CoverStage />;
     case Stage.Contextualization: return <ContextualizationStage />;
     case Stage.Identification:    return <IdentificationStage />;
     case Stage.Navigation:        return <NavigationStage />;

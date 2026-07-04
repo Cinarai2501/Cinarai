@@ -7,13 +7,14 @@ export default function LearningHeader() {
   const { comic } = useLearningEngine();
 
   return (
-    <header className="flex items-center gap-3 bg-gradient-to-r from-primary-600 to-primary-700 px-3 py-2.5 sm:px-6 sm:py-3"
+    <header
+      className="flex items-center gap-3 bg-white border-b border-neutral-100 px-3 py-2.5 sm:px-6 sm:py-3 shadow-sm"
       style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
     >
       <Link
         href="/dashboard"
         aria-label="Kembali ke dashboard"
-        className="flex items-center justify-center h-9 w-9 flex-shrink-0 rounded-xl bg-white/15 text-white hover:bg-white/25 transition-colors"
+        className="flex items-center justify-center h-9 w-9 flex-shrink-0 rounded-xl bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -21,10 +22,10 @@ export default function LearningHeader() {
       </Link>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-semibold text-primary-200 truncate">
+        <p className="text-[11px] font-semibold text-neutral-400 truncate">
           Kelas {comic.kelas} · {comic.lokasi}
         </p>
-        <h1 className="text-sm font-black text-white truncate sm:text-base leading-tight">
+        <h1 className="text-sm font-black text-neutral-800 truncate sm:text-base leading-tight">
           {comic.title}
         </h1>
       </div>

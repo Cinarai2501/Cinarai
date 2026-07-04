@@ -6,7 +6,6 @@ import { useLearningEngine } from '../../hooks/useLearningEngine';
 export default function LearningBottomNav() {
   const {
     currentStage,
-    stageIndex,
     isFinished,
     canAdvance,
     isSaving,
@@ -14,9 +13,9 @@ export default function LearningBottomNav() {
     previousStage,
   } = useLearningEngine();
 
-  const isFirst = stageIndex === 0;
+  const isFirst = currentStage === Stage.Cover;
   const isLastLearningStage = currentStage === Stage.Introspection;
-  const showValidationMessage = !canAdvance && currentStage !== Stage.Cover;
+  const showValidationMessage = !canAdvance;
   const nextDisabled = !canAdvance || isSaving;
 
   if (isFinished) return null;

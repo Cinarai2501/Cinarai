@@ -48,6 +48,8 @@ export interface LearningContextValue {
 
   // Navigation
   nextStage: () => Promise<void>;
+  /** Save sintaks ke Firestore lalu langsung advance — tanpa cek canAdvance gate. */
+  completeAndAdvance: (sintaks: Sintaks) => Promise<void>;
   previousStage: () => void;
   goToStage: (stage: Stage) => void;
 

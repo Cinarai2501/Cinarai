@@ -4,22 +4,27 @@ import { Stage, LEARNING_STAGES } from '../../types';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
 const STAGE_LABELS: Record<Stage, string> = {
-  [Stage.Cover]:             'Cover',
-  [Stage.Contextualization]: 'Kontekstualisasi',
-  [Stage.Identification]:    'Identifikasi',
-  [Stage.Navigation]:        'Navigasi',
-  [Stage.Argumentation]:     'Argumentasi',
-  [Stage.Resolution]:        'Resolusi',
-  [Stage.Application]:       'Aplikasi',
-  [Stage.Introspection]:     'Introspeksi',
-  [Stage.Finish]:            'Selesai',
+  [Stage.Cover]:             '📖 Cover',
+  [Stage.Contextualization]: '📚 Baca Komik',
+  [Stage.Identification]:    '🔍 Identifikasi',
+  [Stage.Navigation]:        '🧭 Navigasi',
+  [Stage.Argumentation]:     '💬 Argumentasi',
+  [Stage.Resolution]:        '💡 Resolusi',
+  [Stage.Application]:       '🎯 Penerapan',
+  [Stage.Introspection]:     '🪞 Refleksi',
+  [Stage.Finish]:            '🏆 Selesai',
 };
 
-export default function LearningProgress() {
-  const { currentStage, stageIndex, progress } = useLearningEngine();
+// Cover is now rendered inside the engine — all learning stages are visible.
+const VISIBLE_STAGES = LEARNING_STAGES.filter((s) => s !== Stage.Finish);
 
-  const stageNumber = stageIndex + 1;
-  const totalLearning = LEARNING_STAGES.length;
+export default function LearningProgress() {
+  const { currentStage, progress } = useLearningEngine();
+
+  const visibleIndex = VISIBLE_STAGES.indexOf(currentStage as typeof VISIBLE_STAGES[number]);
+  // stageNumber: 1-based; clamp to valid range for Finish stage
+  const stageNumber = visibleIndex !== -1 ? visibleIndex + 1 : VISIBLE_STAGES.length;
+  const totalVisible = VISIBLE_STAGES.length;
 
   return (
     <div className="bg-white border-b border-neutral-100 px-4 py-2 sm:px-6">
@@ -28,7 +33,7 @@ export default function LearningProgress() {
           {STAGE_LABELS[currentStage]}
         </span>
         <span className="text-sm font-black text-primary-600 ml-2 flex-shrink-0">
-          Tahap {Math.min(stageNumber, totalLearning)} dari {totalLearning}
+          Tahap {Math.min(stageNumber, totalVisible)} dari {totalVisible}
         </span>
       </div>
 
@@ -39,8 +44,8 @@ export default function LearningProgress() {
           role="progressbar"
           aria-valuenow={stageNumber}
           aria-valuemin={1}
-          aria-valuemax={totalLearning}
-          aria-label={`Tahap ${stageNumber} dari ${totalLearning}`}
+          aria-valuemax={totalVisible}
+          aria-label={`Tahap ${stageNumber} dari ${totalVisible}`}
         />
       </div>
     </div>

@@ -143,7 +143,7 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
         {/* Tombol */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href={`/comic/${comicId}/learn`}
+            href={`/comic/${comicId}`}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-6 py-4 text-base font-black text-white shadow-sm hover:bg-primary-700 active:scale-[0.98] transition-all"
           >
             <span>▶</span> Mulai Belajar

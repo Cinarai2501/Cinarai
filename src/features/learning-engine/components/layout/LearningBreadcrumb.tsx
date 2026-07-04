@@ -28,6 +28,9 @@ const STAGE_EMOJI: Record<Stage, string> = {
   [Stage.Finish]:            '🏆',
 };
 
+// Cover is included in the breadcrumb as the first step.
+const BREADCRUMB_STAGES = LEARNING_STAGES.filter((s) => s !== Stage.Finish);
+
 export default function LearningBreadcrumb() {
   const { currentStage, completedStages, goToStage } = useLearningEngine();
   const completedSet = new Set<string>(completedStages);
@@ -58,7 +61,7 @@ export default function LearningBreadcrumb() {
         className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-none"
         style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
       >
-        {LEARNING_STAGES.map((stage) => {
+        {BREADCRUMB_STAGES.map((stage) => {
           const isCompleted = completedSet.has(stage);
           const isCurrent = currentStage === stage;
           const isAccessible = isCompleted || isCurrent;
