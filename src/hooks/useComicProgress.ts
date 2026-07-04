@@ -20,11 +20,12 @@ export function useComicProgress(comicId: number) {
     return () => unsub();
   }, [user, comicId]);
 
-  const complete = async (sintaks: Sintaks) => {
+  const complete = async (sintaks: Sintaks): Promise<void> => {
     if (!user?.uid) {
-      console.error('Save Progress Error: userId tidak tersedia.');
+      const err = new Error('userId tidak tersedia');
+      console.error('[useComicProgress] complete: userId tidak tersedia', err);
       showSnackbar('Gagal menyimpan progress: sesi tidak ditemukan.', 'error');
-      return;
+      throw err;
     }
 
     const next = completeSintaks(state, sintaks);
@@ -33,11 +34,11 @@ export function useComicProgress(comicId: number) {
     try {
       await saveComicProgress(user.uid, next);
     } catch (error) {
-      console.error('Save Progress Error', error);
+      console.error('[useComicProgress] saveComicProgress gagal', error);
       const msg = error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.';
       showSnackbar(`Gagal menyimpan progress: ${msg}`, 'error');
-      // Rollback optimistic update
-      setState(state);
+      setState(state); // rollback optimistic update
+      throw error;     // re-throw so callers (handleComplete) know it failed
     }
   };
 

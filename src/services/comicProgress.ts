@@ -96,17 +96,19 @@ export async function saveComicProgress(
   }
   const ref = progressDocRef(userId, state.comicId);
   try {
-    await setDoc(ref, {
-      ...toDocument(state),
-      ...(state.isCompleted ? { completedAt: serverTimestamp() } : {}),
-    }, { merge: true });
-
-    const saved = await getDoc(ref);
-    if (!saved.exists()) {
-      throw new Error(`Dokumen ${comicDocId(state.comicId)} tidak ditemukan setelah disimpan.`);
-    }
+    await setDoc(
+      ref,
+      {
+        ...toDocument(state),
+        ...(state.isCompleted ? { completedAt: serverTimestamp() } : {}),
+      },
+      { merge: true }
+    );
   } catch (error) {
-    console.error('Save Progress Error', error);
+    console.error(
+      `[saveComicProgress] gagal menyimpan — userId: ${userId}, comicId: ${state.comicId}`,
+      error
+    );
     throw error;
   }
 }
