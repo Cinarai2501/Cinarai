@@ -29,6 +29,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── identification_answers ────────────────────────────────────────────
+    // Doc ID: {userId}_{comicId}_{step}
+    match /identification_answers/{docId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+    }
+
     // ── Semua collection lain: tolak ─────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

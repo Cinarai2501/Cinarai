@@ -3,6 +3,7 @@ export const SINTAKS = [
   "Contextualization",
   "Identification",
   "Navigation",
+  "Argumentation",
   "Resolution",
   "Application",
   "Introspection",

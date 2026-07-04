@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { subscribeToComicProgress, saveComicProgress } from '@/services/comicProgress';
@@ -13,6 +13,9 @@ export function useComicProgress(comicId: number) {
   const [state, setState] = useState<ComicProgressState>(
     createInitialProgressState(comicId)
   );
+  // Keep a stable ref to the latest state so complete() never closes over stale state
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   useEffect(() => {
     if (!user) return;
@@ -20,7 +23,7 @@ export function useComicProgress(comicId: number) {
     return () => unsub();
   }, [user, comicId]);
 
-  const complete = async (sintaks: Sintaks): Promise<void> => {
+  const complete = useCallback(async (sintaks: Sintaks): Promise<void> => {
     if (!user?.uid) {
       const err = new Error('userId tidak tersedia');
       console.error('[useComicProgress] complete: userId tidak tersedia', err);
@@ -28,19 +31,25 @@ export function useComicProgress(comicId: number) {
       throw err;
     }
 
-    const next = completeSintaks(state, sintaks);
-    setState(next);
+    // Compute next state from the latest snapshot (not a stale closure)
+    const next = completeSintaks(stateRef.current, sintaks);
 
+    // Write to Firestore FIRST — only update local state after confirmed write
     try {
       await saveComicProgress(user.uid, next);
+      // Firestore write confirmed: update local state
+      // (onSnapshot will also arrive shortly and produce the same result)
+      setState(next);
     } catch (error) {
-      console.error('[useComicProgress] saveComicProgress gagal', error);
-      const msg = error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.';
+      console.error(
+        `[useComicProgress] saveComicProgress gagal — userId: ${user.uid}, comicId: ${comicId}, sintaks: ${sintaks}`,
+        error
+      );
+      const msg = error instanceof Error ? error.message : String(error);
       showSnackbar(`Gagal menyimpan progress: ${msg}`, 'error');
-      setState(state); // rollback optimistic update
-      throw error;     // re-throw so callers (handleComplete) know it failed
+      throw error; // re-throw so handleComplete knows the write failed
     }
-  };
+  }, [user, comicId, showSnackbar]);
 
   return { state, complete };
 }

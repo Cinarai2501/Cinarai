@@ -41,6 +41,7 @@ const MISSION_LABELS: Record<string, string> = {
   Contextualization: '📚 Baca komik',
   Identification:    '🔍 Identifikasi masalah',
   Navigation:        '🧭 Navigasi cerita',
+  Argumentation:     '💬 Sampaikan pendapat',
   Resolution:        '💡 Temukan solusi',
   Application:       '🎯 Terapkan ilmu',
   Introspection:     '🪞 Refleksi diri',
@@ -118,7 +119,7 @@ export default function DashboardPage() {
     const totalXp = totalCompleted * 15; // 15 XP per sintaks completed
 
     return { totalCompleted, totalXp, completedComics, continueComic, overallPct };
-  }, [states, unlockStatuses, getProgress]);
+  }, [unlockStatuses, getProgress]);
 
   const levelInfo = getLevelInfo(totalXp);
 

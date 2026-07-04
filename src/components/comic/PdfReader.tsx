@@ -8,20 +8,19 @@ import "react-pdf/dist/Page/TextLayer.css";
 const ZOOM_STEP = 0.25;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
-
-// Minimum horizontal swipe distance (px) to trigger page change
 const SWIPE_THRESHOLD = 50;
-// Maximum vertical drift (px) allowed — prevents accidental swipe while scrolling
 const SWIPE_VERTICAL_LIMIT = 80;
 
 interface PdfReaderProps {
   pdfPath: string;
-  /** Called exactly once when the user reaches the last page. */
+  /** Called exactly once when the user explicitly presses the complete button. */
   onComplete?: () => void;
-  /** When true, renders a "Selesaikan Komik" CTA on the last page. */
+  /** When true, renders the "Selesai Membaca" CTA on the last page. */
   showCompleteButton?: boolean;
   /** Label for the complete button. */
   completeButtonLabel?: string;
+  /** When true, disables the complete button (e.g. while saving). */
+  completeButtonDisabled?: boolean;
   /** Callback fired whenever the current page or total pages change. */
   onPageChange?: (page: number, numPages: number) => void;
 }
@@ -30,7 +29,8 @@ export default function PdfReader({
   pdfPath,
   onComplete,
   showCompleteButton = false,
-  completeButtonLabel = "Selesaikan Komik",
+  completeButtonLabel = "🎉 Selesai Membaca",
+  completeButtonDisabled = false,
   onPageChange,
 }: PdfReaderProps) {
   const [workerReady, setWorkerReady] = useState(false);
@@ -38,14 +38,15 @@ export default function PdfReader({
   const [page, setPage] = useState(1);
   const [scale, setScale] = useState(1);
   const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [showZoom, setShowZoom] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Guard: fire onComplete only once per mount
-  const completedRef = useRef(false);
+  // Stable ref so useEffect never re-runs due to onComplete identity changes
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   // ── Swipe state ────────────────────────────────────────────────────────────
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
-  // Track active pointer count to disable swipe during pinch-zoom
   const activePointers = useRef(0);
 
   // ── Worker setup ───────────────────────────────────────────────────────────
@@ -70,13 +71,8 @@ export default function PdfReader({
     if (numPages > 0) onPageChange?.(page, numPages);
   }, [page, numPages, onPageChange]);
 
-  // ── Complete guard ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (numPages > 0 && page === numPages && !completedRef.current) {
-      completedRef.current = true;
-      onComplete?.();
-    }
-  }, [page, numPages, onComplete]);
+  // ── Last-page flag: only unlocks the button, never fires onComplete ────────
+  const isLastPageReached = numPages > 0 && page === numPages;
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   const goTo = useCallback(
@@ -98,7 +94,6 @@ export default function PdfReader({
   // ── Swipe handlers ─────────────────────────────────────────────────────────
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     activePointers.current = e.touches.length;
-    // Only track single-finger swipe; ignore pinch
     if (e.touches.length === 1) {
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
@@ -109,7 +104,6 @@ export default function PdfReader({
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    // Update pointer count — if a second finger appears mid-gesture, cancel swipe
     if (e.touches.length > 1) {
       touchStartX.current = null;
       touchStartY.current = null;
@@ -119,29 +113,16 @@ export default function PdfReader({
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
       activePointers.current = e.touches.length;
-
       if (touchStartX.current === null || touchStartY.current === null) return;
-      // Only act on single-finger lift
       if (e.changedTouches.length !== 1) return;
-
       const dx = e.changedTouches[0].clientX - touchStartX.current;
       const dy = e.changedTouches[0].clientY - touchStartY.current;
-
       touchStartX.current = null;
       touchStartY.current = null;
-
-      // Ignore if vertical movement is too large (user was scrolling)
       if (Math.abs(dy) > SWIPE_VERTICAL_LIMIT) return;
-      // Ignore if horizontal movement is below threshold
       if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-
-      if (dx < 0) {
-        // Swipe left → next page
-        goTo(page + 1);
-      } else {
-        // Swipe right → previous page
-        goTo(page - 1);
-      }
+      if (dx < 0) goTo(page + 1);
+      else goTo(page - 1);
     },
     [goTo, page]
   );
@@ -158,50 +139,75 @@ export default function PdfReader({
   const baseWidth = containerWidth || 320;
   const pageWidth = baseWidth * scale;
   const isFirstPage = page <= 1;
-  const isLastPage = numPages > 0 && page === numPages;
+  const isLastPage = isLastPageReached;
+  const progressPct = numPages > 0 ? Math.round((page / numPages) * 100) : 0;
 
   if (!workerReady) {
     return (
-      <div className="flex flex-col h-full bg-gray-900 items-center justify-center">
-        <LoadingSpinner />
+      <div className="flex flex-col h-full bg-[#f0f7ff] items-center justify-center gap-3">
+        <div className="w-10 h-10 border-4 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
+        <p className="text-sm font-semibold text-primary-600">Memuat komik...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-900">
+    <div className="flex flex-col h-full bg-[#f0f7ff]">
 
-      {/* ── Top toolbar: zoom only ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-1 px-3 py-2 bg-gray-800 text-white flex-shrink-0">
-        <button
-          onClick={zoomOut}
-          disabled={scale <= ZOOM_MIN}
-          className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed text-lg font-bold"
-          aria-label="Perkecil"
-        >
-          −
-        </button>
-        <button
-          onClick={resetZoom}
-          className="min-w-[52px] h-10 text-center px-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-xs font-bold tabular-nums"
-          aria-label="Reset zoom"
-        >
-          {Math.round(scale * 100)}%
-        </button>
-        <button
-          onClick={zoomIn}
-          disabled={scale >= ZOOM_MAX}
-          className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed text-lg font-bold"
-          aria-label="Perbesar"
-        >
-          +
-        </button>
+      {/* ── Top bar: page label + progress bar ────────────────────────────── */}
+      <div className="flex-shrink-0 bg-white border-b border-neutral-100 px-4 pt-3 pb-2">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-sm font-black text-neutral-700">
+            {numPages > 0
+              ? `📖 Halaman ${page} dari ${numPages}`
+              : "📖 Memuat..."}
+          </span>
+          {/* Zoom toggle — small, unobtrusive */}
+          <button
+            onClick={() => setShowZoom((v) => !v)}
+            className="flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-bold text-neutral-500 hover:bg-neutral-200 transition-colors"
+            aria-label="Ubah ukuran"
+          >
+            🔍 {Math.round(scale * 100)}%
+          </button>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-2.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+          <div
+            className="h-2.5 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-300"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+
+        {/* Zoom controls — shown only when toggled */}
+        {showZoom && (
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-neutral-100">
+            <button
+              onClick={zoomOut}
+              disabled={scale <= ZOOM_MIN}
+              className="flex-1 h-9 rounded-xl bg-neutral-100 text-neutral-700 font-black text-lg disabled:opacity-40 hover:bg-neutral-200 transition-colors"
+              aria-label="Perkecil"
+            >−</button>
+            <button
+              onClick={resetZoom}
+              className="flex-1 h-9 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-black hover:bg-neutral-200 transition-colors"
+              aria-label="Ukuran normal"
+            >Normal</button>
+            <button
+              onClick={zoomIn}
+              disabled={scale >= ZOOM_MAX}
+              className="flex-1 h-9 rounded-xl bg-neutral-100 text-neutral-700 font-black text-lg disabled:opacity-40 hover:bg-neutral-200 transition-colors"
+              aria-label="Perbesar"
+            >+</button>
+          </div>
+        )}
       </div>
 
-      {/* ── PDF viewport with swipe support ───────────────────────────────── */}
+      {/* ── PDF viewport ──────────────────────────────────────────────────── */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center py-4 select-none"
+        className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center py-3 select-none"
         style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -210,8 +216,8 @@ export default function PdfReader({
         <Document
           file={pdfPath}
           onLoadSuccess={onDocumentLoadSuccess}
-          loading={<LoadingSpinner />}
-          error={<ErrorMessage />}
+          loading={<PdfLoadingSpinner />}
+          error={<PdfErrorMessage />}
         >
           <Page
             key={`page_${page}_${scale}`}
@@ -226,52 +232,44 @@ export default function PdfReader({
 
       {/* ── Bottom navigation ──────────────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 bg-gray-800 border-t border-gray-700 px-3 py-3"
+        className="flex-shrink-0 bg-white border-t border-neutral-100 px-3 py-3"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         {isLastPage && showCompleteButton && onComplete ? (
           /* Last page: full-width complete button */
           <button
-            onClick={onComplete}
-            className="w-full min-h-[52px] rounded-2xl bg-primary-600 px-4 py-3.5 text-base font-black text-white shadow-md hover:bg-primary-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            onClick={() => onCompleteRef.current?.()}
+            disabled={completeButtonDisabled}
+            className="w-full min-h-[56px] rounded-2xl bg-gradient-to-r from-green-500 to-green-600 px-4 py-3.5 text-lg font-black text-white shadow-md hover:from-green-600 hover:to-green-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span>✅</span> {completeButtonLabel}
+            {completeButtonDisabled
+              ? <><span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+              : completeButtonLabel
+            }
           </button>
         ) : (
-          /* Normal pages: prev / indicator / next */
+          /* Normal pages: prev / next */
           <div className="flex items-center gap-2">
-            {/* Previous */}
             <button
               onClick={() => goTo(page - 1)}
               disabled={isFirstPage}
               aria-label="Halaman sebelumnya"
-              className="flex items-center justify-center gap-1.5 min-h-[52px] flex-1 rounded-2xl bg-gray-700 text-white font-bold text-sm hover:bg-gray-600 active:bg-gray-500 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center gap-1.5 min-h-[56px] flex-1 rounded-2xl bg-neutral-100 text-neutral-700 font-black text-base hover:bg-neutral-200 active:bg-neutral-300 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
             >
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               Sebelumnya
             </button>
 
-            {/* Page indicator */}
-            <div className="flex flex-col items-center justify-center min-w-[56px] px-1">
-              <span className="text-white font-black text-base tabular-nums leading-none">
-                {numPages > 0 ? page : "—"}
-              </span>
-              <span className="text-gray-400 text-[11px] tabular-nums leading-none mt-0.5">
-                {numPages > 0 ? `/ ${numPages}` : ""}
-              </span>
-            </div>
-
-            {/* Next */}
             <button
               onClick={() => goTo(page + 1)}
               disabled={isLastPage}
               aria-label="Halaman berikutnya"
-              className="flex items-center justify-center gap-1.5 min-h-[52px] flex-1 rounded-2xl bg-primary-600 text-white font-black text-sm hover:bg-primary-700 active:bg-primary-800 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center gap-1.5 min-h-[56px] flex-1 rounded-2xl bg-primary-600 text-white font-black text-base hover:bg-primary-700 active:bg-primary-800 disabled:opacity-35 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
-              Berikutnya
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              Selanjutnya
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -284,10 +282,11 @@ export default function PdfReader({
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function LoadingSpinner() {
+function PdfLoadingSpinner() {
   return (
-    <div className="flex items-center justify-center w-full h-64 text-white">
-      <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+    <div className="flex flex-col items-center justify-center w-full h-64 gap-3">
+      <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+      <p className="text-sm font-semibold text-neutral-500">Memuat halaman...</p>
     </div>
   );
 }
@@ -295,18 +294,20 @@ function LoadingSpinner() {
 function PageSkeleton({ width }: { width?: number }) {
   return (
     <div
-      className="bg-gray-700 animate-pulse rounded"
+      className="bg-neutral-200 animate-pulse rounded-lg"
       style={{ width: width ?? 320, height: ((width ?? 320) * 4) / 3 }}
     />
   );
 }
 
-function ErrorMessage() {
+function PdfErrorMessage() {
   return (
-    <div className="flex flex-col items-center justify-center w-full h-64 gap-3 px-4 text-center">
-      <span className="text-4xl">🚨</span>
-      <p className="text-sm font-semibold text-red-400">Gagal memuat PDF.</p>
-      <p className="text-xs text-gray-400">Pastikan koneksi internet kamu stabil dan coba lagi.</p>
+    <div className="flex flex-col items-center justify-center w-full h-64 gap-3 px-6 text-center">
+      <span className="text-5xl">😕</span>
+      <p className="text-base font-black text-neutral-700">Komik tidak bisa dimuat</p>
+      <p className="text-sm text-neutral-500 leading-relaxed">
+        Periksa koneksi internet kamu, lalu coba lagi ya!
+      </p>
     </div>
   );
 }

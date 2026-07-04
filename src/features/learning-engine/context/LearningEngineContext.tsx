@@ -53,6 +53,11 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   const [stageIndex, setStageIndex] = useState(0);
   const [canAdvance, setCanAdvance] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // Stable ref so nextStage() always reads the latest Firestore snapshot
+  const progressRef = React.useRef(progress);
+  useEffect(() => { progressRef.current = progress; }, [progress]);
+  // Ref guard to prevent concurrent nextStage calls (isSaving state can be stale in closure)
+  const isSavingRef = React.useRef(false);
 
   // Subscribe to Firestore progress
   // Wait for auth to resolve before deciding what to do.
@@ -121,22 +126,25 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
 
   /** Complete current stage in Firestore then advance to next stage. */
   const nextStage = useCallback(async () => {
-    if (!canAdvance || isSaving || stageIndex >= totalStages - 1) return;
+    if (!canAdvance || isSavingRef.current || stageIndex >= totalStages - 1) return;
 
     const sintaks = stageToSintaks(currentStage);
     if (user?.uid && sintaks) {
+      isSavingRef.current = true;
       setIsSaving(true);
       try {
-        const next = await persistCompleteStage(user.uid, progress, sintaks);
+        const next = await persistCompleteStage(user.uid, progressRef.current, sintaks);
         setProgress(next);
         showSnackbar('Progress berhasil disimpan ✓', 'success');
       } catch (error) {
         console.error('Save Progress Error', error);
         const msg = error instanceof Error ? error.message : 'Terjadi kesalahan tidak diketahui.';
         showSnackbar(`Gagal menyimpan progress: ${msg}`, 'error');
+        isSavingRef.current = false;
         setIsSaving(false);
         return; // jangan maju stage jika save gagal
       } finally {
+        isSavingRef.current = false;
         setIsSaving(false);
       }
     } else if (!user?.uid) {
@@ -146,7 +154,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     }
 
     setStageIndex((i) => Math.min(i + 1, totalStages - 1));
-  }, [user, stageIndex, totalStages, currentStage, progress, canAdvance, isSaving, showSnackbar]);
+  }, [user, stageIndex, totalStages, currentStage, canAdvance, showSnackbar]);
 
   const previousStage = useCallback(() => {
     setCanAdvance(true); // reset gate saat mundur

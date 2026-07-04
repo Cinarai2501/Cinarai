@@ -132,10 +132,15 @@ export function IdentificationProvider({
       const item = state.items.find((i) => i.id === itemId);
       if (!item) return;
 
-      void saveIdentificationAnswer(user.uid, comicId, item.targetIndex, {
+      saveIdentificationAnswer(user.uid, comicId, item.targetIndex, {
         selectedAnswer: item.selectedOptionId,
         note: item.note,
         reason: item.reason,
+      }).catch((error) => {
+        console.error(
+          `[IdentificationContext] saveIdentificationAnswer gagal — userId: ${user.uid}, comicId: ${comicId}, itemId: ${itemId}`,
+          error
+        );
       });
     },
     [user, comicId, state.items, identification]

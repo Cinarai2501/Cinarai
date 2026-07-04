@@ -7,16 +7,21 @@ import { subscribeToAllComicProgress } from '@/services/comicProgress';
 import type { ComicProgressState } from '@/types/progress';
 
 export function useAllComicProgress() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showSnackbar } = useSnackbar();
   const [states, setStates] = useState<ComicProgressState[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Wait for auth to resolve before subscribing
+    if (authLoading) return;
+
     if (!user) {
       setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
     const unsub = subscribeToAllComicProgress(
       user.uid,
       (s) => {
@@ -31,7 +36,7 @@ export function useAllComicProgress() {
       },
     );
     return () => unsub();
-  }, [user, showSnackbar]);
+  }, [authLoading, user, showSnackbar]);
 
   const getProgress = (comicId: number): ComicProgressState | undefined =>
     states.find((s) => s.comicId === comicId);

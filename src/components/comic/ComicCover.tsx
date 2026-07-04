@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getComicById } from "@/lib/comicRepository";
 import { useComicProgress } from "@/hooks/useComicProgress";
 
@@ -30,12 +30,20 @@ interface ComicCoverProps {
 export default function ComicCover({ comicId }: ComicCoverProps) {
   const comic = getComicById(comicId);
   const { state, complete } = useComicProgress(comicId);
+  const completedRef = useRef(false);
 
   useEffect(() => {
+    // Guard: only fire once, only when Cover is genuinely CURRENT (not yet completed)
+    if (completedRef.current) return;
     if (state.completedCount === 0 && state.sintaksList[0]?.status === "CURRENT") {
-      complete("Cover");
+      completedRef.current = true;
+      complete("Cover").catch(() => {
+        // Allow retry on next render if write failed
+        completedRef.current = false;
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Run whenever sintaksList identity changes (Firestore snapshot), but guard prevents re-fire
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.sintaksList]);
 
   if (!comic) {

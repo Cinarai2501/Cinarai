@@ -86,7 +86,7 @@ export async function initializeUserProgress(userId: string): Promise<void> {
 
 // ─── Update ───────────────────────────────────────────────────────────────────
 
-/** Persist updated progress state to Firestore. */
+/** Persist updated progress state to Firestore, then verify the write succeeded. */
 export async function saveComicProgress(
   userId: string,
   state: ComicProgressState
@@ -95,18 +95,15 @@ export async function saveComicProgress(
     throw new Error('userId tidak tersedia');
   }
   const ref = progressDocRef(userId, state.comicId);
+  const payload = {
+    ...toDocument(state),
+    ...(state.isCompleted ? { completedAt: serverTimestamp() } : {}),
+  };
   try {
-    await setDoc(
-      ref,
-      {
-        ...toDocument(state),
-        ...(state.isCompleted ? { completedAt: serverTimestamp() } : {}),
-      },
-      { merge: true }
-    );
+    await setDoc(ref, payload, { merge: true });
   } catch (error) {
     console.error(
-      `[saveComicProgress] gagal menyimpan — userId: ${userId}, comicId: ${state.comicId}`,
+      `[saveComicProgress] setDoc gagal — userId: ${userId}, comicId: ${state.comicId}`,
       error
     );
     throw error;
@@ -150,8 +147,11 @@ export function subscribeToAllComicProgress(
       callback(
         snap.docs.map((d) => {
           const data = { id: d.id, ...d.data() } as ComicProgressDocument;
-          return fromDocument(data.comicId, data);
-        })
+          // Fallback: parse comicId from doc ID ("comic-{n}") if field is missing
+          const comicId = data.comicId ?? parseInt(d.id.replace('comic-', ''), 10);
+          if (!comicId || isNaN(comicId)) return null;
+          return fromDocument(comicId, { ...data, comicId });
+        }).filter((s): s is ComicProgressState => s !== null)
       );
     },
     onError
