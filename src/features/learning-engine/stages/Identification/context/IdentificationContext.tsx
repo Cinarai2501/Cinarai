@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useIdentification } from '../hooks/useIdentification';
@@ -15,7 +16,12 @@ import {
   saveIdentificationAnswer,
   loadIdentificationAnswers,
 } from '../services/identificationAnswerService';
-import type { IdentificationStep } from '../types';
+import type { IdentificationItem, IdentificationStep } from '../types';
+
+interface AutoSaveMetadata {
+  status: 'idle' | 'saving' | 'saved' | 'error';
+  message?: string;
+}
 
 interface IdentificationComicMeta {
   comicId: number;
@@ -44,6 +50,8 @@ export interface IdentificationContextValue
   advance: () => void;
   // Validasi
   validationErrors: string[];
+  // Auto-save state per item
+  autoSaveState: Record<string, AutoSaveMetadata>;
 }
 
 const IdentificationContext = createContext<IdentificationContextValue | null>(null);
@@ -77,7 +85,69 @@ export function IdentificationProvider({
   const identification = useIdentification({ comicId, lokasi, cover, title, learningTargets });
   const { state, reset: resetIdentification, applyAnswers } = identification;
 
-  // Load jawaban dari Firestore saat mount
+  const [autoSaveState, setAutoSaveState] = useState<Record<string, AutoSaveMetadata>>({});
+  const saveTimeout = useRef<number | null>(null);
+  const pendingSaveRef = useRef<Set<string>>(new Set());
+
+  const updateAutoSaveState = useCallback((itemId: string, metadata: AutoSaveMetadata) => {
+    setAutoSaveState((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], ...metadata },
+    }));
+  }, []);
+
+  const persistItem = useCallback(async (item: IdentificationItem) => {
+    if (!user) return;
+
+    updateAutoSaveState(item.id, { status: 'saving', message: 'Menyimpan...' });
+
+    try {
+      await saveIdentificationAnswer(user.uid, comicId, item.targetIndex, {
+        selectedAnswer: item.selectedOptionId,
+        note: item.note,
+        reason: item.reason,
+      });
+
+      if (item.reason.trim().length > 0) {
+        identification.saveReason(item.id);
+      } else if (item.selectedOptionId) {
+        identification.save(item.id);
+      }
+
+      updateAutoSaveState(item.id, { status: 'saved', message: '✓ Tersimpan' });
+      window.setTimeout(() => {
+        updateAutoSaveState(item.id, { status: 'idle', message: undefined });
+      }, 2000);
+    } catch (error) {
+      console.error(
+        `[IdentificationContext] auto-save gagal — userId: ${user?.uid}, comicId: ${comicId}, itemId: ${item.id}`,
+        error
+      );
+      updateAutoSaveState(item.id, { status: 'error', message: 'Koneksi terputus, mencoba menyimpan kembali...' });
+      pendingSaveRef.current.add(item.id);
+      if (saveTimeout.current) window.clearTimeout(saveTimeout.current);
+      saveTimeout.current = window.setTimeout(() => {
+        pendingSaveRef.current.forEach((id) => {
+          const retryItem = identification.state.items.find((i) => i.id === id);
+          if (retryItem) void persistItem(retryItem);
+        });
+      }, 1000);
+    }
+  }, [comicId, identification, updateAutoSaveState, user]);
+
+  const scheduleAutoSave = useCallback((itemId: string) => {
+    pendingSaveRef.current.add(itemId);
+    if (saveTimeout.current) window.clearTimeout(saveTimeout.current);
+    saveTimeout.current = window.setTimeout(() => {
+      const pendingItems = Array.from(pendingSaveRef.current);
+      pendingSaveRef.current.clear();
+      pendingItems.forEach((id) => {
+        const item = identification.state.items.find((i) => i.id === id);
+        if (item) void persistItem(item);
+      });
+    }, 500);
+  }, [identification.state.items, persistItem]);
+
   useEffect(() => {
     if (!user) return;
     void loadIdentificationAnswers(user.uid, comicId).then((answers) => {
@@ -123,28 +193,19 @@ export function IdentificationProvider({
     void nextStage();
   }, [nextStage]);
 
-  // Wrap saveReason agar otomatis persist ke Firestore
   const saveReasonWithPersist = useCallback(
     (itemId: string) => {
       identification.saveReason(itemId);
-
-      if (!user) return;
-      const item = state.items.find((i) => i.id === itemId);
-      if (!item) return;
-
-      saveIdentificationAnswer(user.uid, comicId, item.targetIndex, {
-        selectedAnswer: item.selectedOptionId,
-        note: item.note,
-        reason: item.reason,
-      }).catch((error) => {
-        console.error(
-          `[IdentificationContext] saveIdentificationAnswer gagal — userId: ${user.uid}, comicId: ${comicId}, itemId: ${itemId}`,
-          error
-        );
-      });
+      scheduleAutoSave(itemId);
     },
-    [user, comicId, state.items, identification]
+    [identification, scheduleAutoSave]
   );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeout.current) window.clearTimeout(saveTimeout.current);
+    };
+  }, []);
 
   const validationErrors = useMemo<string[]>(() => {
     const errors: string[] = [];
@@ -177,8 +238,21 @@ export function IdentificationProvider({
       reset,
       advance,
       validationErrors,
+      autoSaveState,
+      selectOption: (itemId: string, optionId: string) => {
+        identification.selectOption(itemId, optionId);
+        scheduleAutoSave(itemId);
+      },
+      setNote: (itemId: string, note: string) => {
+        identification.setNote(itemId, note);
+        scheduleAutoSave(itemId);
+      },
+      setReason: (itemId: string, reason: string) => {
+        identification.setReason(itemId, reason);
+        scheduleAutoSave(itemId);
+      },
     }),
-    [identification, saveReasonWithPersist, lokasi, subtitle, kelas, cover, title, currentStep, nextStep, previousStep, reset, advance, validationErrors]
+    [identification, saveReasonWithPersist, lokasi, subtitle, kelas, cover, title, currentStep, nextStep, previousStep, reset, advance, validationErrors, autoSaveState, scheduleAutoSave]
   );
 
   return (

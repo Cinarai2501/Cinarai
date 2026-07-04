@@ -8,7 +8,6 @@ interface ReasonAreaProps {
   value: string;
   isSaved: boolean;
   onChange: (itemId: string, reason: string) => void;
-  onSave: (itemId: string) => void;
 }
 
 export default function ReasonArea({
@@ -16,10 +15,7 @@ export default function ReasonArea({
   value,
   isSaved,
   onChange,
-  onSave,
 }: ReasonAreaProps) {
-  const canSave = value.trim().length > 0 && !isSaved;
-
   return (
     <div className="flex flex-col gap-3 rounded-2xl border-2 border-primary-200 bg-primary-50 p-5">
       <label htmlFor={`reason-${itemId}`} className="flex items-center gap-3">
@@ -52,14 +48,9 @@ export default function ReasonArea({
           <span className="text-xl font-bold text-accent-700">Alasan tersimpan!</span>
         </div>
       ) : (
-        <button
-          type="button"
-          disabled={!canSave}
-          onClick={() => onSave(itemId)}
-          className="flex w-full items-center justify-center gap-2 min-h-[68px] rounded-2xl bg-primary-600 px-5 py-4 text-2xl font-black text-white shadow-sm transition-all hover:bg-primary-700 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed active:scale-[0.97]"
-        >
-          {canSave ? '💾 Simpan Alasan' : 'Tulis alasanmu dulu ya!'}
-        </button>
+        <div className="rounded-2xl border border-primary-200 bg-white px-4 py-3 text-sm text-neutral-600">
+          Jawaban dan alasanmu tersimpan otomatis.
+        </div>
       )}
     </div>
   );

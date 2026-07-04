@@ -15,7 +15,6 @@ export { default as IdentificationActivity } from './components/IdentificationAc
 export { default as ActivityItem } from './components/ActivityItem';
 export { default as AnswerOptions } from './components/AnswerOptions';
 export { default as NoteArea } from './components/NoteArea';
-export { default as SaveButton } from './components/SaveButton';
 export { default as ReasonArea } from './components/ReasonArea';
 
 // Context

@@ -4,7 +4,6 @@ import type { IdentificationItem } from '../types';
 import { useIdentificationContext } from '../context/IdentificationContext';
 import AnswerOptions from './AnswerOptions';
 import NoteArea from './NoteArea';
-import SaveButton from './SaveButton';
 import ReasonArea from './ReasonArea';
 
 interface ActivityItemProps {
@@ -12,11 +11,11 @@ interface ActivityItemProps {
 }
 
 export default function ActivityItem({ item }: ActivityItemProps) {
-  const { selectOption, setNote, save, setReason, saveReason } = useIdentificationContext();
+  const { selectOption, setNote, setReason, autoSaveState } = useIdentificationContext();
 
   const isSaved = item.answerStatus === 'SAVED';
   const isReasonSaved = item.reasonStatus === 'SAVED';
-  const canSave = item.selectedOptionId !== null && !isSaved;
+  const status = autoSaveState[item.id];
 
   return (
     <li className={[
@@ -57,14 +56,10 @@ export default function ActivityItem({ item }: ActivityItemProps) {
         onChange={setNote}
       />
 
-      {/* Tombol simpan jawaban */}
-      {!isSaved && (
-        <SaveButton
-          itemId={item.id}
-          canSave={canSave}
-          isSaved={isSaved}
-          onSave={save}
-        />
+      {status?.message && (
+        <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700">
+          {status.message}
+        </div>
       )}
 
       {/* Area alasan — muncul setelah jawaban disimpan */}
@@ -75,7 +70,6 @@ export default function ActivityItem({ item }: ActivityItemProps) {
           value={item.reason}
           isSaved={isReasonSaved}
           onChange={setReason}
-          onSave={saveReason}
         />
       )}
     </li>

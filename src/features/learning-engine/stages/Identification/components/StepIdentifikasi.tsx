@@ -36,7 +36,7 @@ export default function StepIdentifikasi() {
           {[
             { emoji: '👆', text: 'Pilih jawaban yang paling tepat.' },
             { emoji: '📝', text: 'Tulis catatan singkat tentang jawabanmu.' },
-            { emoji: '💾', text: 'Tekan "Simpan" untuk menyimpan jawabanmu.' },
+            { emoji: '💾', text: 'Jawabanmu akan tersimpan otomatis.' },
           ].map((step, i) => (
             <li key={i} className="flex items-start gap-4 rounded-2xl bg-primary-50 p-4">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-base font-black text-white mt-0.5">
