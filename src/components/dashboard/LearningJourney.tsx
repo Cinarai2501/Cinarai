@@ -245,6 +245,12 @@ function CtaButton({
   percentage: number;
   accentClass: string;
 }) {
+  // Jika sudah ada progress apapun, lanjutkan ke /learn agar LearningEngine
+  // membaca stage dari Firestore. Jika belum pernah mulai, mulai dari /cover.
+  const continueHref = percentage > 0
+    ? `/comic/${comicId}/learn`
+    : `/comic/${comicId}/cover`;
+
   if (isComingSoon) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-xl bg-warning-100 px-4 py-2 text-xs font-bold text-warning-700 cursor-not-allowed">
@@ -262,17 +268,17 @@ function CtaButton({
   if (isCompleted) {
     return (
       <Link
-        href={`/comic/${comicId}/cover`}
+        href={`/comic/${comicId}/learn`}
         className="inline-flex items-center gap-1.5 rounded-xl bg-accent-500 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-accent-600 active:scale-95 transition-all"
       >
-        ✅ Ulangi Komik
+        ✅ Lihat Hasil
       </Link>
     );
   }
   if (percentage > 0) {
     return (
       <Link
-        href={`/comic/${comicId}/cover`}
+        href={continueHref}
         className={`inline-flex items-center gap-1.5 rounded-xl ${accentClass} px-4 py-2.5 text-xs font-black text-white shadow-sm hover:opacity-90 active:scale-95 transition-all`}
       >
         ▶ Lanjutkan

@@ -233,7 +233,7 @@ export default function DashboardPage() {
             {continueComic ? (
               <div className="px-5 pb-5">
                 <Link
-                  href={`/comic/${continueComic.id}/cover`}
+                  href={`/comic/${continueComic.id}/learn`}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-4 text-base font-black text-white shadow-sm hover:bg-primary-700 active:scale-[0.98] transition-all"
                 >
                   <span className="text-xl">▶</span>

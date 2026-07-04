@@ -3,9 +3,8 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { getComicById } from "@/lib/comicRepository";
-import { useComicProgress } from "@/hooks/useComicProgress";
 
 // Loaded client-only: pdfjs-dist requires browser APIs (DOMMatrix, Canvas)
 const PdfCoverCanvas = dynamic(() => import("./PdfCoverCanvas"), {
@@ -29,23 +28,8 @@ interface ComicCoverProps {
 
 export default function ComicCover({ comicId }: ComicCoverProps) {
   const comic = getComicById(comicId);
-  const { state, complete } = useComicProgress(comicId);
-  const completedRef = useRef(false);
-
-  useEffect(() => {
-    // Guard: only fire once, only when Cover is genuinely CURRENT (not yet completed)
-    if (completedRef.current) return;
-    if (state.completedCount === 0 && state.sintaksList[0]?.status === "CURRENT") {
-      completedRef.current = true;
-      complete("Cover").catch(() => {
-        // Allow retry on next render if write failed
-        completedRef.current = false;
-      });
-    }
-  // Run whenever sintaksList identity changes (Firestore snapshot), but guard prevents re-fire
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.sintaksList]);
-
+  // Progress bar dihapus dari halaman Cover — state progress dikelola sepenuhnya
+  // oleh LearningEngine (/comic/[id]/learn). Halaman ini hanya sebagai intro/preview.
   if (!comic) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f0f7ff]">
@@ -106,14 +90,11 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
 
         {/* Progress indicator */}
         <div className="mt-4 rounded-2xl bg-white shadow-sm px-4 py-3 flex items-center gap-3">
-          <span className="text-sm font-bold text-neutral-600">Progress</span>
+          <span className="text-sm font-bold text-neutral-600">Siap Belajar?</span>
           <div className="flex-1 h-2 rounded-full bg-neutral-100 overflow-hidden">
-            <div
-              className="h-2 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700"
-              style={{ width: `${state.percentage}%` }}
-            />
+            <div className="h-2 rounded-full bg-gradient-to-r from-primary-400 to-primary-600" style={{ width: '0%' }} />
           </div>
-          <span className="text-sm font-black text-primary-600 flex-shrink-0">{state.percentage}%</span>
+          <span className="text-sm font-black text-primary-600 flex-shrink-0">Mulai!</span>
         </div>
 
         {/* Sinopsis */}
@@ -162,7 +143,7 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
         {/* Tombol */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href={`/comic/${comicId}`}
+            href={`/comic/${comicId}/learn`}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-6 py-4 text-base font-black text-white shadow-sm hover:bg-primary-700 active:scale-[0.98] transition-all"
           >
             <span>▶</span> Mulai Belajar

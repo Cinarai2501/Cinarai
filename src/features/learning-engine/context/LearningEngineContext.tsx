@@ -54,6 +54,9 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   const [stageIndex, setStageIndex] = useState(0);
   const [canAdvance, setCanAdvance] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // True after the first Firestore snapshot has been applied — prevents subsequent
+  // snapshots from overriding the user's in-session navigation.
+  const initialSyncDoneRef = React.useRef(false);
   // Stable ref so nextStage() always reads the latest Firestore snapshot
   const progressRef = React.useRef(progress);
   useEffect(() => { progressRef.current = progress; }, [progress]);
@@ -99,9 +102,13 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     };
   }, [authLoading, user, comicId]);
 
-  // Sync stageIndex to Firestore progress on initial load
+  // Sync stageIndex to Firestore progress on initial load only.
+  // After the first sync, in-session navigation drives stageIndex exclusively.
   useEffect(() => {
     if (isLoading) return;
+    if (initialSyncDoneRef.current) return;
+    initialSyncDoneRef.current = true;
+
     if (progress.isCompleted) {
       setStageIndex(ALL_STAGES.indexOf(Stage.Finish));
       return;
