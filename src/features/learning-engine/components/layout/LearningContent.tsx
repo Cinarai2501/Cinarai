@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
-const SWIPE_THRESHOLD = 48;   // min horizontal px to count as swipe
-const SWIPE_VERT_LIMIT = 72;  // max vertical drift before cancelling
+const SWIPE_THRESHOLD = 48;
+const SWIPE_VERT_LIMIT = 72;
 
 interface LearningContentProps {
   children: ReactNode;
@@ -14,7 +14,6 @@ export default function LearningContent({ children }: LearningContentProps) {
   const { nextStage, previousStage, canAdvance, isSaving, stageIndex } = useLearningEngine();
   const mainRef = useRef<HTMLElement>(null);
 
-  // Reset scroll to top on mount — prevents inheriting scroll position from PDF reader
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
@@ -62,7 +61,8 @@ export default function LearningContent({ children }: LearningContentProps) {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <div className="mx-auto max-w-2xl px-3 pt-3 pb-8 sm:px-6 sm:pt-5 sm:pb-10 animate-fade-in">
+      {/* Mobile/tablet: centered narrow column. Desktop: fills sidebar's right column. */}
+      <div className="mx-auto w-full max-w-2xl md:max-w-3xl lg:max-w-none px-3 pt-3 pb-8 md:px-6 md:pt-5 md:pb-10 lg:px-8 lg:pt-6 lg:pb-12 animate-fade-in">
         {children}
       </div>
     </main>

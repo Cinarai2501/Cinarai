@@ -25,26 +25,28 @@ export default function LearningProgress() {
   const totalVisible = VISIBLE_STAGES.length;
 
   return (
-    <div className="bg-white border-b border-neutral-100 px-4 py-2 sm:px-6">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-bold text-neutral-700 truncate">
-          {STAGE_LABELS[currentStage]}
-        </span>
-        <span className="text-xs font-semibold text-neutral-400 ml-2 flex-shrink-0">
-          {Math.min(stageNumber, totalVisible)}/{totalVisible}
-        </span>
-      </div>
+    <div className="bg-white border-b border-neutral-100">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-2 md:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-sm font-bold text-neutral-700 truncate">
+            {STAGE_LABELS[currentStage]}
+          </span>
+          <span className="text-xs font-semibold text-neutral-400 ml-2 flex-shrink-0">
+            {Math.min(stageNumber, totalVisible)}/{totalVisible}
+          </span>
+        </div>
 
-      <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
-        <div
-          className="h-1.5 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700"
-          style={{ width: `${progress.percentage}%` }}
-          role="progressbar"
-          aria-valuenow={stageNumber}
-          aria-valuemin={1}
-          aria-valuemax={totalVisible}
-          aria-label={`Tahap ${stageNumber} dari ${totalVisible}`}
-        />
+        <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+          <div
+            className="h-1.5 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700"
+            style={{ width: `${progress.percentage}%` }}
+            role="progressbar"
+            aria-valuenow={stageNumber}
+            aria-valuemin={1}
+            aria-valuemax={totalVisible}
+            aria-label={`Tahap ${stageNumber} dari ${totalVisible}`}
+          />
+        </div>
       </div>
     </div>
   );
