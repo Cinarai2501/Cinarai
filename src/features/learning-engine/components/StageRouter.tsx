@@ -34,9 +34,12 @@ export default function StageRouter() {
   const { currentStage, isLoading, isFinished } = useLearningEngine();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Reset scroll to top on every stage change
+  // Reset scroll to top on every stage change AND on initial load completion.
+  // Runs when currentStage changes (stage navigation) or when isLoading flips
+  // false (first render after Firestore data arrives).
   useEffect(() => {
     if (isLoading) return;
+    // Scroll the nearest overflow-y scroll container (LearningContent <main>)
     let el: HTMLElement | null = wrapperRef.current?.parentElement ?? null;
     while (el) {
       const overflow = window.getComputedStyle(el).overflowY;
@@ -46,6 +49,7 @@ export default function StageRouter() {
       }
       el = el.parentElement;
     }
+    // Fallback: reset window scroll (covers initial navigation from PDF page)
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentStage, isLoading]);
 

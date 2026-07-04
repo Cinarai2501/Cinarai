@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import LearningEngine from './LearningEngine';
 import { getComicById } from '../services/comicService';
 
@@ -8,6 +9,12 @@ interface LearningEngineRootProps {
 }
 
 export default function LearningEngineRoot({ comicId }: LearningEngineRootProps) {
+  // Reset window scroll immediately on mount — prevents inheriting the PDF
+  // reader's scroll position when navigating from /comic/[id] to /comic/[id]/learn.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   const comic = getComicById(comicId);
 
   if (!comic) {
