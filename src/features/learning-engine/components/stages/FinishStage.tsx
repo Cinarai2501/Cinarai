@@ -50,26 +50,23 @@ export default function FinishStage() {
       }}
     >
       {/* Celebration header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 px-4 pt-12 pb-20 text-center">
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 px-5 pt-12 pb-20 text-center">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -left-6 bottom-4 h-28 w-28 rounded-full bg-secondary-400/20" />
-
         <div className="relative">
           <div className="inline-flex h-24 w-24 items-center justify-center rounded-full bg-white/20 text-5xl shadow-lg ring-4 ring-white/30 mb-4">
             🏆
           </div>
-          <h1 className="text-2xl font-black text-white leading-tight">
-            Luar Biasa! 🎉
-          </h1>
-          <p className="mt-1 text-sm text-primary-200 leading-snug px-4">
+          <h1 className="text-3xl font-black text-white leading-tight">Luar Biasa! 🎉</h1>
+          <p className="mt-2 text-xl text-primary-200 leading-snug px-4">
             Kamu telah menyelesaikan<br />
-            <span className="font-bold text-white">{comic.title}</span>
+            <span className="font-black text-white">{comic.title}</span>
           </p>
         </div>
       </div>
 
       {/* Content floats over header */}
-      <div className="relative -mt-12 mx-auto w-full max-w-md px-4 space-y-4">
+      <div className="relative -mt-12 mx-auto w-full max-w-md px-4 flex flex-col gap-4">
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -79,26 +76,27 @@ export default function FinishStage() {
         </div>
 
         {/* Stage checklist */}
-        <div className="rounded-3xl bg-white shadow-md overflow-hidden">
-          <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">Tahapan</p>
-            <h2 className="text-base font-black text-neutral-900">Yang Sudah Diselesaikan</h2>
+        <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-neutral-100">
+            <p className="text-sm font-black uppercase tracking-widest text-neutral-400">Tahapan</p>
+            <h2 className="text-xl font-black text-neutral-900 mt-0.5">Yang Sudah Diselesaikan</h2>
           </div>
-          <ul className="px-5 py-3 space-y-1">
+          <ul className="px-5 py-4 flex flex-col gap-3">
             {LEARNING_STAGES.map((stage) => {
               const done = completedSet.has(stage);
               return (
-                <li key={stage} className="flex items-center gap-3 py-1.5">
-                  <span className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-sm ${
-                    done ? 'bg-accent-100' : 'bg-neutral-100'
-                  }`}>
+                <li key={stage} className="flex items-center gap-4">
+                  <span className={[
+                    'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-xl',
+                    done ? 'bg-accent-100' : 'bg-neutral-100',
+                  ].join(' ')}>
                     {done ? '✅' : (STAGE_EMOJI[stage] ?? '○')}
                   </span>
-                  <span className={`text-sm ${done ? 'text-neutral-800 font-semibold' : 'text-neutral-400'}`}>
+                  <span className={`text-xl flex-1 ${done ? 'text-neutral-800 font-bold' : 'text-neutral-400'}`}>
                     {STAGE_LABELS[stage]}
                   </span>
                   {done && (
-                    <span className="ml-auto text-[10px] font-bold text-accent-600">+15 XP</span>
+                    <span className="text-base font-black text-accent-600">+15 XP</span>
                   )}
                 </li>
               );
@@ -110,7 +108,7 @@ export default function FinishStage() {
         <button
           type="button"
           onClick={() => router.push('/dashboard')}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-4 text-base font-black text-white shadow-md hover:bg-primary-700 active:scale-[0.98] transition-all"
+          className="flex w-full items-center justify-center gap-3 min-h-[72px] rounded-2xl bg-primary-600 px-5 py-4 text-2xl font-black text-white shadow-md hover:bg-primary-700 active:scale-[0.98] transition-all"
         >
           🏠 Kembali ke Dashboard
         </button>
@@ -124,12 +122,12 @@ function StatCard({ emoji, label, value, color }: {
   emoji: string; label: string; value: string; color: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white shadow-md px-3 py-4 flex flex-col items-center gap-1 text-center">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${color} text-lg`}>
+    <div className="rounded-2xl bg-white shadow-sm px-3 py-4 flex flex-col items-center gap-2 text-center">
+      <span className={`flex h-10 w-10 items-center justify-center rounded-full ${color} text-xl`}>
         {emoji}
       </span>
-      <span className="text-sm font-black text-neutral-900 leading-tight">{value}</span>
-      <span className="text-[10px] text-neutral-400 leading-tight">{label}</span>
+      <span className="text-xl font-black text-neutral-900 leading-tight">{value}</span>
+      <span className="text-sm text-neutral-400 leading-tight">{label}</span>
     </div>
   );
 }

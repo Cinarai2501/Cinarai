@@ -7,7 +7,6 @@ import { useLearningEngine } from '../../hooks/useLearningEngine';
 export default function CoverStage() {
   const { comic, setCanAdvance } = useLearningEngine();
 
-  // Cover stage allows immediate advancement - no interaction needed
   useEffect(() => {
     setCanAdvance(true);
   }, [setCanAdvance]);
@@ -19,11 +18,11 @@ export default function CoverStage() {
     : `${minutes} menit`;
 
   return (
-    <div className="flex flex-col gap-3 animate-fade-in-up">
+    <div className="flex flex-col gap-4 animate-fade-in-up">
 
-      {/* ── Hero: cover image ── */}
+      {/* Cover image */}
       <div className="-mx-3 sm:mx-0">
-        <div className="relative w-full aspect-[3/4] sm:rounded-2xl overflow-hidden shadow-md bg-neutral-200">
+        <div className="relative w-full aspect-[3/4] sm:rounded-2xl overflow-hidden shadow-sm bg-neutral-200">
           <Image
             src={comic.cover}
             alt={`Cover ${comic.title}`}
@@ -35,35 +34,35 @@ export default function CoverStage() {
         </div>
       </div>
 
-      {/* ── Judul & meta ── */}
-      <div className="rounded-2xl bg-white shadow-sm px-4 py-4">
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-[11px] font-semibold text-primary-700">
+      {/* Judul & meta */}
+      <div className="rounded-2xl bg-white shadow-sm px-5 py-5">
+        <div className="flex flex-wrap gap-2 mb-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-100 px-3 py-1.5 text-sm font-bold text-primary-700">
             📍 {comic.lokasi}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-secondary-100 px-2.5 py-1 text-[11px] font-semibold text-secondary-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary-100 px-3 py-1.5 text-sm font-bold text-secondary-700">
             📚 Kelas {comic.kelas}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-bold text-neutral-600">
             ⏱ {estimasiLabel}
           </span>
         </div>
-        <h2 className="text-xl font-black text-neutral-950 leading-snug">{comic.title}</h2>
-        <p className="mt-1 text-sm text-neutral-500 leading-relaxed">{comic.subtitle}</p>
+        <h2 className="text-2xl font-black text-neutral-950 leading-snug">{comic.title}</h2>
+        <p className="mt-2 text-xl text-neutral-500 leading-relaxed">{comic.subtitle}</p>
       </div>
 
-      {/* ── Target Pembelajaran ── */}
+      {/* Target Pembelajaran */}
       <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-neutral-100">
-          <h3 className="text-sm font-black text-neutral-700">🎯 Yang Akan Kamu Pelajari</h3>
+        <div className="px-5 py-4 border-b border-neutral-100">
+          <h3 className="text-xl font-black text-neutral-700">🎯 Yang Akan Kamu Pelajari</h3>
         </div>
-        <ul className="px-3 py-2.5 flex flex-col gap-1.5">
+        <ul className="px-4 py-4 flex flex-col gap-3">
           {comic.learningTargets.map((target, i) => (
-            <li key={i} className="flex items-start gap-3 rounded-xl bg-neutral-50 p-3">
-              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-black text-primary-700 mt-0.5">
+            <li key={i} className="flex items-start gap-4 rounded-2xl bg-primary-50 p-4">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-base font-black text-white mt-0.5">
                 {i + 1}
               </span>
-              <p className="text-base text-neutral-700 leading-relaxed">{target}</p>
+              <p className="text-xl text-neutral-700 leading-relaxed pt-1">{target}</p>
             </li>
           ))}
         </ul>
