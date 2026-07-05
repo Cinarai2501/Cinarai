@@ -10,17 +10,13 @@ interface PdfPageProps {
 }
 
 export default function PdfPage({ pageNumber, width, loading }: PdfPageProps) {
-  const safeWidth = width > 0 ? width : undefined;
-
   return (
-    <div className="w-full max-w-full overflow-hidden">
-      <Page
-        pageNumber={pageNumber}
-        width={safeWidth}
-        loading={loading}
-        renderAnnotationLayer={false}
-        renderTextLayer={false}
-      />
-    </div>
+    <Page
+      pageNumber={pageNumber}
+      width={width > 0 ? width : undefined}
+      loading={loading}
+      renderAnnotationLayer={false}
+      renderTextLayer={false}
+    />
   );
 }

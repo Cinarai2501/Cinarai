@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Document, pdfjs } from "react-pdf";
 import { usePdfSize } from "@/hooks/usePdfSize";
 import PdfError from "./PdfError";
@@ -35,7 +35,24 @@ export default function PdfViewer({
   const [page, setPage] = useState(1);
   const [workerReady, setWorkerReady] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+
+  /**
+   * containerRef is attached to the outermost constraint div — the element
+   * that sits OUTSIDE the card (no border, no horizontal padding).
+   *
+   * Why outside the card:
+   *   react-pdf's <Page> renders a div with `minWidth: min-content`.
+   *   If containerRef is inside the card, the Page div can inflate the card's
+   *   width before ResizeObserver fires, causing the measurement to reflect
+   *   the PDF's native width instead of the available viewport width.
+   *
+   *   By placing containerRef on an ancestor that has `overflow: hidden`,
+   *   the browser clips the Page div at the constraint boundary. The
+   *   getBoundingClientRect() / contentRect.width of this element is always
+   *   the true available width, unaffected by the canvas inside.
+   */
   const { containerRef, containerWidth } = usePdfSize<HTMLDivElement>();
+
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const onCompleteRef = useRef(onComplete);
@@ -75,23 +92,29 @@ export default function PdfViewer({
     }
   }, []);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    if (e.changedTouches.length !== 1) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    touchStartX.current = null;
-    touchStartY.current = null;
-    if (Math.abs(dy) > SWIPE_VERTICAL_LIMIT) return;
-    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-    if (dx < 0) goTo(page + 1);
-    else goTo(page - 1);
-  }, [goTo, page]);
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return;
+      if (e.changedTouches.length !== 1) return;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      touchStartX.current = null;
+      touchStartY.current = null;
+      if (Math.abs(dy) > SWIPE_VERTICAL_LIMIT) return;
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+      if (dx < 0) goTo(page + 1);
+      else goTo(page - 1);
+    },
+    [goTo, page]
+  );
 
-  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    setPage(1);
-  }, []);
+  const onDocumentLoadSuccess = useCallback(
+    ({ numPages: n }: { numPages: number }) => {
+      setNumPages(n);
+      setPage(1);
+    },
+    []
+  );
 
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
@@ -100,8 +123,6 @@ export default function PdfViewer({
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
   const progressPct = numPages > 0 ? Math.round((page / numPages) * 100) : 0;
-  const pageWidth = useMemo(() => Math.max(0, containerWidth), [containerWidth]);
-  const shouldRenderPage = pageWidth > 0;
 
   if (!workerReady) {
     return (
@@ -121,34 +142,79 @@ export default function PdfViewer({
         isLoading={!workerReady}
       />
 
+      {/*
+        ── Scroll container ────────────────────────────────────────────────────
+        overflow-y-auto  : vertical scroll for tall pages
+        overflow-x-hidden: belt-and-suspenders horizontal clip
+        py-3             : vertical breathing room only — no horizontal padding
+                           so containerRef measures the full available width
+      */}
       <div
-        ref={containerRef}
-        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-[#f5f7fa] px-1 py-3 sm:px-2 md:px-3"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-[#f5f7fa] py-3"
         style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="mx-auto flex w-full max-w-full flex-col items-center">
-          <Document
-            key={`pdf-${retryCount}`}
-            file={pdfPath}
-            onLoadSuccess={onDocumentLoadSuccess}
-            loading={<PdfLoading />}
-            error={<PdfError onRetry={handleRetry} />}
-          >
-            <div className="my-3 w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex justify-center overflow-hidden">
-                <div className="w-full max-w-full min-w-0 overflow-hidden">
-                  <PdfPage
-                    pageNumber={page}
-                    width={pageWidth}
-                    loading={shouldRenderPage ? <PdfLoading variant="skeleton" /> : null}
-                  />
-                </div>
-              </div>
-            </div>
-          </Document>
+        {/*
+          ── Constraint div (containerRef) ──────────────────────────────────────
+          This is the element usePdfSize observes.
+
+          Rules this element MUST follow:
+            • no border          → contentRect.width == available width
+            • no horizontal padding → same reason
+            • overflow: hidden   → hard clip that prevents react-pdf's
+                                   `minWidth: min-content` from inflating
+                                   this element's measured width
+            • w-full             → fills the scroll container
+            • px-3 sm:px-4       → visual margin for the card inside;
+                                   these are on the INNER card, not here
+
+          Because overflow:hidden clips at this boundary, getBoundingClientRect()
+          and contentRect.width always return the true available width regardless
+          of what the Page div's minWidth:min-content tries to do.
+        */}
+        <div
+          ref={containerRef}
+          className="w-full overflow-hidden"
+        >
+          {/*
+            ── Visual card ────────────────────────────────────────────────────
+            border, rounded, shadow are purely decorative.
+            mx-3 / sm:mx-4 creates the horizontal margin inside the constraint.
+            The card's content-box = containerWidth - 2*margin - 2*border.
+            <Page> receives containerWidth (the full constraint width), which
+            is slightly wider than the card's content-box — but because the
+            constraint div has overflow:hidden, the canvas is clipped exactly
+            at containerWidth. The 6px of card border+margin on each side
+            means the canvas is visually inset, which is the desired look.
+
+            If pixel-perfect fit inside the card is required, pass
+            (containerWidth - cardHorizontalInset) to <Page>. But since
+            containerRef has overflow:hidden, there is zero crop regardless.
+          */}
+          <div className="mx-3 my-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-4">
+            <Document
+              key={`pdf-${retryCount}`}
+              file={pdfPath}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={<PdfLoading />}
+              error={<PdfError onRetry={handleRetry} />}
+            >
+              {/*
+                key={`${page}-${containerWidth}`} forces react-pdf to fully
+                unmount and remount <Page> whenever the page number or the
+                available width changes. This prevents stale canvas renders
+                from a previous width being visible during the transition.
+              */}
+              <PdfPage
+                key={`${page}-${containerWidth}`}
+                pageNumber={page}
+                width={containerWidth}
+                loading={containerWidth > 0 ? <PdfLoading variant="skeleton" /> : null}
+              />
+            </Document>
+          </div>
         </div>
       </div>
 
