@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useIdentificationContext } from '../context/IdentificationContext';
 import StepKonfirmasiItem from './StepKonfirmasiItem';
 
 export default function StepKonfirmasi() {
-  const { state, previousStep, reset, advance, validationErrors } = useIdentificationContext();
+  const { state, previousStep, reset, advance, validationErrors, reviewIndex, setReviewIndex } = useIdentificationContext();
   const { items } = state;
-  const [reviewIndex, setReviewIndex] = useState(0);
 
   const canAdvance = validationErrors.length === 0;
   const isLast = reviewIndex === items.length - 1;
@@ -102,7 +100,7 @@ export default function StepKonfirmasi() {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => setReviewIndex((i) => Math.max(0, i - 1))}
+            onClick={() => setReviewIndex(Math.max(0, reviewIndex - 1))}
             disabled={reviewIndex === 0}
             className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[20px] border-2 border-neutral-200 bg-white px-4 py-2 text-sm font-black text-neutral-600 transition-colors hover:bg-neutral-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 sm:text-base"
           >
@@ -113,7 +111,7 @@ export default function StepKonfirmasi() {
           </button>
           <button
             type="button"
-            onClick={() => setReviewIndex((i) => Math.min(items.length - 1, i + 1))}
+            onClick={() => setReviewIndex(Math.min(items.length - 1, reviewIndex + 1))}
             className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[20px] bg-primary-600 px-4 py-2 text-sm font-black text-white transition-colors hover:bg-primary-700 active:scale-[0.97] sm:text-base"
           >
             Berikutnya

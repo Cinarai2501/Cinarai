@@ -5,37 +5,42 @@ import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { IdentificationProvider, useIdentificationContext } from '../../stages/Identification/context/IdentificationContext';
 import StepAmati from '../../stages/Identification/components/StepAmati';
 import StepIdentifikasi from '../../stages/Identification/components/StepIdentifikasi';
-import StepKonfirmasi from '../../stages/Identification/components/StepKonfirmasi';
 
-const STEP_ORDER = ['OBSERVE', 'IDENTIFY', 'CONFIRM'] as const;
-
-/** Bridges IdentificationContext slides into LearningEngineContext slideNav. */
+/**
+ * Bridges IdentificationContext slides into LearningEngineContext slideNav.
+ *
+ * Flat slide layout:
+ *   0 → OBSERVE
+ *   1 → IDENTIFY (with inline feedback)
+ */
 function SlideNavBridge() {
-  const { currentStep, nextStep, previousStep, state, validationErrors } = useIdentificationContext();
+  const {
+    currentStep, nextStep, previousStep,
+    state,
+  } = useIdentificationContext();
   const { registerSlideNav, unregisterSlideNav } = useLearningEngine();
 
-  const slideIndex = STEP_ORDER.indexOf(currentStep);
-  const totalSlides = STEP_ORDER.length;
+  const slideIndex = currentStep === 'OBSERVE' ? 0 : 1;
+  const totalSlides = 2;
+
   const canGoNext =
     currentStep === 'OBSERVE'
       ? state.observe.note.trim().length > 0
-      : currentStep === 'IDENTIFY'
-        ? state.isComplete
-        : validationErrors.length === 0;
+      : state.isComplete;
 
-  const goNext = useCallback(() => nextStep(), [nextStep]);
-  const goPrev = useCallback(() => previousStep(), [previousStep]);
+  const canGoPrev = slideIndex > 0;
+
+  const goNext = useCallback(() => {
+    if (currentStep === 'OBSERVE') nextStep();
+  }, [currentStep, nextStep]);
+
+  const goPrev = useCallback(() => {
+    if (currentStep === 'IDENTIFY') previousStep();
+  }, [currentStep, previousStep]);
 
   useEffect(() => {
-    registerSlideNav({
-      slideIndex,
-      totalSlides,
-      canGoNext,
-      canGoPrev: slideIndex > 0,
-      goNext,
-      goPrev,
-    });
-  }, [slideIndex, totalSlides, canGoNext, goNext, goPrev, registerSlideNav]);
+    registerSlideNav({ slideIndex, totalSlides, canGoNext, canGoPrev, goNext, goPrev });
+  }, [slideIndex, totalSlides, canGoNext, canGoPrev, goNext, goPrev, registerSlideNav]);
 
   useEffect(() => () => unregisterSlideNav(), [unregisterSlideNav]);
 
@@ -45,7 +50,6 @@ function SlideNavBridge() {
 function StepRouter() {
   const { currentStep } = useIdentificationContext();
   if (currentStep === 'OBSERVE') return <StepAmati />;
-  if (currentStep === 'CONFIRM') return <StepKonfirmasi />;
   return <StepIdentifikasi />;
 }
 

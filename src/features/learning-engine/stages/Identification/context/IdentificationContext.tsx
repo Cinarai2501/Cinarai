@@ -52,6 +52,9 @@ export interface IdentificationContextValue
   validationErrors: string[];
   // Auto-save state per item
   autoSaveState: Record<string, AutoSaveMetadata>;
+  // Review pagination (CONFIRM step)
+  reviewIndex: number;
+  setReviewIndex: (index: number) => void;
 }
 
 const IdentificationContext = createContext<IdentificationContextValue | null>(null);
@@ -81,6 +84,7 @@ export function IdentificationProvider({
   const { nextStage } = useLearningEngine();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<IdentificationStep>('OBSERVE');
+  const [reviewIndex, setReviewIndex] = useState(0);
 
   const identification = useIdentification({ comicId, lokasi, cover, title, learningTargets });
   const { state, reset: resetIdentification, applyAnswers } = identification;
@@ -164,13 +168,13 @@ export function IdentificationProvider({
     onCompleteChange?.(state.isComplete);
   }, [state.isComplete, onCompleteChange]);
 
-  // Otomatis maju ke CONFIRM saat semua item selesai
+  // Reset reviewIndex when entering CONFIRM step
   useEffect(() => {
-    if (state.isComplete && currentStep === 'IDENTIFY') {
-      setCurrentStep('CONFIRM');
-    }
-  }, [state.isComplete, currentStep]);
+    if (currentStep === 'CONFIRM') setReviewIndex(0);
+  }, [currentStep]);
 
+  // Otomatis maju ke CONFIRM dihapus — feedback langsung di IDENTIFY
+  // (tidak perlu auto-advance ke CONFIRM lagi)
   const nextStep = useCallback(() => {
     setCurrentStep((prev) => {
       if (prev === 'OBSERVE') return 'IDENTIFY';
@@ -238,6 +242,8 @@ export function IdentificationProvider({
       advance,
       validationErrors,
       autoSaveState,
+      reviewIndex,
+      setReviewIndex,
       selectOption: (itemId: string, optionId: string) => {
         identification.selectOption(itemId, optionId);
         scheduleAutoSave(itemId);
@@ -251,7 +257,7 @@ export function IdentificationProvider({
         scheduleAutoSave(itemId);
       },
     }),
-    [identification, saveReasonWithPersist, lokasi, subtitle, kelas, cover, title, currentStep, nextStep, previousStep, reset, advance, validationErrors, autoSaveState, scheduleAutoSave]
+    [identification, saveReasonWithPersist, lokasi, subtitle, kelas, cover, title, currentStep, nextStep, previousStep, reset, advance, validationErrors, autoSaveState, scheduleAutoSave, reviewIndex, setReviewIndex]
   );
 
   return (

@@ -20,7 +20,7 @@ export default function IdentificationActivity() {
           <span className="text-2xl flex-shrink-0">🎉</span>
           <div>
             <p className="text-lg font-black text-white leading-tight">Hebat! Semua soal selesai!</p>
-            <p className="text-sm text-accent-100">Kamu berhasil di {lokasi}. Tekan Berikutnya!</p>
+            <p className="text-sm text-accent-100">Kamu berhasil di {lokasi}. Tekan Lanjut!</p>
           </div>
         </div>
       )}
