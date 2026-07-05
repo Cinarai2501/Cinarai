@@ -19,13 +19,6 @@ const BUTTON_LABELS = {
   WEBSITE: 'Buka Link',
 } as const;
 
-const ASSET_TITLES = {
-  MODEL_3D: 'Model 3D',
-  VIDEO: 'Video',
-  QUIZ: 'Kuis',
-  WEBSITE: 'Website',
-} as const;
-
 // ── Core ──────────────────────────────────────────────────────────────────────
 
 function toEntry(qr: ClassifiedQr): ComicAssetEntry | null {
@@ -44,7 +37,7 @@ function toEntry(qr: ClassifiedQr): ComicAssetEntry | null {
 
   return {
     page: qr.page,
-    title: ASSET_TITLES[qr.category],
+    title: qr.title?.trim() || 'Model 3D',
     buttonLabel: BUTTON_LABELS[qr.category],
     provider,
     url: qr.value,

@@ -80,11 +80,14 @@ function AccordionItem({ icon, label, count, defaultOpen = false, children }: Ac
 function AssetRow({ entry, onOpen }: { entry: ComicAssetEntry; onOpen?: (entry: ComicAssetEntry) => void }) {
   const hasValidUrl = isValidUrl(entry.url);
   const canOpen = Boolean(onOpen) && hasValidUrl;
+  const title = entry.title?.trim() || 'Model 3D';
 
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-4">
-      {/* text-base = 16px minimum */}
-      <span className="text-base font-semibold text-neutral-500">Halaman {entry.page}</span>
+      <div className="min-w-0">
+        <p className="text-base font-black text-neutral-900">{title}</p>
+        <p className="text-sm text-neutral-500">Halaman {entry.page}</p>
+      </div>
       <button
         type="button"
         onClick={() => {
