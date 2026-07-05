@@ -150,71 +150,34 @@ export default function PdfViewer({
                            so containerRef measures the full available width
       */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-[#f5f7fa] py-3"
+        ref={containerRef}
+        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-[#f5f7fa] px-1 py-3 sm:px-2 md:px-3"
         style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/*
-          ── Constraint div (containerRef) ──────────────────────────────────────
-          This is the element usePdfSize observes.
-
-          Rules this element MUST follow:
-            • no border          → contentRect.width == available width
-            • no horizontal padding → same reason
-            • overflow: hidden   → hard clip that prevents react-pdf's
-                                   `minWidth: min-content` from inflating
-                                   this element's measured width
-            • w-full             → fills the scroll container
-            • px-3 sm:px-4       → visual margin for the card inside;
-                                   these are on the INNER card, not here
-
-          Because overflow:hidden clips at this boundary, getBoundingClientRect()
-          and contentRect.width always return the true available width regardless
-          of what the Page div's minWidth:min-content tries to do.
-        */}
-        <div
-          ref={containerRef}
-          className="w-full overflow-hidden"
-        >
-          {/*
-            ── Visual card ────────────────────────────────────────────────────
-            border, rounded, shadow are purely decorative.
-            mx-3 / sm:mx-4 creates the horizontal margin inside the constraint.
-            The card's content-box = containerWidth - 2*margin - 2*border.
-            <Page> receives containerWidth (the full constraint width), which
-            is slightly wider than the card's content-box — but because the
-            constraint div has overflow:hidden, the canvas is clipped exactly
-            at containerWidth. The 6px of card border+margin on each side
-            means the canvas is visually inset, which is the desired look.
-
-            If pixel-perfect fit inside the card is required, pass
-            (containerWidth - cardHorizontalInset) to <Page>. But since
-            containerRef has overflow:hidden, there is zero crop regardless.
-          */}
-          <div className="mx-3 my-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-4">
-            <Document
-              key={`pdf-${retryCount}`}
-              file={pdfPath}
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading={<PdfLoading />}
-              error={<PdfError onRetry={handleRetry} />}
-            >
-              {/*
-                key={`${page}-${containerWidth}`} forces react-pdf to fully
-                unmount and remount <Page> whenever the page number or the
-                available width changes. This prevents stale canvas renders
-                from a previous width being visible during the transition.
-              */}
-              <PdfPage
-                key={`${page}-${containerWidth}`}
-                pageNumber={page}
-                width={containerWidth}
-                loading={containerWidth > 0 ? <PdfLoading variant="skeleton" /> : null}
-              />
-            </Document>
-          </div>
+        <div className="mx-auto flex w-full max-w-full flex-col items-center">
+          <Document
+            key={`pdf-${retryCount}`}
+            file={pdfPath}
+            onLoadSuccess={onDocumentLoadSuccess}
+            loading={<PdfLoading />}
+            error={<PdfError onRetry={handleRetry} />}
+          >
+            <div className="my-3 w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex justify-center overflow-hidden">
+                <div className="w-full max-w-full min-w-0 overflow-hidden">
+                  <PdfPage
+                    key={`${page}-${containerWidth}`}
+                    pageNumber={page}
+                    width={containerWidth}
+                    loading={containerWidth > 0 ? <PdfLoading variant="skeleton" /> : null}
+                  />
+                </div>
+              </div>
+            </div>
+          </Document>
         </div>
       </div>
 
