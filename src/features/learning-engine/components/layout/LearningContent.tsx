@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
 const SWIPE_THRESHOLD = 48;
@@ -11,12 +11,23 @@ interface LearningContentProps {
 }
 
 export default function LearningContent({ children }: LearningContentProps) {
-  const { nextStage, previousStage, canAdvance, isSaving, stageIndex, slideNav } = useLearningEngine();
+  const { nextStage, previousStage, canAdvance, isSaving, stageIndex, slideNav, resetProgress, isFinished } = useLearningEngine();
   const mainRef = useRef<HTMLElement>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
-  useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
+  const handleReset = useCallback(async () => {
+    if (isResetting) return;
+    const confirmed = window.confirm(
+      'Ulang pembelajaran dari awal? Progress dan jawaban yang sudah disimpan akan dihapus.'
+    );
+    if (!confirmed) return;
+    setIsResetting(true);
+    try {
+      await resetProgress();
+    } finally {
+      setIsResetting(false);
+    }
+  }, [isResetting, resetProgress]);
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -51,14 +62,12 @@ export default function LearningContent({ children }: LearningContentProps) {
     const onFirstSlide = !hasSlides || slideNav.slideIndex === 0;
 
     if (dx < 0) {
-      // swipe left = next
       if (hasSlides && !onLastSlide) {
         slideNav.goNext();
       } else if (canAdvance && !isSaving) {
         void nextStage();
       }
     } else {
-      // swipe right = prev
       if (hasSlides && !onFirstSlide) {
         slideNav.goPrev();
       } else if (stageIndex > 0) {
@@ -75,13 +84,27 @@ export default function LearningContent({ children }: LearningContentProps) {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/*
-        Mobile/tablet : centered, max-w-2xl / max-w-3xl
-        Desktop       : still centered but capped at max-w-3xl so lines
-                        never stretch across a 1600px+ right column.
-      */}
       <div className="mx-auto w-full max-w-2xl px-3 pb-8 pt-3 animate-fade-in sm:px-4 md:max-w-3xl md:px-6 md:pb-10 md:pt-5 lg:px-8 lg:pb-12 lg:pt-6">
         {children}
+
+        {/* Reset — below stage content, only when not finished */}
+        {!isFinished && (
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => { void handleReset(); }}
+              disabled={isResetting}
+              className="flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-2xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-400 transition-colors hover:border-error-200 hover:bg-error-50 hover:text-error-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isResetting ? (
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500" />
+              ) : (
+                <span>↺</span>
+              )}
+              Ulang Pembelajaran
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

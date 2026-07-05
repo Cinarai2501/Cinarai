@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Stage } from '../../types';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
@@ -13,10 +13,7 @@ export default function LearningBottomNav() {
     nextStage,
     previousStage,
     slideNav,
-    resetProgress,
   } = useLearningEngine();
-
-  const [isResetting, setIsResetting] = useState(false);
 
   const isFirstStage = currentStage === Stage.Cover;
   const isLastLearningStage = currentStage === Stage.Introspection;
@@ -43,20 +40,6 @@ export default function LearningBottomNav() {
       void nextStage();
     }
   }, [hasSlides, onLastSlide, slideNav, nextStage]);
-
-  const handleReset = useCallback(async () => {
-    if (isResetting) return;
-    const confirmed = window.confirm(
-      'Ulang pembelajaran dari awal? Progress dan jawaban yang sudah disimpan akan dihapus.'
-    );
-    if (!confirmed) return;
-    setIsResetting(true);
-    try {
-      await resetProgress();
-    } finally {
-      setIsResetting(false);
-    }
-  }, [isResetting, resetProgress]);
 
   const prevDisabled = (isFirstStage && onFirstSlide) || isSaving;
   const nextDisabled = (!canAdvance && onLastSlide) || isSaving;
@@ -125,23 +108,6 @@ export default function LearningBottomNav() {
               </svg>
             </>
           )}
-        </button>
-      </div>
-
-      {/* Reset — secondary destructive action, below primary nav */}
-      <div className="mx-auto mt-2 w-full max-w-2xl md:max-w-3xl">
-        <button
-          type="button"
-          onClick={() => { void handleReset(); }}
-          disabled={isResetting}
-          className="flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-2xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-400 transition-colors hover:border-error-200 hover:bg-error-50 hover:text-error-600 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isResetting ? (
-            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-500" />
-          ) : (
-            <span>↺</span>
-          )}
-          Ulang Pembelajaran
         </button>
       </div>
     </nav>
