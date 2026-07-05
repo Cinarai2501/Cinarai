@@ -8,13 +8,7 @@ export function usePdfSize<T extends HTMLElement>() {
     const element = containerRef.current;
     if (!element) return;
 
-    // Use window.innerWidth as the source of truth so the measurement is
-    // never inflated by the canvas that lives inside this same container.
-    const style = window.getComputedStyle(element);
-    const paddingLeft = parseFloat(style.paddingLeft) || 0;
-    const paddingRight = parseFloat(style.paddingRight) || 0;
-    const width = window.innerWidth - paddingLeft - paddingRight;
-    setContainerWidth(Math.max(0, Math.floor(width)));
+    setContainerWidth(Math.max(0, Math.floor(element.clientWidth)));
   }, []);
 
   useEffect(() => {
