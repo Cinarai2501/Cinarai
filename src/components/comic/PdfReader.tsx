@@ -31,6 +31,7 @@ export default function PdfReader({
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [pageViewport, setPageViewport] = useState<{ width: number; height: number } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
@@ -84,6 +85,10 @@ export default function PdfReader({
     };
   }, [updateContainerWidth]);
 
+  useEffect(() => {
+    setPageViewport(null);
+  }, [page]);
+
   // ── Notify parent ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (numPages > 0) onPageChange?.(page, numPages);
@@ -132,6 +137,11 @@ export default function PdfReader({
     setPage(1);
   }, []);
 
+  const handlePageLoadSuccess = useCallback((pageProxy: { getViewport: (options: { scale: number }) => { width: number; height: number } }) => {
+    const viewport = pageProxy.getViewport({ scale: 1 });
+    setPageViewport({ width: viewport.width, height: viewport.height });
+  }, []);
+
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
   const progressPct = numPages > 0 ? Math.round((page / numPages) * 100) : 0;
@@ -139,7 +149,9 @@ export default function PdfReader({
   // Fit-width: PDF fills the available container width while staying centered and responsive.
   const availableWidth = Math.max(0, containerWidth - 8);
   const pageWidth = availableWidth > 0 ? Math.min(availableWidth, PDF_MAX_WIDTH) : undefined;
-  const pageHeight = pageWidth ? Math.round(pageWidth * 1.414) : undefined;
+  const pageHeight = pageWidth && pageViewport
+    ? Math.round((pageWidth / pageViewport.width) * pageViewport.height)
+    : undefined;
 
   if (!workerReady) {
     return (
@@ -201,7 +213,8 @@ export default function PdfReader({
                 pageNumber={page}
                 width={pageWidth}
                 height={pageHeight}
-                loading={pageWidth ? <PageSkeleton width={pageWidth} /> : null}
+                onLoadSuccess={handlePageLoadSuccess}
+                loading={pageWidth ? <PageSkeleton width={pageWidth} height={pageHeight} /> : null}
                 renderAnnotationLayer={false}
                 renderTextLayer={false}
               />
@@ -257,11 +270,11 @@ function PdfLoadingSpinner() {
   );
 }
 
-function PageSkeleton({ width }: { width: number }) {
+function PageSkeleton({ width, height }: { width: number; height?: number }) {
   return (
     <div
       className="bg-neutral-700 animate-pulse"
-      style={{ width, height: Math.round(width * 1.414) }}
+      style={{ width, height: height ?? Math.round(width * 1.414) }}
     />
   );
 }
