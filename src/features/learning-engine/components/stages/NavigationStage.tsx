@@ -3,7 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
+import { useSnackbar } from '@/context/SnackbarContext';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
+
+function isValidUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function openAssetUrl(url: string): void {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 // ── Accordion ──────────────────────────────────────────────────────────────────
 
@@ -56,21 +71,33 @@ function AccordionItem({ icon, label, count, defaultOpen = false, children }: Ac
 
 // ── Asset row ──────────────────────────────────────────────────────────────────
 
-function AssetRow({ entry }: { entry: ComicAssetEntry }) {
+function AssetRow({ entry, onOpen }: { entry: ComicAssetEntry; onOpen?: (url: string | null | undefined) => void }) {
+  const hasValidUrl = isValidUrl(entry.url);
+  const canOpen = Boolean(onOpen) && hasValidUrl;
+
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-4">
       {/* text-base = 16px minimum */}
       <span className="text-base font-semibold text-neutral-500">Halaman {entry.page}</span>
       <button
         type="button"
-        disabled
-        className="flex min-h-[48px] w-full min-w-0 items-center justify-center rounded-2xl border border-primary-200 bg-primary-50 px-4 text-base font-semibold text-primary-700 touch-manipulation disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={() => {
+          if (canOpen) onOpen?.(entry.url);
+        }}
+        disabled={!canOpen}
+        className={`flex min-h-[48px] w-full min-w-0 items-center justify-center rounded-2xl border px-4 text-base font-semibold touch-manipulation transition ${
+          canOpen
+            ? 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100'
+            : 'border-primary-200 bg-primary-50 text-primary-700 disabled:opacity-60'
+        }`}
       >
         {entry.buttonLabel}
       </button>
-      <span className="inline-flex w-fit rounded-full bg-warning-100 px-3 py-1 text-base font-bold text-warning-700">
-        Segera Hadir
-      </span>
+      {!canOpen && (
+        <span className="inline-flex w-fit rounded-full bg-warning-100 px-3 py-1 text-base font-bold text-warning-700">
+          Segera Hadir
+        </span>
+      )}
     </div>
   );
 }
@@ -79,6 +106,7 @@ function AssetRow({ entry }: { entry: ComicAssetEntry }) {
 
 export default function NavigationStage() {
   const { comic, setCanAdvance } = useLearningEngine();
+  const { showSnackbar } = useSnackbar();
   const metadata = useComicMetadata(comic.id);
   const { model3D, video, quiz, website } = metadata.assets;
   const isEmpty = model3D.length === 0 && video.length === 0 && quiz.length === 0 && website.length === 0;
@@ -86,6 +114,15 @@ export default function NavigationStage() {
   useEffect(() => {
     setCanAdvance(true);
   }, [setCanAdvance]);
+
+  function handleOpenUrl(url: string | null | undefined) {
+    if (!isValidUrl(url ?? '')) {
+      showSnackbar('Model 3D belum tersedia.', 'info');
+      return;
+    }
+
+    openAssetUrl(url);
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-3 overflow-x-hidden px-1 py-1 animate-fade-in-up sm:gap-4 sm:px-2">
@@ -109,7 +146,7 @@ export default function NavigationStage() {
         <AccordionItem icon="🧊" label="Model 3D" count={model3D.length} defaultOpen>
           <div className="flex flex-col gap-3">
             {model3D.map((entry) => (
-              <AssetRow key={`${entry.page}-${entry.url}`} entry={entry} />
+              <AssetRow key={`${entry.page}-${entry.url}`} entry={entry} onOpen={handleOpenUrl} />
             ))}
           </div>
         </AccordionItem>
