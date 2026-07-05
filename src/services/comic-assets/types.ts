@@ -119,6 +119,7 @@ export interface ClassifiedQr {
   image: string;
   category: QrCategory;
   title?: string;
+  qrUrl?: string;
 }
 
 // ── Comic metadata ────────────────────────────────────────────────────────────
