@@ -11,8 +11,8 @@ export default function StepKonfirmasi() {
     <div className="flex flex-col gap-4 animate-fade-in-up">
 
       <div className="px-1">
-        <h2 className="text-xl font-black text-neutral-900">✅ Periksa Jawabanmu</h2>
-        <p className="text-sm text-neutral-500 mt-0.5">Pastikan semua jawaban sudah benar sebelum lanjut.</p>
+        <h2 className="text-lg font-black text-neutral-900 sm:text-xl">✅ Periksa Jawabanmu</h2>
+        <p className="mt-0.5 text-sm text-neutral-500">Pastikan semua jawaban sudah benar sebelum lanjut.</p>
       </div>
 
       <ul className="flex flex-col gap-3">
@@ -41,7 +41,7 @@ export default function StepKonfirmasi() {
         type="button"
         onClick={advance}
         disabled={!canAdvance}
-        className="flex w-full items-center justify-center gap-2 min-h-[56px] rounded-xl bg-primary-600 px-5 py-3 text-lg font-black text-white shadow-sm hover:bg-primary-700 transition-all active:scale-[0.97] disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed"
+        className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-[20px] bg-primary-600 px-5 py-3 text-base font-black text-white shadow-sm transition-all hover:bg-primary-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 sm:text-lg"
       >
         {canAdvance ? (
           <>
@@ -59,14 +59,14 @@ export default function StepKonfirmasi() {
         <button
           type="button"
           onClick={reset}
-          className="flex flex-1 items-center justify-center gap-2 min-h-[48px] rounded-xl border-2 border-warning-300 bg-warning-50 px-4 py-2 text-base font-black text-warning-700 hover:bg-warning-100 transition-colors active:scale-[0.97]"
+          className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[20px] border-2 border-warning-300 bg-warning-50 px-4 py-2 text-sm font-black text-warning-700 transition-colors hover:bg-warning-100 active:scale-[0.97] sm:text-base"
         >
           ✏️ Ubah Jawaban
         </button>
         <button
           type="button"
           onClick={previousStep}
-          className="flex flex-1 items-center justify-center gap-2 min-h-[48px] rounded-xl border-2 border-neutral-200 bg-white px-4 py-2 text-base font-black text-neutral-600 hover:bg-neutral-50 transition-colors active:scale-[0.97]"
+          className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[20px] border-2 border-neutral-200 bg-white px-4 py-2 text-sm font-black text-neutral-600 transition-colors hover:bg-neutral-50 active:scale-[0.97] sm:text-base"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />

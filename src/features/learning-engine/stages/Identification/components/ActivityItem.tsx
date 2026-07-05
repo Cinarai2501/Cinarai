@@ -18,7 +18,7 @@ export default function ActivityItem({ item }: ActivityItemProps) {
 
   return (
     <li className={[
-      'flex flex-col gap-3 rounded-2xl border-2 p-4 transition-all',
+      'flex flex-col gap-3 rounded-[24px] border-2 p-3 shadow-sm transition-all sm:p-4',
       isReasonSaved
         ? 'border-accent-300 bg-accent-50'
         : 'border-neutral-200 bg-white',
@@ -32,7 +32,7 @@ export default function ActivityItem({ item }: ActivityItemProps) {
         ].join(' ')}>
           {isReasonSaved ? '✓' : item.targetIndex + 1}
         </span>
-        <p className="text-lg font-black text-neutral-800 leading-snug flex-1 pt-0.5">
+        <p className="flex-1 pt-0.5 text-sm font-black leading-snug text-neutral-800 sm:text-base">
           {item.question}
         </p>
       </div>

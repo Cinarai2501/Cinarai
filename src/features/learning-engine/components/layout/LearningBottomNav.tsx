@@ -23,22 +23,22 @@ export default function LearningBottomNav() {
   return (
     <nav
       aria-label="Navigasi stage"
-      className="flex-shrink-0 bg-white border-t border-neutral-200 px-3 pt-2.5 md:px-6 lg:px-8"
+      className="flex-shrink-0 border-t border-neutral-200 bg-white px-4 pt-3 md:px-6 lg:px-8"
       style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}
     >
       {showValidationMessage && (
-        <p className="text-center text-sm md:text-base text-warning-700 font-bold bg-warning-50 border border-warning-200 rounded-xl px-3 py-2.5 mb-2 mx-auto w-full max-w-2xl md:max-w-3xl">
+        <p className="mx-auto mb-3 w-full max-w-2xl rounded-2xl border border-warning-200 bg-warning-50 px-4 py-3 text-center text-sm font-semibold text-warning-700 md:max-w-3xl md:text-base">
           ⚠️ Selesaikan semua bagian terlebih dahulu
         </p>
       )}
 
-      <div className="flex items-center gap-2 mx-auto w-full max-w-2xl md:max-w-3xl">
+      <div className="mx-auto flex w-full max-w-2xl items-center gap-3 md:max-w-3xl">
         {/* Previous */}
         <button
           onClick={previousStage}
           disabled={isFirst || isSaving}
           aria-label="Stage sebelumnya"
-          className="flex items-center justify-center gap-1.5 h-11 md:h-12 rounded-xl border border-neutral-200 bg-white px-3 md:px-5 text-sm md:text-base font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
+          className="flex h-11 min-w-[112px] items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 md:h-12 md:min-w-[132px] md:text-base"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -51,7 +51,7 @@ export default function LearningBottomNav() {
           onClick={() => { void nextStage(); }}
           disabled={nextDisabled}
           aria-label={isLastLearningStage ? 'Selesaikan pembelajaran' : 'Stage berikutnya'}
-          className="flex flex-1 items-center justify-center gap-1.5 h-11 md:h-12 rounded-xl bg-primary-600 px-4 md:px-6 text-sm md:text-base font-black text-white shadow-sm hover:bg-primary-700 disabled:bg-neutral-300 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
+          className="flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 text-sm font-black text-white shadow-sm transition-all hover:bg-primary-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-neutral-300 md:h-12 md:text-base"
         >
           {isSaving ? (
             <>

@@ -25,7 +25,7 @@ export default function CoverStage() {
 
         {/* Cover image */}
         <div className="-mx-3 sm:mx-0 lg:mx-0">
-          <div className="relative w-full aspect-[3/4] sm:rounded-2xl overflow-hidden shadow-sm bg-neutral-200">
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-sm sm:rounded-[24px]">
             <Image
               src={comic.cover}
               alt={`Cover ${comic.title}`}
@@ -41,8 +41,8 @@ export default function CoverStage() {
         <div className="flex flex-col gap-4 mt-4 lg:mt-0">
 
           {/* Judul & meta */}
-          <div className="rounded-2xl bg-white shadow-sm px-5 py-5">
-            <div className="flex flex-wrap gap-2 mb-3">
+          <div className="rounded-[24px] bg-white px-4 py-4 shadow-sm sm:px-5 sm:py-5">
+            <div className="mb-3 flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-100 px-3 py-1.5 text-sm font-bold text-primary-700">
                 📍 {comic.lokasi}
               </span>
@@ -53,22 +53,22 @@ export default function CoverStage() {
                 ⏱ {estimasiLabel}
               </span>
             </div>
-            <h2 className="text-lg md:text-2xl lg:text-2xl font-black text-neutral-950 leading-snug">{comic.title}</h2>
-            <p className="mt-2 text-base md:text-lg text-neutral-500 leading-relaxed">{comic.subtitle}</p>
+            <h2 className="text-lg font-black leading-snug text-neutral-950 md:text-2xl">{comic.title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-500 md:text-base">{comic.subtitle}</p>
           </div>
 
           {/* Target Pembelajaran */}
-          <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-100">
-              <h3 className="text-xl font-black text-neutral-700">🎯 Yang Akan Kamu Pelajari</h3>
+          <div className="overflow-hidden rounded-[24px] bg-white shadow-sm">
+            <div className="border-b border-neutral-100 px-4 py-4 sm:px-5">
+              <h3 className="text-base font-black text-neutral-700 md:text-lg">🎯 Yang Akan Kamu Pelajari</h3>
             </div>
-            <ul className="px-4 py-4 flex flex-col gap-3">
+            <ul className="flex flex-col gap-3 px-4 py-4 sm:px-5">
               {comic.learningTargets.map((target, i) => (
-                <li key={i} className="flex items-start gap-4 rounded-2xl bg-primary-50 p-4">
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-base font-black text-white mt-0.5">
+                <li key={i} className="flex items-start gap-3 rounded-2xl bg-primary-50 p-3 sm:gap-4 sm:p-4">
+                  <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-black text-white sm:h-9 sm:w-9 sm:text-base">
                     {i + 1}
                   </span>
-                  <p className="text-base md:text-lg text-neutral-700 leading-relaxed pt-1">{target}</p>
+                  <p className="pt-1 text-sm leading-relaxed text-neutral-700 sm:text-base">{target}</p>
                 </li>
               ))}
             </ul>

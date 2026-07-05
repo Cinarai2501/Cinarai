@@ -24,17 +24,17 @@ export default function LearningStageNav() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-5 py-5 border-b border-neutral-100">
-        <p className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-1">
+      <div className="border-b border-neutral-100 px-4 py-4 md:px-5 md:py-5">
+        <p className="mb-2 text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">
           Tahapan
         </p>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-black text-neutral-700">
+          <span className="text-sm font-black text-neutral-700 md:text-base">
             {Math.round(progress.percentage)}% selesai
           </span>
         </div>
         {/* Mini progress bar */}
-        <div className="mt-2 h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
           <div
             className="h-1.5 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700"
             style={{ width: `${progress.percentage}%` }}
@@ -43,7 +43,7 @@ export default function LearningStageNav() {
       </div>
 
       {/* Stage list */}
-      <nav className="flex-1 px-3 py-3 flex flex-col gap-1" aria-label="Daftar tahapan">
+      <nav className="flex-1 px-3 py-3 flex flex-col gap-2" aria-label="Daftar tahapan">
         {VISIBLE_STAGES.map((stage, i) => {
           const meta = STAGE_META[stage];
           const isCurrent = stage === currentStage;
@@ -53,7 +53,7 @@ export default function LearningStageNav() {
             <div
               key={stage}
               className={[
-                'flex items-center gap-3 rounded-xl px-3 py-3 transition-colors',
+                'flex items-center gap-3 rounded-2xl px-3 py-3 transition-colors',
                 isCurrent
                   ? 'bg-primary-50 border border-primary-200'
                   : isDone
@@ -81,7 +81,7 @@ export default function LearningStageNav() {
                   {meta.emoji} {meta.label}
                 </p>
                 {isCurrent && (
-                  <p className="text-xs text-primary-500 mt-0.5">Sedang berlangsung</p>
+                  <p className="mt-0.5 text-xs text-primary-500">Sedang berlangsung</p>
                 )}
               </div>
             </div>
@@ -90,8 +90,8 @@ export default function LearningStageNav() {
       </nav>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-neutral-100">
-        <p className="text-xs text-neutral-400 leading-relaxed text-center">
+      <div className="border-t border-neutral-100 px-4 py-4 md:px-5">
+        <p className="text-center text-xs leading-relaxed text-neutral-400 md:text-sm">
           Selesaikan setiap tahap untuk membuka tahap berikutnya.
         </p>
       </div>

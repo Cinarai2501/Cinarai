@@ -23,7 +23,7 @@ export default function ReasonArea({
       </label>
 
       {isSaved ? (
-        <p className="text-sm text-neutral-600 bg-accent-50 border border-accent-200 rounded-xl px-3 py-2">
+        <p className="rounded-2xl border border-accent-200 bg-accent-50 px-3 py-2 text-sm text-neutral-600">
           {value}
         </p>
       ) : (
@@ -35,7 +35,7 @@ export default function ReasonArea({
           }}
           placeholder="Tulis alasanmu di sini…"
           rows={3}
-          className="w-full resize-none rounded-xl border-2 border-primary-200 bg-white px-3 py-2 text-base text-neutral-800 placeholder:text-neutral-400 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-colors"
+          className="w-full resize-none rounded-2xl border-2 border-primary-200 bg-white px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:text-base"
         />
       )}
     </div>
