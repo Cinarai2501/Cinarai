@@ -1,5 +1,5 @@
 import { AiRouter } from './router';
-import type { AiRequestPayload } from './provider';
+import type { AiProvider, AiRequestPayload } from './provider';
 
 export interface TutorContext {
   moduleName: string;
@@ -63,7 +63,10 @@ export function buildTutorPrompt(context: TutorContext): string {
   ].join('\n');
 }
 
-export async function generateTutorResponse(context: TutorContext): Promise<TutorResponse> {
+export async function generateTutorResponse(
+  context: TutorContext,
+  providerOverride?: Pick<AiProvider, 'generate'>,
+): Promise<TutorResponse> {
   const router = AiRouter.createDefault();
   const payload: AiRequestPayload = {
     prompt: buildTutorPrompt(context),
@@ -72,9 +75,11 @@ export async function generateTutorResponse(context: TutorContext): Promise<Tuto
     maxTokens: 220,
   };
 
-  const response = await router.generate(payload);
+  const response = await (providerOverride ? providerOverride.generate(payload) : router.generate(payload));
+  const normalizedAnswer = typeof response?.content === 'string' ? response.content.trim() : '';
+
   return {
-    answer: response.content || 'Saya belum bisa memberikan respons saat ini. Coba lagi sebentar lagi.',
+    answer: normalizedAnswer || 'Maaf, saya sedang tidak bisa merespons saat ini. Coba lagi sebentar lagi.',
     provider: response.provider,
   };
 }

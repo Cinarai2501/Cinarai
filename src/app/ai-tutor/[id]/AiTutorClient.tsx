@@ -42,6 +42,7 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isResponding, setIsResponding] = useState(false);
   const [sessionMemory, setSessionMemory] = useState<TutorSessionMemory | null>(null);
+  const [hasLoadedContext, setHasLoadedContext] = useState(false);
 
   const isObservationComplete = useMemo(() => {
     const answers = reflection?.jawaban;
@@ -69,6 +70,7 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
 
         setComic(comicData);
         setReflection(reflectionData as ReflectionDocument | null);
+        setHasLoadedContext(true);
 
         if (user?.uid) {
           const answers = await queryFirestoreCollection('identification_answers', {
@@ -87,6 +89,9 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
         }
       } catch (error) {
         console.error('[AiTutor] gagal memuat konteks Firestore', error);
+        if (isMounted) {
+          setHasLoadedContext(true);
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -179,6 +184,20 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
       setIsResponding(false);
     }
   };
+
+  if (isLoading || !hasLoadedContext) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-neutral-50 px-4 py-6 text-center sm:px-6">
+        <span className="text-5xl">⏳</span>
+        <div>
+          <p className="text-base font-black text-neutral-800">Memuat konteks AI Tutor…</p>
+          <p className="mt-1 text-sm text-neutral-500 leading-relaxed">
+            Sedang mengambil data modul, observasi, dan identifikasi dari Firestore.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!comic) {
     return (

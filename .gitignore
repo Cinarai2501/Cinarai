@@ -39,3 +39,5 @@ pnpm-debug.log*
 # Firebase
 .firebaserc
 firebase-debug.log
+
+.env.local
