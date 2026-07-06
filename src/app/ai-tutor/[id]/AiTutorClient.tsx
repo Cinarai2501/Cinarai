@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getFirestoreDocument, queryFirestoreCollection } from '@/services/firestore';
 import { fetchComicById } from '@/services/comicFirestoreService';
+import { generateTutorResponse } from '@/lib/ai';
 import type { Comic } from '@/types/comic';
 import type { IdentificationAnswerDocument, ReflectionDocument } from '@/types/firestore';
 
@@ -16,6 +17,11 @@ interface ChatMessage {
   id: number;
   role: 'assistant' | 'user';
   content: string;
+}
+
+interface TutorSessionMemory {
+  moduleId: number;
+  messages: ChatMessage[];
 }
 
 const starterMessages: ChatMessage[] = [
@@ -34,6 +40,8 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(starterMessages);
   const [draft, setDraft] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isResponding, setIsResponding] = useState(false);
+  const [sessionMemory, setSessionMemory] = useState<TutorSessionMemory | null>(null);
 
   const isObservationComplete = useMemo(() => {
     const answers = reflection?.jawaban;
@@ -93,6 +101,22 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
     };
   }, [comicId, user?.uid]);
 
+  useEffect(() => {
+    if (!comic) {
+      setSessionMemory(null);
+      setMessages(starterMessages);
+      return;
+    }
+
+    const existingSession = sessionMemory?.moduleId === comicId ? sessionMemory : null;
+    if (existingSession) {
+      setMessages(existingSession.messages);
+    } else {
+      setSessionMemory({ moduleId: comicId, messages: starterMessages });
+      setMessages(starterMessages);
+    }
+  }, [comic, comicId, sessionMemory]);
+
   const summaryItems = useMemo(
     () => [
       { label: 'Nama Modul', value: comic?.title ?? 'Memuat...' },
@@ -102,22 +126,58 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
     [comic, identificationAnswers.length, isObservationComplete],
   );
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = draft.trim();
-    if (!trimmed) return;
+    if (!trimmed || !isObservationComplete || isResponding || !comic) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { id: prev.length + 1, role: 'user', content: trimmed },
-      {
-        id: prev.length + 2,
-        role: 'assistant',
-        content: isObservationComplete
-          ? 'AI belum dihubungkan. Saya hanya menampilkan konteks belajar yang sudah tersimpan dari observasi dan identifikasi kamu.'
-          : 'Selesaikan observasi terlebih dahulu agar konteks belajar bisa ditampilkan dengan lengkap.',
-      },
-    ]);
+    const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+    setSessionMemory({ moduleId: comicId, messages: nextMessages });
     setDraft('');
+    setIsResponding(true);
+
+    try {
+      const response = await generateTutorResponse({
+        moduleName: comic.title,
+        identification: identificationAnswers.map((answer) => ({
+          step: answer.step,
+          selectedAnswer: answer.selectedAnswer,
+          note: answer.note,
+          reason: answer.reason,
+        })),
+        objectInfo: {
+          location: comic.lokasi,
+          classLevel: comic.kelas,
+          synopsis: comic.synopsis,
+          learningTargets: comic.learningTargets,
+        },
+        observationAnswers: reflection?.jawaban ?? {},
+        question: trimmed,
+        sessionHistory: nextMessages.map(({ role, content }) => ({ role, content })),
+      });
+
+      const assistantMessage: ChatMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: response.answer,
+      };
+      const updatedMessages = [...nextMessages, assistantMessage];
+      setMessages(updatedMessages);
+      setSessionMemory({ moduleId: comicId, messages: updatedMessages });
+    } catch (error) {
+      console.error('[AiTutor] gagal memanggil AI service', error);
+      const fallbackMessage: ChatMessage = {
+        id: Date.now() + 2,
+        role: 'assistant',
+        content: 'Maaf, saya sedang tidak bisa merespons saat ini. Coba lagi sebentar lagi.',
+      };
+      const updatedMessages = [...nextMessages, fallbackMessage];
+      setMessages(updatedMessages);
+      setSessionMemory({ moduleId: comicId, messages: updatedMessages });
+    } finally {
+      setIsResponding(false);
+    }
   };
 
   if (!comic) {
@@ -288,16 +348,16 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
                     onChange={(event) => setDraft(event.target.value)}
                     rows={3}
                     placeholder={isObservationComplete ? 'Tuliskan pertanyaanmu...' : 'Selesaikan observasi terlebih dahulu'}
-                    disabled={!isObservationComplete || isLoading || authLoading}
+                    disabled={!isObservationComplete || isLoading || authLoading || isResponding}
                     className="min-h-[96px] flex-1 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={!isObservationComplete || isLoading || authLoading}
+                    disabled={!isObservationComplete || isLoading || authLoading || isResponding}
                     className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
                   >
-                    Kirim
+                    {isResponding ? 'Memproses...' : 'Kirim'}
                   </button>
                 </div>
               </div>
