@@ -13,7 +13,11 @@ import {
   type UserCredential,
   type Unsubscribe,
 } from 'firebase/auth';
-import { auth } from './client';
+import { getFirebaseAuth } from './client';
+
+const getAuthInstance = () => {
+  return getFirebaseAuth();
+};
 
 /**
  * Sign up user with email and password
@@ -23,7 +27,7 @@ export const signUp = async (
   password: string
 ): Promise<UserCredential> => {
   try {
-    return await createUserWithEmailAndPassword(auth, email, password);
+    return await createUserWithEmailAndPassword(getAuthInstance(), email, password);
   } catch (error) {
     console.error('Sign up error:', error);
     throw error;
@@ -38,7 +42,7 @@ export const signIn = async (
   password: string
 ): Promise<UserCredential> => {
   try {
-    return await signInWithEmailAndPassword(auth, email, password);
+    return await signInWithEmailAndPassword(getAuthInstance(), email, password);
   } catch (error) {
     console.error('Sign in error:', error);
     throw error;
@@ -50,7 +54,7 @@ export const signIn = async (
  */
 export const logout = async (): Promise<void> => {
   try {
-    await signOut(auth);
+    await signOut(getAuthInstance());
   } catch (error) {
     console.error('Sign out error:', error);
     throw error;
@@ -78,7 +82,7 @@ export const updateUserProfile = async (
  */
 export const resetPassword = async (email: string): Promise<void> => {
   try {
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(getAuthInstance(), email);
   } catch (error) {
     console.error('Reset password error:', error);
     throw error;
@@ -91,7 +95,7 @@ export const resetPassword = async (email: string): Promise<void> => {
 export const signInWithGoogle = async (): Promise<UserCredential> => {
   try {
     const provider = new GoogleAuthProvider();
-    return await signInWithPopup(auth, provider);
+    return await signInWithPopup(getAuthInstance(), provider);
   } catch (error) {
     console.error('Google sign in error:', error);
     throw error;
@@ -104,14 +108,14 @@ export const signInWithGoogle = async (): Promise<UserCredential> => {
 export const subscribeToAuthChanges = (
   callback: (user: User | null) => void
 ): Unsubscribe => {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(getAuthInstance(), callback);
 };
 
 /**
  * Get current user
  */
 export const getCurrentUser = (): User | null => {
-  return auth.currentUser;
+  return getAuthInstance().currentUser;
 };
 
 /**
@@ -119,7 +123,7 @@ export const getCurrentUser = (): User | null => {
  */
 export const getUserToken = async (): Promise<string | null> => {
   try {
-    const user = auth.currentUser;
+    const user = getAuthInstance().currentUser;
     if (!user) return null;
     return await user.getIdToken();
   } catch (error) {

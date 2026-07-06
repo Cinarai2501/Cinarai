@@ -41,35 +41,63 @@ const validateConfig = (): boolean => {
 };
 
 // Initialize Firebase
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-let storage: FirebaseStorage;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let firestore: Firestore | undefined;
+let storage: FirebaseStorage | undefined;
 
-const initializeFirebase = (): void => {
+export const initializeFirebase = (): void => {
   if (typeof window === 'undefined') {
     return;
   }
 
   if (!validateConfig()) {
-    return;
+    console.warn('Firebase config is incomplete; initializing with the provided values anyway.');
   }
 
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    firestore = getFirestore(app);
-    storage = getStorage(app);
   } else {
     app = getApps()[0];
-    auth = getAuth(app);
-    firestore = getFirestore(app);
-    storage = getStorage(app);
   }
+
+  auth = getAuth(app);
+  firestore = getFirestore(app);
+  storage = getStorage(app);
 };
 
 // Initialize on module load
 initializeFirebase();
 
-export { app, auth, firestore, storage };
+export const getFirebaseAuth = (): Auth => {
+  initializeFirebase();
+
+  if (!auth) {
+    throw new Error('Firebase Auth is not available');
+  }
+
+  return auth;
+};
+
+export const getFirebaseFirestore = (): Firestore => {
+  initializeFirebase();
+
+  if (!firestore) {
+    throw new Error('Firebase Firestore is not available');
+  }
+
+  return firestore;
+};
+
+export const getFirebaseStorage = (): FirebaseStorage => {
+  initializeFirebase();
+
+  if (!storage) {
+    throw new Error('Firebase Storage is not available');
+  }
+
+  return storage;
+};
+
+export { app };
 export default firebaseConfig;
