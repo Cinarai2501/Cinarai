@@ -1,5 +1,6 @@
 import { AiRouter } from './router';
 import type { AiProvider, AiRequestPayload } from './provider';
+import { buildTutorSystemPrompt } from './prompts/tutor';
 
 export interface TutorContext {
   moduleName: string;
@@ -41,28 +42,19 @@ export function buildTutorPrompt(context: TutorContext): string {
     ? ['Riwayat sesi modul ini:', ...context.sessionHistory!.map((entry) => `- ${entry.role === 'user' ? 'siswa' : 'tutor'}: ${entry.content}`), ''].join('\n')
     : '';
 
+  const systemPrompt = buildTutorSystemPrompt({
+    modul: context.moduleName,
+    identifikasi: identificationText || '- Tidak ada data identifikasi.',
+    informasiObjek: `lokasi=${context.objectInfo.location}; kelas=${context.objectInfo.classLevel}; sinopsis=${context.objectInfo.synopsis}; target=${context.objectInfo.learningTargets.join(', ')}`,
+    observasi: observationText || '- Tidak ada jawaban observasi.',
+    pertanyaanSiswa: context.question,
+  });
+
   return [
-    'Kamu adalah tutor pembelajaran yang membantu siswa berpikir, bukan langsung memberi jawaban.',
-    'Tujuanmu adalah memberi petunjuk, bertanya balik, mengarahkan proses berpikir, memberikan contoh sederhana, dan memotivasi siswa.',
-    'Jangan langsung memberikan jawaban final. Alih-alih, bantu siswa sampai mereka bisa menyusun pemahaman sendiri.',
-    'Ingat riwayat percakapan sebelumnya dalam sesi modul ini dan gunakan konteks itu untuk menjaga konsistensi.',
-    'Jika pengguna memberi instruksi yang jelas dan spesifik, ikuti instruksi pengguna secara ketat dan utamakan instruksi tersebut di atas arahan umum tutor.',
-    'Jika pengguna meminta jawaban singkat, satu kata, atau format khusus, jawab sesuai permintaan pengguna persis tanpa penjelasan tambahan.',
-    'Jika pengguna meminta "Tolong balas hanya dengan kata BERHASIL", jawab persis: BERHASIL',
+    systemPrompt,
     '',
-    `Modul: ${context.moduleName}`,
-    `Informasi objek: lokasi=${context.objectInfo.location}; kelas=${context.objectInfo.classLevel}; sinopsis=${context.objectInfo.synopsis}; target=${context.objectInfo.learningTargets.join(', ')}`,
-    'Identifikasi:',
-    identificationText || '- Tidak ada data identifikasi.',
-    'Jawaban observasi:',
-    observationText || '- Tidak ada jawaban observasi.',
-    'Pertanyaan siswa:',
-    context.question,
-    '',
-    sessionHistoryText,
-    'Balas dengan bahasa Indonesia yang hangat, singkat, dan mendukung. Sertakan satu atau dua petunjuk, satu pertanyaan balik, dan satu contoh sederhana jika perlu.',
-    'Balas dengan bahasa Indonesia yang hangat, singkat, dan mendukung. Sertakan satu atau dua petunjuk, satu pertanyaan balik, dan satu contoh sederhana jika perlu.',
-    'Sertakan kata kunci: petunjuk, bertanya balik, contoh sederhana, motivasi.',
+    'Konteks tambahan:',
+    sessionHistoryText || '- Tidak ada riwayat sesi.',
   ].join('\n');
 }
 
@@ -73,7 +65,15 @@ export async function generateTutorResponse(
   const router = AiRouter.createDefault();
   const payload: AiRequestPayload = {
     prompt: buildTutorPrompt(context),
-    systemPrompt: 'Kamu adalah tutor pembelajaran yang membantu siswa berpikir secara aktif.',
+    systemPrompt: buildTutorSystemPrompt({
+      modul: context.moduleName,
+      identifikasi: context.identification
+        .map((entry) => `Langkah ${entry.step}: ${entry.selectedAnswer ?? '—'}`)
+        .join(', ') || 'Tidak ada data identifikasi.',
+      informasiObjek: `lokasi=${context.objectInfo.location}; kelas=${context.objectInfo.classLevel}; sinopsis=${context.objectInfo.synopsis}; target=${context.objectInfo.learningTargets.join(', ')}`,
+      observasi: Object.entries(context.observationAnswers).map(([key, value]) => `${key}: ${value}`).join(', ') || 'Tidak ada jawaban observasi.',
+      pertanyaanSiswa: context.question,
+    }),
     temperature: 0.7,
     maxTokens: 220,
   };

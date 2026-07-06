@@ -25,7 +25,7 @@ test('buildTutorPrompt includes learning context and coaching instructions', () 
   assert.match(prompt, /Bangun Ruang/i);
   assert.match(prompt, /identifikasi/i);
   assert.match(prompt, /petunjuk/i);
-  assert.match(prompt, /bertanya balik/i);
+  assert.match(prompt, /Socratic/i);
   assert.match(prompt, /contoh sederhana/i);
 });
 
