@@ -40,4 +40,8 @@ pnpm-debug.log*
 .firebaserc
 firebase-debug.log
 
+# Generated at build time — do not commit
+public/pdf.worker.min.mjs
+tsconfig.tsbuildinfo
+
 .env.local

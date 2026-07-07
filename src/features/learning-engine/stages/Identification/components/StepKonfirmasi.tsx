@@ -16,26 +16,28 @@ export default function StepKonfirmasi() {
   return (
     <div className="flex flex-col gap-4 animate-fade-in-up">
 
-      <div className="px-1">
+      <div className="px-3">
         <h2 className="text-lg font-black text-neutral-900 sm:text-xl">✅ Periksa Jawabanmu</h2>
-        <p className="mt-0.5 text-sm text-neutral-500">
+        <p className="mt-0.5 text-base text-neutral-500">
           Tinjau setiap jawaban sebelum melanjutkan.
         </p>
       </div>
 
       {/* Progress dots */}
-      <div className="flex items-center justify-center gap-1.5 px-1">
+      <div className="flex flex-wrap items-center justify-center gap-2 px-3">
         {items.map((_, i) => (
           <button
             key={i}
             type="button"
             onClick={() => setReviewIndex(i)}
             className={[
-              'h-2 rounded-full transition-all',
-              i === reviewIndex ? 'w-6 bg-primary-600' : 'w-2 bg-neutral-300',
+              'min-h-[44px] min-w-[44px] rounded-full border transition-all duration-200',
+              i === reviewIndex ? 'border-primary-600 bg-primary-600 text-white' : 'border-neutral-300 bg-white text-neutral-600 hover:border-primary-600',
             ].join(' ')}
             aria-label={`Soal ${i + 1}`}
-          />
+          >
+            {i + 1}
+          </button>
         ))}
       </div>
 
@@ -48,9 +50,9 @@ export default function StepKonfirmasi() {
 
       {/* Validation errors — only shown on last item */}
       {isLast && !canAdvance && (
-        <ul className="flex flex-col gap-1 px-1">
+        <ul className="flex flex-col gap-3 px-3">
           {validationErrors.map((err) => (
-            <li key={err} className="text-sm font-bold text-error-600">⚠️ {err}</li>
+            <li key={err} className="text-base font-bold text-error-600">⚠️ {err}</li>
           ))}
         </ul>
       )}

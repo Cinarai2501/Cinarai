@@ -50,7 +50,7 @@ export default function PdfViewer({
   }, [onComplete]);
 
   useEffect(() => {
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
     setWorkerReady(true);
   }, []);
 

@@ -45,8 +45,8 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
       renderingRef.current = true;
 
       try {
-        // Use the same worker URL pattern as PdfReader — version from react-pdf's bundled pdfjs
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        // Use local worker — copied to public/ by next.config.ts at build time
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
         const pdf = await pdfjs.getDocument(pdfPath).promise;
         const page = await pdf.getPage(1);

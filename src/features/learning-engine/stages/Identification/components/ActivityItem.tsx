@@ -33,7 +33,7 @@ export default function ActivityItem({ item }: ActivityItemProps) {
         ].join(' ')}>
           {isAnswered ? (isCorrect ? '✓' : '✗') : item.targetIndex + 1}
         </span>
-        <p className="flex-1 pt-0.5 text-sm font-black leading-snug text-neutral-800 sm:text-base">
+        <p className="flex-1 pt-0.5 text-base font-black leading-snug text-neutral-800">
           {item.question}
         </p>
       </div>
@@ -54,18 +54,18 @@ export default function ActivityItem({ item }: ActivityItemProps) {
           isCorrect ? 'border-accent-200 bg-white' : 'border-error-200 bg-white',
         ].join(' ')}>
           <span className={[
-            'text-sm font-black',
+            'text-base font-black',
             isCorrect ? 'text-accent-700' : 'text-error-700',
           ].join(' ')}>
             {isCorrect ? '✅ Benar!' : '❌ Kurang Tepat'}
           </span>
           {!isCorrect && correctOption && (
-            <p className="text-sm text-neutral-700">
+            <p className="text-base text-neutral-700">
               <span className="font-black">Jawaban yang benar: </span>
               <span className="font-bold text-accent-700">{correctOption.text}</span>
             </p>
           )}
-          <p className="text-sm leading-relaxed text-neutral-600">{item.explanation}</p>
+          <p className="text-base leading-relaxed text-neutral-600">{item.explanation}</p>
         </div>
       )}
     </li>

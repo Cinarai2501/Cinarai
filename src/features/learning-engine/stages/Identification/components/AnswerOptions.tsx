@@ -34,7 +34,7 @@ export default function AnswerOptions({
               disabled={isAnswered}
               onClick={() => onSelect(option.id)}
               className={[
-                'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all active:scale-[0.98]',
+                'flex min-h-[56px] w-full items-center gap-3 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98]',
                 isRight
                   ? 'bg-accent-50 border-2 border-accent-400 cursor-default'
                   : isWrong
@@ -59,7 +59,7 @@ export default function AnswerOptions({
                 {(isSelected || isRight) && <span className="h-2 w-2 rounded-full bg-white" />}
               </span>
               <span className={[
-                'flex-1 text-sm font-bold leading-snug sm:text-base',
+                'flex-1 text-base font-bold leading-snug',
                 isRight
                   ? 'text-accent-800'
                   : isWrong

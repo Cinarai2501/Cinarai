@@ -16,12 +16,12 @@ export default function StepKonfirmasiItem({ item, index, total }: StepKonfirmas
   return (
     <div className="flex flex-col gap-3">
       {/* Header */}
-      <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-black uppercase tracking-widest text-neutral-400">
+      <div className="flex flex-col gap-3 px-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-base font-black uppercase tracking-widest text-neutral-400">
           Soal {index + 1} dari {total}
         </span>
         <span className={[
-          'rounded-full px-3 py-0.5 text-sm font-black',
+          'rounded-full px-3 py-2 text-base font-black',
           isCorrect ? 'bg-accent-100 text-accent-700' : 'bg-error-100 text-error-700',
         ].join(' ')}>
           {isCorrect ? '✅ Benar' : '❌ Kurang Tepat'}
@@ -33,7 +33,7 @@ export default function StepKonfirmasiItem({ item, index, total }: StepKonfirmas
         'rounded-2xl border-2 p-4',
         isCorrect ? 'border-accent-200 bg-accent-50' : 'border-error-200 bg-error-50',
       ].join(' ')}>
-        <p className="text-sm font-black leading-snug text-neutral-800 sm:text-base">
+        <p className="text-base font-black leading-snug text-neutral-800">
           {item.question}
         </p>
       </div>
@@ -53,10 +53,10 @@ export default function StepKonfirmasiItem({ item, index, total }: StepKonfirmas
           />
         )}
         <div>
-          <span className="text-xs font-black uppercase tracking-widest text-neutral-400">
+          <span className="text-base font-black uppercase tracking-widest text-neutral-400">
             Penjelasan
           </span>
-          <p className="mt-0.5 text-sm leading-relaxed text-neutral-700">
+          <p className="mt-0.5 text-base leading-relaxed text-neutral-700">
             {item.explanation}
           </p>
         </div>
@@ -82,9 +82,9 @@ function Row({
         : 'text-neutral-700';
 
   return (
-    <div>
-      <span className="text-xs font-black uppercase tracking-widest text-neutral-400">{label}</span>
-      <p className={['text-sm leading-relaxed', valueClass].join(' ')}>{value}</p>
+    <div className="space-y-1">
+      <span className="text-base font-black uppercase tracking-widest text-neutral-400">{label}</span>
+      <p className={['text-base leading-relaxed', valueClass].join(' ')}>{value}</p>
     </div>
   );
 }

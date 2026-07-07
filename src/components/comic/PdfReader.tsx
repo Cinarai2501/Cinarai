@@ -1,7 +1,9 @@
 "use client";
 
-import PdfViewer from "@/components/pdf/PdfViewer";
+import dynamic from "next/dynamic";
 import type { ComicAsset } from "@/lib/comicAsset";
+
+const PdfViewer = dynamic(() => import("@/components/pdf/PdfViewer"), { ssr: false });
 
 interface PdfReaderProps {
   asset?: ComicAsset | null;

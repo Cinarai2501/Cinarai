@@ -2,27 +2,22 @@
 
 import { useIdentificationContext } from '../context/IdentificationContext';
 import IdentificationActivity from './IdentificationActivity';
+import IdentificationHeader from './IdentificationHeader';
+import IdentificationProgress from './IdentificationProgress';
 
 export default function StepIdentifikasi() {
   const { lokasi, state } = useIdentificationContext();
-  const { observedCount, items } = state;
+  const { observedCount, items, isComplete } = state;
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in-up">
-
-      {/* Progress ringkas */}
-      <div className="flex items-center justify-between px-1">
-        <p className="text-base font-bold text-neutral-500">
-          🧩 Identifikasi di <span className="text-primary-600">{lokasi}</span>
-        </p>
-        <span className="text-sm font-black text-primary-600">
-          {observedCount}/{items.length}
-        </span>
+      <IdentificationHeader />
+      <div className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+        <p className="text-base font-semibold uppercase tracking-[0.2em] text-neutral-400">Lokasi</p>
+        <p className="mt-2 text-xl font-black text-neutral-900">{lokasi}</p>
       </div>
-
-      {/* Daftar soal */}
+      <IdentificationProgress observedCount={observedCount} totalCount={items.length} isComplete={isComplete} />
       <IdentificationActivity />
-
     </div>
   );
 }

@@ -18,12 +18,12 @@ export default function ReasonArea({
 }: ReasonAreaProps) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={`reason-${itemId}`} className="text-sm font-black text-primary-700">
+      <label htmlFor={`reason-${itemId}`} className="text-base font-black text-primary-700">
         💬 Kenapa kamu memilih jawaban itu?
       </label>
 
       {isSaved ? (
-        <p className="rounded-2xl border border-accent-200 bg-accent-50 px-3 py-2 text-sm text-neutral-600">
+        <p className="rounded-2xl border border-accent-200 bg-accent-50 px-4 py-3 text-base text-neutral-600">
           {value}
         </p>
       ) : (
@@ -34,8 +34,8 @@ export default function ReasonArea({
             if (e.target.value.length <= MAX_CHARS) onChange(itemId, e.target.value);
           }}
           placeholder="Tulis alasanmu di sini…"
-          rows={3}
-          className="w-full resize-none rounded-2xl border-2 border-primary-200 bg-white px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:text-base"
+          rows={4}
+          className="w-full min-h-[150px] resize-none rounded-2xl border-2 border-primary-200 bg-white px-4 py-3 text-base text-neutral-800 placeholder:text-neutral-400 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
         />
       )}
     </div>
