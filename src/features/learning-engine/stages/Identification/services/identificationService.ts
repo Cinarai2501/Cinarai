@@ -24,13 +24,15 @@ function buildStoryQuestions(
   comicId: number,
   lokasi: string,
   learningTargets: readonly string[],
-  title: string
-): Array<{ question: string; options: string[]; correctIndex: number; explanation: string }> {
+  title: string,
+  cover: string,
+): Array<{ question: string; image: string; options: string[]; correctIndex: number; explanation: string }> {
   const conceptHints = learningTargets.slice(0, 4).join(' • ');
 
   const baseQuestions = [
     {
       question: `Di bagian mana tokoh menemukan bentuk yang paling dekat dengan kubus saat mengamati ${title} di ${lokasi}?`,
+      image: cover,
       options: [
         'Pada susunan batu bagian kaki bangunan',
         'Pada atap yang melengkung',
@@ -42,6 +44,7 @@ function buildStoryQuestions(
     },
     {
       question: `Tokoh menyebut bangun ruang apa ketika mengamati bagian penyangga utama dari ${title}?`,
+      image: cover,
       options: [
         'Balok',
         'Kerucut',
@@ -53,6 +56,7 @@ function buildStoryQuestions(
     },
     {
       question: `Bagian mana dari cerita yang membantu tokoh memahami bentuk prisma saat mengamati ${lokasi}?`,
+      image: cover,
       options: [
         'Bagian dinding yang tersusun berjejer',
         'Bagian langit-langit yang membentuk puncak',
@@ -64,6 +68,7 @@ function buildStoryQuestions(
     },
     {
       question: `Mengapa bagian yang diamati bisa disebut limas menurut tokoh dalam ${title}?`,
+      image: cover,
       options: [
         'Karena bentuknya bertumpu pada satu titik puncak',
         'Karena bentuknya selalu membulat',
@@ -75,6 +80,7 @@ function buildStoryQuestions(
     },
     {
       question: `Objek apa yang tokoh amati saat menemukan bentuk kerucut pada ${lokasi}?`,
+      image: cover,
       options: [
         'Bagian atap yang meruncing',
         'Bagian lantai yang rata',
@@ -86,6 +92,7 @@ function buildStoryQuestions(
     },
     {
       question: `Apa alasan tokoh menyebut bagian tersebut sebagai bangun ruang yang berbeda dari kubus?`,
+      image: cover,
       options: [
         'Karena sisi-sisinya tidak sama panjang dan bentuknya lebih panjang',
         'Karena warnanya lebih gelap',
@@ -97,6 +104,7 @@ function buildStoryQuestions(
     },
     {
       question: `Bangun ruang apa yang paling banyak membantu tokoh memahami bentuk arsitektur di ${title}?`,
+      image: cover,
       options: [
         'Balok',
         'Kerucut',
@@ -108,6 +116,7 @@ function buildStoryQuestions(
     },
     {
       question: `Saat membaca ulang cerita, informasi apa yang paling penting untuk menjawab soal tentang ${conceptHints}?`,
+      image: cover,
       options: [
         'Ciri bentuk dan bagian objek yang diamati',
         'Nama tokoh yang paling sering muncul',
@@ -166,7 +175,7 @@ export function createIdentificationState(
   cover: string,
   title: string,
 ): IdentificationState {
-  const questions = buildStoryQuestions(comicId, lokasi, learningTargets, title);
+  const questions = buildStoryQuestions(comicId, lokasi, learningTargets, title, cover);
   const items: IdentificationItem[] = questions.map((question, index) => {
     const id = `${comicId}-identification-${index}`;
     const options = buildOptions(id, question.options);
@@ -175,6 +184,7 @@ export function createIdentificationState(
       targetIndex: index,
       targetText: question.question,
       question: question.question,
+      image: question.image,
       options,
       correctOptionId: options[question.correctIndex]?.id ?? options[0].id,
       explanation: question.explanation,

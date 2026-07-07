@@ -17,13 +17,12 @@ export default function IdentificationQuestion({
   isChecked,
   onCheck,
 }: IdentificationQuestionProps) {
-  const { selectOption, cover } = useIdentificationContext();
+  const { selectOption } = useIdentificationContext();
 
   const hasSelection = item.selectedOptionId !== null;
   const isCorrect = item.selectedOptionId === item.correctOptionId;
   const selectedOption = item.options.find((option) => option.id === item.selectedOptionId) ?? null;
   const correctOption = item.options.find((option) => option.id === item.correctOptionId) ?? null;
-  const contextImage = cover || '/comics/komik-1/cover.png';
 
   return (
     <li className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-lg shadow-neutral-100 transition-all hover:-translate-y-0.5 sm:p-6">
@@ -31,12 +30,12 @@ export default function IdentificationQuestion({
         <div className="overflow-hidden rounded-[28px] border border-neutral-100 bg-neutral-50">
           <div className="relative aspect-[16/10] w-full bg-neutral-100">
             <Image
-              src={contextImage}
-              alt="Gambar konteks Candi Jawi"
+              src={item.image}
+              alt={`Gambar soal ${item.targetIndex + 1}`}
               fill
               className="object-cover"
               sizes="(max-width: 640px) 100vw, 640px"
-              priority
+              priority={item.targetIndex === 0}
             />
           </div>
         </div>

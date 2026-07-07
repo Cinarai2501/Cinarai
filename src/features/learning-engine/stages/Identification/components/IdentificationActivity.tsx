@@ -1,13 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Image from 'next/image';
 import { useIdentificationContext } from '../context/IdentificationContext';
 import IdentificationQuestion from './IdentificationQuestion';
 
 export default function IdentificationActivity() {
   const { state, lokasi } = useIdentificationContext();
-  const { items, observedCount, isComplete, cover } = state;
+  const { items, observedCount, isComplete } = state;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
@@ -26,19 +25,6 @@ export default function IdentificationActivity() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-100 shadow-sm">
-        <div className="relative aspect-[16/10] w-full bg-neutral-100">
-          <Image
-            src={cover || '/comics/komik-1/cover.png'}
-            alt="Gambar konteks Candi Jawi"
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, 640px"
-            priority
-          />
-        </div>
-      </div>
-
       <div className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

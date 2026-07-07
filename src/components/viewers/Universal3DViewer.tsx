@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { toDataURL } from 'qrcode';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
 
 interface Universal3DViewerProps {
@@ -80,7 +80,6 @@ export default function Universal3DViewer({
   initialComicId,
   initialPage,
 }: Universal3DViewerProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const resolvedUrl = initialUrl ?? searchParams.get('url') ?? '';
@@ -123,12 +122,9 @@ export default function Universal3DViewer({
   }, [qrSource]);
 
   const handleBack = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-      return;
+    if (typeof window !== 'undefined') {
+      window.close();
     }
-
-    router.push('/');
   };
 
   const handleOpenExternal = () => {
@@ -157,7 +153,7 @@ export default function Universal3DViewer({
             onClick={handleBack}
             className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-base font-semibold text-white"
           >
-            Kembali ke Navigasi
+            Tutup Viewer
           </button>
         </div>
       </div>
@@ -176,7 +172,7 @@ export default function Universal3DViewer({
             onClick={handleBack}
             className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-base font-semibold text-white"
           >
-            Kembali ke Navigasi
+            Tutup Viewer
           </button>
         </div>
       </div>
@@ -195,7 +191,7 @@ export default function Universal3DViewer({
             onClick={handleBack}
             className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-base font-semibold text-white"
           >
-            Kembali ke Navigasi
+            Tutup Viewer
           </button>
         </div>
       </div>
@@ -238,7 +234,7 @@ export default function Universal3DViewer({
               onClick={handleBack}
               className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700"
             >
-              Kembali ke Navigasi
+              Tutup Viewer
             </button>
           </div>
         </div>
@@ -315,7 +311,7 @@ export default function Universal3DViewer({
                   onClick={handleBack}
                   className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700"
                 >
-                  Kembali ke Navigasi
+                  Tutup Viewer
                 </button>
               </div>
             </div>
