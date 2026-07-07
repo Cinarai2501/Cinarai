@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { IdentificationProvider, useIdentificationContext } from '../../stages/Identification/context/IdentificationContext';
+import StepAmati from '../../stages/Identification/components/StepAmati';
 import StepIdentifikasi from '../../stages/Identification/components/StepIdentifikasi';
 
 /**
@@ -13,20 +14,29 @@ import StepIdentifikasi from '../../stages/Identification/components/StepIdentif
  *   1 → IDENTIFY (with inline feedback)
  */
 function SlideNavBridge() {
-  const { state } = useIdentificationContext();
+  const {
+    currentStep, nextStep, previousStep,
+    state,
+  } = useIdentificationContext();
   const { registerSlideNav, unregisterSlideNav } = useLearningEngine();
 
-  // Single-slide identification flow in the new blueprint.
-  const slideIndex = 0;
-  const totalSlides = 1;
+  const slideIndex = currentStep === 'OBSERVE' ? 0 : 1;
+  const totalSlides = 2;
 
-  const canGoNext = !!state.completed;
+  const canGoNext =
+    currentStep === 'OBSERVE'
+      ? state.observe.note.trim().length > 0
+      : state.isComplete;
 
-  const canGoPrev = false;
+  const canGoPrev = slideIndex > 0;
 
-  const goNext = useCallback(() => {}, []);
+  const goNext = useCallback(() => {
+    if (currentStep === 'OBSERVE') nextStep();
+  }, [currentStep, nextStep]);
 
-  const goPrev = useCallback(() => {}, []);
+  const goPrev = useCallback(() => {
+    if (currentStep === 'IDENTIFY') previousStep();
+  }, [currentStep, previousStep]);
 
   useEffect(() => {
     registerSlideNav({ slideIndex, totalSlides, canGoNext, canGoPrev, goNext, goPrev });
@@ -38,6 +48,8 @@ function SlideNavBridge() {
 }
 
 function StepRouter() {
+  const { currentStep } = useIdentificationContext();
+  if (currentStep === 'OBSERVE') return <StepAmati />;
   return <StepIdentifikasi />;
 }
 

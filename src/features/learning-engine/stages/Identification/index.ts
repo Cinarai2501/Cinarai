@@ -1,11 +1,62 @@
-export { default as IdentificationStage } from './IdentificationStage';
-export { default as CandiImage } from './CandiImage';
-export { default as ImageOverlay } from './ImageOverlay';
-export { default as HighlightOverlay } from './HighlightOverlay';
-export { default as FeedbackPanel } from './FeedbackPanel';
-export { default as SummaryPanel } from './SummaryPanel';
-export { default as ShapeGrid } from './ShapeGrid';
-export { default as ShapeCard } from './ShapeCard';
-export { default as CheckAnswerButton } from './CheckAnswerButton';
-export { useIdentification } from './useIdentification';
-// types are internal to the Identification module (no root shape export)
+// Layout utama
+export { default as IdentificationLayout } from './components/IdentificationLayout';
+
+// PoC overlay
+export { default as ShapeOverlay } from './components/ShapeOverlay';
+export type { ShapeOverlayProps } from './components/ShapeOverlay';
+
+// Step components
+export { default as StepAmati } from './components/StepAmati';
+export { default as StepIdentifikasi } from './components/StepIdentifikasi';
+export { default as StepKonfirmasi } from './components/StepKonfirmasi';
+
+// Step Konfirmasi sub-komponen
+export { default as StepKonfirmasiItem } from './components/StepKonfirmasiItem';
+
+// Identifikasi sub-komponen
+export { default as IdentificationProgress } from './components/IdentificationProgress';
+export { default as IdentificationActivity } from './components/IdentificationActivity';
+export { default as ActivityItem } from './components/ActivityItem';
+export { default as AnswerOptions } from './components/AnswerOptions';
+export { default as NoteArea } from './components/NoteArea';
+export { default as ReasonArea } from './components/ReasonArea';
+
+// Context
+export {
+  IdentificationProvider,
+  useIdentificationContext,
+} from './context';
+export type { IdentificationContextValue } from './context';
+
+// Hook
+export { useIdentification } from './hooks/useIdentification';
+
+// Services
+export {
+  createIdentificationState,
+  markItemObserved,
+  setObserveNote,
+  completeObserve,
+  selectAnswer,
+  updateNote,
+  saveAnswer,
+  updateReason,
+  saveReason,
+  resetIdentificationState,
+} from './services/identificationService';
+
+// Types
+export type {
+  IdentificationStep,
+  AnswerOption,
+  AnswerStatus,
+  ReasonStatus,
+  IdentificationItem,
+  IdentificationItemStatus,
+  IdentificationState,
+  ObserveState,
+  MarkObservedPayload,
+  SelectAnswerPayload,
+  UpdateNotePayload,
+  SaveAnswerPayload,
+} from './types';
