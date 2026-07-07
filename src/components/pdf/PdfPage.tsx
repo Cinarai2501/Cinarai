@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Page } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";

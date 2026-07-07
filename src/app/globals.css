@@ -105,6 +105,24 @@ a, button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── PoC overlay animations ────────────────────────────────────────────── */
+@keyframes pocOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.poc-overlay-enter {
+  animation: pocOverlayIn 0.3s ease-out both;
+}
+
+@keyframes pocFeedbackPop {
+  0%   { opacity: 0; transform: scale(0.95) translateY(4px); }
+  60%  { transform: scale(1.02) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.poc-feedback-pop {
+  animation: pocFeedbackPop 0.25s ease-out both;
+}
+
 /* ── PDF side-nav arrows (desktop) ────────────────────────────────────── */
 .fixed-side-btn {
   position: sticky;

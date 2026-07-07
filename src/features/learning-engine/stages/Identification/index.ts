@@ -1,6 +1,10 @@
 // Layout utama
 export { default as IdentificationLayout } from './components/IdentificationLayout';
 
+// PoC overlay
+export { default as ShapeOverlay } from './components/ShapeOverlay';
+export type { ShapeOverlayProps } from './components/ShapeOverlay';
+
 // Step components
 export { default as StepAmati } from './components/StepAmati';
 export { default as StepIdentifikasi } from './components/StepIdentifikasi';
