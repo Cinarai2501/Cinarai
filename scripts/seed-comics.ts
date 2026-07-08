@@ -11,6 +11,8 @@
  * 5. Setelah selesai, kembalikan: allow write: if false; lalu Publish lagi
  */
 
+/* eslint-disable no-console */
+
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 

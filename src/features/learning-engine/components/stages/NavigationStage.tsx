@@ -1,12 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { serverTimestamp } from 'firebase/firestore';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
 import { useSnackbar } from '@/context/SnackbarContext';
-import { useAuth } from '@/hooks/useAuth';
-import { mergeFirestoreDocument } from '@/services/firestore';
+// `useAuth` intentionally not used here (kept authentication & data flows intact elsewhere)
 import { generateTutorResponse } from '@/lib/ai';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 
@@ -26,7 +24,7 @@ function getObjectDisplayName(entry: ComicAssetEntry | null | undefined): string
   return 'Kubus';
 }
 
-const bangunRuangOptions = ['Kubus', 'Balok', 'Prisma', 'Limas', 'Tabung', 'Kerucut', 'Bola'];
+// removed observation form options — Navigation is now exploration-only
 
 function getQuickQuestions(objectName: string): string[] {
   const normalized = objectName.toLowerCase();
@@ -71,13 +69,6 @@ function getQuickQuestions(objectName: string): string[] {
   ];
 }
 
-interface ObservasiFormState {
-  bangunRuang: string;
-  alasan: string;
-  bagianMenarik: string;
-  hubunganMatematika: string;
-}
-
 interface ChatMessage {
   id: number;
   role: 'assistant' | 'user';
@@ -92,33 +83,27 @@ const starterMessages: ChatMessage[] = [
   },
 ];
 
+/* eslint-disable @next/next/no-img-element */
+
 export default function NavigationStage() {
   const { comic, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
   const { showSnackbar } = useSnackbar();
-  const { user } = useAuth();
   const metadata = useComicMetadata(comic.id);
   const { model3D } = metadata.assets;
   const primaryEntry = model3D[0] ?? null;
   const activeObjectName = useMemo(() => getObjectDisplayName(primaryEntry), [primaryEntry]);
   const quickQuestions = useMemo(() => getQuickQuestions(activeObjectName), [activeObjectName]);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState<ObservasiFormState>({
-    bangunRuang: '',
-    alasan: '',
-    bagianMenarik: '',
-    hubunganMatematika: '',
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [error, setError] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(starterMessages);
   const [draft, setDraft] = useState('');
   const [isResponding, setIsResponding] = useState(false);
   const [hasOpenedAr, setHasOpenedAr] = useState(false);
   const [hasAskedAi, setHasAskedAi] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
 
-  const isObservationComplete = Object.values(formData).every((value) => value.trim().length > 0);
   const canAdvanceToArgumentation = hasOpenedAr && hasAskedAi;
 
   useEffect(() => {
@@ -163,46 +148,9 @@ export default function NavigationStage() {
     };
   }, [canAdvanceToArgumentation, setCanAdvance, unregisterSlideNav]);
 
-  const handleChange = (field: keyof ObservasiFormState, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setError('');
-    setIsSaved(false);
-  };
-
-  const handleSave = async () => {
-    if (!isObservationComplete) {
-      setError('Semua pertanyaan observasi wajib diisi.');
-      return;
-    }
-    if (!user) {
-      setError('Silakan masuk terlebih dahulu.');
-      return;
-    }
-
-    setIsSaving(true);
-    setError('');
-    try {
-      const docId = `${user.uid}_${comic.id}_observasi`;
-      await mergeFirestoreDocument('reflection', docId, {
-        studentId: user.uid,
-        userId: user.uid,
-        moduleId: String(comic.id),
-        jawaban: { ...formData },
-        timestamp: serverTimestamp(),
-        status: 'completed',
-        prompt: 'Observasi',
-        response: JSON.stringify(formData),
-        submittedAt: serverTimestamp(),
-      });
-      setIsSaved(true);
-      showSnackbar('Observasi berhasil disimpan ✓', 'success');
-    } catch (err) {
-      console.error('[NavigationStage] Gagal menyimpan observasi', err);
-      setError('Gagal menyimpan. Silakan coba lagi.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const handleToggleRotate = () => setIsRotating((v) => !v);
+  const handleToggleZoom = () => setIsZoomed((v) => !v);
+  const handleToggleEmbed = () => setShowEmbed((v) => !v);
 
   const handleSend = useCallback(async (rawText?: string) => {
     const trimmed = (rawText ?? draft).trim();
@@ -227,7 +175,7 @@ export default function NavigationStage() {
           synopsis: comic.synopsis,
           learningTargets: comic.learningTargets,
         },
-        observationAnswers: { ...formData },
+        observationAnswers: {},
         question: trimmed,
         sessionHistory: historyForPrompt,
         comicTitle: comic.title,
@@ -253,7 +201,7 @@ export default function NavigationStage() {
     } finally {
       setIsResponding(false);
     }
-  }, [activeObjectName, comic, draft, formData, isResponding, messages, primaryEntry]);
+  }, [activeObjectName, comic, draft, isResponding, messages, primaryEntry]);
 
   function handleOpenAr(entry: ComicAssetEntry) {
     if (!isValidUrl(entry.url)) {
@@ -261,6 +209,18 @@ export default function NavigationStage() {
       return;
     }
     setHasOpenedAr(true);
+    // For Sketchfab embedded models, prefer opening embed in-page.
+    const url = entry.url;
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      if (host.includes('sketchfab.com') || host.includes('skfb.ly')) {
+        setShowEmbed(true);
+        return;
+      }
+    } catch {
+      // fallback to opening externally
+    }
     window.open(entry.url, '_blank', 'noopener,noreferrer');
   }
 
@@ -286,16 +246,22 @@ export default function NavigationStage() {
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-4 lg:grid-cols-1">
         <section className="flex flex-col gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-3 sm:p-4">
             <div className="overflow-hidden rounded-[18px] border border-neutral-200 bg-white">
-              {previewSrc ? (
-                <img
-                  src={previewSrc}
-                  alt={`Tampilan ${activeObjectName} dalam AR`}
-                  className="h-56 w-full object-cover sm:h-72"
-                />
+              {showEmbed && primaryEntry ? (
+                <div className="h-64 w-full sm:h-80">
+                  <iframe src={`${primaryEntry.url.replace(/\/$/, '')}/embed`} title={`Model 3D ${activeObjectName}`} className="h-full w-full border-0" allow="fullscreen" />
+                </div>
+              ) : previewSrc ? (
+                <div className={`h-56 w-full overflow-hidden sm:h-72 ${isRotating ? 'animate-spin-slow' : ''}`}>
+                  <img
+                    src={previewSrc}
+                    alt={`Tampilan ${activeObjectName} dalam AR`}
+                    className={`h-full w-full object-cover transition-transform ${isZoomed ? 'scale-105' : 'scale-100'}`} 
+                  />
+                </div>
               ) : (
                 <div className="flex h-56 flex-col items-center justify-center gap-3 bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4 text-center sm:h-72">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 text-2xl text-primary-700">
@@ -308,215 +274,109 @@ export default function NavigationStage() {
                 </div>
               )}
             </div>
+
             <div className="mt-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-neutral-400">Eksplorasi AR</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-neutral-400">Eksplorasi 3D</p>
               <h3 className="mt-1 text-xl font-black text-neutral-900">{activeObjectName}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-                Bangun ruang yang ditemukan pada Candi Jawi.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => primaryEntry && handleOpenAr(primaryEntry)}
-              disabled={!primaryEntry || !isValidUrl(primaryEntry.url)}
-              className="mt-4 inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
-            >
-              Lihat AR Interaktif
-            </button>
-          </div>
-
-          <div className="rounded-[20px] border border-primary-100 bg-primary-50/80 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🔍</span>
-              <h4 className="text-base font-black text-neutral-900">Panduan Observasi</h4>
-            </div>
-            <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-              <li>✓ Putar objek</li>
-              <li>✓ Perbesar objek</li>
-              <li>✓ Amati bentuk bangun ruang</li>
-              <li>✓ Identifikasi sisi</li>
-              <li>✓ Identifikasi rusuk</li>
-              <li>✓ Identifikasi titik sudut</li>
-              <li>✓ Diskusikan hasil pengamatan dengan AI</li>
-            </ul>
-          </div>
-
-          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">✅</span>
-              <h4 className="text-base font-black text-neutral-900">Status Eksplorasi</h4>
-            </div>
-            <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-              <li className="flex items-center gap-2">{hasOpenedAr ? '☑' : '☐'} <span>Melihat Preview</span></li>
-              <li className="flex items-center gap-2">{hasOpenedAr ? '☑' : '☐'} <span>Membuka AR</span></li>
-              <li className="flex items-center gap-2">{hasAskedAi ? '☑' : '☐'} <span>Bertanya ke AI</span></li>
-              <li className="flex items-center gap-2">{canAdvanceToArgumentation ? '☑' : '☐'} <span>Siap ke Argumentation</span></li>
-            </ul>
-            <button
-              type="button"
-              onClick={handleContinueToArgumentation}
-              disabled={!canAdvanceToArgumentation}
-              className="mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
-            >
-              Lanjut ke Argumentation
-            </button>
-            {!canAdvanceToArgumentation && (
-              <p className="mt-3 text-sm text-neutral-600">
-                Silakan eksplorasi objek AR dan diskusikan hasil pengamatanmu dengan AI sebelum melanjutkan.
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📝</span>
-              <h4 className="text-base font-black text-neutral-900">Catat hasil pengamatan</h4>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">Eksplorasi model 3D, perbesar, putar, dan minta info dari AI.</p>
             </div>
 
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700" htmlFor="nav-bangun-ruang">
-                  Bangun ruang apa yang paling dominan?
-                </label>
-                <select
-                  id="nav-bangun-ruang"
-                  value={formData.bangunRuang}
-                  onChange={(event) => handleChange('bangunRuang', event.target.value)}
-                  disabled={isSaved}
-                  className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:bg-neutral-50 disabled:text-neutral-500"
-                >
-                  <option value="">Pilih bangun ruang</option>
-                  {bangunRuangOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700" htmlFor="nav-alasan">
-                  Mengapa kamu memilih jawaban tersebut?
-                </label>
-                <textarea
-                  id="nav-alasan"
-                  rows={3}
-                  value={formData.alasan}
-                  onChange={(event) => handleChange('alasan', event.target.value)}
-                  disabled={isSaved}
-                  placeholder="Jelaskan alasanmu..."
-                  className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:bg-neutral-50 disabled:text-neutral-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700" htmlFor="nav-bagian-menarik">
-                  Bagian objek mana yang paling menarik?
-                </label>
-                <textarea
-                  id="nav-bagian-menarik"
-                  rows={3}
-                  value={formData.bagianMenarik}
-                  onChange={(event) => handleChange('bagianMenarik', event.target.value)}
-                  disabled={isSaved}
-                  placeholder="Tuliskan bagian yang paling menarik..."
-                  className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:bg-neutral-50 disabled:text-neutral-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700" htmlFor="nav-hubungan">
-                  Apa hubungan objek dengan materi matematika?
-                </label>
-                <textarea
-                  id="nav-hubungan"
-                  rows={3}
-                  value={formData.hubunganMatematika}
-                  onChange={(event) => handleChange('hubunganMatematika', event.target.value)}
-                  disabled={isSaved}
-                  placeholder="Hubungkan dengan konsep matematika..."
-                  className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:bg-neutral-50 disabled:text-neutral-500"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <p className="mt-4 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm font-semibold text-error-700">
-                {error}
-              </p>
-            )}
-
-            {isSaved ? (
-              <div className="mt-4 rounded-2xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm font-semibold text-accent-700">
-                ✓ Observasi tersimpan. Kamu sudah siap melanjutkan ke tahap Argumentation.
-              </div>
-            ) : (
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={handleSave}
-                disabled={!isObservationComplete || isSaving}
-                className="mt-4 flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 text-base font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+                onClick={() => primaryEntry && handleOpenAr(primaryEntry)}
+                disabled={!primaryEntry || !isValidUrl(primaryEntry.url)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-700"
               >
-                {isSaving ? 'Menyimpan...' : 'Simpan Observasi'}
+                Lihat AR Interaktif
               </button>
-            )}
+              <button
+                type="button"
+                onClick={handleToggleRotate}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+              >
+                Putar
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleZoom}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+              >
+                Perbesar
+              </button>
+              <button
+                type="button"
+                onClick={() => showSnackbar(comic.synopsis || 'Tidak ada info lebih lanjut.', 'info')}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+              >
+                Info
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleEmbed}
+                disabled={!primaryEntry}
+                className="ml-auto inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+              >
+                {showEmbed ? 'Tutup 3D' : 'View 3D'}
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleContinueToArgumentation}
+                disabled={!canAdvanceToArgumentation}
+                className="w-full inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+              >
+                Lanjut
+              </button>
+              {!canAdvanceToArgumentation && (
+                <p className="mt-3 text-sm text-neutral-600">Silakan eksplorasi AR dan bertanya ke AI sebelum melanjutkan.</p>
+              )}
+            </div>
           </div>
         </section>
+      </div>
 
-        <section className="flex flex-col gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🤖</span>
+      {/* Floating AI */}
+      <div>
+        {!showAiPanel && (
+          <button
+            aria-label="Buka AI Assistant"
+            onClick={() => setShowAiPanel(true)}
+            className="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary-600 text-white shadow-xl"
+          >
+            🤖
+          </button>
+        )}
+
+        {showAiPanel && (
+          <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-3xl border border-neutral-200 bg-white p-4 shadow-xl sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-black text-neutral-900">AI Assistant</h3>
-                <p className="text-sm text-neutral-500">Diskusikan apa yang kamu temukan berdasarkan hasil observasi.</p>
+                <h4 className="text-base font-black text-neutral-900">Halo — AI Assistant</h4>
+                <p className="mt-1 text-sm text-neutral-600">Tanyakan sesuatu tentang objek ini.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowAiPanel(false)} className="rounded-full border border-neutral-200 px-3 py-2 text-sm">Tutup</button>
               </div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {quickQuestions.map((question) => (
-                <button
-                  key={question}
-                  type="button"
-                  onClick={() => void handleSend(question)}
-                  disabled={isResponding}
-                  className="rounded-full border border-primary-200 bg-white px-3 py-2 text-sm font-semibold text-primary-700 transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {question}
-                </button>
+              {quickQuestions.map((q) => (
+                <button key={q} type="button" onClick={() => void handleSend(q)} disabled={isResponding} className="rounded-full border border-primary-200 bg-white px-3 py-2 text-sm font-semibold text-primary-700">{q}</button>
               ))}
             </div>
 
-            <div className="mt-4 flex min-h-[320px] flex-col overflow-hidden rounded-[18px] border border-neutral-200 bg-white">
-              <div className="flex-1 space-y-3 overflow-y-auto bg-neutral-50 px-3 py-3 sm:px-4">
-                {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[90%] rounded-2xl px-3 py-2.5 text-sm leading-relaxed shadow-sm ${message.role === 'user' ? 'bg-primary-600 text-white' : 'border border-neutral-200 bg-white text-neutral-700'}`}>
-                      {message.content}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-neutral-100 bg-white px-3 py-3 sm:px-4">
-                <textarea
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  rows={3}
-                  placeholder="Tanyakan apa yang kamu temukan pada objek ini..."
-                  disabled={isResponding}
-                  className="min-h-[96px] w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:cursor-not-allowed disabled:opacity-60"
-                />
-                <button
-                  type="button"
-                  onClick={() => void handleSend()}
-                  disabled={isResponding || !draft.trim()}
-                  className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
-                >
-                  {isResponding ? 'Memproses...' : 'Kirim pertanyaan'}
-                </button>
+            <div className="mt-4">
+              <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} placeholder="Ketik pertanyaan singkat..." className="w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700" />
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => void handleSend()} disabled={isResponding || !draft.trim()} className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white">{isResponding ? 'Memproses...' : 'Kirim'}</button>
+                <button onClick={() => { setDraft(''); setMessages(starterMessages); }} className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700">Reset</button>
               </div>
             </div>
           </div>
-        </section>
+        )}
       </div>
     </div>
   );

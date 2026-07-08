@@ -1,5 +1,6 @@
-'use client';
+ 'use client';
 
+import Image from 'next/image';
 import { useEffect } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
@@ -25,13 +26,7 @@ export default function CoverStage() {
         {/* Cover image */}
         <div className="-mx-3 sm:mx-0 lg:mx-0">
           <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-sm sm:rounded-[24px]">
-            <img
-              src={comic.cover}
-              alt={`Cover ${comic.title}`}
-              className="h-full w-full object-cover"
-              loading="eager"
-              decoding="async"
-            />
+            <Image src={comic.cover} alt={`Cover ${comic.title}`} fill className="object-cover" priority />
           </div>
         </div>
 

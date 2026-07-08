@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { useMemo, useState } from "react";
 import { COMICS } from "@/data/comics";
 
@@ -27,12 +28,12 @@ export default function ComicCover({ comicId }: ComicCoverProps) {
         <div className="w-full max-w-[420px] rounded-[32px] border border-primary-100 bg-white p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-4">
           <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[24px] bg-neutral-100">
             {!imageError ? (
-              <img
+              <Image
                 src={comic.cover}
                 alt={`Cover ${comic.title}`}
-                className="h-full w-full object-cover"
-                loading="eager"
-                decoding="async"
+                fill
+                className="object-cover"
+                priority
                 onError={() => setImageError(true)}
               />
             ) : (

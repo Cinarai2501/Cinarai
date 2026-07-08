@@ -5,6 +5,8 @@ import { toDataURL } from 'qrcode';
 import { useSearchParams } from 'next/navigation';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
 
+/* eslint-disable @next/next/no-img-element */
+
 interface Universal3DViewerProps {
   initialUrl?: string;
   initialTitle?: string;
