@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ComicAsset } from "@/lib/comicAsset";
+import { useComicReadingProgress } from '@/context/ComicReadingProgressContext';
 
 const PdfViewer = dynamic(() => import("@/components/pdf/PdfViewer"), { ssr: false });
 
@@ -9,25 +10,45 @@ interface PdfReaderProps {
   asset?: ComicAsset | null;
   pdfPath?: string | null;
   comicTitle?: string;
+  comicId?: number;
   onComplete?: () => void;
   showCompleteButton?: boolean;
   completeButtonLabel?: string;
   completeButtonDisabled?: boolean;
   onPageChange?: (page: number, numPages: number) => void;
+  isComicCompleted?: boolean;
+  completeButtonLabelWhenDone?: string;
 }
 
 export default function PdfReader({
   asset,
   pdfPath,
   comicTitle,
+  comicId,
   onComplete,
   showCompleteButton = false,
   completeButtonLabel = "🎉 Selesai Membaca",
   completeButtonDisabled = false,
   onPageChange,
+  isComicCompleted = false,
+  completeButtonLabelWhenDone = "Lanjut ke Identification",
 }: PdfReaderProps) {
+  const { getLastPage } = useComicReadingProgress();
+  // If comic is completed, get last page from localStorage (will be populated by ContextualizationStage)
+  // Otherwise default to page 1
+  const getInitialPage = (): number => {
+    // Prefer reading last page from ComicReadingProgressContext (single source of truth)
+    if (!comicId || !isComicCompleted) return 1;
+    try {
+      return getLastPage(comicId) ?? 1;
+    } catch {
+      return 1;
+    }
+  };
+
   const resolvedPdfPath = asset?.sourcePdfPath ?? pdfPath ?? "";
   const resolvedTitle = comicTitle ?? asset?.title ?? undefined;
+  const initialPage = getInitialPage();
 
   if (!resolvedPdfPath) {
     return (
@@ -42,11 +63,15 @@ export default function PdfReader({
     <PdfViewer
       pdfPath={resolvedPdfPath}
       comicTitle={resolvedTitle}
+      comicId={comicId}
       onComplete={onComplete}
       showCompleteButton={showCompleteButton}
       completeButtonLabel={completeButtonLabel}
       completeButtonDisabled={completeButtonDisabled}
       onPageChange={onPageChange}
+      isComicCompleted={isComicCompleted}
+      completeButtonLabelWhenDone={completeButtonLabelWhenDone}
+      initialPage={initialPage}
     />
   );
 }

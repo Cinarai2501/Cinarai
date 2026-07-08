@@ -15,12 +15,16 @@ const DESKTOP_MAX_PAGE_WIDTH = 900;
 
 interface PdfViewerProps {
   pdfPath: string;
+  comicId?: number;
   comicTitle?: string;
   onComplete?: () => void;
   showCompleteButton?: boolean;
   completeButtonLabel?: string;
   completeButtonDisabled?: boolean;
   onPageChange?: (page: number, numPages: number) => void;
+  isComicCompleted?: boolean;
+  completeButtonLabelWhenDone?: string;
+  initialPage?: number;
 }
 
 export default function PdfViewer({
@@ -31,9 +35,12 @@ export default function PdfViewer({
   completeButtonLabel = "🎉 Selesai Membaca",
   completeButtonDisabled = false,
   onPageChange,
+  isComicCompleted = false,
+  completeButtonLabelWhenDone = "Lanjut ke Identification",
+  initialPage = 1,
 }: PdfViewerProps) {
   const [numPages, setNumPages] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [workerReady, setWorkerReady] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -115,7 +122,7 @@ export default function PdfViewer({
   const onDocumentLoadSuccess = useCallback(
     ({ numPages: n }: { numPages: number }) => {
       setNumPages(n);
-      setPage(1);
+      setPage(initialPage ?? 1);
     },
     []
   );
@@ -204,6 +211,8 @@ export default function PdfViewer({
         completeButtonLabel={completeButtonLabel}
         completeButtonDisabled={completeButtonDisabled}
         onComplete={onComplete}
+        isComicCompleted={isComicCompleted}
+        completeButtonLabelWhenDone={completeButtonLabelWhenDone}
       />
     </div>
   );
