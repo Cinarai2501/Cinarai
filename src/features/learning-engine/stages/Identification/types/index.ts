@@ -27,6 +27,7 @@ export interface IdentificationItem {
   readonly imageAlt: string;
   readonly options: AnswerOption[];
   readonly correctOptionId: string;
+  readonly overlayType?: 'body' | 'kaki' | 'puncak' | 'atap' | 'dinding' | string;
   readonly explanation: string;
   status: IdentificationItemStatus;
   selectedOptionId: string | null;

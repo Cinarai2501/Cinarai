@@ -35,20 +35,74 @@ export default function IdentificationQuestion({
           {imgError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-100">
               <svg className="h-12 w-12 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3l18 18M9.75 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v8l3-3m0 0l3 3m-3-3V4" />
               </svg>
-              <p className="text-sm font-semibold text-neutral-400">{item.imageAlt}</p>
+              <p className="text-sm font-semibold text-neutral-400">Gagal memuat gambar — {item.imageAlt}</p>
             </div>
           ) : (
-            <Image
-              src={item.image}
-              alt={item.imageAlt}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, 640px"
-              priority={item.targetIndex === 0}
-              onError={() => setImgError(true)}
-            />
+            <>
+              <Image
+                src={item.image}
+                alt={item.imageAlt}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 640px"
+                priority={item.targetIndex === 0}
+                onError={() => setImgError(true)}
+              />
+
+              {/* Overlay edukatif: outline, panah, label — rendered by component */}
+              <div className="absolute inset-0 pointer-events-none">
+                <svg className="w-full h-full" viewBox="0 0 100 62" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                  {/* Simple overlays per type */}
+                  {item.overlayType === 'body' && (
+                    <g>
+                      <rect x="30" y="18" width="40" height="26" fill="none" stroke="#ffb86b" strokeWidth="1.5" rx="2" />
+                      <path d="M70 22 L85 12" stroke="#ffb86b" strokeWidth="1.2" fill="none" markerEnd="url(#arrow)" />
+                      <rect x="74" y="6" width="22" height="8" rx="2" fill="#ffb86b" opacity="0.95" />
+                      <text x="85" y="11" fontSize="6" fontWeight="700" fill="#1f2937" textAnchor="middle">Balok</text>
+                    </g>
+                  )}
+                  {item.overlayType === 'kaki' && (
+                    <g>
+                      <rect x="28" y="36" width="44" height="14" fill="none" stroke="#7ee787" strokeWidth="1.5" rx="1" />
+                      <path d="M45 34 L55 26" stroke="#7ee787" strokeWidth="1.2" fill="none" />
+                      <rect x="18" y="18" width="28" height="8" rx="2" fill="#7ee787" opacity="0.95" />
+                      <text x="32" y="24" fontSize="5" fontWeight="700" fill="#064e3b">Kubus</text>
+                    </g>
+                  )}
+                  {item.overlayType === 'puncak' && (
+                    <g>
+                      <path d="M50 6 L60 26 L40 26 Z" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
+                      <path d="M62 20 L78 12" stroke="#60a5fa" strokeWidth="1.2" />
+                      <rect x="72" y="6" width="24" height="8" rx="2" fill="#60a5fa" opacity="0.95" />
+                      <text x="84" y="11" fontSize="5.5" fontWeight="700" fill="#0f172a">Kerucut</text>
+                    </g>
+                  )}
+                  {item.overlayType === 'atap' && (
+                    <g>
+                      <path d="M30 14 L70 14 L50 34 Z" fill="none" stroke="#f472b6" strokeWidth="1.5" />
+                      <path d="M72 18 L86 12" stroke="#f472b6" strokeWidth="1.2" />
+                      <rect x="74" y="6" width="28" height="8" rx="2" fill="#f472b6" opacity="0.95" />
+                      <text x="88" y="11" fontSize="5" fontWeight="700" fill="#5b1055">Limas</text>
+                    </g>
+                  )}
+                  {item.overlayType === 'dinding' && (
+                    <g>
+                      <rect x="20" y="18" width="60" height="28" fill="none" stroke="#f97316" strokeWidth="1.5" />
+                      <path d="M82 22 L94 14" stroke="#f97316" strokeWidth="1.2" />
+                      <rect x="86" y="6" width="28" height="8" rx="2" fill="#f97316" opacity="0.95" />
+                      <text x="100" y="11" fontSize="5" fontWeight="700" fill="#7c2d12">Prisma</text>
+                    </g>
+                  )}
+                  <defs>
+                    <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                      <path d="M0 0 L6 3 L0 6 z" fill="#ffb86b" />
+                    </marker>
+                  </defs>
+                </svg>
+              </div>
+            </>
           )}
         </div>
       </div>
