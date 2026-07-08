@@ -96,12 +96,18 @@ export default function NavigationStage() {
   const [messages, setMessages] = useState<ChatMessage[]>(starterMessages);
   const [draft, setDraft] = useState('');
   const [isResponding, setIsResponding] = useState(false);
-  const [hasOpenedAr, setHasOpenedAr] = useState(false);
-  const [hasAskedAi, setHasAskedAi] = useState(false);
+  const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
   const [showEmbed, setShowEmbed] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  const canAdvanceToArgumentation = hasOpenedAr && hasAskedAi;
+  // Progress gate: all model3D entries must be explored.
+  // AI interaction is optional and never blocks advancement.
+  const requiredIds = useMemo(
+    () => model3D.filter((e) => isValidUrl(e.url)).map((e) => `${e.page}-${e.url}`),
+    [model3D],
+  );
+  const allObjectsExplored = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
+  const canAdvanceToArgumentation = allObjectsExplored;
 
   useEffect(() => {
     const candidates = [
@@ -140,8 +146,8 @@ export default function NavigationStage() {
 
   useEffect(() => {
     setCanAdvance(canAdvanceToArgumentation);
-    console.info('[Navigation] Navigation State — canAdvance:', canAdvanceToArgumentation, 'hasAskedAi:', hasAskedAi, 'hasVisitedAR:', hasOpenedAr);
-  }, [canAdvanceToArgumentation, hasAskedAi, hasOpenedAr, setCanAdvance]);
+    console.info('[Navigation] Navigation State — canAdvance:', canAdvanceToArgumentation, 'exploredIds:', exploredIds.size, '/', requiredIds.length);
+  }, [canAdvanceToArgumentation, exploredIds.size, requiredIds.length, setCanAdvance]);
 
   // Separate cleanup effect: unregister slide nav only on unmount.
   // Must not be co-located with setCanAdvance — otherwise the cleanup fires
@@ -217,11 +223,7 @@ export default function NavigationStage() {
         throw new Error(payload.error ?? 'AI response was not available.');
       }
 
-      // Mark AI as asked only after a confirmed successful response.
-      // Setting this before the fetch would prematurely enable the "Lanjut" button
-      // and allow the stage to advance before the AI has actually answered (BUG 1 & 3).
-      setHasAskedAi(true);
-
+      // AI response received — purely informational, does not affect stage progress.
       console.info('[Navigation] AI Response Success — provider:', payload.provider, 'length:', payload.answer.length);
       console.info('[NavigationStage] Navigation received:', {
         provider: payload.provider,
@@ -247,16 +249,25 @@ export default function NavigationStage() {
       setMessages((prev) => [...prev, fallbackMessage]);
     } finally {
       setIsResponding(false);
-      console.info('[Navigation] Navigation State — canAdvance:', hasOpenedAr && hasAskedAi, 'hasAskedAi:', hasAskedAi, 'hasVisitedAR:', hasOpenedAr);
     }
-  }, [activeObjectName, comic, draft, hasAskedAi, hasOpenedAr, isResponding, messages, primaryEntry]);
+  }, [activeObjectName, comic, draft, isResponding, messages, primaryEntry]);
 
   function handleOpenAr(entry: ComicAssetEntry) {
     if (!isValidUrl(entry.url)) {
       showSnackbar('Link AR belum tersedia.', 'info');
       return;
     }
-    setHasOpenedAr(true);
+
+    // Mark this entry as explored regardless of how it opens.
+    const entryId = `${entry.page}-${entry.url}`;
+    setExploredIds((prev) => {
+      if (prev.has(entryId)) return prev;
+      const next = new Set(prev);
+      next.add(entryId);
+      console.info('[Navigation] AR explored:', entry.title, '— exploredIds:', next.size, '/', requiredIds.length);
+      return next;
+    });
+
     // For Sketchfab embedded models, prefer opening embed in-page.
     const url = entry.url;
     try {
@@ -274,7 +285,13 @@ export default function NavigationStage() {
 
   function handleContinueToArgumentation() {
     if (!canAdvanceToArgumentation) {
-      showSnackbar('Silakan eksplorasi objek AR dan diskusikan hasil pengamatanmu dengan AI sebelum melanjutkan.', 'info');
+      const remaining = requiredIds.length - exploredIds.size;
+      showSnackbar(
+        remaining === 1
+          ? 'Silakan eksplorasi 1 objek AR lagi sebelum melanjutkan.'
+          : `Silakan eksplorasi ${remaining} objek AR lagi sebelum melanjutkan.`,
+        'info',
+      );
       return;
     }
     void nextStage();
@@ -329,15 +346,44 @@ export default function NavigationStage() {
               <p className="mt-2 text-sm leading-relaxed text-neutral-600">Eksplorasi model 3D dan ajukan pertanyaan kepada AI untuk memahami objek ini.</p>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => primaryEntry && handleOpenAr(primaryEntry)}
-                disabled={!primaryEntry || !isValidUrl(primaryEntry.url)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-700"
-              >
-                Lihat AR Interaktif
-              </button>
+            {/* AR object list — one button per model3D entry */}
+            <div className="mt-4 flex flex-col gap-2">
+              {model3D.length > 0 ? (
+                model3D.map((entry) => {
+                  const entryId = `${entry.page}-${entry.url}`;
+                  const explored = exploredIds.has(entryId);
+                  const valid = isValidUrl(entry.url);
+                  return (
+                    <div key={entryId} className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAr(entry)}
+                        disabled={!valid}
+                        className={[
+                          'inline-flex min-h-[44px] flex-1 items-center justify-between rounded-2xl border px-4 py-2 text-sm font-semibold transition',
+                          explored
+                            ? 'border-accent-300 bg-accent-50 text-accent-700'
+                            : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50',
+                        ].join(' ')}
+                      >
+                        <span>{entry.title || 'Lihat AR Interaktif'}</span>
+                        {explored && <span className="ml-2 text-accent-600">✓</span>}
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-400 cursor-not-allowed"
+                >
+                  Objek AR belum tersedia
+                </button>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => showSnackbar(comic.synopsis || 'Tidak ada info lebih lanjut.', 'info')}
@@ -357,7 +403,11 @@ export default function NavigationStage() {
                 Lanjut
               </button>
               {!canAdvanceToArgumentation && (
-                <p className="mt-3 text-sm text-neutral-600">Silakan eksplorasi AR dan bertanya ke AI sebelum melanjutkan.</p>
+                <p className="mt-3 text-sm text-neutral-600">
+                  {requiredIds.length > 1
+                    ? `Eksplorasi semua objek AR (${exploredIds.size}/${requiredIds.length}) untuk melanjutkan.`
+                    : 'Buka viewer AR untuk melanjutkan.'}
+                </p>
               )}
             </div>
           </div>
