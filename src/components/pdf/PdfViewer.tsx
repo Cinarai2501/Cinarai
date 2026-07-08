@@ -124,7 +124,7 @@ export default function PdfViewer({
       setNumPages(n);
       setPage(initialPage ?? 1);
     },
-    []
+    [initialPage]
   );
 
   const handleRetry = useCallback(() => {
