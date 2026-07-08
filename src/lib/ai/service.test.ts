@@ -70,3 +70,27 @@ test('buildTutorPrompt prioritizes explicit short-answer instructions from the u
   assert.match(prompt, /Tolong balas hanya dengan kata BERHASIL/i);
   assert.match(prompt, /ikuti instruksi pengguna secara ketat/i);
 });
+
+test('buildTutorPrompt includes navigation context and topic boundaries', () => {
+  const prompt = buildTutorPrompt({
+    moduleName: 'Bangun Ruang',
+    identification: [],
+    objectInfo: {
+      location: 'Candi Jawi',
+      classLevel: '5',
+      synopsis: 'Mengamati bangun ruang',
+      learningTargets: ['Mengamati bangun ruang'],
+    },
+    observationAnswers: {},
+    question: 'Apa yang kamu lihat?',
+    comicTitle: 'Komik 1',
+    pageLabel: 'Halaman 13',
+    objectName: 'Kubus',
+    learningStage: 'Navigation',
+  });
+
+  assert.match(prompt, /Komik 1/i);
+  assert.match(prompt, /Kubus/i);
+  assert.match(prompt, /Navigation/i);
+  assert.match(prompt, /hanya berdasarkan/i);
+});

@@ -1,0 +1,9 @@
+<svg width="960" height="640" viewBox="0 0 960 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="640" rx="40" fill="#F6FFFB"/>
+  <ellipse cx="480" cy="220" rx="180" ry="70" fill="#FFFFFF" stroke="#1E94FF" stroke-width="8"/>
+  <rect x="300" y="220" width="360" height="220" rx="18" fill="#FFFFFF" stroke="#1E94FF" stroke-width="8"/>
+  <ellipse cx="480" cy="440" rx="180" ry="70" fill="#E4FFF3" stroke="#1E94FF" stroke-width="8"/>
+  <path d="M300 220L300 440" stroke="#1E94FF" stroke-width="8"/>
+  <path d="M660 220L660 440" stroke="#1E94FF" stroke-width="8"/>
+  <text x="185" y="560" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#1F2937">Tabung</text>
+</svg>

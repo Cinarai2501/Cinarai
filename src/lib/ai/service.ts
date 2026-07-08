@@ -22,6 +22,10 @@ export interface TutorContext {
     role: 'user' | 'assistant';
     content: string;
   }>;
+  comicTitle?: string;
+  pageLabel?: string;
+  objectName?: string;
+  learningStage?: string;
 }
 
 export interface TutorResponse {
@@ -48,6 +52,10 @@ export function buildTutorPrompt(context: TutorContext): string {
     informasiObjek: `lokasi=${context.objectInfo.location}; kelas=${context.objectInfo.classLevel}; sinopsis=${context.objectInfo.synopsis}; target=${context.objectInfo.learningTargets.join(', ')}`,
     observasi: observationText || '- Tidak ada jawaban observasi.',
     pertanyaanSiswa: context.question,
+    komik: context.comicTitle ?? context.moduleName,
+    halaman: context.pageLabel ?? '- Tidak ada informasi halaman.',
+    objek: context.objectName ?? '- Tidak ada informasi objek.',
+    tahap: context.learningStage ?? 'Navigation',
   });
 
   return [
@@ -73,6 +81,10 @@ export async function generateTutorResponse(
       informasiObjek: `lokasi=${context.objectInfo.location}; kelas=${context.objectInfo.classLevel}; sinopsis=${context.objectInfo.synopsis}; target=${context.objectInfo.learningTargets.join(', ')}`,
       observasi: Object.entries(context.observationAnswers).map(([key, value]) => `${key}: ${value}`).join(', ') || 'Tidak ada jawaban observasi.',
       pertanyaanSiswa: context.question,
+      komik: context.comicTitle ?? context.moduleName,
+      halaman: context.pageLabel ?? '- Tidak ada informasi halaman.',
+      objek: context.objectName ?? '- Tidak ada informasi objek.',
+      tahap: context.learningStage ?? 'Navigation',
     }),
     temperature: 0.7,
     maxTokens: 220,
