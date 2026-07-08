@@ -37,7 +37,7 @@ export class AiRouterError extends Error {
 export class AiRouter {
   constructor(
     private readonly providers: AiProvider[],
-    private readonly logger: Pick<Console, 'info' | 'warn'> = console,
+    private readonly logger: Pick<Console, 'info' | 'warn' | 'error'> = console,
   ) {}
 
   static createDefault(configs: Partial<Record<AiProviderName, AiProviderConfig>> = {}): AiRouter {
@@ -85,7 +85,8 @@ export class AiRouter {
 
     for (const provider of this.providers) {
       const displayName = PROVIDER_DISPLAY_NAMES[provider.name] ?? provider.name;
-      this.logger.info(`[ai-router] Trying ${displayName}`);
+      const providerLabel = displayName;
+      this.logger.info(`[ai-router] Trying ${providerLabel}...`);
 
       try {
         const response = await provider.generate(payload);
@@ -94,16 +95,24 @@ export class AiRouter {
         }
 
         logs.push({ provider: provider.name, status: 'success' });
-        this.logger.info(`[ai-router] Provider success: ${provider.name}`);
+        this.logger.info(`[ai-router] Provider success: ${providerLabel}`);
+        this.logger.info(`[ai-router] Response length: ${response.content.length}`);
         return response;
       } catch (error) {
         const reason = error instanceof Error ? error.message : 'unknown error';
+        const statusCode = typeof (error as { statusCode?: unknown }).statusCode === 'number'
+          ? (error as { statusCode: number }).statusCode
+          : undefined;
         logs.push({ provider: provider.name, status: 'failed', reason });
-        this.logger.warn(`[ai-router] Provider failed: ${provider.name} | reason=${reason}`);
+        this.logger.error(`[ai-router] Provider: ${providerLabel}`);
+        this.logger.error(`[ai-router] Status: failed`);
+        this.logger.error(`[ai-router] Error message: ${reason}`);
+        this.logger.error(`[ai-router] HTTP status: ${statusCode ?? 'n/a'}`);
+        this.logger.error(error);
       }
     }
 
-    this.logger.warn('[ai-router] All providers failed.');
+    this.logger.error('[ai-router] All providers failed.');
 
     throw new AiRouterError('Semua provider AI gagal.', logs);
   }

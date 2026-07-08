@@ -100,7 +100,6 @@ export default function NavigationStage() {
   const [hasOpenedAr, setHasOpenedAr] = useState(false);
   const [hasAskedAi, setHasAskedAi] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
-  const [showAiPanel, setShowAiPanel] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const canAdvanceToArgumentation = hasOpenedAr && hasAskedAi;
@@ -264,7 +263,7 @@ export default function NavigationStage() {
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-1">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <section className="flex flex-col gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-3 sm:p-4">
             <div className="overflow-hidden rounded-[18px] border border-neutral-200 bg-white">
@@ -332,44 +331,64 @@ export default function NavigationStage() {
             </div>
           </div>
         </section>
-      </div>
 
-      {/* Floating AI */}
-      <div>
-        {!showAiPanel && (
-          <button
-            aria-label="Buka AI Assistant"
-            onClick={() => setShowAiPanel(true)}
-            className="fixed bottom-5 right-5 z-50 inline-flex h-16 w-16 items-center justify-center rounded-full border border-primary-200 bg-white p-1 shadow-xl"
-          >
-            <img src="/images/robot-smile.svg" alt="AI Assistant" className="h-14 w-14" />
-          </button>
-        )}
-
-        {showAiPanel && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-3xl border border-neutral-200 bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:rounded-3xl" style={{ height: '45vh' }}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h4 className="text-base font-black text-neutral-900">Halo — AI Assistant</h4>
-                <p className="mt-1 text-sm text-neutral-600">Tanyakan sesuatu tentang objek ini.</p>
+        <aside className="rounded-[24px] border border-primary-100 bg-gradient-to-br from-white via-primary-50 to-secondary-50 p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative flex w-full flex-col items-center">
+              <div className="mb-2 rounded-full border border-primary-200 bg-white/90 px-4 py-2 text-center text-sm font-semibold text-primary-700 shadow-sm">
+                Tanyakan apa saja tentang bangun ruang atau Candi Jawi!
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setShowAiPanel(false)} className="rounded-full border border-neutral-200 px-3 py-2 text-sm">Tutup</button>
+              <div
+                className="relative flex h-24 w-24 items-center justify-center rounded-full bg-white/80 p-2 shadow-[0_12px_36px_rgba(43,140,255,0.18)]"
+                style={{
+                  animation: isResponding ? 'aiBlink 1.2s ease-in-out infinite' : 'aiFloat 2s ease-in-out infinite',
+                }}
+              >
+                <img src="/images/ai/robot.svg" alt="AI Assistant robot" className="h-20 w-20" />
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {quickQuestions.map((q) => (
-                <button key={q} type="button" onClick={() => void handleSend(q)} disabled={isResponding} className="rounded-full border border-primary-200 bg-white px-3 py-2 text-sm font-semibold text-primary-700">{q}</button>
-              ))}
-            </div>
-
-            <div className="mt-4">
-              <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} placeholder="Ketik pertanyaan singkat..." className="w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700" />
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => void handleSend()} disabled={isResponding || !draft.trim()} className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white">{isResponding ? 'Memproses...' : 'Kirim'}</button>
-                <button onClick={() => { setDraft(''); setMessages(starterMessages); }} className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700">Reset</button>
+            <div className="w-full rounded-[22px] border border-primary-100 bg-white/90 p-3 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                {quickQuestions.map((q) => (
+                  <button key={q} type="button" onClick={() => void handleSend(q)} disabled={isResponding} className="rounded-full border border-primary-200 bg-white px-3 py-2 text-xs font-semibold text-primary-700">
+                    {q}
+                  </button>
+                ))}
               </div>
+
+              <div className="mt-3">
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  rows={3}
+                  placeholder="Tulis pertanyaanmu..."
+                  className="w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700"
+                />
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="text-xs text-neutral-500">
+                    {isResponding ? 'Robot sedang berpikir...' : 'Robot siap membantu'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleSend()}
+                    disabled={isResponding || !draft.trim()}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+                    aria-label="Kirim pertanyaan"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
               {aiError && (
                 <div className="mt-3 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm font-semibold text-error-700">
                   Terjadi error pada layanan AI: {aiError}
@@ -377,8 +396,30 @@ export default function NavigationStage() {
               )}
             </div>
           </div>
-        )}
+        </aside>
       </div>
+
+      <style jsx global>{`
+        @keyframes aiFloat {
+          0%,
+          100% {
+            transform: translateY(-4px);
+          }
+          50% {
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes aiBlink {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.03);
+          }
+        }
+      `}</style>
     </div>
   );
 }
