@@ -1,0 +1,135 @@
+'use client';
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+
+/** Progress membaca satu komik */
+export interface ComicReadingProgress {
+  comicId: number;
+  currentPage: number;
+  totalPages: number;
+  completed: boolean;
+  lastPage: number; // Halaman terakhir yang dibaca sebelum completed=true
+}
+
+interface ComicReadingProgressContextValue {
+  progress: ComicReadingProgress | null;
+  updateProgress: (comicId: number, page: number, totalPages: number) => void;
+  markCompleted: (comicId: number, totalPages: number) => void;
+  getLastPage: (comicId: number) => number;
+  isComicCompleted: (comicId: number) => boolean;
+}
+
+const ComicReadingProgressContext = createContext<ComicReadingProgressContextValue | null>(null);
+
+export function useComicReadingProgress(): ComicReadingProgressContextValue {
+  const ctx = useContext(ComicReadingProgressContext);
+  if (!ctx) {
+    throw new Error('useComicReadingProgress must be used within ComicReadingProgressProvider');
+  }
+  return ctx;
+}
+
+const STORAGE_KEY = 'cinarai:comic-reading-progress';
+
+function getStoredProgress(): Record<number, ComicReadingProgress> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveStoredProgress(data: Record<number, ComicReadingProgress>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+interface ComicReadingProgressProviderProps {
+  children: React.ReactNode;
+}
+
+export function ComicReadingProgressProvider({ children }: ComicReadingProgressProviderProps) {
+  const [allProgress, setAllProgress] = useState<Record<number, ComicReadingProgress>>(() =>
+    getStoredProgress()
+  );
+  const [currentComicId, setCurrentComicId] = useState<number | null>(null);
+
+  // Sync state to localStorage whenever it changes
+  useEffect(() => {
+    saveStoredProgress(allProgress);
+  }, [allProgress]);
+
+  const updateProgress = useCallback((comicId: number, page: number, totalPages: number) => {
+    setCurrentComicId(comicId);
+    setAllProgress((prev) => {
+      const current = prev[comicId] || {
+        comicId,
+        currentPage: 1,
+        totalPages,
+        completed: false,
+        lastPage: 1,
+      };
+      return {
+        ...prev,
+        [comicId]: {
+          ...current,
+          currentPage: page,
+          totalPages,
+          lastPage: current.completed ? current.lastPage : page, // Update lastPage only if not completed yet
+        },
+      };
+    });
+  }, []);
+
+  const markCompleted = useCallback((comicId: number, totalPages: number) => {
+    setAllProgress((prev) => {
+      const current = prev[comicId] || {
+        comicId,
+        currentPage: totalPages,
+        totalPages,
+        completed: false,
+        lastPage: totalPages,
+      };
+      return {
+        ...prev,
+        [comicId]: {
+          ...current,
+          completed: true,
+          currentPage: totalPages,
+          totalPages,
+          lastPage: totalPages, // Save last page when completed
+        },
+      };
+    });
+  }, []);
+
+  const getLastPage = useCallback((comicId: number): number => {
+    return allProgress[comicId]?.lastPage ?? 1;
+  }, [allProgress]);
+
+  const isComicCompleted = useCallback((comicId: number): boolean => {
+    return allProgress[comicId]?.completed ?? false;
+  }, [allProgress]);
+
+  const progress = currentComicId ? allProgress[currentComicId] ?? null : null;
+
+  const value: ComicReadingProgressContextValue = {
+    progress,
+    updateProgress,
+    markCompleted,
+    getLastPage,
+    isComicCompleted,
+  };
+
+  return (
+    <ComicReadingProgressContext.Provider value={value}>
+      {children}
+    </ComicReadingProgressContext.Provider>
+  );
+}

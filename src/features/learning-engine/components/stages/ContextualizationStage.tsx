@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo } from 'react';
 import { buildComicAssetFromComic } from '@/lib/comicAsset';
+import { useComicReadingProgress } from '@/context/ComicReadingProgressContext';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import LearningHeader from '../layout/LearningHeader';
 import LearningStageNav from '../layout/LearningStageNav';
@@ -11,21 +12,33 @@ const PdfReader = dynamic(() => import('@/components/comic/PdfReader'), { ssr: f
 
 export default function ContextualizationStage() {
   const { comic, progress, setCanAdvance, completeAndAdvance, isSaving } = useLearningEngine();
+  const { updateProgress, markCompleted, isComicCompleted } = useComicReadingProgress();
 
   const alreadyCompleted = progress.sintaksList.some(
     (s) => s.sintaks === 'Contextualization' && s.status === 'COMPLETED'
   );
 
   const comicAsset = useMemo(() => comic.asset ?? buildComicAssetFromComic(comic), [comic]);
+  const isCurrentComicCompleted = isComicCompleted(comic.id);
 
   useEffect(() => {
     setCanAdvance(alreadyCompleted);
     return () => setCanAdvance(true);
   }, [alreadyCompleted, setCanAdvance]);
 
+  const handlePageChange = useCallback(
+    (page: number, totalPages: number) => {
+      updateProgress(comic.id, page, totalPages);
+    },
+    [comic.id, updateProgress]
+  );
+
   const handlePdfComplete = useCallback(async () => {
+    // Simpan sebagai completed
+    markCompleted(comic.id, progress.sintaksList[0]?.status !== 'COMPLETED' ? 1 : 1);
+    // Advance ke Identification
     await completeAndAdvance('Contextualization');
-  }, [completeAndAdvance]);
+  }, [comic.id, completeAndAdvance, markCompleted, progress.sintaksList]);
 
   return (
     <div
@@ -57,10 +70,14 @@ export default function ContextualizationStage() {
             <PdfReader
               asset={comicAsset}
               pdfPath={comic.pdfPath}
+              comicId={comic.id}
               onComplete={handlePdfComplete}
               showCompleteButton={!alreadyCompleted}
               completeButtonLabel="Saya Sudah Membaca ✅"
               completeButtonDisabled={isSaving}
+              onPageChange={handlePageChange}
+              isComicCompleted={isCurrentComicCompleted}
+              completeButtonLabelWhenDone="Lanjut ke Identification"
             />
           </div>
         )}

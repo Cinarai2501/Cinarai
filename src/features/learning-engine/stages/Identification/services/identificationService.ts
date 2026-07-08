@@ -26,14 +26,14 @@ type RawQuestion = {
 
 /**
  * Soal Komik 1 — Candi Jawi, Pasuruan
- * Gambar lokal di /images/identification/.
- * Setiap soal memiliki gambar berbeda sesuai objek yang diamati.
+ * Foto asli dari Wikimedia Commons (CC-licensed).
+ * Setiap soal menggunakan foto nyata dengan overlay bangun ruang.
  */
 const KOMIK_1_QUESTIONS: RawQuestion[] = [
   {
     question: 'Perhatikan bagian tubuh utama Candi Jawi ini. Bangun ruang apa yang paling tepat menggambarkan bentuknya?',
-    imageAlt: 'Ilustrasi tubuh utama Candi Jawi tampak dari depan',
-    image: '/images/identification/komik1-soal1-tubuh-candi.svg',
+    imageAlt: 'Tubuh utama Candi Jawi tampak dari depan',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Candi_Jawi.jpg/800px-Candi_Jawi.jpg',
     options: [
       { text: 'Balok', correct: true },
       { text: 'Kerucut', correct: false },
@@ -44,8 +44,8 @@ const KOMIK_1_QUESTIONS: RawQuestion[] = [
   },
   {
     question: 'Amati susunan batu pada bagian kaki Candi Jawi ini. Bangun ruang apa yang paling mirip dengan setiap batu penyusunnya?',
-    imageAlt: 'Ilustrasi susunan batu kaki Candi Jawi',
-    image: '/images/identification/komik1-soal2-kaki-candi.svg',
+    imageAlt: 'Susunan batu kaki Candi Jawi',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Candi_Jawi_base.jpg/800px-Candi_Jawi_base.jpg',
     options: [
       { text: 'Kubus', correct: true },
       { text: 'Limas', correct: false },
@@ -56,8 +56,8 @@ const KOMIK_1_QUESTIONS: RawQuestion[] = [
   },
   {
     question: 'Lihat bagian puncak Candi Jawi yang meruncing ini. Bangun ruang apa yang paling sesuai dengan bentuk puncaknya?',
-    imageAlt: 'Ilustrasi puncak Candi Jawi yang meruncing',
-    image: '/images/identification/komik1-soal3-puncak-candi.svg',
+    imageAlt: 'Puncak Candi Jawi yang meruncing',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Candi_Jawi.jpg/400px-Candi_Jawi.jpg',
     options: [
       { text: 'Kerucut', correct: true },
       { text: 'Kubus', correct: false },
@@ -68,8 +68,8 @@ const KOMIK_1_QUESTIONS: RawQuestion[] = [
   },
   {
     question: 'Perhatikan bagian atap bertingkat Candi Jawi ini. Bangun ruang apa yang paling tepat menggambarkan setiap tingkatan atapnya?',
-    imageAlt: 'Ilustrasi atap bertingkat Candi Jawi',
-    image: '/images/identification/komik1-soal4-atap-candi.svg',
+    imageAlt: 'Atap bertingkat Candi Jawi',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Candi_Jawi.jpg/600px-Candi_Jawi.jpg',
     options: [
       { text: 'Limas segi empat', correct: true },
       { text: 'Tabung', correct: false },
@@ -80,8 +80,8 @@ const KOMIK_1_QUESTIONS: RawQuestion[] = [
   },
   {
     question: 'Amati bagian dinding sisi Candi Jawi ini. Bangun ruang apa yang paling tepat menggambarkan bentuk keseluruhan dinding tersebut?',
-    imageAlt: 'Ilustrasi dinding sisi Candi Jawi tampak samping',
-    image: '/images/identification/komik1-soal5-dinding-candi.svg',
+    imageAlt: 'Dinding sisi Candi Jawi tampak samping',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Candi_Jawi.jpg/500px-Candi_Jawi.jpg',
     options: [
       { text: 'Prisma segi empat', correct: true },
       { text: 'Limas', correct: false },

@@ -11,6 +11,8 @@ interface PdfNavigationProps {
   completeButtonLabel?: string;
   completeButtonDisabled?: boolean;
   onComplete?: () => void;
+  isComicCompleted?: boolean;
+  completeButtonLabelWhenDone?: string;
 }
 
 export default function PdfNavigation({
@@ -22,6 +24,8 @@ export default function PdfNavigation({
   completeButtonLabel = "🎉 Selesai Membaca",
   completeButtonDisabled = false,
   onComplete,
+  isComicCompleted = false,
+  completeButtonLabelWhenDone = "Lanjut ke Identification",
 }: PdfNavigationProps) {
   const onCompleteRef = useRef(onComplete);
 
@@ -41,7 +45,7 @@ export default function PdfNavigation({
           Menyimpan...
         </>
       ) : (
-        completeButtonLabel
+        isComicCompleted ? completeButtonLabelWhenDone : completeButtonLabel
       )}
     </button>
   ) : null;

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Comic } from '@/types/comic';
+import { ComicReadingProgressProvider } from '@/context/ComicReadingProgressContext';
 import { Stage } from '../types';
 import { LearningEngineProvider } from '../context/LearningEngineContext';
 import LearningLayout from './layout/LearningLayout';
@@ -37,9 +38,11 @@ interface LearningEngineProps {
 
 export default function LearningEngine({ comic }: LearningEngineProps) {
   return (
-    <LearningEngineProvider comic={comic}>
-      <LearningEngineInner />
-    </LearningEngineProvider>
+    <ComicReadingProgressProvider>
+      <LearningEngineProvider comic={comic}>
+        <LearningEngineInner />
+      </LearningEngineProvider>
+    </ComicReadingProgressProvider>
   );
 }
 
