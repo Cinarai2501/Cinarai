@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toDataURL } from 'qrcode';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import type { Comic } from '@/types/comic';
+import { resolvePreviewImagePath } from './navigationStage.helpers';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -279,17 +281,40 @@ interface ObjectCardProps {
 }
 
 function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardProps) {
-  const [showAi, setShowAi] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [qrError, setQrError] = useState<string | null>(null);
   const objectTitle = entry.title?.trim() || 'Bangun Ruang';
   const valid = isValidUrl(entry.url);
   const sketchfab = valid && isSketchfab(entry.url);
   const embedUrl = sketchfab ? toEmbedUrl(entry.url) : null;
+  const previewImage = entry.previewImage?.trim() || resolvePreviewImagePath(objectTitle);
+  const qrSource = (entry.qrUrl || entry.url || '').trim();
   const id = `${entry.page}-${entry.url}`;
 
-  // Auto-open AI after explored
   useEffect(() => {
-    if (explored) setShowAi(true);
-  }, [explored]);
+    if (!isQrOpen || !qrSource) {
+      setQrDataUrl('');
+      setQrError(null);
+      return;
+    }
+
+    let isMounted = true;
+    toDataURL(qrSource, { margin: 1, scale: 10 })
+      .then((dataUrl) => {
+        if (isMounted) setQrDataUrl(dataUrl);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setQrDataUrl('');
+          setQrError('QR tidak dapat dibuat saat ini.');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isQrOpen, qrSource]);
 
   function handleIframeLoad() {
     onExplored(id);
@@ -298,6 +323,12 @@ function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardPro
   function handleExternalOpen() {
     onExplored(id);
     window.open(entry.url, '_blank', 'noopener,noreferrer');
+  }
+
+  function handleQrOpen() {
+    if (!qrSource) return;
+    onExplored(id);
+    setIsQrOpen(true);
   }
 
   return (
@@ -321,7 +352,6 @@ function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardPro
         )}
       </div>
 
-      {/* ── Embedded Sketchfab Viewer ── */}
       {sketchfab && embedUrl ? (
         <div className="relative w-full bg-neutral-900" style={{ paddingBottom: '56.25%' /* 16:9 */ }}>
           <iframe
@@ -334,16 +364,45 @@ function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardPro
           />
         </div>
       ) : valid ? (
-        /* Non-Sketchfab: show a placeholder with external open button */
-        <div className="flex flex-col items-center justify-center gap-3 bg-neutral-50 px-4 py-8">
-          <p className="text-sm text-neutral-500">Model 3D tersedia di platform eksternal.</p>
-          <button
-            type="button"
-            onClick={handleExternalOpen}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 active:scale-[0.98]"
-          >
-            <span>🔭</span> Buka Model 3D
-          </button>
+        <div className="border-t border-neutral-100 bg-white px-4 py-4 sm:px-5 sm:py-5">
+          <div className="overflow-hidden rounded-[18px] border border-neutral-200 bg-neutral-100">
+            {previewImage ? (
+              <img
+                src={previewImage}
+                alt={`Preview ${objectTitle}`}
+                className="h-48 w-full object-cover sm:h-56"
+              />
+            ) : (
+              <div className="flex h-48 items-center justify-center bg-gradient-to-br from-primary-100 to-secondary-50 text-sm font-semibold text-primary-700 sm:h-56">
+                Preview model akan tampil di sini.
+              </div>
+            )}
+          </div>
+
+          {entry.description && (
+            <p className="mt-3 text-sm leading-relaxed text-neutral-600">{entry.description}</p>
+          )}
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={handleExternalOpen}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 active:scale-[0.98]"
+            >
+              <span>📦</span> Lihat Model 3D
+            </button>
+            <button
+              type="button"
+              onClick={handleQrOpen}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-black text-neutral-700 transition hover:bg-neutral-100 active:scale-[0.98]"
+            >
+              <span>📱</span> Lihat QR
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <ObjectAiPanel entry={entry} comic={comic} />
+          </div>
         </div>
       ) : (
         <div className="bg-neutral-50 px-4 py-6 text-center">
@@ -351,7 +410,6 @@ function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardPro
         </div>
       )}
 
-      {/* ── Buka Fullscreen (opsional, hanya Sketchfab) ── */}
       {sketchfab && valid && (
         <div className="flex justify-end bg-white px-4 py-2">
           <a
@@ -368,37 +426,60 @@ function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardPro
         </div>
       )}
 
-      {/* ── Description ── */}
-      {entry.description && (
-        <div className="border-t border-neutral-100 bg-white px-4 py-3">
-          <p className="text-sm leading-relaxed text-neutral-600">{entry.description}</p>
+      {isQrOpen && qrSource && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+          <div className="w-full max-w-md rounded-[24px] border border-neutral-200 bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary-600">QR Assemblr</p>
+                <h4 className="mt-1 text-lg font-black text-neutral-900">{objectTitle}</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQrOpen(false)}
+                className="rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700"
+              >
+                Tutup
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt={`QR ${objectTitle}`} className="mx-auto h-60 w-60 rounded-2xl bg-white p-3 object-contain" />
+              ) : (
+                <div className="mx-auto flex h-60 w-60 items-center justify-center rounded-2xl bg-white p-3 text-center text-sm font-semibold text-neutral-500">
+                  {qrError || 'Membuat QR...'}
+                </div>
+              )}
+              <div className="mt-4 space-y-2 text-sm text-neutral-600">
+                <p className="font-semibold text-neutral-700">Model</p>
+                <p>{objectTitle}</p>
+                <p className="font-semibold text-neutral-700">Link</p>
+                <p className="break-all text-xs text-neutral-500">{qrSource}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              {qrDataUrl && (
+                <a
+                  href={qrDataUrl}
+                  download={`${objectTitle.toLowerCase().replace(/\s+/g, '-') || 'qr'}-assemblr.png`}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-black text-white"
+                >
+                  Download QR
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsQrOpen(false)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-black text-neutral-700"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* ── AI Tutor toggle + panel ── */}
-      <div className="border-t border-neutral-100 bg-white px-4 pb-4 pt-3">
-        {explored ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setShowAi((v) => !v)}
-              className={['inline-flex w-full min-h-[40px] items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition', showAi ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100'].join(' ')}
-            >
-              <span>🤖</span>
-              <span>{showAi ? 'Tutup AI Tutor' : 'Tanya AI Tutor'}</span>
-            </button>
-            {showAi && (
-              <div className="mt-3">
-                <ObjectAiPanel entry={entry} comic={comic} />
-              </div>
-            )}
-          </>
-        ) : (
-          <p className="text-center text-xs text-neutral-400">
-            AI Tutor tersedia setelah model 3D dimuat.
-          </p>
-        )}
-      </div>
     </div>
   );
 }

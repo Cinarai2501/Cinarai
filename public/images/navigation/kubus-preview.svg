@@ -1,0 +1,10 @@
+<svg width="800" height="500" viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" rx="32" fill="#F1F8FF"/>
+  <rect x="170" y="120" width="220" height="220" rx="20" fill="#4F8EF7"/>
+  <rect x="390" y="120" width="220" height="220" rx="20" fill="#7FB4FF"/>
+  <path d="M390 120L170 120L390 340L610 340" stroke="#1F4EAD" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M390 340L170 340" stroke="#1F4EAD" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="232" cy="182" r="18" fill="#FFFFFF" fill-opacity="0.9"/>
+  <circle cx="452" cy="182" r="18" fill="#FFFFFF" fill-opacity="0.9"/>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#1F4EAD">Kubus</text>
+</svg>

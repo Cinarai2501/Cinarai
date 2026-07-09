@@ -1,0 +1,8 @@
+<svg width="800" height="500" viewBox="0 0 800 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" rx="32" fill="#F9F6FF"/>
+  <rect x="190" y="120" width="240" height="220" rx="24" fill="#8F6BE8"/>
+  <rect x="430" y="120" width="180" height="220" rx="24" fill="#B79CFB"/>
+  <path d="M430 120L190 120L190 340L430 340" stroke="#5A2FC4" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M430 340L610 340" stroke="#5A2FC4" stroke-width="18" stroke-linecap="round"/>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#5A2FC4">Balok</text>
+</svg>
