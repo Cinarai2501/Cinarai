@@ -8,6 +8,7 @@ type ArgumentationRequestBody = {
   question: string;
   studentAnswer: string;
   shapeName: string;
+  templePart: string;
   comicTitle: string;
   lokasi: string;
   classLevel: string;
@@ -40,6 +41,7 @@ function buildArgumentationPrompt(body: ArgumentationRequestBody): string {
     `- Komik: ${body.comicTitle}`,
     `- Lokasi: ${body.lokasi}`,
     `- Kelas: ${body.classLevel}`,
+    `- Bagian bangunan: ${body.templePart}`,
     `- Bangun ruang: ${body.shapeName}`,
     `- Pertanyaan: ${body.question}`,
     `- Jawaban siswa: ${body.studentAnswer}`,
