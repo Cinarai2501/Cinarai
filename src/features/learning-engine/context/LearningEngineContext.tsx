@@ -185,6 +185,33 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   }, [user, showSnackbar]);
 
   /** Complete current stage in Firestore then advance to next stage. */
+  const completeCurrentStage = useCallback(async () => {
+    if (isSavingRef.current) return;
+
+    const sintaks = stageToSintaks(currentStage);
+    if (!sintaks) return;
+
+    if (!user?.uid) {
+      showSnackbar('Gagal menyimpan progress: login diperlukan.', 'error');
+      return;
+    }
+
+    isSavingRef.current = true;
+    setIsSaving(true);
+    try {
+      const next = await persistCompleteStage(user.uid, progressRef.current, sintaks);
+      progressRef.current = next;
+      setProgress(next);
+      showSnackbar('Progress berhasil disimpan ✓', 'success');
+    } catch (error) {
+      const code = extractFirebaseErrorCode(error);
+      showSnackbar(`Gagal menyimpan progress: ${code}`, 'error');
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
+    }
+  }, [user, currentStage, showSnackbar]);
+
   const nextStage = useCallback(async () => {
     if (!canAdvance || isSavingRef.current || stageIndex >= totalStages - 1) return;
 
@@ -275,6 +302,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       totalStages,
       nextStage,
       completeAndAdvance,
+      completeCurrentStage,
       previousStage,
       goToStage,
       finishLearning,
@@ -298,6 +326,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       totalStages,
       nextStage,
       completeAndAdvance,
+      completeCurrentStage,
       previousStage,
       goToStage,
       finishLearning,

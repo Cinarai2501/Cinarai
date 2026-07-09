@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { RESOLUTION_MISSIONS, type ResolutionMission } from './resolutionStage.helpers';
 
-function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, selected: string | null, attempt: number = 0): string {
+function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (isCorrect) {
     return [
       '✨ Selamat! Jawabanmu benar!',
@@ -247,7 +247,7 @@ function MissionCard({
       });
       const data = await response.json();
       const answerIsCorrect = Boolean(data.correct);
-      const fallbackText = getTutorFallback(mission, answerIsCorrect, selected, attempts);
+      const fallbackText = getTutorFallback(mission, answerIsCorrect, attempts);
       const aiText = typeof data.explanation === 'string' && data.explanation.trim()
         ? data.explanation
         : fallbackText;
@@ -265,7 +265,7 @@ function MissionCard({
         // Untuk jawaban salah: siswa tetap di soal yang sama, pilihan tetap aktif
       }
     } catch {
-      const fallbackText = getTutorFallback(mission, false, selected, attempts);
+      const fallbackText = getTutorFallback(mission, false, attempts);
       setTutorMessage(fallbackText);
       setAnswerFeedback('incorrect');
     } finally {
