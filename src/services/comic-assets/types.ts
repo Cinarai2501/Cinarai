@@ -119,6 +119,10 @@ export interface ClassifiedQr {
   image: string;
   category: QrCategory;
   title?: string;
+  /** Short 1–2 sentence description for the Navigation card */
+  description?: string;
+  /** Preview image path (local public/ path) shown before opening the 3D model */
+  previewImage?: string;
   qrUrl?: string;
 }
 
@@ -127,6 +131,10 @@ export interface ClassifiedQr {
 export interface ComicAssetEntry {
   page: number;
   title: string;
+  /** Short 1–2 sentence description shown in the Navigation card */
+  description?: string;
+  /** Preview image path shown before the user opens the 3D model */
+  previewImage?: string;
   buttonLabel: string;
   provider?: string;
   url: string;

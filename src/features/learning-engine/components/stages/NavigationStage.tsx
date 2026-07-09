@@ -12,8 +12,8 @@ import type { Comic } from '@/types/comic';
 function isValidUrl(url: string): boolean {
   if (!url) return false;
   try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
   } catch {
     return false;
   }
@@ -28,57 +28,95 @@ function isSketchfab(url: string): boolean {
   }
 }
 
-function getQuickQuestions(objectName: string): string[] {
-  const n = objectName.toLowerCase();
-  if (n.includes('kubus'))
+// ─── Quick questions per object ───────────────────────────────────────────────
+
+function getQuickQuestions(title: string): string[] {
+  const t = title.toLowerCase();
+
+  // Object 0 — Candi Jawi (facilitator mode, NOT shape-answer mode)
+  if (t.includes('candi jawi') || t === 'candi jawi') {
+    return [
+      'Apa saja bangun ruang yang dapat ditemukan pada Candi Jawi?',
+      'Bagian mana yang berbentuk kubus?',
+      'Bagian mana yang berbentuk balok?',
+      'Bagian mana yang menyerupai limas?',
+      'Mengapa bangunan candi tersusun dari beberapa bangun ruang?',
+    ];
+  }
+  if (t.includes('kubus')) {
     return [
       'Apa nama bangun ruang ini?',
       'Berapa jumlah sisinya?',
       'Berapa jumlah rusuknya?',
       'Berapa titik sudutnya?',
-      'Mengapa bagian bawah Candi Jawi berbentuk kubus?',
+      'Mengapa bagian kaki Candi Jawi berbentuk kubus?',
     ];
-  if (n.includes('balok'))
+  }
+  if (t.includes('balok')) {
     return [
-      'Apa nama bangun ruang ini?',
-      'Berapa jumlah sisi balok ini?',
+      'Apa ciri-ciri balok?',
       'Apa perbedaan balok dan kubus?',
-      'Bagaimana bentuk rusuk pada balok?',
+      'Berapa jumlah sisi balok?',
+      'Bagian mana pada Candi Jawi berbentuk balok?',
     ];
-  if (n.includes('limas'))
+  }
+  if (t.includes('limas')) {
     return [
-      'Apa nama bangun ruang ini?',
-      'Berapa jumlah sisi limas ini?',
+      'Apa ciri-ciri limas?',
+      'Berapa jumlah sisi limas segi empat?',
+      'Mengapa atap candi menyerupai limas?',
       'Apa perbedaan limas dan prisma?',
-      'Mengapa atap candi berbentuk limas?',
     ];
-  if (n.includes('prisma'))
+  }
+  if (t.includes('prisma')) {
     return [
-      'Apa nama bangun ruang ini?',
-      'Berapa jumlah sisi prisma ini?',
-      'Apa perbedaan prisma dan balok?',
+      'Apa ciri-ciri prisma?',
+      'Berapa jumlah sisi prisma segitiga?',
       'Di mana kita bisa melihat bentuk prisma di Candi Jawi?',
+      'Apa perbedaan prisma dan balok?',
     ];
-  if (n.includes('kerucut'))
+  }
+  if (t.includes('kerucut')) {
     return [
-      'Apa nama bangun ruang ini?',
       'Apa ciri khas alas kerucut?',
       'Apa perbedaan kerucut dan tabung?',
-      'Mengapa bentuk atap candi mirip kerucut?',
+      'Mengapa puncak candi mirip kerucut?',
+      'Berapa jumlah sisi kerucut?',
     ];
-  if (n.includes('tabung'))
+  }
+  if (t.includes('tabung')) {
     return [
-      'Apa nama bangun ruang ini?',
       'Apa bentuk alas dan tutup tabung?',
       'Berapa jumlah rusuk tabung?',
       'Mengapa struktur ini sering muncul pada bangunan?',
     ];
+  }
   return [
     'Apa nama bangun ruang ini?',
     'Berapa jumlah rusuknya?',
     'Bagaimana bentuk sisi-sisinya?',
     'Apa kaitannya dengan Candi Jawi?',
   ];
+}
+
+// ─── System prompt per object ─────────────────────────────────────────────────
+
+function getSystemPromptHint(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes('candi jawi') || t === 'candi jawi') {
+    return (
+      'Kamu adalah fasilitator observasi Candi Jawi. ' +
+      'JANGAN langsung menyebutkan nama bangun ruang. ' +
+      'Bantu siswa menemukan sendiri bangun ruang yang tersembunyi di arsitektur Candi Jawi ' +
+      'dengan pertanyaan-pertanyaan pemandu. ' +
+      'Tanyakan: "Bagian mana yang terlihat seperti kotak?", "Apa yang kamu lihat di puncak candi?", dll.'
+    );
+  }
+  return (
+    `Kamu adalah AI Tutor untuk bangun ruang ${title}. ` +
+    'Bantu siswa memahami ciri-ciri, sifat, dan kaitannya dengan Candi Jawi. ' +
+    'Jawab pertanyaan dengan jelas dan tambahkan satu pertanyaan reflektif. Maksimal 100 kata.'
+  );
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -90,8 +128,6 @@ interface ChatMessage {
 }
 
 // ─── ObjectAiPanel ────────────────────────────────────────────────────────────
-// Self-contained AI chat panel scoped to a single AR object.
-// Has its own messages, draft, isResponding, aiError — fully isolated.
 
 interface ObjectAiPanelProps {
   entry: ComicAssetEntry;
@@ -100,14 +136,19 @@ interface ObjectAiPanelProps {
 
 /* eslint-disable @next/next/no-img-element */
 function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
-  const objectName = entry.title?.trim() || 'Bangun Ruang';
-  const quickQuestions = useMemo(() => getQuickQuestions(objectName), [objectName]);
+  const objectTitle = entry.title?.trim() || 'Bangun Ruang';
+  const quickQuestions = useMemo(() => getQuickQuestions(objectTitle), [objectTitle]);
+  const systemHint = useMemo(() => getSystemPromptHint(objectTitle), [objectTitle]);
+
+  const isCandiJawi = objectTitle.toLowerCase().includes('candi jawi');
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 1,
       role: 'assistant',
-      content: `Halo! Aku siap membantu kamu memahami ${objectName}. Silakan tanyakan apa saja!`,
+      content: isCandiJawi
+        ? 'Halo! Kamu sudah melihat model 3D Candi Jawi. Coba amati dengan teliti — bagian mana yang menarik perhatianmu? Apa yang kamu lihat?'
+        : `Halo! Kamu sudah mengeksplorasi model ${objectTitle}. Ada yang ingin kamu tanyakan?`,
     },
   ]);
   const [draft, setDraft] = useState('');
@@ -115,7 +156,6 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
   const [aiError, setAiError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isResponding]);
@@ -125,11 +165,8 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
       const trimmed = (rawText ?? draft).trim();
       if (!trimmed || isResponding) return;
 
-      console.info(`[Navigation][${objectName}] AI Request Start — question:`, trimmed);
-
-      const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
-      const nextMessages = [...messages, userMessage];
-      const historyForPrompt = nextMessages.map(({ role, content }) => ({ role, content }));
+      const userMsg: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
+      const nextMessages = [...messages, userMsg];
 
       setMessages(nextMessages);
       setDraft('');
@@ -137,7 +174,7 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
       setAiError(null);
 
       try {
-        const response = await fetch('/api/ai/chat', {
+        const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -152,58 +189,40 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
                 learningTargets: comic.learningTargets,
               },
               observationAnswers: {},
-              sessionHistory: historyForPrompt,
+              sessionHistory: nextMessages.map(({ role, content }) => ({ role, content })),
               comicTitle: comic.title,
               pageLabel: `Halaman ${entry.page}`,
-              objectName,
+              objectName: objectTitle,
               learningStage: 'Navigation',
+              systemHint,
             },
           }),
         });
 
-        const payload = (await response.json()) as {
-          answer?: string;
-          provider?: string;
-          error?: string;
-        };
-
-        if (!response.ok || !payload.answer) {
-          throw new Error(payload.error ?? 'AI response was not available.');
-        }
-
-        console.info(
-          `[Navigation][${objectName}] AI Response Success — provider:`,
-          payload.provider,
-          'length:',
-          payload.answer.length,
-        );
+        const payload = (await res.json()) as { answer?: string; provider?: string; error?: string };
+        if (!res.ok || !payload.answer) throw new Error(payload.error ?? 'AI tidak merespons.');
 
         setMessages((prev) => [
           ...prev,
           { id: Date.now() + 1, role: 'assistant', content: payload.answer! },
         ]);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(`[Navigation][${objectName}] AI Error:`, msg);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         setAiError(msg);
         setMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 2,
-            role: 'assistant',
-            content: `Maaf, terjadi kesalahan saat menghubungi layanan AI: ${msg}`,
-          },
+          { id: Date.now() + 2, role: 'assistant', content: `Maaf, terjadi kesalahan: ${msg}` },
         ]);
       } finally {
         setIsResponding(false);
       }
     },
-    [comic, draft, entry.page, isResponding, messages, objectName],
+    [comic, draft, entry.page, isResponding, messages, objectTitle, systemHint],
   );
 
   return (
-    <div className="mt-3 flex flex-col gap-0 overflow-hidden rounded-[20px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white shadow-[0_4px_16px_rgba(47,128,237,0.08)]">
-      {/* Robot header */}
+    <div className="mt-3 overflow-hidden rounded-[20px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white shadow-[0_4px_16px_rgba(47,128,237,0.08)]">
+      {/* Header */}
       <div className="flex items-center gap-3 bg-gradient-to-r from-[#EBF5FF] to-[#F5FBFF] px-4 py-3">
         <div
           className={[
@@ -211,19 +230,11 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
             isResponding ? 'animate-ai-blink' : 'animate-ai-float',
           ].join(' ')}
         >
-          <img
-            src="/images/ai/robot.svg"
-            alt="Robot AI"
-            width={32}
-            height={32}
-            className="h-8 w-8 drop-shadow-sm"
-          />
+          <img src="/images/ai/robot.svg" alt="AI Tutor" className="h-8 w-8 drop-shadow-sm" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-black uppercase tracking-widest text-primary-600">
-            AI Tutor
-          </p>
-          <p className="truncate text-sm font-bold text-neutral-700">{objectName}</p>
+          <p className="text-xs font-black uppercase tracking-widest text-primary-600">AI Tutor</p>
+          <p className="truncate text-sm font-bold text-neutral-700">{objectTitle}</p>
         </div>
         <div className="flex items-center gap-1.5">
           <span
@@ -240,7 +251,7 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
 
       <div className="flex flex-col gap-3 p-3">
         {/* Chat messages */}
-        <div className="flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
+        <div className="flex max-h-52 flex-col gap-2 overflow-y-auto pr-1">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -261,9 +272,13 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
           {isResponding && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-primary-100 bg-[#F5FBFF] px-3 py-2.5">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '0ms' }} />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '150ms' }} />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '300ms' }} />
+                {[0, 150, 300].map((delay) => (
+                  <span
+                    key={delay}
+                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary-400"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -285,7 +300,7 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
           ))}
         </div>
 
-        {/* Input row */}
+        {/* Input */}
         <div className="flex items-end gap-2">
           <textarea
             value={draft}
@@ -314,19 +329,18 @@ function ObjectAiPanel({ entry, comic }: ObjectAiPanelProps) {
         </div>
 
         {aiError && (
-          <div className="rounded-2xl border border-error-200 bg-error-50 px-3 py-2.5 text-xs font-semibold text-error-700">
-            Terjadi error: {aiError}
-          </div>
+          <p className="rounded-2xl border border-error-200 bg-error-50 px-3 py-2 text-xs font-semibold text-error-700">
+            {aiError}
+          </p>
         )}
       </div>
     </div>
   );
 }
 
-// ─── ObjectExploreCard ────────────────────────────────────────────────────────
-// One card per model3D entry: AR button + explored badge + per-object AI panel.
+// ─── ObjectCard ───────────────────────────────────────────────────────────────
 
-interface ObjectExploreCardProps {
+interface ObjectCardProps {
   entry: ComicAssetEntry;
   index: number;
   explored: boolean;
@@ -334,27 +348,28 @@ interface ObjectExploreCardProps {
   onOpenAr: (entry: ComicAssetEntry) => void;
 }
 
-function ObjectExploreCard({ entry, index, explored, comic, onOpenAr }: ObjectExploreCardProps) {
+function ObjectCard({ entry, index, explored, comic, onOpenAr }: ObjectCardProps) {
   const [showAi, setShowAi] = useState(false);
-  const objectName = entry.title?.trim() || 'Bangun Ruang';
+  const objectTitle = entry.title?.trim() || 'Bangun Ruang';
   const valid = isValidUrl(entry.url);
+  const isCandiJawi = index === 0;
 
-  // Auto-open AI panel after AR is explored
+  // Auto-open AI after exploration
   useEffect(() => {
     if (explored) setShowAi(true);
   }, [explored]);
 
+  const previewSrc = entry.previewImage ?? (isCandiJawi ? '/images/navigation/default.svg' : '/images/navigation/default.svg');
+
   return (
     <div
       className={[
-        'rounded-[20px] border p-4 transition-all duration-200',
-        explored
-          ? 'border-accent-200 bg-accent-50/40'
-          : 'border-neutral-200 bg-white',
+        'overflow-hidden rounded-[20px] border transition-all duration-200',
+        explored ? 'border-accent-200 bg-white' : 'border-neutral-200 bg-white',
       ].join(' ')}
     >
-      {/* Card header */}
-      <div className="flex items-center gap-3">
+      {/* ── Card header ── */}
+      <div className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3">
         <div
           className={[
             'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-black',
@@ -364,51 +379,92 @@ function ObjectExploreCard({ entry, index, explored, comic, onOpenAr }: ObjectEx
           {explored ? '✓' : index + 1}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-            Objek {index + 1}
+          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+            {isCandiJawi ? 'Objek Utama' : `Objek ${index + 1}`}
           </p>
-          <h3 className="truncate text-base font-black text-neutral-900">{objectName}</h3>
+          <h3 className="truncate text-base font-black text-neutral-900">{objectTitle}</h3>
         </div>
         {explored && (
-          <span className="rounded-full bg-accent-100 px-2.5 py-1 text-xs font-bold text-accent-700">
-            Selesai
+          <span className="flex-shrink-0 rounded-full bg-accent-100 px-2.5 py-1 text-xs font-bold text-accent-700">
+            ✓ Selesai
           </span>
         )}
       </div>
 
-      {/* AR button */}
-      <div className="mt-3 flex items-center gap-2">
+      {/* ── Preview image ── */}
+      <div className="relative overflow-hidden bg-neutral-100" style={{ aspectRatio: '16/9' }}>
+        <img
+          src={previewSrc}
+          alt={`Preview ${objectTitle}`}
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/images/navigation/default.svg';
+          }}
+        />
+        {/* Overlay label */}
+        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/50 to-transparent p-3">
+          <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+            {isCandiJawi ? '🏛️ Candi Jawi, Pasuruan' : `📐 ${objectTitle}`}
+          </span>
+        </div>
+        {/* "Belum dieksplorasi" overlay */}
+        {!explored && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <span className="rounded-2xl bg-white/90 px-4 py-2 text-xs font-black text-neutral-700 shadow-sm backdrop-blur-sm">
+              Tekan tombol di bawah untuk mengeksplorasi
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Description ── */}
+      {entry.description && (
+        <div className="px-4 py-3">
+          <p className="text-sm leading-relaxed text-neutral-600">{entry.description}</p>
+        </div>
+      )}
+
+      {/* ── Action row ── */}
+      <div className="flex items-center gap-2 px-4 pb-4">
         <button
           type="button"
           onClick={() => onOpenAr(entry)}
           disabled={!valid}
           className={[
-            'inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition',
+            'inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition active:scale-[0.98]',
             explored
               ? 'border-accent-300 bg-accent-50 text-accent-700 hover:bg-accent-100'
-              : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50',
+              : 'border-primary-300 bg-primary-600 text-white shadow-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:border-neutral-200',
           ].join(' ')}
         >
-          <span>🔭</span>
-          <span>{explored ? `Buka Lagi: ${objectName}` : `Lihat AR: ${objectName}`}</span>
+          <span>{explored ? '🔄' : '🔭'}</span>
+          <span>{explored ? 'Buka Lagi' : 'Lihat Model 3D'}</span>
         </button>
 
-        {/* Toggle AI panel button */}
+        {/* Toggle AI button — only after exploration */}
         {explored && (
           <button
             type="button"
             onClick={() => setShowAi((v) => !v)}
-            className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-primary-200 bg-primary-50 text-lg transition hover:bg-primary-100"
-            aria-label={showAi ? 'Tutup AI' : 'Buka AI'}
-            title={showAi ? 'Tutup AI Tutor' : 'Tanya AI Tutor'}
+            className={[
+              'inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border text-lg transition',
+              showAi
+                ? 'border-primary-300 bg-primary-100 text-primary-700'
+                : 'border-primary-200 bg-primary-50 text-primary-600 hover:bg-primary-100',
+            ].join(' ')}
+            aria-label={showAi ? 'Tutup AI Tutor' : 'Buka AI Tutor'}
           >
             🤖
           </button>
         )}
       </div>
 
-      {/* Per-object AI panel — only shown after AR explored */}
-      {explored && showAi && <ObjectAiPanel entry={entry} comic={comic} />}
+      {/* ── AI Tutor panel — always below the object, shown after exploration ── */}
+      {explored && showAi && (
+        <div className="border-t border-neutral-100 px-4 pb-4">
+          <ObjectAiPanel entry={entry} comic={comic} />
+        </div>
+      )}
     </div>
   );
 }
@@ -416,7 +472,7 @@ function ObjectExploreCard({ entry, index, explored, comic, onOpenAr }: ObjectEx
 // ─── NavigationStage ──────────────────────────────────────────────────────────
 
 export default function NavigationStage() {
-  const { comic, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
+  const { comic, setCanAdvance, unregisterSlideNav } = useLearningEngine();
   const { showSnackbar } = useSnackbar();
   const metadata = useComicMetadata(comic.id);
   const { model3D } = metadata.assets;
@@ -424,93 +480,75 @@ export default function NavigationStage() {
   const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
   const [embedEntryId, setEmbedEntryId] = useState<string | null>(null);
 
-  // Progress gate: all valid model3D entries must be explored. AI is optional.
+  const entryId = useCallback((e: ComicAssetEntry) => `${e.page}-${e.url}`, []);
+
   const requiredIds = useMemo(
-    () => model3D.filter((e) => isValidUrl(e.url)).map((e) => `${e.page}-${e.url}`),
-    [model3D],
+    () => model3D.filter((e) => isValidUrl(e.url)).map(entryId),
+    [model3D, entryId],
   );
-  const canAdvanceToArgumentation =
-    requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
+
+  const canAdvance = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
 
   useEffect(() => {
-    setCanAdvance(canAdvanceToArgumentation);
-    console.info(
-      '[Navigation] canAdvance:', canAdvanceToArgumentation,
-      'explored:', exploredIds.size, '/', requiredIds.length,
-    );
-  }, [canAdvanceToArgumentation, exploredIds.size, requiredIds.length, setCanAdvance]);
+    setCanAdvance(canAdvance);
+  }, [canAdvance, setCanAdvance]);
 
   useEffect(() => {
     return () => { unregisterSlideNav(); };
   }, [unregisterSlideNav]);
 
-  function handleOpenAr(entry: ComicAssetEntry) {
-    if (!isValidUrl(entry.url)) {
-      showSnackbar('Link AR belum tersedia.', 'info');
-      return;
-    }
+  const handleOpenAr = useCallback(
+    (entry: ComicAssetEntry) => {
+      if (!isValidUrl(entry.url)) {
+        showSnackbar('Link AR belum tersedia.', 'info');
+        return;
+      }
 
-    const entryId = `${entry.page}-${entry.url}`;
-    setExploredIds((prev) => {
-      if (prev.has(entryId)) return prev;
-      const next = new Set(prev);
-      next.add(entryId);
-      console.info('[Navigation] AR explored:', entry.title, '—', next.size, '/', requiredIds.length);
-      return next;
-    });
+      const id = entryId(entry);
+      setExploredIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
 
-    if (isSketchfab(entry.url)) {
-      setEmbedEntryId(entryId);
-      return;
-    }
-    window.open(entry.url, '_blank', 'noopener,noreferrer');
-  }
+      if (isSketchfab(entry.url)) {
+        setEmbedEntryId(id);
+        return;
+      }
+      window.open(entry.url, '_blank', 'noopener,noreferrer');
+    },
+    [entryId, showSnackbar],
+  );
 
-  function handleContinue() {
-    if (!canAdvanceToArgumentation) {
-      const remaining = requiredIds.length - exploredIds.size;
-      showSnackbar(
-        remaining === 1
-          ? 'Silakan eksplorasi 1 objek AR lagi sebelum melanjutkan.'
-          : `Silakan eksplorasi ${remaining} objek AR lagi sebelum melanjutkan.`,
-        'info',
-      );
-      return;
-    }
-    void nextStage();
-  }
-
-  // Find the entry currently shown as Sketchfab embed
   const embedEntry = embedEntryId
-    ? model3D.find((e) => `${e.page}-${e.url}` === embedEntryId) ?? null
+    ? (model3D.find((e) => entryId(e) === embedEntryId) ?? null)
     : null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden px-1 py-1 animate-fade-in-up sm:gap-5 sm:px-2">
-      {/* Stage header */}
-      <header className="rounded-[24px] bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4 py-4 shadow-sm sm:px-5 sm:py-5">
+    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden animate-fade-in-up">
+
+      {/* ── Stage header ── */}
+      <header className="rounded-[24px] bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4 py-4 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-2xl text-white shadow-sm">
             🧭
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-primary-600">
-              Navigation (AR + AI)
+              Navigation · AR + AI
             </p>
-            <h2 className="mt-1 text-lg font-black text-neutral-900 sm:text-xl">
-              Eksplorasi objek 3D dan tanyakan hasil pengamatanmu kepada AI.
+            <h2 className="mt-0.5 text-base font-black leading-snug text-neutral-900 sm:text-lg">
+              Eksplorasi model 3D, lalu diskusikan hasil pengamatanmu dengan AI Tutor.
             </h2>
           </div>
         </div>
       </header>
 
-      {/* Sketchfab inline embed — shown when a Sketchfab entry is opened */}
+      {/* ── Sketchfab inline embed ── */}
       {embedEntry && (
         <div className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
-            <p className="text-sm font-bold text-neutral-700">
-              Model 3D: {embedEntry.title}
-            </p>
+            <p className="text-sm font-bold text-neutral-700">Model 3D: {embedEntry.title}</p>
             <button
               type="button"
               onClick={() => setEmbedEntryId(null)}
@@ -530,44 +568,37 @@ export default function NavigationStage() {
         </div>
       )}
 
-      {/* Object cards */}
-      <div className="flex flex-col gap-3">
-        {model3D.length > 0 ? (
-          model3D.map((entry, index) => {
-            const entryId = `${entry.page}-${entry.url}`;
-            return (
-              <ObjectExploreCard
-                key={entryId}
-                entry={entry}
-                index={index}
-                explored={exploredIds.has(entryId)}
-                comic={comic}
-                onOpenAr={handleOpenAr}
-              />
-            );
-          })
-        ) : (
-          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-8 text-center">
-            <p className="text-sm font-semibold text-neutral-500">
-              Objek AR belum tersedia untuk komik ini.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Progress + continue */}
-      <div className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-neutral-600">
-            Progress eksplorasi
+      {/* ── Object cards ── */}
+      {model3D.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          {model3D.map((entry, index) => (
+            <ObjectCard
+              key={entryId(entry)}
+              entry={entry}
+              index={index}
+              explored={exploredIds.has(entryId(entry))}
+              comic={comic}
+              onOpenAr={handleOpenAr}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-10 text-center">
+          <p className="text-sm font-semibold text-neutral-500">
+            Objek AR belum tersedia untuk komik ini.
           </p>
+        </div>
+      )}
+
+      {/* ── Progress footer ── */}
+      <div className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-semibold text-neutral-600">Progress eksplorasi</p>
           <span className="text-sm font-black text-primary-700">
             {exploredIds.size}/{requiredIds.length} objek
           </span>
         </div>
-
-        {/* Progress bar */}
-        <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
           <div
             className="h-2 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500"
             style={{
@@ -577,30 +608,10 @@ export default function NavigationStage() {
             }}
           />
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => showSnackbar(comic.synopsis || 'Tidak ada info lebih lanjut.', 'info')}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-          >
-            Info
-          </button>
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={!canAdvanceToArgumentation}
-            className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
-          >
-            Lanjut
-          </button>
-        </div>
-
-        {!canAdvanceToArgumentation && (
-          <p className="mt-3 text-sm text-neutral-500">
-            {requiredIds.length > 1
-              ? `Eksplorasi semua objek AR (${exploredIds.size}/${requiredIds.length}) untuk melanjutkan.`
-              : 'Buka viewer AR untuk melanjutkan.'}
+        {!canAdvance && (
+          <p className="mt-2 text-xs text-neutral-500">
+            Eksplorasi semua objek AR ({exploredIds.size}/{requiredIds.length}) untuk melanjutkan.
+            AI Tutor bersifat opsional.
           </p>
         )}
       </div>

@@ -29,6 +29,8 @@ function toEntry(qr: ClassifiedQr): ComicAssetEntry | null {
   return {
     page: qr.page,
     title: qr.title?.trim() || 'Model 3D',
+    description: qr.description,
+    previewImage: qr.previewImage,
     buttonLabel: BUTTON_LABELS[qr.category],
     provider,
     url: qr.value,
