@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { RESOLUTION_MISSIONS } from '../../../../features/learning-engine/components/stages/resolutionStage.helpers';
 
 export const runtime = 'nodejs';
 
 type ReqBody = {
   selected?: string;
   attempt?: number;
+  missionId?: number;
 };
 
-const CORRECT_KEY = 'C';
-
-function buildFullExplanation() {
+function buildExplanation(mission: (typeof RESOLUTION_MISSIONS)[number]) {
   return [
-    'Penjelasan lengkap:',
+    'Penjelasan AI:',
     '',
-    'Mengapa jawaban benar:',
-    'Rumus Volume Kubus = s × s × s',
+    mission.formula,
     '',
-    'Dengan s = 8 cm:',
-    '8 × 8 × 8',
-    '= 512 cm³',
+    mission.explanation,
     '',
-    'Hubungan dengan bagian alas Candi Jawi:',
-    'Bagian alas Candi Jawi yang dimaksud memiliki bentuk persegi sejajar (alas), sehingga dapat dimodelkan sebagai sisi-sisi kubus jika kita membayangkan sebuah balok beraturan.',
-    'Menggunakan rumus volume kubus memberi gambaran seberapa banyak ruang yang terisi pada bangun dengan tinggi sama dengan panjang rusuknya, mirip bagaimana volume dasar (alas) menentukan ukuran bagian bawah struktur.',
+    `Hubungan dengan Candi Jawi: ${mission.context}`,
   ].join('\n');
 }
 
@@ -31,39 +26,39 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as ReqBody;
     const selected = (body.selected ?? '').toString().trim().toUpperCase();
     const attempt = Math.max(0, Number(body.attempt) || 0);
+    const missionId = Number(body.missionId) || 1;
+    const mission = RESOLUTION_MISSIONS.find((item) => item.id === missionId) ?? RESOLUTION_MISSIONS[0];
 
     if (!selected) {
       return NextResponse.json({ error: 'selected is required' }, { status: 400 });
     }
 
-    // Correct answer
-    if (selected === CORRECT_KEY) {
+    if (selected === mission.correctKey) {
       return NextResponse.json({
         correct: true,
-        explanation: buildFullExplanation(),
+        explanation: buildExplanation(mission),
+        answer: mission.answer,
       });
     }
 
-    // Wrong answer — provide stepwise hints, up to 3 hints.
-    const nextAttempt = attempt;
-    if (nextAttempt >= 3) {
-      // after 3 wrong attempts show full explanation
+    if (attempt >= 3) {
       return NextResponse.json({
         correct: false,
-        showSolution: true,
-        explanation: buildFullExplanation(),
+        hint: 'Coba pelajari kembali rumus bangun ruang ini dan kirim jawaban lagi.',
       });
     }
 
     const hints = [
-      'Coba ingat kembali rumus volume kubus.',
-      'Ingat rumus: Volume kubus = s × s × s. Masukkan s = 8, lalu lakukan perkalian berurutan.',
-      'Hitung 8 × 8 = 64, lalu 64 × 8 = 512. Jika masih belum yakin, tekan kirim lagi untuk melihat pembahasan lengkap.',
+      mission.aiHint,
+      `Periksa satu langkah penting pada rumus ${mission.shape.toLowerCase()} sebelum menjawab.`,
+      `Coba hitung kembali dengan teliti sampai kamu yakin dengan pilihan yang paling sesuai.`,
     ];
 
-    const hint = hints[Math.min(nextAttempt, hints.length - 1)];
-
-    return NextResponse.json({ correct: false, hint, attempts: nextAttempt });
+    return NextResponse.json({
+      correct: false,
+      hint: hints[Math.min(attempt, hints.length - 1)],
+      attempts: attempt,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown';
     return NextResponse.json({ error: message }, { status: 502 });
