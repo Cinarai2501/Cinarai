@@ -1,38 +1,72 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { RESOLUTION_MISSIONS, type ResolutionMission } from './resolutionStage.helpers';
 
-function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, selected: string | null): string {
-  const selectedLabel = selected ? `Kamu memilih ${selected}.` : 'Kamu belum memilih jawaban.';
+function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, selected: string | null, attempt: number = 0): string {
   if (isCorrect) {
     return [
-      'Hebat! Jawabanmu benar.',
+      '✨ Selamat! Jawabanmu benar!',
       '',
-      `Langkah 1: ${mission.explanation}`,
+      'Aku bangga dengan kamu. Mari kita lihat bagaimana cara mengerjakannya:',
       '',
-      `Langkah 2: Gunakan rumus ${mission.shape.toLowerCase()} yang benar.`,
+      `📚 Bangun yang kita gunakan: ${mission.shape}`,
       '',
-      `Langkah 3: ${mission.formula}`,
+      `📏 Rumusnya adalah: ${mission.formula}`,
       '',
-      `Langkah 4: Jadi hasil akhirnya adalah ${mission.answer}.`,
+      `📌 Jadi hasilnya adalah: ${mission.answer}`,
       '',
-      `Hubungan dengan Candi Jawi: ${mission.context}`,
+      `🏛️ Hubungan dengan Candi Jawi: ${mission.context}`,
+      '',
+      'Kamu sudah memahami konsep yang penting. Sangat bagus! 👏',
     ].join('\n');
   }
 
+  // Untuk jawaban salah - attempt pertama: berikan petunjuk tanpa jawaban langsung
+  if (attempt === 0 || attempt === 1) {
+    return [
+      '💡 Hmm, jawaban itu belum tepat. Jangan khawatir!',
+      '',
+      'Mari kita periksa bersama-sama:',
+      '',
+      `🔍 Bangun yang sedang kita hitung adalah: ${mission.shape}`,
+      '',
+      `📏 Rumus yang kita pakai: ${mission.formula.split('=')[0].trim()}`,
+      '',
+      'Coba perhatikan langkah-langkahnya lebih teliti. Masukkan angka dengan hati-hati.',
+      '',
+      'Ingat: Kesalahan adalah guru terbaik. Ayo coba lagi! 💪',
+    ].join('\n');
+  }
+
+  // Untuk attempt kedua: lebih detail guidance
+  if (attempt === 2) {
+    return [
+      '🤔 Mari kita coba pendekatan lain:',
+      '',
+      `Langkah 1: Identifikasi bangunnya - ${mission.shape}`,
+      '',
+      `Langkah 2: Gunakan rumus: ${mission.formula.split('=')[0].trim()}`,
+      '',
+      `Langkah 3: Masukkan nilai-nilainya dengan teliti`,
+      '',
+      `Langkah 4: Hitung hasilnya: ${mission.formula}`,
+      '',
+      'Aku yakin kamu bisa! Coba lagi dengan keyakinan penuh! 🌟',
+    ].join('\n');
+  }
+
+  // Untuk attempt ketiga ke atas
   return [
-    'Jawabanmu belum tepat. Mari kita pelajari bersama.',
+    '📖 Mari kita lihat penjelasan lengkapnya:',
     '',
-    `Langkah 1: Bangun yang sedang kita hitung adalah ${mission.shape}.`,
+    `Bangun: ${mission.shape}`,
+    `Rumus: ${mission.formula}`,
+    `Hasil: ${mission.answer}`,
     '',
-    `Langkah 2: Rumus yang dipakai adalah ${mission.formula.split('=')[0].trim()}.`,
-    '',
-    `Langkah 3: Masukkan nilainya dengan hati-hati. ${selectedLabel}`,
-    '',
-    'Tidak apa-apa, kesalahan adalah bagian dari belajar. Ayo coba lagi dengan lebih teliti.',
+    'Belajarlah dari pengalaman ini. Kamu akan lebih mahir seiring waktu! 🚀',
   ].join('\n');
 }
 
@@ -40,33 +74,38 @@ export default function ResolutionStage() {
   const { comic, setCanAdvance, nextStage } = useLearningEngine();
   const [misiStarted, setMisiStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [completedUpToIndex, setCompletedUpToIndex] = useState(-1); // Track progress yang ditampilkan
   const [selected, setSelected] = useState<string | null>(null);
-  const [completedIds, setCompletedIds] = useState<number[]>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect' | 'neutral'; message: string } | null>(null);
 
   const currentMission = RESOLUTION_MISSIONS[currentIndex];
-  const progress = useMemo(() => `${Math.min(currentIndex + 1, RESOLUTION_MISSIONS.length)}/${RESOLUTION_MISSIONS.length}`, [currentIndex]);
-  const allCompleted = completedIds.length === RESOLUTION_MISSIONS.length || isFinished;
+  const displayedProgress = useMemo(
+    () => `${Math.min(completedUpToIndex + 2, RESOLUTION_MISSIONS.length)}/${RESOLUTION_MISSIONS.length}`,
+    [completedUpToIndex]
+  );
 
   useEffect(() => {
     setCanAdvance(false);
   }, [misiStarted, setCanAdvance]);
 
+  // Reset state ketika berpindah soal
   useEffect(() => {
     if (!misiStarted) return;
     setSelected(null);
-    setFeedback(null);
   }, [currentIndex, misiStarted]);
 
-  const handleAdvance = () => {
-    if (allCompleted) {
+  const handleAdvanceToNextMission = () => {
+    if (currentIndex === RESOLUTION_MISSIONS.length - 1) {
+      // Ini soal terakhir, mark sebagai finished
+      setIsFinished(true);
+      setCompletedUpToIndex(currentIndex);
       setCanAdvance(true);
-      void nextStage();
       return;
     }
 
+    // Bukan soal terakhir, lanjut ke soal berikutnya
+    setCompletedUpToIndex(currentIndex);
     setIsTransitioning(true);
     window.setTimeout(() => {
       setCurrentIndex((prev) => prev + 1);
@@ -78,7 +117,7 @@ export default function ResolutionStage() {
     return <ResolutionCover comic={comic} onStart={() => setMisiStarted(true)} />;
   }
 
-  if (allCompleted) {
+  if (isFinished) {
     return <CompletionPage onContinue={() => void nextStage()} />;
   }
 
@@ -104,7 +143,7 @@ export default function ResolutionStage() {
               <h3 className="mt-1 text-lg font-black text-neutral-900">{currentMission.title}</h3>
             </div>
             <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-primary-700 shadow-sm">
-              {progress}
+              {displayedProgress}
             </div>
           </div>
 
@@ -112,7 +151,7 @@ export default function ResolutionStage() {
             {RESOLUTION_MISSIONS.map((_, index) => (
               <span
                 key={index}
-                className={['h-2.5 w-2.5 rounded-full', index < currentIndex ? 'bg-accent-500' : index === currentIndex ? 'bg-primary-600' : 'bg-neutral-200'].join(' ')}
+                className={['h-2.5 w-2.5 rounded-full', index <= completedUpToIndex ? 'bg-accent-500' : index === currentIndex ? 'bg-primary-600' : 'bg-neutral-200'].join(' ')}
               />
             ))}
           </div>
@@ -120,31 +159,14 @@ export default function ResolutionStage() {
 
         <MissionCard
           mission={currentMission}
+          missionIndex={currentIndex}
+          totalMissions={RESOLUTION_MISSIONS.length}
           selected={selected}
           onSelect={setSelected}
-          onComplete={() => {
-            const isLastMission = currentIndex === RESOLUTION_MISSIONS.length - 1;
-            setCompletedIds((prev) => (prev.includes(currentMission.id) ? prev : [...prev, currentMission.id]));
-            setFeedback({ type: 'correct', message: 'Benar! Kamu telah menyelesaikan misi ini.' });
-            if (isLastMission) {
-              window.setTimeout(() => {
-                setIsFinished(true);
-                setCanAdvance(true);
-              }, 800);
-            } else {
-              window.setTimeout(handleAdvance, 800);
-            }
-          }}
-          onIncorrect={(message) => setFeedback({ type: 'incorrect', message })}
+          onReadyToAdvance={handleAdvanceToNextMission}
           isTransitioning={isTransitioning}
         />
       </div>
-
-      {feedback && (
-        <div className={['rounded-[20px] border px-4 py-3 text-sm shadow-sm', feedback.type === 'correct' ? 'border-accent-200 bg-accent-50 text-accent-700' : 'border-warning-200 bg-warning-50 text-warning-700'].join(' ')}>
-          {feedback.message}
-        </div>
-      )}
     </div>
   );
 }
@@ -165,7 +187,8 @@ function CompletionPage({ onContinue }: { onContinue: () => void }) {
         onClick={onContinue}
         className="mt-6 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700"
       >
-        Lanjut ke Application
+        <span>🎉</span>
+        Saya Sudah Menyelesaikan Resolution
       </button>
     </div>
   );
@@ -173,36 +196,39 @@ function CompletionPage({ onContinue }: { onContinue: () => void }) {
 
 function MissionCard({
   mission,
+  missionIndex,
+  totalMissions,
   selected,
   onSelect,
-  onComplete,
-  onIncorrect,
+  onReadyToAdvance,
   isTransitioning,
 }: {
   mission: ResolutionMission;
+  missionIndex: number;
+  totalMissions: number;
   selected: string | null;
   onSelect: (key: string) => void;
-  onComplete: () => void;
-  onIncorrect: (message: string) => void;
+  onReadyToAdvance: () => void;
   isTransitioning: boolean;
 }) {
   const { setCanAdvance } = useLearningEngine();
   const [attempts, setAttempts] = useState(0);
-  const [hint, setHint] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSolved, setIsSolved] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [tutorMessage, setTutorMessage] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [answerFeedback, setAnswerFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const aiPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setHint(null);
     setTutorMessage(null);
     setTypedText('');
     setIsTyping(false);
     setIsSolved(false);
     setAttempts(0);
+    setAnswerFeedback(null);
   }, [mission.id]);
 
   const handleSubmitAnswer = async () => {
@@ -211,44 +237,43 @@ function MissionCard({
     setTutorMessage(null);
     setTypedText('');
     setIsTyping(true);
+    setAnswerFeedback(null);
 
     try {
       const response = await fetch('/api/ai/resolution', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selected, attempt: attempts + 1, missionId: mission.id }),
+        body: JSON.stringify({ selected, attempt: attempts, missionId: mission.id }),
       });
       const data = await response.json();
       const answerIsCorrect = Boolean(data.correct);
-      const fallbackText = getTutorFallback(mission, answerIsCorrect, selected);
+      const fallbackText = getTutorFallback(mission, answerIsCorrect, selected, attempts);
       const aiText = typeof data.explanation === 'string' && data.explanation.trim()
-        ? `${data.explanation}\n\n${answerIsCorrect ? 'Bagus, kamu sudah memahami konsepnya.' : 'Tidak apa-apa jika masih keliru. Kesalahan adalah bagian dari proses belajar.'}`
+        ? data.explanation
         : fallbackText;
 
       if (answerIsCorrect) {
         setIsSolved(true);
-        setHint(null);
+        setAnswerFeedback('correct');
         setTutorMessage(aiText);
-        setCanAdvance(true);
-        onComplete();
+        setCanAdvance(false); // JANGAN auto advance - tunggu user menekan tombol
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
-        const hintText = data.hint || `Petunjuk ${Math.min(nextAttempt, 3)}/3: ${getTutorFallback(mission, false, selected)}`;
-        setHint(hintText);
+        setAnswerFeedback('incorrect');
         setTutorMessage(aiText);
-        onIncorrect(hintText);
+        // Untuk jawaban salah: siswa tetap di soal yang sama, pilihan tetap aktif
       }
     } catch {
-      const fallbackText = getTutorFallback(mission, false, selected);
+      const fallbackText = getTutorFallback(mission, false, selected, attempts);
       setTutorMessage(fallbackText);
-      setHint('Maaf, AI belum bisa merespons. Berikut penjelasan lokal yang bisa membantu.');
-      onIncorrect('Maaf, AI belum bisa merespons. Berikut penjelasan lokal.');
+      setAnswerFeedback('incorrect');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Typing animation
   useEffect(() => {
     if (!tutorMessage) {
       setTypedText('');
@@ -284,14 +309,13 @@ function MissionCard({
     window.speechSynthesis.speak(utterance);
   };
 
-  const showTutorExplanation = () => {
-    if (tutorMessage) {
-      setTutorMessage(tutorMessage);
-      return;
+  const scrollAiPanelToTop = () => {
+    if (aiPanelRef.current) {
+      aiPanelRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
-    setTutorMessage(getTutorFallback(mission, false, selected));
   };
+
+  const isReadyToAdvance = isSolved && !isTyping && tutorMessage !== null;
 
   return (
     <div className={['transition-all duration-200', isTransitioning ? 'translate-x-4 opacity-0' : 'translate-x-0 opacity-100'].join(' ')}>
@@ -308,6 +332,7 @@ function MissionCard({
 
         <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
           <div className="flex items-center justify-center overflow-hidden rounded-[16px] border border-neutral-200 bg-white p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={mission.illustration}
               alt={`Ilustrasi ${mission.shape}`}
@@ -323,76 +348,128 @@ function MissionCard({
               key={key}
               type="button"
               onClick={() => onSelect(key)}
-              className={['flex min-h-[52px] w-full items-center gap-4 rounded-2xl border-2 px-4 py-3 text-left transition active:scale-[0.98]', selected === key ? 'border-primary-500 bg-primary-50' : 'border-neutral-200 bg-white hover:border-primary-200 hover:bg-primary-50/50'].join(' ')}
+              disabled={isSolved}
+              className={[
+                'flex min-h-[52px] w-full items-center gap-4 rounded-2xl border-2 px-4 py-3 text-left transition active:scale-[0.98]',
+                isSolved && selected !== key ? 'opacity-60 cursor-not-allowed' : '',
+                selected === key
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-neutral-200 bg-white hover:border-primary-200 hover:bg-primary-50/50'
+              ].join(' ')}
             >
-              <span className={['flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black', selected === key ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-600'].join(' ')}>{key}</span>
-              <span className={['text-base font-bold', selected === key ? 'text-primary-700' : 'text-neutral-800'].join(' ')}>{label}</span>
+              <span
+                className={[
+                  'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black',
+                  selected === key ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-600'
+                ].join(' ')}
+              >
+                {key}
+              </span>
+              <span
+                className={[
+                  'text-base font-bold',
+                  selected === key ? 'text-primary-700' : 'text-neutral-800'
+                ].join(' ')}
+              >
+                {label}
+              </span>
             </button>
           ))}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => void handleSubmitAnswer()}
-            disabled={!selected || isSolved || isSubmitting}
-            className="inline-flex min-h-[46px] flex-1 items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
-          >
-            {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
-          </button>
-          <button
-            type="button"
-            onClick={showTutorExplanation}
-            className="inline-flex min-h-[46px] flex-1 items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-black text-neutral-800 shadow-sm transition hover:bg-neutral-50"
-          >
-            Tunjukkan Pembahasan
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => void handleSubmitAnswer()}
+          disabled={!selected || isSolved || isSubmitting}
+          className="inline-flex min-h-[46px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
+        >
+          {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
+        </button>
 
-        {hint && (
-          <div className="rounded-2xl border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
-            {hint}
+        {/* Feedback untuk jawaban */}
+        {answerFeedback === 'correct' && !isTyping && (
+          <div className="rounded-[20px] border-2 border-accent-300 bg-accent-50 px-4 py-4 flex items-center gap-3 animate-pulse">
+            <span className="text-3xl">✅</span>
+            <div>
+              <p className="font-black text-accent-700">Jawaban Benar!</p>
+              <p className="text-sm text-accent-600">Bagus sekali! Mari kita pelajari bersama-sama.</p>
+            </div>
           </div>
         )}
 
-        <div className="rounded-[20px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white p-4 shadow-sm">
+        {answerFeedback === 'incorrect' && (
+          <div className="rounded-[20px] border-2 border-amber-300 bg-amber-50 px-4 py-4 flex items-center gap-3">
+            <span className="text-3xl">💡</span>
+            <div>
+              <p className="font-black text-amber-700">Mari Coba Lagi</p>
+              <p className="text-sm text-amber-600">AI Guru sedang memberikan petunjuk di bawah.</p>
+            </div>
+          </div>
+        )}
+
+        {/* AI Tutor Panel */}
+        <div ref={aiPanelRef} className="rounded-[20px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white p-4 shadow-sm overflow-y-auto max-h-96">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-lg text-white">🤖</div>
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-lg text-white">🤖</div>
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary-600">AI Tutor</p>
               <p className="text-sm font-black text-neutral-800">Guru Matematika Candi Jawi</p>
             </div>
           </div>
 
-          <div className="mt-3 rounded-[16px] border border-primary-100 bg-white/90 p-3 text-sm leading-relaxed text-neutral-700">
+          <div className="mt-3 rounded-[16px] border border-primary-100 bg-white/90 p-3 text-sm leading-relaxed text-neutral-700 min-h-[100px]">
             {tutorMessage ? (
               <>
-                <p className="whitespace-pre-wrap">{typedText || '...'}</p>
+                <p className="whitespace-pre-wrap">{typedText}</p>
                 {isTyping && <span className="ml-1 animate-pulse">|</span>}
               </>
             ) : (
-              <p>
+              <p className="text-neutral-500">
                 Saya akan membimbingmu langkah demi langkah untuk memahami {mission.shape.toLowerCase()} dan menghubungkannya dengan Candi Jawi.
               </p>
             )}
           </div>
 
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex flex-wrap gap-2 justify-end">
+            {tutorMessage && (
+              <button
+                type="button"
+                onClick={scrollAiPanelToTop}
+                className="inline-flex items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-100 transition"
+              >
+                📖 Baca Lagi
+              </button>
+            )}
             <button
               type="button"
               onClick={handleSpeak}
               disabled={!typedText || isTyping}
-              className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700 disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-100 transition disabled:opacity-60"
             >
-              {isSpeaking ? '🔊 Mendengar...' : '🔊 Dengarkan Penjelasan'}
+              {isSpeaking ? '🔊 Mendengar...' : '🔊 Dengarkan'}
             </button>
           </div>
         </div>
 
-        {isSolved && (
-          <div className="rounded-[20px] border border-accent-200 bg-accent-50 px-4 py-3 text-sm font-black text-accent-700">
-            ✓ Benar
-          </div>
+        {/* Tombol untuk melanjutkan */}
+        {isReadyToAdvance && (
+          <button
+            type="button"
+            onClick={onReadyToAdvance}
+            className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent-500 to-accent-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:from-accent-600 hover:to-accent-700 active:scale-[0.98] animate-pulse"
+          >
+            {missionIndex === totalMissions - 1 ? (
+              <>
+                <span>🎉</span>
+                Saya Sudah Menyelesaikan Resolution
+              </>
+            ) : (
+              <>
+                <span>→</span>
+                Saya Sudah Paham, Lanjut
+              </>
+            )}
+          </button>
         )}
       </div>
     </div>

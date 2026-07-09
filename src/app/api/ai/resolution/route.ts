@@ -9,15 +9,21 @@ type ReqBody = {
   missionId?: number;
 };
 
-function buildExplanation(mission: (typeof RESOLUTION_MISSIONS)[number]) {
+function buildExplanation(mission: (typeof RESOLUTION_MISSIONS)[number]): string {
   return [
-    'Penjelasan AI:',
+    '✨ Selamat! Jawabanmu benar!',
     '',
-    mission.formula,
+    'Aku bangga dengan kamu. Mari kita lihat bagaimana cara mengerjakannya:',
     '',
-    mission.explanation,
+    `📚 Bangun yang kita gunakan: ${mission.shape}`,
     '',
-    `Hubungan dengan Candi Jawi: ${mission.context}`,
+    `📏 Rumusnya adalah: ${mission.formula}`,
+    '',
+    `📌 Jadi hasilnya adalah: ${mission.answer}`,
+    '',
+    `🏛️ Hubungan dengan Candi Jawi: ${mission.context}`,
+    '',
+    'Kamu sudah memahami konsep yang penting. Sangat bagus! 👏',
   ].join('\n');
 }
 
@@ -44,14 +50,14 @@ export async function POST(request: NextRequest) {
     if (attempt >= 3) {
       return NextResponse.json({
         correct: false,
-        hint: 'Coba pelajari kembali rumus bangun ruang ini dan kirim jawaban lagi.',
+        hint: '📖 Mari kita lihat penjelasan lengkapnya:\n\nBelajarlah dari pengalaman ini. Kamu akan lebih mahir seiring waktu! 🚀',
       });
     }
 
     const hints = [
-      mission.aiHint,
-      `Periksa satu langkah penting pada rumus ${mission.shape.toLowerCase()} sebelum menjawab.`,
-      `Coba hitung kembali dengan teliti sampai kamu yakin dengan pilihan yang paling sesuai.`,
+      `💡 Hmm, jawaban itu belum tepat. Jangan khawatir!\n\nBangun: ${mission.shape}\nRumus: ${mission.formula.split('=')[0].trim()}\n\nCoba perhatikan langkah-langkahnya lebih teliti.`,
+      `🤔 Mari kita coba pendekatan lain:\n\nIngat langkah-langkahnya:\n1. Identifikasi bangun: ${mission.shape}\n2. Gunakan rumus: ${mission.formula.split('=')[0].trim()}\n3. Masukkan nilai-nilainya\n\nAyo coba lagi!`,
+      `📖 Mari kita lihat penjelasan lengkapnya:\n\nBangun: ${mission.shape}\nRumus: ${mission.formula}\nHasil: ${mission.answer}`,
     ];
 
     return NextResponse.json({
