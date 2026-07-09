@@ -440,21 +440,245 @@ export default function ArgumentationStage() {
 
       {/* ── Summary when all done ── */}
       {allAnswered && isLastQuestion && (
-        <div className="rounded-[20px] border-2 border-accent-200 bg-accent-50 px-4 py-4">
-          <p className="text-center text-sm font-black text-accent-700">
-            ✅ Semua pertanyaan selesai!
-          </p>
-          <p className="mt-1 text-center text-xs text-accent-600">
-            Rata-rata skor:{' '}
-            <span className="font-black">
-              {(
-                answers.reduce((sum, a) => sum + (a.aiFeedback?.score ?? 0), 0) / answers.length
-              ).toFixed(1)}{' '}
-              / 5
-            </span>
-          </p>
+        <div className="space-y-4">
+          <div className="rounded-[20px] border-2 border-accent-200 bg-accent-50 px-4 py-4">
+            <p className="text-center text-sm font-black text-accent-700">✅ Semua pertanyaan selesai!</p>
+            <p className="mt-1 text-center text-xs text-accent-600">
+              Rata-rata skor:{' '}
+              <span className="font-black">
+                {(
+                  answers.reduce((sum, a) => sum + (a.aiFeedback?.score ?? 0), 0) / answers.length
+                ).toFixed(1)}{' '}
+                / 5
+              </span>
+            </p>
+          </div>
+
+          {/* Tantangan Numerasi (UI saja, belum ada validasi) */}
+          <NumeracyChallenge />
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── NumeracyChallenge (UI only) ───────────────────────────────────────────
+function NumeracyChallenge() {
+  const OPTIONS = [
+    { key: 'A', label: '256 cm³' },
+    { key: 'B', label: '384 cm³' },
+    { key: 'C', label: '512 cm³' },
+    { key: 'D', label: '640 cm³' },
+  ];
+  const [selected, setSelected] = useState<string | null>(null);
+  const [showSimulation, setShowSimulation] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+
+  useEffect(() => {
+    if (!showSimulation) return;
+    setShowResult(false);
+    const timer = setTimeout(() => setShowResult(true), 2600);
+    return () => clearTimeout(timer);
+  }, [showSimulation]);
+  // AI Tutor panel state
+  const [tutorMessage, setTutorMessage] = useState<string | null>(null);
+  const [tutorVariant, setTutorVariant] = useState<'positive' | 'constructive' | null>(null);
+
+  useEffect(() => {
+    if (!selected) {
+      setTutorMessage(null);
+      setTutorVariant(null);
+      return;
+    }
+
+    // Deterministic feedback (no external AI)
+    if (selected === 'C') {
+      setTutorVariant('positive');
+      setTutorMessage([
+        'Kamu berhasil menerapkan rumus volume kubus dengan benar.',
+        '',
+        'Rumus Volume Kubus = s × s × s',
+        'Dengan s = 8 cm:',
+        '8 × 8 × 8 = 512 cm³',
+        '',
+        'Kenapa bagian alas Candi Jawi dapat dimodelkan sebagai kubus di pembelajaran ini?',
+        'Karena bagian alas yang dimaksud berbentuk persegi (panjang dan lebar sama). Jika kita membayangkan tinggi yang sama dengan panjang rusuk alas, bentuk idealnya adalah kubus — sehingga volume dihitung dengan mengalikan panjang × lebar × tinggi (s × s × s).',
+      ].join('\n'));
+    } else {
+      setTutorVariant('constructive');
+      setTutorMessage([
+        'Baik, mari periksa langkah perhitungannya bersama-sama.',
+        '',
+        'Konsep penting: Volume kubus = panjang × lebar × tinggi. Untuk kubus semua sisi sama, jadi Volume = s × s × s.',
+        'Dengan s = 8 cm, lakukan langkah berturut-turut:',
+        '1) 8 × 8 = 64',
+        '2) 64 × 8 = 512 cm³',
+        '',
+        'Perhatikan langkah perkalian berulang di atas — pilihan jawaban biasanya berbeda ketika langkah ketiga tidak dihitung atau dikalikan dengan angka lain. Coba hitung kembali langkah-langkahnya dan bandingkan dengan pilihan yang tersedia.',
+      ].join('\n'));
+    }
+  }, [selected]);
+
+  return (
+    <div className="overflow-hidden rounded-[24px] bg-white shadow-sm">
+      <div className="border-b border-neutral-100 bg-primary-50 px-5 py-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-500">Tantangan Numerasi</p>
+        <h3 className="mt-1 text-lg font-black text-neutral-900">Misi Kubus</h3>
+      </div>
+
+      <div className="flex flex-col gap-5 px-5 py-5">
+        <div className="rounded-2xl border border-primary-100 bg-primary-50 px-4 py-4">
+          <p className="text-sm leading-relaxed text-neutral-700 sm:text-base">
+            Jika panjang rusuk kubus pada bagian alas Candi Jawi adalah{' '}
+            <span className="font-black text-primary-700">8 cm</span>, berapakah volumenya?
+          </p>
+        </div>
+
+        {/* Simple SVG cube illustration */}
+        <div className="flex justify-center py-2">
+          <svg viewBox="0 0 120 100" className="w-full max-w-[160px]" aria-hidden="true">
+            <rect x="20" y="30" width="60" height="60" fill="#e0f0ff" stroke="#1875cc" strokeWidth="2" />
+            <polygon points="20,30 40,10 100,10 80,30" fill="#c1e1ff" stroke="#1875cc" strokeWidth="2" />
+            <polygon points="80,30 100,10 100,70 80,90" fill="#a1d2ff" stroke="#1875cc" strokeWidth="2" />
+            <line x1="20" y1="30" x2="40" y2="10" stroke="#1875cc" strokeWidth="1.5" strokeDasharray="4 3" />
+            <text x="60" y="95" textAnchor="middle" fontSize="10" fontWeight="700" fill="#1875cc">s = 8 cm</text>
+          </svg>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {OPTIONS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSelected(key)}
+              className={[
+                'flex min-h-[52px] w-full items-center gap-4 rounded-2xl border-2 px-4 py-3 text-left transition active:scale-[0.98]',
+                selected === key
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-neutral-200 bg-white hover:border-primary-200 hover:bg-primary-50/50',
+              ].join(' ')}
+            >
+              <span className={['flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black', selected === key ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-600'].join(' ')}>
+                {key}
+              </span>
+              <span className={['text-base font-bold', selected === key ? 'text-primary-700' : 'text-neutral-800'].join(' ')}>{label}</span>
+            </button>
+          ))}
+        </div>
+        {/* Controls: show animation when student has answered */}
+        <div className="px-5 pb-5">
+          <div className="mt-3 flex gap-3">
+            <button
+              type="button"
+              onClick={() => setShowSimulation(true)}
+              disabled={!selected}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-secondary-500 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-secondary-600 disabled:opacity-50"
+            >
+              Tampilkan Animasi
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowSimulation(false);
+                setShowResult(false);
+              }}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-black text-neutral-800 shadow-sm transition hover:bg-neutral-50"
+            >
+              Reset Animasi
+            </button>
+          </div>
+
+          {/* Simulation area */}
+          <div className="mt-4 flex flex-col items-center gap-3">
+            <div className="w-full max-w-[240px]">
+              <svg viewBox="0 0 120 100" className="w-full" aria-hidden="true">
+                {/* cube outlines (transparent faces) */}
+                <rect x="20" y="30" width="60" height="60" fill="none" stroke="#1875cc" strokeWidth="2" fillOpacity="0.12" />
+                <polygon points="20,30 40,10 100,10 80,30" fill="none" stroke="#1875cc" strokeWidth="2" fillOpacity="0.08" />
+                <polygon points="80,30 100,10 100,70 80,90" fill="none" stroke="#1875cc" strokeWidth="2" fillOpacity="0.08" />
+
+                {/* edge label */}
+                <text x="60" y="97" textAnchor="middle" fontSize="10" fontWeight="700" fill="#1875cc">s = 8 cm</text>
+
+                {/* fill front face (rect) — animate scaleY */}
+                <g transform="translate(20,30)">
+                  <rect
+                    x="0"
+                    y="0"
+                    width="60"
+                    height="60"
+                    fill="#1875cc"
+                    opacity="0.14"
+                  />
+                  <rect
+                    x="0"
+                    y="0"
+                    width="60"
+                    height="60"
+                    fill="#1875cc"
+                    style={{ transformOrigin: 'bottom', transform: showSimulation ? 'scaleY(1)' : 'scaleY(0)', transition: 'transform 2.5s linear' }}
+                    opacity="0.28"
+                  />
+                </g>
+
+                {/* simple top face fill — clipped via scale */}
+                <g transform="translate(0,0)">
+                  <polygon
+                    points="20,30 40,10 100,10 80,30"
+                    fill="#1875cc"
+                    opacity="0.08"
+                    style={{ transformOrigin: 'center bottom', transform: showSimulation ? 'scaleY(1)' : 'scaleY(0)', transition: 'transform 2.5s linear' }}
+                  />
+                </g>
+
+                {/* right face fill */}
+                <g>
+                  <polygon
+                    points="80,30 100,10 100,70 80,90"
+                    fill="#1875cc"
+                    opacity="0.06"
+                    style={{ transformOrigin: 'left bottom', transform: showSimulation ? 'scaleY(1)' : 'scaleY(0)', transition: 'transform 2.5s linear' }}
+                  />
+                </g>
+              </svg>
+            </div>
+
+            {/* Explanation after animation */}
+            <div className="w-full max-w-[360px]">
+              {showSimulation && (
+                <p className="text-sm text-neutral-700">Mengisi kubus untuk menunjukkan Volume = panjang × lebar × tinggi</p>
+              )}
+              {showResult && (
+                <div className="mt-2 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm text-neutral-800">
+                  <p className="font-black">Mengapa volume 512 cm³?</p>
+                  <p>Rumus Volume Kubus = s × s × s</p>
+                  <p className="mt-1">8 × 8 × 8 = 512 cm³</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* AI Tutor Panel */}
+          {tutorMessage && (
+            <div className={[
+              'mt-4 overflow-hidden rounded-2xl border px-4 py-3',
+              tutorVariant === 'positive' ? 'border-accent-200 bg-accent-50' : 'border-neutral-100 bg-white',
+            ].join(' ')}>
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                  <img src="/images/ai/robot.svg" alt="AI Tutor" className="h-6 w-6" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-neutral-800">
+                    {tutorVariant === 'positive' ? 'AI Tutor — Apresiasi' : 'AI Tutor — Bantuan'}
+                  </p>
+                  <pre className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{tutorMessage}</pre>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

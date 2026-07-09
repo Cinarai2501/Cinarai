@@ -5,13 +5,16 @@ import { useEffect, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 
 export default function ResolutionStage() {
-  const { comic, setCanAdvance } = useLearningEngine();
+  const { comic, setCanAdvance, nextStage } = useLearningEngine();
   const [misiStarted, setMisiStarted] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [resolutionCompleted, setResolutionCompleted] = useState(false);
 
-  // Cover screen: advance is locked until student presses Mulai Misi
+  // Cover screen: lock advance until misi diselesaikan (jawaban benar)
   useEffect(() => {
-    setCanAdvance(misiStarted);
+    // Always lock stage navigation while mission is active; will be
+    // unlocked when siswa memberikan jawaban yang benar.
+    setCanAdvance(false);
   }, [misiStarted, setCanAdvance]);
 
   if (!misiStarted) {
@@ -34,8 +37,47 @@ export default function ResolutionStage() {
         </div>
       </header>
 
-      <MisiKubus selected={selected} onSelect={setSelected} />
+      {!resolutionCompleted ? (
+        <MisiKubus selected={selected} onSelect={setSelected} onComplete={() => setResolutionCompleted(true)} />
+      ) : (
+        <SummaryPage onContinue={() => void nextStage()} />
+      )}
 
+    </div>
+  );
+}
+
+// ─── SummaryPage ────────────────────────────────────────────────────────────
+function SummaryPage({ onContinue }: { onContinue: () => void }) {
+  return (
+    <div className="overflow-hidden rounded-[24px] bg-white shadow-sm px-5 py-6">
+      <h3 className="text-lg font-black text-neutral-900">Ringkasan</h3>
+      <p className="mt-2 text-sm text-neutral-700">Kamu telah menyelesaikan tahap Resolution. Berikut ringkasan aktivitas:</p>
+
+      <ul className="mt-4 flex flex-col gap-3">
+        <li className="flex items-center gap-3">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent-100 text-accent-700">✓</span>
+          <span className="text-sm font-bold text-neutral-800">Model AR telah diamati</span>
+        </li>
+        <li className="flex items-center gap-3">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent-100 text-accent-700">✓</span>
+          <span className="text-sm font-bold text-neutral-800">Tantangan numerasi selesai</span>
+        </li>
+        <li className="flex items-center gap-3">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent-100 text-accent-700">✓</span>
+          <span className="text-sm font-bold text-neutral-800">AI telah memberikan validasi</span>
+        </li>
+      </ul>
+
+      <div className="mt-6">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-secondary-500 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-secondary-600"
+        >
+          Lanjut ke Application
+        </button>
+      </div>
     </div>
   );
 }
@@ -84,10 +126,62 @@ const OPTIONS = [
 function MisiKubus({
   selected,
   onSelect,
+  onComplete,
 }: {
   selected: string | null;
   onSelect: (key: string) => void;
+  onComplete?: () => void;
 }) {
+  const { setCanAdvance } = useLearningEngine();
+  const [attempts, setAttempts] = useState(0);
+  const [hint, setHint] = useState<string | null>(null);
+  const [isSolved, setIsSolved] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+
+  // Reset hints when selection changes
+  useEffect(() => {
+    if (!selected) return;
+    setHint(null);
+  }, [selected]);
+
+  async function handleSubmitAnswer() {
+    if (!selected || isSolved || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/ai/resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selected, attempt: attempts + 1 }),
+      });
+      const data = await res.json();
+
+      if (data.correct) {
+        // jawaban benar — tampilkan penjelasan lengkap
+        setIsSolved(true);
+        setShowSolution(true);
+        setHint(null);
+        if (data.explanation) setExplanation(data.explanation);
+        setCanAdvance(true);
+        if (onComplete) onComplete();
+      } else {
+        // jawaban salah — terima petunjuk bertahap
+        const nextAttempt = attempts + 1;
+        setAttempts(nextAttempt);
+        if (data.hint) setHint(data.hint);
+        if (data.showSolution) {
+          setShowSolution(true);
+          if (data.explanation) setExplanation(data.explanation);
+        }
+      }
+    } catch (e) {
+      setHint('Maaf, layanan tidak tersedia. Coba lagi nanti.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-[24px] bg-white shadow-sm">
       {/* Card header */}
@@ -105,6 +199,45 @@ function MisiKubus({
             Jika panjang rusuk kubus pada bagian alas Candi Jawi adalah{' '}
             <span className="font-black text-primary-700">8 cm</span>, berapakah volumenya?
           </p>
+        </div>
+
+        {/* Submit + hint area */}
+        <div className="px-5 pb-5">
+          <div className="mt-2 flex gap-3">
+            <button
+              type="button"
+              onClick={() => void handleSubmitAnswer()}
+              disabled={!selected || isSolved || isSubmitting}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
+            >
+              {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                // allow student to reveal full solution only after 3 attempts
+                setShowSolution(true);
+              }}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-black text-neutral-800 shadow-sm transition hover:bg-neutral-50"
+            >
+              Tunjukkan Pembahasan
+            </button>
+          </div>
+
+          {/* Hint / explanation box */}
+          <div className="mt-3">
+            {hint && (
+              <div className="rounded-2xl border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+                {hint}
+              </div>
+            )}
+
+            {showSolution && explanation && (
+              <div className="mt-3 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm text-neutral-800">
+                <pre className="whitespace-pre-wrap text-sm">{explanation}</pre>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* SVG illustration */}
