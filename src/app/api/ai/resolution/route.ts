@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RESOLUTION_MISSIONS } from '../../../../features/learning-engine/components/stages/resolutionStage.helpers';
+import { RESOLUTION_MISSIONS, buildResolutionTutorExplanation } from '../../../../features/learning-engine/components/stages/resolutionStage.helpers';
 
 export const runtime = 'nodejs';
 
@@ -9,22 +9,8 @@ type ReqBody = {
   missionId?: number;
 };
 
-function buildExplanation(mission: (typeof RESOLUTION_MISSIONS)[number]): string {
-  return [
-    '✨ Selamat! Jawabanmu benar!',
-    '',
-    'Aku bangga dengan kamu. Mari kita lihat bagaimana cara mengerjakannya:',
-    '',
-    `📚 Bangun yang kita gunakan: ${mission.shape}`,
-    '',
-    `📏 Rumusnya adalah: ${mission.formula}`,
-    '',
-    `📌 Jadi hasilnya adalah: ${mission.answer}`,
-    '',
-    `🏛️ Hubungan dengan Candi Jawi: ${mission.context}`,
-    '',
-    'Kamu sudah memahami konsep yang penting. Sangat bagus! 👏',
-  ].join('\n');
+function buildCorrectExplanation(mission: (typeof RESOLUTION_MISSIONS)[number]): string {
+  return buildResolutionTutorExplanation(mission, true);
 }
 
 export async function POST(request: NextRequest) {
@@ -42,27 +28,14 @@ export async function POST(request: NextRequest) {
     if (selected === mission.correctKey) {
       return NextResponse.json({
         correct: true,
-        explanation: buildExplanation(mission),
+        explanation: buildCorrectExplanation(mission),
         answer: mission.answer,
       });
     }
 
-    if (attempt >= 3) {
-      return NextResponse.json({
-        correct: false,
-        hint: '📖 Mari kita lihat penjelasan lengkapnya:\n\nBelajarlah dari pengalaman ini. Kamu akan lebih mahir seiring waktu! 🚀',
-      });
-    }
-
-    const hints = [
-      `💡 Hmm, jawaban itu belum tepat. Jangan khawatir!\n\nBangun: ${mission.shape}\nRumus: ${mission.formula.split('=')[0].trim()}\n\nCoba perhatikan langkah-langkahnya lebih teliti.`,
-      `🤔 Mari kita coba pendekatan lain:\n\nIngat langkah-langkahnya:\n1. Identifikasi bangun: ${mission.shape}\n2. Gunakan rumus: ${mission.formula.split('=')[0].trim()}\n3. Masukkan nilai-nilainya\n\nAyo coba lagi!`,
-      `📖 Mari kita lihat penjelasan lengkapnya:\n\nBangun: ${mission.shape}\nRumus: ${mission.formula}\nHasil: ${mission.answer}`,
-    ];
-
     return NextResponse.json({
       correct: false,
-      hint: hints[Math.min(attempt, hints.length - 1)],
+      explanation: buildResolutionTutorExplanation(mission, false),
       attempts: attempt,
     });
   } catch (error) {
