@@ -48,6 +48,11 @@ export interface IntrospectionProgressMetadata {
   checklist?: Array<{ prompt: string; checked: boolean }>;
   confidence?: number | null;
   reflectionText?: string;
+  aiReflection?: {
+    appreciation: string;
+    needsImprovement: string;
+    suggestion: string;
+  };
   completedAt?: FirestoreTimestamp | FieldValue;
 }
 
@@ -72,6 +77,14 @@ export interface ReflectionDocument extends FirestoreBaseDocument {
   comicId?: string;
   prompt?: string;
   response?: string;
+  selectedChecklist?: string[];
+  confidence?: number | null;
+  reflectionText?: string;
+  aiReflection?: {
+    appreciation: string;
+    needsImprovement: string;
+    suggestion: string;
+  } | string;
   jawaban?: Record<string, string>;
   timestamp?: FirestoreTimestamp | FieldValue;
   status?: 'completed' | string;
@@ -116,6 +129,26 @@ export interface IdentificationAnswerDocument extends FirestoreBaseDocument {
   updatedAt: FirestoreTimestamp;
 }
 
+export interface ApplicationActivityDocument extends FirestoreBaseDocument {
+  userId: string;
+  comicId: number;
+  selectedAnswer: string;
+  studentReason: string;
+  attempt: number;
+  coachType: string;
+  coachMessage: string;
+  coachSummary: {
+    mastered: string[];
+    needsImprovement: string[];
+    nextPractice: string[];
+  };
+  arViewed?: boolean;
+  explorationCompleted?: boolean;
+  timestamp?: FirestoreTimestamp | string;
+  localTimestamp?: string;
+  synced?: boolean;
+}
+
 export interface ComicCharacterDocument {
   name: string;
   role: string;
@@ -150,5 +183,6 @@ export interface FirestoreCollectionMap {
   badge: BadgeDocument;
   activity: ActivityDocument;
   identification_answers: IdentificationAnswerDocument;
+  application_activity: ApplicationActivityDocument;
   comics: ComicDocument;
 }

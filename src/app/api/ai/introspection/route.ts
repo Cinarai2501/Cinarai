@@ -5,61 +5,157 @@ import type { AiRequestPayload } from '@/lib/ai/provider';
 export const runtime = 'nodejs';
 
 type IntrospectionRequestBody = {
-  identificationResult?: string;
-  argumentationResult?: string;
-  resolutionResult?: string;
-  applicationResult?: string;
-  confidence?: number;
-  reflectionText?: string;
   comicTitle?: string;
   lokasi?: string;
   classLevel?: string;
+  checklist?: string[];
+  confidence?: number | null;
+  reflectionText?: string;
+  stagePerformance?: Array<{ stage: string; status: string }>;
+  identificationAnswers?: Array<{
+    step: number;
+    selectedAnswer: string | null;
+    note: string;
+    reason: string;
+  }>;
+  applicationActivities?: Array<{
+    selectedAnswer: string;
+    studentReason: string;
+    attempt: number;
+    coachType: string;
+    coachMessage: string;
+    coachSummary: {
+      mastered: string[];
+      needsImprovement: string[];
+      nextPractice: string[];
+    };
+  }>;
+  identificationResult?: string;
+  navigationResult?: string;
+  argumentationResult?: string;
+  resolutionResult?: string;
+  applicationResult?: string;
 };
 
 type IntrospectionResponseBody = {
   appreciation: string;
-  summary: string;
-  strength: string;
+  needsImprovement: string;
   suggestion: string;
   provider?: string;
 };
 
+function normalize(input?: string): string {
+  return (input ?? '').trim();
+}
+
+function formatAnswers(items?: IntrospectionRequestBody['identificationAnswers']): string {
+  if (!items || items.length === 0) return '- Tidak ada jawaban identifikasi yang tersimpan.';
+  return items
+    .map((item) => `  • Langkah ${item.step}: Jawaban=${item.selectedAnswer ?? '—'}, Catatan="${normalize(item.note)}", Alasan="${normalize(item.reason)}"`)
+    .join('\n');
+}
+
+function formatActivities(items?: IntrospectionRequestBody['applicationActivities']): string {
+  if (!items || items.length === 0) return '- Tidak ada aktivitas application yang tersimpan.';
+  return items
+    .map((item) => `  • Upaya ${item.attempt}: Jawaban=${item.selectedAnswer}, Alasan="${normalize(item.studentReason)}", Coach=${item.coachType}, Rekomendasi="${normalize(item.coachMessage)}"`)
+    .join('\n');
+}
+
 function buildIntrospectionPrompt(body: IntrospectionRequestBody): string {
+  const checklistItems = body.checklist ?? [];
+  const checklist = checklistItems.length > 0
+    ? checklistItems.map((item) => `- ${item}`).join('\n')
+    : '- Tidak ada checklist refleksi';
+
+  const stagePerformance = body.stagePerformance?.length
+    ? body.stagePerformance.map((item) => `- ${item.stage}: ${item.status}`).join('\n')
+    : '- Tidak ada data performa tahap.';
+
   return [
-    'Kamu adalah AI Refleksi CINARAI untuk siswa Sekolah Dasar Indonesia.',
+    'Kamu adalah AI Tutor CINARAI.',
     '',
-    'TUGAS:',
-    'Buat teks singkat yang menyapa siswa dan membantu mereka melihat hasil belajarnya.',
-    'Baca konteks ini dan jawab dalam bahasa Indonesia yang sederhana, hangat, dan mudah dipahami anak SD.',
+    'Analisis seluruh aktivitas siswa pada komik ini dengan cermat menggunakan data yang tersedia.',
+    'Gunakan data asli berikut:',
+    '- status dan hasil setiap tahap pembelajaran',
+    '- jawaban identifikasi dari Firestore',
+    '- aktivitas Application dari Firestore',
+    '- checklist refleksi',
+    '- tingkat keyakinan siswa',
+    '- teks refleksi siswa',
+    'Jika suatu stage tidak memiliki data tersimpan, abaikan detail stage tersebut dan jangan membuat informasi baru.',
+    'Jangan mengarang jawaban, gunakan hanya data nyata yang tersedia.',
+    'Buat respons singkat maksimal 150 kata.',
     '',
-    'ATURAN WAJIB:',
-    '1. Berikan apresiasi singkat untuk usaha siswa.',
-    '2. Ringkas kemampuan utama yang terlihat dari hasil belajar.',
-    '3. Sebutkan satu kekuatan siswa.',
-    '4. Berikan satu saran belajar yang bisa mereka lakukan selanjutnya.',
-    '5. Gunakan bahasa siswa SD.',
-    '6. Maksimal 120 kata.',
-    '7. Jawaban harus dalam format JSON ketat tanpa teks lain.',
+    'FORMAT:',
+    'Apresiasi',
+    'Yang Perlu Ditingkatkan',
+    'Saran Belajar.',
     '',
-    'FORMAT RESPONS (JSON):',
+    'Data siswa:',
+    `- Komik: ${normalize(body.comicTitle) || 'Tidak diketahui'}`,
+    `- Lokasi: ${normalize(body.lokasi) || 'Tidak diketahui'}`,
+    `- Kelas: ${normalize(body.classLevel) || 'Tidak diketahui'}`,
+    `- Checklist refleksi:\n${checklist}`,
+    `- Tingkat keyakinan: ${body.confidence ?? 'Tidak tersedia'}`,
+    `- Catatan siswa: ${normalize(body.reflectionText) || 'Tidak tersedia'}`,
+    '',
+    'Ringkasan performa tiap tahap:',
+    stagePerformance,
+    '',
+    'Hasil Identifikasi:',
+    `${normalize(body.identificationResult) || 'Tidak tersedia'}`,
+    '',
+    'Hasil Navigasi:',
+    `${normalize(body.navigationResult) || 'Tidak tersedia'}`,
+    '',
+    'Hasil Argumentasi:',
+    `${normalize(body.argumentationResult) || 'Tidak tersedia'}`,
+    '',
+    'Hasil Resolusi:',
+    `${normalize(body.resolutionResult) || 'Tidak tersedia'}`,
+    '',
+    'Hasil Aplikasi:',
+    `${normalize(body.applicationResult) || 'Tidak tersedia'}`,
+    '',
+    'Detail jawaban identifikasi:',
+    formatAnswers(body.identificationAnswers),
+    '',
+    'Detail application activity:',
+    formatActivities(body.applicationActivities),
+    '',
+    'Gunakan konteks nyata dari data di atas untuk menjelaskan kekuatan dan area yang perlu ditingkatkan.',
+    '',
+    'Jawab dalam format JSON ketat tanpa teks lain:',
     '{',
     '  "appreciation": "...",',
-    '  "summary": "...",',
-    '  "strength": "...",',
+    '  "needsImprovement": "...",',
     '  "suggestion": "..."',
     '}',
-    '',
-    'KONTEKS HASIL BELAJAR:',
-    `- Komik: ${body.comicTitle ?? 'Tidak diketahui'}`,
-    `- Lokasi: ${body.lokasi ?? 'Tidak diketahui'}`,
-    `- Kelas: ${body.classLevel ?? 'Tidak diketahui'}`,
-    `- Hasil Identification: ${body.identificationResult ?? 'Tidak tersedia'}`,
-    `- Hasil Argumentation: ${body.argumentationResult ?? 'Tidak tersedia'}`,
-    `- Hasil Resolution: ${body.resolutionResult ?? 'Tidak tersedia'}`,
-    `- Hasil Application: ${body.applicationResult ?? 'Tidak tersedia'}`,
-    `- Confidence siswa: ${body.confidence ?? 'Tidak tersedia'}`,
-    `- Refleksi siswa: ${body.reflectionText ?? 'Tidak tersedia'}`,
   ].join('\n');
+}
+
+function parseResponse(raw: string): IntrospectionResponseBody | null {
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    const parsed = JSON.parse(cleaned) as Partial<IntrospectionResponseBody>;
+    if (
+      parsed &&
+      typeof parsed.appreciation === 'string' && parsed.appreciation.trim() &&
+      typeof parsed.needsImprovement === 'string' && parsed.needsImprovement.trim() &&
+      typeof parsed.suggestion === 'string' && parsed.suggestion.trim()
+    ) {
+      return {
+        appreciation: parsed.appreciation.trim(),
+        needsImprovement: parsed.needsImprovement.trim(),
+        suggestion: parsed.suggestion.trim(),
+        provider: parsed.provider,
+      };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -72,38 +168,23 @@ export async function POST(request: NextRequest) {
     const router = AiRouter.createDefault();
     const payload: AiRequestPayload = {
       prompt: buildIntrospectionPrompt(body),
-      systemPrompt: 'Kamu adalah AI Refleksi CINARAI. Balas hanya dalam format JSON yang diminta.',
+      systemPrompt: 'Kamu adalah AI Tutor CINARAI. Balas hanya dengan JSON ketat, ringkas, dan gunakan data nyata yang tersedia.',
       temperature: 0.4,
       maxTokens: 250,
     };
 
     const response = await router.generate(payload);
     const raw = typeof response?.content === 'string' ? response.content.trim() : '';
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = parseResponse(raw);
 
-    let parsed: Partial<IntrospectionResponseBody> = {};
-    try {
-      parsed = JSON.parse(jsonStr) as Partial<IntrospectionResponseBody>;
-    } catch {
-      parsed = {
-        appreciation:
-          'Kamu sudah berani belajar sampai tahap refleksi. Terima kasih sudah berusaha!',
-        summary:
-          'Kamu telah menyelesaikan beberapa tahap belajar dan menunjukkan sikap rajin.',
-        strength:
-          'Kekuatanmu adalah semangat belajar dan keberanian menulis refleksi.',
-        suggestion:
-          'Coba baca kembali catatanmu atau tanya guru jika ada yang belum jelas.',
-      };
+    if (parsed) {
+      return NextResponse.json({ ...parsed, provider: response.provider });
     }
 
-    return NextResponse.json({
-      appreciation: parsed.appreciation ?? 'Kamu sudah melakukan refleksi yang baik.',
-      summary: parsed.summary ?? 'Kamu sudah menunjukkan kemajuan dari belajar tadi.',
-      strength: parsed.strength ?? 'Kamu punya kekuatan untuk terus berusaha.',
-      suggestion: parsed.suggestion ?? 'Tetap latihan dan ajukan pertanyaan jika perlu.',
-      provider: response.provider,
-    } as IntrospectionResponseBody);
+    return NextResponse.json(
+      { error: 'AI response tidak memenuhi format JSON yang diharapkan.' },
+      { status: 502 },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown AI error';
     return NextResponse.json({ error: message }, { status: 502 });

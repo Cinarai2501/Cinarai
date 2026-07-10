@@ -54,6 +54,9 @@ export default function ReportClient() {
   const checklist = introspection?.checklist ?? [];
   const reflectionText = introspection?.reflectionText ?? '';
   const confidence = introspection?.confidence ?? null;
+  const aiReflection = introspection?.aiReflection && typeof introspection.aiReflection !== 'string'
+    ? introspection.aiReflection
+    : null;
   const reportReady = Boolean(introspection?.completed);
 
   if (loading || isLoading) {
@@ -134,6 +137,26 @@ export default function ReportClient() {
                   {reflectionText || 'Belum ada tulisan refleksi yang tersimpan.'}
                 </p>
               </div>
+
+              {aiReflection && (
+                <div className="mt-5 rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+                  <p className="text-sm font-semibold text-neutral-600">Refleksi AI</p>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Apresiasi</p>
+                      <p className="mt-2 text-sm leading-relaxed text-neutral-700">{aiReflection.appreciation}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Yang perlu ditingkatkan</p>
+                      <p className="mt-2 text-sm leading-relaxed text-neutral-700">{aiReflection.needsImprovement}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Saran belajar</p>
+                      <p className="mt-2 text-sm leading-relaxed text-neutral-700">{aiReflection.suggestion}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-[28px] bg-white p-6 shadow-sm">
