@@ -1,97 +1,65 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { toDataURL } from 'qrcode';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
+import { useSnackbar } from '@/context/SnackbarContext';
+// `useAuth` intentionally not used here (kept authentication & data flows intact elsewhere)
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
-import type { Comic } from '@/types/comic';
-import { resolvePreviewImagePath } from './navigationStage.helpers';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isValidUrl(url: string): boolean {
   if (!url) return false;
   try {
-    const { protocol } = new URL(url);
-    return protocol === 'http:' || protocol === 'https:';
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }
 }
 
-function isSketchfab(url: string): boolean {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    return host.includes('sketchfab.com') || host.includes('skfb.ly');
-  } catch {
-    return false;
+function getObjectDisplayName(entry: ComicAssetEntry | null | undefined): string {
+  const rawName = entry?.title?.trim();
+  if (rawName) return rawName;
+  return 'Kubus';
+}
+
+// removed observation form options — Navigation is now exploration-only
+
+function getQuickQuestions(objectName: string): string[] {
+  const normalized = objectName.toLowerCase();
+  if (normalized.includes('kubus')) {
+    return [
+      'Apa nama bangun ruang ini?',
+      'Berapa jumlah sisinya?',
+      'Berapa jumlah rusuknya?',
+      'Berapa titik sudutnya?',
+      'Mengapa bagian bawah Candi Jawi berbentuk kubus?',
+    ];
   }
-}
-
-function toEmbedUrl(url: string): string {
-  // https://sketchfab.com/3d-models/slug-ID  →  https://sketchfab.com/models/ID/embed
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes('sketchfab.com')) {
-      const parts = u.pathname.split('-');
-      const id = parts[parts.length - 1];
-      return `https://sketchfab.com/models/${id}/embed?autostart=1&ui_hint=0&ui_watermark=0`;
-    }
-  } catch { /* fall through */ }
-  return url;
-}
-
-// ─── Quick questions ──────────────────────────────────────────────────────────
-
-function getQuickQuestions(title: string): string[] {
-  const t = title.toLowerCase();
-  if (t.includes('candi jawi')) return [
-    'Apa saja bangun ruang yang dapat ditemukan pada Candi Jawi?',
-    'Bagian mana yang berbentuk kubus?',
-    'Bagian mana yang berbentuk balok?',
-    'Bagian mana yang menyerupai limas?',
-    'Mengapa bangunan candi tersusun dari beberapa bangun ruang?',
-  ];
-  if (t.includes('kubus')) return [
-    'Apa nama bangun ruang ini?',
-    'Berapa jumlah sisinya?',
-    'Berapa jumlah rusuknya?',
-    'Berapa titik sudutnya?',
-    'Mengapa bagian kaki Candi Jawi berbentuk kubus?',
-  ];
-  if (t.includes('balok')) return [
-    'Apa ciri-ciri balok?',
-    'Apa perbedaan balok dan kubus?',
-    'Berapa jumlah sisi balok?',
-    'Bagian mana pada Candi Jawi berbentuk balok?',
-  ];
-  if (t.includes('limas')) return [
-    'Apa ciri-ciri limas?',
-    'Berapa jumlah sisi limas segi empat?',
-    'Mengapa atap candi menyerupai limas?',
-    'Apa perbedaan limas dan prisma?',
-  ];
-  if (t.includes('prisma')) return [
-    'Apa ciri-ciri prisma?',
-    'Berapa jumlah sisi prisma segitiga?',
-    'Di mana kita bisa melihat bentuk prisma di Candi Jawi?',
-    'Apa perbedaan prisma dan balok?',
-  ];
-  if (t.includes('kerucut')) return [
-    'Apa ciri khas alas kerucut?',
-    'Apa perbedaan kerucut dan tabung?',
-    'Mengapa puncak candi mirip kerucut?',
-    'Berapa jumlah sisi kerucut?',
-  ];
-  if (t.includes('tabung')) return [
-    'Apa bentuk alas dan tutup tabung?',
-    'Berapa jumlah rusuk tabung?',
-    'Mengapa struktur ini sering muncul pada bangunan?',
-  ];
+  if (normalized.includes('balok')) {
+    return [
+      'Apa nama bangun ruang ini?',
+      'Berapa jumlah sisi balok ini?',
+      'Apa perbedaan balok dan kubus?',
+      'Bagaimana bentuk rusuk pada balok?',
+    ];
+  }
+  if (normalized.includes('kerucut')) {
+    return [
+      'Apa nama bangun ruang ini?',
+      'Apa ciri khas alas kerucut?',
+      'Apa perbedaan kerucut dan tabung?',
+      'Mengapa bentuk atap candi mirip kerucut?',
+    ];
+  }
+  if (normalized.includes('tabung')) {
+    return [
+      'Apa nama bangun ruang ini?',
+      'Apa bentuk alas dan tutup tabung?',
+      'Berapa jumlah rusuk tabung?',
+      'Mengapa struktur ini sering muncul pada bangunan?',
+    ];
+  }
   return [
     'Apa nama bangun ruang ini?',
     'Berapa jumlah rusuknya?',
@@ -100,72 +68,132 @@ function getQuickQuestions(title: string): string[] {
   ];
 }
 
-// ─── System prompt hint ───────────────────────────────────────────────────────
-
-function getSystemPromptHint(title: string): string {
-  const t = title.toLowerCase();
-  if (t.includes('candi jawi')) {
-    return (
-      'Kamu adalah fasilitator observasi Candi Jawi. ' +
-      'JANGAN langsung menyebutkan nama bangun ruang. ' +
-      'Bantu siswa menemukan sendiri bangun ruang yang tersembunyi di arsitektur Candi Jawi ' +
-      'dengan pertanyaan pemandu. Jelaskan sejarah singkat dan fungsi Candi Jawi jika ditanya. ' +
-      'Arahkan siswa untuk mengamati bagian kubus, balok, limas, prisma, dan kerucut.'
-    );
-  }
-  return (
-    `Kamu adalah AI Tutor untuk bangun ruang ${title}. ` +
-    'Bantu siswa memahami ciri-ciri, sifat, dan kaitannya dengan Candi Jawi. ' +
-    'Jawab pertanyaan dengan jelas dan tambahkan satu pertanyaan reflektif. Maksimal 100 kata.'
-  );
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface ChatMessage {
   id: number;
   role: 'assistant' | 'user';
   content: string;
 }
 
-// ─── ObjectAiPanel ────────────────────────────────────────────────────────────
-
-/* eslint-disable @next/next/no-img-element */
-function ObjectAiPanel({ entry, comic }: { entry: ComicAssetEntry; comic: Comic }) {
-  const objectTitle = entry.title?.trim() || 'Bangun Ruang';
-  const quickQuestions = useMemo(() => getQuickQuestions(objectTitle), [objectTitle]);
-  const systemHint = useMemo(() => getSystemPromptHint(objectTitle), [objectTitle]);
-  const isCandiJawi = objectTitle.toLowerCase().includes('candi jawi');
-
-  const [messages, setMessages] = useState<ChatMessage[]>([{
+const starterMessages: ChatMessage[] = [
+  {
     id: 1,
     role: 'assistant',
-    content: isCandiJawi
-      ? 'Halo! Kamu sudah melihat model 3D Candi Jawi. Coba amati dengan teliti — bagian mana yang menarik perhatianmu?'
-      : `Halo! Kamu sudah mengeksplorasi model ${objectTitle}. Ada yang ingin kamu tanyakan?`,
-  }]);
+    content: 'Halo! Aku siap membantu kamu mengamati objek ini dan mengaitkannya dengan bangun ruang di Candi Jawi.',
+  },
+];
+
+/* eslint-disable @next/next/no-img-element */
+
+export default function NavigationStage() {
+  const { comic, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
+  const { showSnackbar } = useSnackbar();
+  const metadata = useComicMetadata(comic.id);
+  const { model3D } = metadata.assets;
+  const primaryEntry = model3D[0] ?? null;
+  const activeObjectName = useMemo(() => getObjectDisplayName(primaryEntry), [primaryEntry]);
+  const quickQuestions = useMemo(() => getQuickQuestions(activeObjectName), [activeObjectName]);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>(starterMessages);
   const [draft, setDraft] = useState('');
   const [isResponding, setIsResponding] = useState(false);
+  const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
+  const [showEmbed, setShowEmbed] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Progress gate: all model3D entries must be explored.
+  // AI interaction is optional and never blocks advancement.
+  const requiredIds = useMemo(
+    () => model3D.filter((e) => isValidUrl(e.url)).map((e) => `${e.page}-${e.url}`),
+    [model3D],
+  );
+  const allObjectsExplored = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
+  const canAdvanceToArgumentation = allObjectsExplored;
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isResponding]);
+    const candidates = [
+      `/images/navigation/komik-${comic.id}-ar.png`,
+      `/images/navigation/komik-${comic.id}-ar.jpg`,
+      `/images/navigation/komik-${comic.id}-ar.webp`,
+    ];
+
+    let isMounted = true;
+    let settled = false;
+
+    const tryLoad = (src: string) => {
+      if (settled) return;
+      const image = new window.Image();
+      image.onload = () => {
+        if (!isMounted) return;
+        settled = true;
+        setPreviewSrc(src);
+      };
+      image.onerror = () => {
+        if (!isMounted) return;
+        if (src === candidates[candidates.length - 1]) {
+          settled = true;
+          setPreviewSrc(null);
+        }
+      };
+      image.src = src;
+    };
+
+    candidates.forEach((candidate) => tryLoad(candidate));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [comic.id]);
+
+  useEffect(() => {
+    setCanAdvance(canAdvanceToArgumentation);
+    console.info('[Navigation] Navigation State — canAdvance:', canAdvanceToArgumentation, 'exploredIds:', exploredIds.size, '/', requiredIds.length);
+  }, [canAdvanceToArgumentation, exploredIds.size, requiredIds.length, setCanAdvance]);
+
+  // Separate cleanup effect: unregister slide nav only on unmount.
+  // Must not be co-located with setCanAdvance — otherwise the cleanup fires
+  // on every canAdvanceToArgumentation change, not just on unmount.
+  useEffect(() => {
+    return () => { unregisterSlideNav(); };
+  }, [unregisterSlideNav]);
+
+  // Auto-load Sketchfab embeds when the primary entry is a Sketchfab model
+  useEffect(() => {
+    if (!primaryEntry || !primaryEntry.url) return;
+    try {
+      const parsed = new URL(primaryEntry.url);
+      const host = parsed.hostname.toLowerCase();
+      if (host.includes('sketchfab.com') || host.includes('skfb.ly')) {
+        setShowEmbed(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, [primaryEntry]);
+
+  // Rotate/Zoom controls removed — Sketchfab provides built-in gestures
 
   const handleSend = useCallback(async (rawText?: string) => {
     const trimmed = (rawText ?? draft).trim();
-    if (!trimmed || isResponding) return;
+    if (!trimmed || isResponding || !comic) return;
 
-    const userMsg: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
-    const nextMessages = [...messages, userMsg];
+    console.info('[Navigation] AI Request Start — question:', trimmed);
+
+    const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
+    const nextMessages = [...messages, userMessage];
+    const historyForPrompt = nextMessages.map(({ role, content }) => ({ role, content }));
+
     setMessages(nextMessages);
     setDraft('');
     setIsResponding(true);
     setAiError(null);
 
     try {
-      const res = await fetch('/api/ai/chat', {
+      console.info('[NavigationStage] Navigation -> /api/ai/chat', {
+        question: trimmed,
+        objectName: activeObjectName,
+      });
+
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,501 +208,337 @@ function ObjectAiPanel({ entry, comic }: { entry: ComicAssetEntry; comic: Comic 
               learningTargets: comic.learningTargets,
             },
             observationAnswers: {},
-            sessionHistory: nextMessages.map(({ role, content }) => ({ role, content })),
+            sessionHistory: historyForPrompt,
             comicTitle: comic.title,
-            pageLabel: `Halaman ${entry.page}`,
-            objectName: objectTitle,
+            pageLabel: primaryEntry ? `Halaman ${primaryEntry.page}` : undefined,
+            objectName: activeObjectName,
             learningStage: 'Navigation',
-            systemHint,
           },
         }),
       });
-      const payload = (await res.json()) as { answer?: string; error?: string };
-      if (!res.ok || !payload.answer) throw new Error(payload.error ?? 'AI tidak merespons.');
-      setMessages((prev) => [...prev, { id: Date.now() + 1, role: 'assistant', content: payload.answer! }]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+
+      const payload = await response.json() as { answer?: string; provider?: string; error?: string };
+
+      if (!response.ok || !payload.answer) {
+        throw new Error(payload.error ?? 'AI response was not available.');
+      }
+
+      // AI response received — purely informational, does not affect stage progress.
+      console.info('[Navigation] AI Response Success — provider:', payload.provider, 'length:', payload.answer.length);
+      console.info('[NavigationStage] Navigation received:', {
+        provider: payload.provider,
+        answerLength: payload.answer.length,
+      });
+
+      const assistantMessage: ChatMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: payload.answer,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('[NavigationStage] Gagal memanggil AI', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[Navigation] Error:', msg);
       setAiError(msg);
-      setMessages((prev) => [...prev, { id: Date.now() + 2, role: 'assistant', content: `Maaf, terjadi kesalahan: ${msg}` }]);
+      const fallbackMessage: ChatMessage = {
+        id: Date.now() + 2,
+        role: 'assistant',
+        content: `Maaf, terjadi kesalahan saat menghubungi layanan AI: ${msg}`,
+      };
+      setMessages((prev) => [...prev, fallbackMessage]);
     } finally {
       setIsResponding(false);
     }
-  }, [comic, draft, entry.page, isResponding, messages, objectTitle, systemHint]);
+  }, [activeObjectName, comic, draft, isResponding, messages, primaryEntry]);
 
-  return (
-    <div className="overflow-hidden rounded-[20px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white shadow-[0_4px_16px_rgba(47,128,237,0.08)]">
-      {/* Header */}
-      <div className="flex items-center gap-3 bg-gradient-to-r from-[#EBF5FF] to-[#F5FBFF] px-4 py-3">
-        <div className={['flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/80 shadow-[0_4px_12px_rgba(47,128,237,0.15)]', isResponding ? 'animate-ai-blink' : 'animate-ai-float'].join(' ')}>
-          <img src="/images/ai/robot.svg" alt="AI Tutor" className="h-8 w-8 drop-shadow-sm" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-black uppercase tracking-widest text-primary-600">AI Tutor</p>
-          <p className="truncate text-sm font-bold text-neutral-700">{objectTitle}</p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className={['h-2 w-2 rounded-full', isResponding ? 'animate-pulse bg-secondary-500' : 'bg-accent-500'].join(' ')} />
-          <span className="text-xs font-semibold text-neutral-400">{isResponding ? 'Berpikir...' : 'Siap'}</span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 p-3">
-        {/* Messages */}
-        <div className="flex max-h-52 flex-col gap-2 overflow-y-auto pr-1">
-          {messages.map((msg) => (
-            <div key={msg.id} className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}>
-              <div className={['max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed', msg.role === 'user' ? 'rounded-br-sm bg-primary-600 text-white' : 'rounded-bl-sm border border-primary-100 bg-[#F5FBFF] text-neutral-800'].join(' ')}>
-                {msg.content}
-              </div>
-            </div>
-          ))}
-          {isResponding && (
-            <div className="flex justify-start">
-              <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-primary-100 bg-[#F5FBFF] px-3 py-2.5">
-                {[0, 150, 300].map((d) => <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: `${d}ms` }} />)}
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-
-        {/* Quick questions */}
-        <div className="flex flex-wrap gap-1.5">
-          {quickQuestions.map((q) => (
-            <button key={q} type="button" onClick={() => void handleSend(q)} disabled={isResponding}
-              className="rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-semibold text-primary-700 shadow-sm transition hover:border-primary-400 hover:bg-primary-50 disabled:opacity-50">
-              {q}
-            </button>
-          ))}
-        </div>
-
-        {/* Input */}
-        <div className="flex items-end gap-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
-            rows={2}
-            placeholder="Tulis pertanyaanmu..."
-            className="flex-1 resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
-          />
-          <button type="button" onClick={() => void handleSend()} disabled={isResponding || !draft.trim()}
-            className="mb-0.5 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-[0_4px_12px_rgba(47,128,237,0.28)] transition hover:bg-primary-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:shadow-none"
-            aria-label="Kirim pertanyaan">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-
-        {aiError && <p className="rounded-2xl border border-error-200 bg-error-50 px-3 py-2 text-xs font-semibold text-error-700">{aiError}</p>}
-      </div>
-    </div>
-  );
-}
-
-// ─── ObjectCard ───────────────────────────────────────────────────────────────
-
-interface ObjectCardProps {
-  entry: ComicAssetEntry;
-  index: number;
-  explored: boolean;
-  comic: Comic;
-  onExplored: (entryId: string) => void;
-}
-
-function makeObjectId(entry: ComicAssetEntry, index: number) {
-  const title = (entry.title ?? '').trim() || '';
-  const safeTitle = title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') : '';
-  const urlHash = entry.url ? String(entry.url).slice(-12).replace(/[^a-z0-9]/gi, '') : '';
-  return `${entry.page}-${safeTitle || urlHash || index}`;
-}
-
-
-function ObjectCard({ entry, index, explored, comic, onExplored }: ObjectCardProps) {
-  const [isQrOpen, setIsQrOpen] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState('');
-  const [qrLoading, setQrLoading] = useState(false);
-  const [qrError, setQrError] = useState<string | null>(null);
-  const objectTitle = entry.title?.trim() || 'Bangun Ruang';
-  const valid = isValidUrl(entry.url);
-  const sketchfab = valid && isSketchfab(entry.url);
-  const embedUrl = sketchfab ? toEmbedUrl(entry.url) : null;
-  const previewImage = entry.previewImage?.trim() || resolvePreviewImagePath(objectTitle);
-  const qrSource = (entry.qrUrl || entry.url || '').trim();
-  const id = makeObjectId(entry, index);
-
-  useEffect(() => {
-    if (!isQrOpen || !qrSource) {
-      setQrDataUrl('');
-      setQrError(null);
-      setQrLoading(false);
+  function handleOpenAr(entry: ComicAssetEntry) {
+    if (!isValidUrl(entry.url)) {
+      showSnackbar('Link AR belum tersedia.', 'info');
       return;
     }
 
-    console.log('[NavigationStage] membuka QR, qrSource:', qrSource);
+    // Mark this entry as explored regardless of how it opens.
+    const entryId = `${entry.page}-${entry.url}`;
+    setExploredIds((prev) => {
+      if (prev.has(entryId)) return prev;
+      const next = new Set(prev);
+      next.add(entryId);
+      console.info('[Navigation] AR explored:', entry.title, '— exploredIds:', next.size, '/', requiredIds.length);
+      return next;
+    });
 
-    let isMounted = true;
-    setQrLoading(true);
-    toDataURL(qrSource, { margin: 1, scale: 10 })
-      .then((dataUrl) => {
-        if (isMounted) {
-          setQrDataUrl(dataUrl);
-          setQrError(null);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          console.error('[NavigationStage] QR generation failed', err);
-          setQrDataUrl('');
-          setQrError('QR tidak dapat dibuat saat ini.');
-        }
-      })
-      .finally(() => {
-        if (isMounted) setQrLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isQrOpen, qrSource]);
-
-  useEffect(() => {
-    console.log('Modal rendered', isQrOpen, qrSource);
-  }, [isQrOpen, qrSource]);
-
-  function handleIframeLoad() {
-    console.log('Current Object (iframe load):', id);
-    onExplored(id);
-  }
-
-  function handleExternalOpen() {
-    console.log('Current Object (external open):', id);
-    onExplored(id);
+    // For Sketchfab embedded models, prefer opening embed in-page.
+    const url = entry.url;
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      if (host.includes('sketchfab.com') || host.includes('skfb.ly')) {
+        setShowEmbed(true);
+        return;
+      }
+    } catch {
+      // fallback to opening externally
+    }
     window.open(entry.url, '_blank', 'noopener,noreferrer');
   }
 
-  function handleQrOpen() {
-    console.log('Current Object (qr open):', id);
-    if (!qrSource) {
-      setQrError('QR Code belum tersedia.');
+  function handleContinueToArgumentation() {
+    if (!canAdvanceToArgumentation) {
+      const remaining = requiredIds.length - exploredIds.size;
+      showSnackbar(
+        remaining === 1
+          ? 'Silakan eksplorasi 1 objek AR lagi sebelum melanjutkan.'
+          : `Silakan eksplorasi ${remaining} objek AR lagi sebelum melanjutkan.`,
+        'info',
+      );
       return;
     }
-    onExplored(id);
-    setIsQrOpen(true);
+    void nextStage();
   }
 
   return (
-    <div className={['overflow-hidden rounded-[20px] border shadow-sm transition-all duration-200', explored ? 'border-accent-200' : 'border-neutral-200'].join(' ')}>
-
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3 bg-white px-4 py-3">
-        <div className={['flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-black', explored ? 'bg-accent-500 text-white' : 'bg-primary-100 text-primary-700'].join(' ')}>
-          {explored ? '✓' : index + 1}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-            {index === 0 ? 'Objek Utama' : `Objek ${index + 1}`}
-          </p>
-          <h3 className="truncate text-base font-black text-neutral-900">{objectTitle}</h3>
-        </div>
-        {explored && (
-          <span className="flex-shrink-0 rounded-full bg-accent-100 px-2.5 py-1 text-xs font-bold text-accent-700">
-            ✓ Selesai
-          </span>
-        )}
-      </div>
-
-      {sketchfab && embedUrl ? (
-        <div className="relative w-full bg-neutral-900" style={{ paddingBottom: '56.25%' /* 16:9 */ }}>
-          <iframe
-            src={embedUrl}
-            title={`Model 3D ${objectTitle}`}
-            onLoad={handleIframeLoad}
-            allow="autoplay; fullscreen; xr-spatial-tracking"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full border-0"
-          />
-        </div>
-      ) : valid ? (
-        <div className="border-t border-neutral-100 bg-white px-4 py-4 sm:px-5 sm:py-5">
-          <div className="overflow-hidden rounded-[18px] border border-neutral-200 bg-neutral-100">
-            {previewImage ? (
-              <img
-                src={previewImage}
-                alt={`Preview ${objectTitle}`}
-                className="h-48 w-full object-cover sm:h-56"
-              />
-            ) : (
-              <div className="flex h-48 items-center justify-center bg-gradient-to-br from-primary-100 to-secondary-50 text-sm font-semibold text-primary-700 sm:h-56">
-                Preview model akan tampil di sini.
-              </div>
-            )}
-          </div>
-
-          {entry.description && (
-            <p className="mt-3 text-sm leading-relaxed text-neutral-600">{entry.description}</p>
-          )}
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={handleExternalOpen}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 active:scale-[0.98]"
-            >
-              <span>📦</span> Lihat Model 3D
-            </button>
-            <button
-              type="button"
-              onClick={() => { console.log('Lihat QR clicked', id); handleQrOpen(); }}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-black text-neutral-700 transition hover:bg-neutral-100 active:scale-[0.98]"
-            >
-              <span>📱</span> Lihat QR
-            </button>
-          </div>
-
-          <div className="mt-4">
-            <ObjectAiPanel entry={entry} comic={comic} />
-          </div>
-        </div>
-      ) : (
-        <div className="bg-neutral-50 px-4 py-6 text-center">
-          <p className="text-sm text-neutral-400">Model 3D belum tersedia.</p>
-        </div>
-      )}
-
-      {sketchfab && valid && (
-        <div className="flex justify-end bg-white px-4 py-2">
-          <a
-            href={entry.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100"
-          >
-            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path d="M6 2H2v12h12v-4M10 2h4v4M10 6l4-4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Buka Fullscreen
-          </a>
-        </div>
-      )}
-
-      {isQrOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
-          <div className="w-full max-w-md rounded-[24px] border border-neutral-200 bg-white p-5 shadow-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary-600">QR Assemblr</p>
-                <h4 className="mt-1 text-lg font-black text-neutral-900">{objectTitle}</h4>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsQrOpen(false)}
-                className="rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700"
-              >
-                Tutup
-              </button>
-            </div>
-
-            <div className="mt-4 rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
-              {qrLoading ? (
-                <div className="mx-auto flex h-60 w-60 items-center justify-center rounded-2xl bg-white p-3">
-                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-                </div>
-              ) : qrDataUrl ? (
-                <img src={qrDataUrl} alt={`QR ${objectTitle}`} className="mx-auto h-60 w-60 rounded-2xl bg-white p-3 object-contain" />
-              ) : (
-                <div className="mx-auto flex h-60 w-60 items-center justify-center rounded-2xl bg-white p-3 text-center text-sm font-semibold text-neutral-500">
-                  {qrError || 'QR Code belum tersedia.'}
-                </div>
-              )}
-              <div className="mt-4 space-y-2 text-sm text-neutral-600">
-                <p className="font-semibold text-neutral-700">Model</p>
-                <p>{objectTitle}</p>
-                <p className="font-semibold text-neutral-700">Link</p>
-                <p className="break-all text-xs text-neutral-500">{qrSource}</p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3">
-              {qrDataUrl && (
-                <a
-                  href={qrDataUrl}
-                  download={`${objectTitle.toLowerCase().replace(/\s+/g, '-') || 'qr'}-assemblr.png`}
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-black text-white"
-                >
-                  Download QR
-                </a>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsQrOpen(false)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-black text-neutral-700"
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── NavigationStage ──────────────────────────────────────────────────────────
-
-export default function NavigationStage() {
-  const { comic, setCanAdvance, unregisterSlideNav } = useLearningEngine();
-  const metadata = useComicMetadata(comic.id);
-  const { model3D } = metadata.assets;
-
-  const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
-  const { user } = useAuth();
-
-  const requiredIds = useMemo(() => {
-    return model3D
-      .filter((e) => isValidUrl(e.url))
-      .map((e, idx) => makeObjectId(e, idx));
-  }, [model3D]);
-
-  const canAdvance = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
-
-  useEffect(() => { setCanAdvance(canAdvance); }, [canAdvance, setCanAdvance]);
-  // Restore explored ids from Firestore (once) or localStorage
-  useEffect(() => {
-    let isMounted = true;
-    async function restore() {
-      try {
-        // localStorage first
-        const raw = localStorage.getItem(`navigation_explored_${comic.id}`);
-        if (raw) {
-          const arr = JSON.parse(raw) as string[];
-          if (isMounted && Array.isArray(arr) && arr.length > 0) {
-            setExploredIds(new Set(arr));
-            console.log('[NavigationStage] restored explored from localStorage', arr);
-            return;
-          }
-        }
-
-        // fallback: Firestore
-        if (user?.uid) {
-          const ref = doc(firestore, 'users', user.uid, 'progress', `comic-${comic.id}`);
-          const snap = await getDoc(ref);
-          if (snap.exists()) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data = snap.data() as any;
-            const arr = Array.isArray(data?.navigationExploredObjects) ? data.navigationExploredObjects : [];
-            if (isMounted && arr.length > 0) {
-              setExploredIds(new Set(arr));
-              console.log('[NavigationStage] restored explored from Firestore', arr);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[NavigationStage] restore explored failed', err);
-      }
-    }
-    restore();
-    return () => { isMounted = false; };
-  }, [comic.id, user]);
-  useEffect(() => () => { unregisterSlideNav(); }, [unregisterSlideNav]);
-
-  const handleExplored = useCallback((id: string) => {
-    console.log('mark explored called for:', id);
-    setExploredIds((prev) => {
-      if (prev.has(id)) {
-        console.log('Already completed:', id);
-        console.log('Completed:', Array.from(prev));
-        console.log('Progress:', prev.size, '/', requiredIds.length);
-        return prev;
-      }
-      const next = new Set(prev);
-      next.add(id);
-      console.log('Completed:', Array.from(next));
-      console.log('Progress:', next.size, '/', requiredIds.length);
-
-      // persist to Firestore (merge) and localStorage
-      try {
-        if (user?.uid) {
-          const ref = doc(firestore, 'users', user.uid, 'progress', `comic-${comic.id}`);
-          // merge navigationExploredObjects array
-          void setDoc(ref, { navigationExploredObjects: Array.from(next) }, { merge: true });
-        }
-      } catch (err) {
-        console.error('[NavigationStage] failed to persist explored ids', err);
-      }
-
-      try {
-        localStorage.setItem(`navigation_explored_${comic.id}`, JSON.stringify(Array.from(next)));
-      } catch (e) {
-        // ignore
-      }
-
-      return next;
-    });
-  }, [user, comic.id, requiredIds.length]);
-
-  return (
-    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden animate-fade-in-up">
-
-      {/* Stage header */}
-      <header className="rounded-[24px] bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4 py-4 shadow-sm">
+    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden px-1 py-1 animate-fade-in-up sm:gap-5 sm:px-2">
+      <header className="rounded-[24px] bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4 py-4 shadow-sm sm:px-5 sm:py-5">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-2xl text-white shadow-sm">
             🧭
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-primary-600">
-              Navigation · AR + AI
-            </p>
-            <h2 className="mt-0.5 text-base font-black leading-snug text-neutral-900 sm:text-lg">
-              Amati setiap model 3D, lalu diskusikan dengan AI Tutor.
-            </h2>
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-primary-600">Navigation (AR + AI)</p>
+            <h2 className="mt-1 text-lg font-black text-neutral-900 sm:text-xl">Eksplorasi objek 3D dan tanyakan hasil pengamatanmu kepada AI.</h2>
           </div>
         </div>
       </header>
 
-      {/* Object cards */}
-      {model3D.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {model3D.map((entry, index) => (
-            <ObjectCard
-              key={`${entry.page}-${entry.url}`}
-              entry={entry}
-              index={index}
-              explored={exploredIds.has(`${entry.page}-${entry.url}`)}
-              comic={comic}
-              onExplored={handleExplored}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-10 text-center">
-          <p className="text-sm font-semibold text-neutral-500">
-            Objek AR belum tersedia untuk komik ini.
-          </p>
-        </div>
-      )}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <section className="flex flex-col gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-3 sm:p-4">
+            <div className="overflow-hidden rounded-[18px] border border-neutral-200 bg-white">
+              {showEmbed && primaryEntry ? (
+                <div className="h-64 w-full sm:h-80">
+                  <iframe src={`${primaryEntry.url.replace(/\/$/, '')}/embed`} title={`Model 3D ${activeObjectName}`} className="h-full w-full border-0" allow="fullscreen" />
+                </div>
+              ) : previewSrc ? (
+                <div className="h-56 w-full overflow-hidden sm:h-72">
+                  <img
+                    src={previewSrc}
+                    alt={`Tampilan ${activeObjectName} dalam AR`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="flex h-56 flex-col items-center justify-center gap-3 bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4 text-center sm:h-72">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 text-2xl text-primary-700">
+                    📷
+                  </div>
+                  <div>
+                    <p className="text-base font-black text-neutral-900">Preview AR belum tersedia.</p>
+                    <p className="mt-1 text-sm text-neutral-600">Screenshot asli untuk komik ini belum tersedia, tetapi pengalaman AR tetap bisa dibuka.</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
-      {/* Progress footer */}
-      <div className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-semibold text-neutral-600">Progress eksplorasi</p>
-          <span className="text-sm font-black text-primary-700">
-            {exploredIds.size}/{requiredIds.length} objek
-          </span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
-          <div
-            className="h-2 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500"
-            style={{ width: requiredIds.length > 0 ? `${(exploredIds.size / requiredIds.length) * 100}%` : '0%' }}
-          />
-        </div>
-        {!canAdvance && (
-          <p className="mt-2 text-xs text-neutral-500">
-            Muat semua model 3D ({exploredIds.size}/{requiredIds.length}) untuk melanjutkan. AI Tutor bersifat opsional.
-          </p>
-        )}
+            <div className="mt-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-neutral-400">Eksplorasi 3D</p>
+              <h3 className="mt-1 text-xl font-black text-neutral-900">{activeObjectName}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">Eksplorasi model 3D dan ajukan pertanyaan kepada AI untuk memahami objek ini.</p>
+            </div>
+
+            {/* AR object list — one button per model3D entry */}
+            <div className="mt-4 flex flex-col gap-2">
+              {model3D.length > 0 ? (
+                model3D.map((entry) => {
+                  const entryId = `${entry.page}-${entry.url}`;
+                  const explored = exploredIds.has(entryId);
+                  const valid = isValidUrl(entry.url);
+                  return (
+                    <div key={entryId} className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAr(entry)}
+                        disabled={!valid}
+                        className={[
+                          'inline-flex min-h-[44px] flex-1 items-center justify-between rounded-2xl border px-4 py-2 text-sm font-semibold transition',
+                          explored
+                            ? 'border-accent-300 bg-accent-50 text-accent-700'
+                            : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50',
+                        ].join(' ')}
+                      >
+                        <span>{entry.title || 'Lihat AR Interaktif'}</span>
+                        {explored && <span className="ml-2 text-accent-600">✓</span>}
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-400 cursor-not-allowed"
+                >
+                  Objek AR belum tersedia
+                </button>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => showSnackbar(comic.synopsis || 'Tidak ada info lebih lanjut.', 'info')}
+                className="ml-auto inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700"
+              >
+                Info
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleContinueToArgumentation}
+                disabled={!canAdvanceToArgumentation}
+                className="w-full inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+              >
+                Lanjut
+              </button>
+              {!canAdvanceToArgumentation && (
+                <p className="mt-3 text-sm text-neutral-600">
+                  {requiredIds.length > 1
+                    ? `Eksplorasi semua objek AR (${exploredIds.size}/${requiredIds.length}) untuk melanjutkan.`
+                    : 'Buka viewer AR untuk melanjutkan.'}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <aside
+          aria-label="AI Assistant"
+          className="flex flex-col gap-0 overflow-hidden rounded-[24px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white shadow-[0_8px_32px_rgba(47,128,237,0.10)]"
+        >
+          {/* Robot hero area */}
+          <div className="relative flex flex-col items-center bg-gradient-to-b from-[#EBF5FF] to-[#F5FBFF] px-5 pb-4 pt-6">
+            {/* Bubble chat */}
+            <div className="relative mb-3 max-w-[240px] rounded-[18px] border border-primary-100 bg-white px-4 py-2.5 text-center text-sm font-semibold leading-snug text-primary-700 shadow-[0_4px_16px_rgba(47,128,237,0.12)]">
+              Tanyakan apa saja tentang bangun ruang atau Candi Jawi!
+              {/* Bubble tail */}
+              <span className="absolute -bottom-[9px] left-1/2 -translate-x-1/2 h-0 w-0 border-l-[9px] border-r-[9px] border-t-[9px] border-l-transparent border-r-transparent border-t-white" />
+              <span className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 h-0 w-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary-100" style={{ zIndex: -1 }} />
+            </div>
+
+            {/* Robot */}
+            <button
+              type="button"
+              aria-label="AI Assistant"
+              className="group mt-1 cursor-pointer select-none rounded-full border-0 bg-transparent p-0 focus:outline-none"
+            >
+              <div className={[
+                'flex h-28 w-28 items-center justify-center rounded-full bg-white/70 shadow-[0_12px_40px_rgba(47,128,237,0.18)] transition-transform duration-150 ease-out',
+                'group-hover:scale-105 group-active:scale-95',
+                isResponding ? 'animate-ai-blink' : 'animate-ai-float',
+              ].join(' ')}>
+                <img
+                  src="/images/ai/robot.svg"
+                  alt="Robot AI CINARAI"
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 drop-shadow-md"
+                />
+              </div>
+            </button>
+
+            {/* Status badge */}
+            <div className="mt-3 flex items-center gap-1.5">
+              <span className={['h-2 w-2 rounded-full', isResponding ? 'animate-pulse bg-secondary-500' : 'bg-accent-500'].join(' ')} />
+              <span className="text-xs font-semibold text-neutral-500">
+                {isResponding ? 'Sedang berpikir...' : 'Siap membantu!'}
+              </span>
+            </div>
+          </div>
+
+          {/* Chat + input area */}
+          <div className="flex flex-col gap-3 p-4">
+            {/* Chat messages */}
+            {messages.length > 0 && (
+              <div className="flex max-h-48 flex-col gap-2 overflow-y-auto pr-1">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
+                  >
+                    <div className={[
+                      'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+                      msg.role === 'user'
+                        ? 'rounded-br-sm bg-primary-600 text-white'
+                        : 'rounded-bl-sm border border-primary-100 bg-[#F5FBFF] text-neutral-800',
+                    ].join(' ')}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isResponding && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-primary-100 bg-[#F5FBFF] px-4 py-3">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '0ms' }} />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '150ms' }} />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Quick questions */}
+            <div className="flex flex-wrap gap-1.5">
+              {quickQuestions.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => void handleSend(q)}
+                  disabled={isResponding}
+                  className="rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-semibold text-primary-700 shadow-sm transition hover:border-primary-400 hover:bg-primary-50 disabled:opacity-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            {/* Input row */}
+            <div className="flex items-end gap-2">
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleSend();
+                  }
+                }}
+                rows={2}
+                placeholder="Tulis pertanyaanmu..."
+                className="flex-1 resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              />
+              <button
+                type="button"
+                onClick={() => void handleSend()}
+                disabled={isResponding || !draft.trim()}
+                className="mb-0.5 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-[0_4px_16px_rgba(47,128,237,0.30)] transition hover:bg-primary-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:shadow-none"
+                aria-label="Kirim pertanyaan"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+
+            {aiError && (
+              <div className="rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm font-semibold text-error-700">
+                Terjadi error: {aiError}
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );
