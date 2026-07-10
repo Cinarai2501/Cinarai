@@ -88,18 +88,18 @@ function DynamicCover({ question }: { question: ArgumentationQuestion }) {
         <img
           src={question.photoSrc}
           alt={question.photoAlt}
-          className="h-52 w-full object-cover sm:h-64"
+          className="h-52 w-full object-contain sm:h-64"
         />
         {question.overlaySrc && (
           <img
             src={question.overlaySrc}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover opacity-75"
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
           />
         )}
         {/* Part label badge */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 backdrop-blur-sm">
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5">
           <span className="text-xs font-bold text-white">📷</span>
           <span className="text-xs font-bold capitalize text-white">{question.templePart}</span>
         </div>
