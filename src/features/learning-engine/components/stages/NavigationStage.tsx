@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
 import { useSnackbar } from '@/context/SnackbarContext';
@@ -88,6 +89,7 @@ const starterMessages: ChatMessage[] = [
 /* eslint-disable @next/next/no-img-element */
 
 export default function NavigationStage() {
+  const router = useRouter();
   const { comic, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
   const { showSnackbar } = useSnackbar();
   const metadata = useComicMetadata(comic.id);
@@ -217,7 +219,8 @@ export default function NavigationStage() {
   );
 
   function handleOpenAr(entry: ComicAssetEntry) {
-    if (!isValidUrl(entry.arUrl)) {
+    const entryUrl = entry.viewerType === 'embed' ? entry.embedUrl || entry.arUrl : entry.arUrl;
+    if (!isValidUrl(entryUrl)) {
       showSnackbar('Link AR belum tersedia.', 'info');
       return;
     }
@@ -230,12 +233,9 @@ export default function NavigationStage() {
       return next;
     });
 
-    if (entry.viewerType === 'embed' && entry.embedUrl) {
-      window.open(entry.embedUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    window.open(entry.arUrl, '_blank', 'noopener,noreferrer');
+    router.push(
+      `/viewer/3d?url=${encodeURIComponent(entryUrl)}&title=${encodeURIComponent(entry.title)}&comicId=${comic.id}&page=${entry.page}`,
+    );
   }
 
   function handleOpenQr(entry: ComicAssetEntry, event: React.MouseEvent<HTMLButtonElement>) {
@@ -261,12 +261,11 @@ export default function NavigationStage() {
   }
 
   const featuredEntry = primaryEntry?.viewerType === 'embed' ? primaryEntry : null;
-  const isFeatureExplored = featuredEntry ? exploredIds.has(`${featuredEntry.page}-${featuredEntry.arUrl}`) : false;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden px-2 py-2 sm:px-4 sm:py-4">
       {featuredEntry && (
-        <Hero3DViewer entry={featuredEntry} isExplored={isFeatureExplored} />
+        <Hero3DViewer entry={featuredEntry} />
       )}
 
       <div className="space-y-5">
@@ -283,16 +282,13 @@ export default function NavigationStage() {
             model3D.map((entry, idx) => {
               const entryId = `${entry.page}-${entry.arUrl}`;
               const isActive = activeEntry ? `${activeEntry.page}-${activeEntry.arUrl}` === entryId : idx === 0;
-              const isExplored = exploredIds.has(entryId);
               const isValid = isValidUrl(entry.arUrl);
 
               return (
                 <AssemblrCard
                   key={entryId}
                   entry={entry}
-                  index={idx}
                   isActive={isActive}
-                  isExplored={isExplored}
                   onSelect={() => setActiveObjectId(entryId)}
                   onOpenAr={(e) => {
                     e.stopPropagation();

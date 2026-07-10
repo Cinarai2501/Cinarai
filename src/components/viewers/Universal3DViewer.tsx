@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { toDataURL } from 'qrcode';
-import { useSearchParams } from 'next/navigation';
-import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -82,12 +81,13 @@ export default function Universal3DViewer({
   initialComicId,
   initialPage,
 }: Universal3DViewerProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const resolvedUrl = initialUrl ?? searchParams.get('url') ?? '';
   const resolvedTitle = initialTitle ?? searchParams.get('title') ?? 'Model 3D';
-  const resolvedComicId = initialComicId ?? searchParams.get('comicId') ?? '';
-  const resolvedPage = initialPage ?? searchParams.get('page') ?? '';
+  const resolvedComicId = initialComicId ?? searchParams.get('comicId') ?? '-';
+  const resolvedPage = initialPage ?? searchParams.get('page') ?? '-';
 
   const [isPreparing, setIsPreparing] = useState(true);
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -95,17 +95,8 @@ export default function Universal3DViewer({
   const [qrLoading, setQrLoading] = useState(false);
   const isValidUrl = isValidHttpUrl(resolvedUrl);
   const providerInfo = useMemo(() => detectProvider(resolvedUrl), [resolvedUrl]);
-  const metadata = useComicMetadata(Number(resolvedComicId) || 0);
-  const currentPage = Number(resolvedPage);
-  const heroEntry = useMemo(() => {
-    if (!metadata?.assets?.model3D?.length) return null;
-    if (Number.isFinite(currentPage) && currentPage > 0) {
-      return metadata.assets.model3D.find((entry) => entry.page === currentPage) ?? metadata.assets.model3D[0];
-    }
-    return metadata.assets.model3D[0];
-  }, [currentPage, metadata]);
-  const qrSource = heroEntry?.arUrl?.trim() ?? '';
-  const showQrButton = Boolean(qrSource);
+  const qrSource = resolvedUrl;
+  const showQrButton = Boolean(qrSource && isValidUrl);
 
   useEffect(() => {
     setIsPreparing(true);
@@ -120,21 +111,17 @@ export default function Universal3DViewer({
       return;
     }
 
-    console.log('[Universal3DViewer] Generating QR for:', qrSource);
     setQrLoading(true);
     toDataURL(qrSource, { margin: 1, scale: 10 })
       .then((dataUrl) => setQrDataUrl(dataUrl))
-      .catch((err) => {
-        console.error('[Universal3DViewer] QR generation error', err);
+      .catch(() => {
         setQrDataUrl('');
       })
       .finally(() => setQrLoading(false));
   }, [qrSource]);
 
   const handleBack = () => {
-    if (typeof window !== 'undefined') {
-      window.close();
-    }
+    router.back();
   };
 
   const handleOpenExternal = () => {
@@ -285,14 +272,8 @@ export default function Universal3DViewer({
                   <p className="text-base font-black text-neutral-900">{resolvedTitle}</p>
                   <p className="mt-2 text-sm font-semibold text-neutral-700">Provider</p>
                   <p className="text-base text-neutral-700">{providerInfo.label}</p>
-                  {heroEntry?.title ? (
-                    <>
-                      <p className="mt-2 text-sm font-semibold text-neutral-700">Label metadata</p>
-                      <p className="text-base text-neutral-700">{heroEntry.title}</p>
-                    </>
-                  ) : null}
                   <p className="mt-2 text-sm font-semibold text-neutral-700">Halaman</p>
-                  <p className="text-base text-neutral-700">{resolvedPage || heroEntry?.page || '-'}</p>
+                  <p className="text-base text-neutral-700">{resolvedPage}</p>
                 </div>
               </div>
             </div>
