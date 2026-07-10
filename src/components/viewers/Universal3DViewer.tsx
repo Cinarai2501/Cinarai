@@ -88,9 +88,10 @@ export default function Universal3DViewer({
   const resolvedTitle = initialTitle ?? searchParams.get('title') ?? 'Model 3D';
   const resolvedComicId = initialComicId ?? searchParams.get('comicId') ?? '-';
   const resolvedPage = initialPage ?? searchParams.get('page') ?? '-';
+  const resolvedMode = searchParams.get('mode') ?? 'default';
 
   const [isPreparing, setIsPreparing] = useState(true);
-  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(resolvedMode === 'qr');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [qrLoading, setQrLoading] = useState(false);
   const isValidUrl = isValidHttpUrl(resolvedUrl);

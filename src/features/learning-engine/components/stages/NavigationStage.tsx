@@ -8,7 +8,6 @@ import { useSnackbar } from '@/context/SnackbarContext';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { Hero3DViewer } from './Hero3DViewer';
 import { AssemblrCard } from './AssemblrCard';
-import { QrModal } from './QrModal';
 import { FloatingAITutor } from './FloatingAITutor';
 
 /* eslint-disable @next/next/no-img-element */
@@ -111,8 +110,6 @@ export default function NavigationStage() {
   const [isResponding, setIsResponding] = useState(false);
   const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
   const [aiError, setAiError] = useState<string | null>(null);
-  const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [qrModalSrc, setQrModalSrc] = useState<string>('');
 
   const requiredIds = useMemo(
     () => model3D.filter((e) => isValidUrl(e.arUrl)).map((e) => `${e.page}-${e.arUrl}`),
@@ -130,7 +127,9 @@ export default function NavigationStage() {
       setActiveObjectId(null);
       return;
     }
-    const nextActiveId = `${primaryEntry.page}-${primaryEntry.arUrl}`;
+
+    const storedId = typeof window !== 'undefined' ? window.sessionStorage.getItem('navigationStageLastOpenedObjectId') : null;
+    const nextActiveId = storedId ? storedId : `${primaryEntry.page}-${primaryEntry.arUrl}`;
     setActiveObjectId((current) => (current ? current : nextActiveId));
   }, [primaryEntry]);
 
@@ -144,6 +143,15 @@ export default function NavigationStage() {
       return next;
     });
   }, [activeEntry]);
+
+  useEffect(() => {
+    if (!activeObjectId || typeof window === 'undefined') return;
+
+    const target = document.querySelector(`[data-object-id="${activeObjectId}"]`);
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeObjectId]);
 
   useEffect(() => {
     return () => {
@@ -218,7 +226,7 @@ export default function NavigationStage() {
     [activeObjectName, comic, draft, isResponding, messages, activeEntry],
   );
 
-  function handleOpenAr(entry: ComicAssetEntry) {
+  function handleOpenAr(entry: ComicAssetEntry, openQr = false) {
     const entryUrl = entry.viewerType === 'embed' ? entry.embedUrl || entry.arUrl : entry.arUrl;
     if (!isValidUrl(entryUrl)) {
       showSnackbar('Link AR belum tersedia.', 'info');
@@ -226,6 +234,7 @@ export default function NavigationStage() {
     }
 
     const entryId = `${entry.page}-${entry.arUrl}`;
+    setActiveObjectId(entryId);
     setExploredIds((prev) => {
       if (prev.has(entryId)) return prev;
       const next = new Set(prev);
@@ -233,17 +242,8 @@ export default function NavigationStage() {
       return next;
     });
 
-    router.push(
-      `/viewer/3d?url=${encodeURIComponent(entryUrl)}&title=${encodeURIComponent(entry.title)}&comicId=${comic.id}&page=${entry.page}`,
-    );
-  }
-
-  function handleOpenQr(entry: ComicAssetEntry, event: React.MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-    const entryId = `${entry.page}-${entry.arUrl}`;
-    setQrModalSrc(entry.qrImage?.trim() || '');
-    setQrModalOpen(true);
-    setExploredIds((prev) => new Set(prev).add(entryId));
+    const url = `/viewer/3d?url=${encodeURIComponent(entryUrl)}&title=${encodeURIComponent(entry.title)}&comicId=${comic.id}&page=${entry.page}`;
+    router.push(openQr ? `${url}&mode=qr` : url);
   }
 
   function handleContinueToArgumentation() {
@@ -295,7 +295,11 @@ export default function NavigationStage() {
                     setActiveObjectId(entryId);
                     handleOpenAr(entry);
                   }}
-                  onOpenQr={(e) => handleOpenQr(entry, e)}
+                  onOpenQr={(e) => {
+                    e.stopPropagation();
+                    setActiveObjectId(entryId);
+                    handleOpenAr(entry, true);
+                  }}
                   isValidUrl={isValid}
                 />
               );
@@ -326,8 +330,6 @@ export default function NavigationStage() {
           </p>
         )}
       </div>
-
-      <QrModal isOpen={qrModalOpen} qrSrc={qrModalSrc} onClose={() => setQrModalOpen(false)} />
 
       <FloatingAITutor
         messages={messages}

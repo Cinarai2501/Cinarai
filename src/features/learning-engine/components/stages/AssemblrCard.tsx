@@ -25,6 +25,7 @@ export function AssemblrCard({
 
   return (
     <div
+      data-object-id={`${entry.page}-${entry.arUrl}`}
       onClick={onSelect}
       className={`rounded-[20px] bg-white px-4 py-4 transition duration-200 ${
         isActive ? 'shadow-[0_18px_50px_rgba(15,23,42,0.12)]' : 'shadow-sm hover:shadow-[0_18px_50px_rgba(15,23,42,0.08)]'
