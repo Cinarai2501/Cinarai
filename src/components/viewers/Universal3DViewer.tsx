@@ -104,7 +104,7 @@ export default function Universal3DViewer({
     }
     return metadata.assets.model3D[0];
   }, [currentPage, metadata]);
-  const qrSource = heroEntry?.url?.trim() ?? '';
+  const qrSource = heroEntry?.arUrl?.trim() ?? '';
   const showQrButton = Boolean(qrSource);
 
   useEffect(() => {

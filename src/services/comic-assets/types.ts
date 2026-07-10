@@ -123,7 +123,14 @@ export interface ClassifiedQr {
   description?: string;
   /** Preview image path (local public/ path) shown before opening the 3D model */
   previewImage?: string;
+  /** QR image asset used by the QR modal */
+  qrImage?: string;
+  /** Preferred normalized field used by NavigationStage */
   qrUrl?: string;
+  /** Legacy aliases kept for compatibility during metadata normalization */
+  qr?: string;
+  assemblrQR?: string;
+  url?: string;
 }
 
 // ── Comic metadata ────────────────────────────────────────────────────────────
@@ -137,8 +144,10 @@ export interface ComicAssetEntry {
   previewImage?: string;
   buttonLabel: string;
   provider?: string;
-  url: string;
-  qrUrl?: string;
+  /** AR / 3D model URL used by the Model 3D button */
+  arUrl: string;
+  /** QR image asset used by the QR button */
+  qrImage?: string;
 }
 
 export interface ComicAssetGroup {

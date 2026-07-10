@@ -25,6 +25,12 @@ function toEntry(qr: ClassifiedQr): ComicAssetEntry | null {
   if (qr.category === 'UNKNOWN') return null;
 
   const provider = qr.category === 'MODEL_3D' ? 'sketchfab' : qr.category === 'VIDEO' ? 'video' : qr.category === 'QUIZ' ? 'quiz' : 'website';
+  const arUrl = [qr.qrUrl, qr.qr, qr.assemblrQR, qr.url, qr.value]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .find((value) => Boolean(value)) || qr.value;
+  const qrImage = [qr.qrImage, qr.image, qr.previewImage]
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .find((value) => Boolean(value));
 
   return {
     page: qr.page,
@@ -33,7 +39,8 @@ function toEntry(qr: ClassifiedQr): ComicAssetEntry | null {
     previewImage: qr.previewImage,
     buttonLabel: BUTTON_LABELS[qr.category],
     provider,
-    url: qr.value,
+    arUrl,
+    qrImage,
   };
 }
 

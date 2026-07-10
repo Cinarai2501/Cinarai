@@ -99,11 +99,15 @@ export default function NavigationStage() {
   const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
   const [showEmbed, setShowEmbed] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrModalSrc, setQrModalSrc] = useState<string>('');
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [aiMinimized, setAiMinimized] = useState(false);
 
   // Progress gate: all model3D entries must be explored.
   // AI interaction is optional and never blocks advancement.
   const requiredIds = useMemo(
-    () => model3D.filter((e) => isValidUrl(e.url)).map((e) => `${e.page}-${e.url}`),
+    () => model3D.filter((e) => isValidUrl(e.arUrl)).map((e) => `${e.page}-${e.arUrl}`),
     [model3D],
   );
   const allObjectsExplored = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
@@ -158,9 +162,9 @@ export default function NavigationStage() {
 
   // Auto-load Sketchfab embeds when the primary entry is a Sketchfab model
   useEffect(() => {
-    if (!primaryEntry || !primaryEntry.url) return;
+    if (!primaryEntry || !primaryEntry.arUrl) return;
     try {
-      const parsed = new URL(primaryEntry.url);
+      const parsed = new URL(primaryEntry.arUrl);
       const host = parsed.hostname.toLowerCase();
       if (host.includes('sketchfab.com') || host.includes('skfb.ly')) {
         setShowEmbed(true);
@@ -253,13 +257,13 @@ export default function NavigationStage() {
   }, [activeObjectName, comic, draft, isResponding, messages, primaryEntry]);
 
   function handleOpenAr(entry: ComicAssetEntry) {
-    if (!isValidUrl(entry.url)) {
+    if (!isValidUrl(entry.arUrl)) {
       showSnackbar('Link AR belum tersedia.', 'info');
       return;
     }
 
     // Mark this entry as explored regardless of how it opens.
-    const entryId = `${entry.page}-${entry.url}`;
+    const entryId = `${entry.page}-${entry.arUrl}`;
     setExploredIds((prev) => {
       if (prev.has(entryId)) return prev;
       const next = new Set(prev);
@@ -269,7 +273,7 @@ export default function NavigationStage() {
     });
 
     // For Sketchfab embedded models, prefer opening embed in-page.
-    const url = entry.url;
+    const url = entry.arUrl;
     try {
       const parsed = new URL(url);
       const host = parsed.hostname.toLowerCase();
@@ -280,7 +284,7 @@ export default function NavigationStage() {
     } catch {
       // fallback to opening externally
     }
-    window.open(entry.url, '_blank', 'noopener,noreferrer');
+    window.open(entry.arUrl, '_blank', 'noopener,noreferrer');
   }
 
   function handleContinueToArgumentation() {
@@ -317,7 +321,7 @@ export default function NavigationStage() {
             <div className="overflow-hidden rounded-[18px] border border-neutral-200 bg-white">
               {showEmbed && primaryEntry ? (
                 <div className="h-64 w-full sm:h-80">
-                  <iframe src={`${primaryEntry.url.replace(/\/$/, '')}/embed`} title={`Model 3D ${activeObjectName}`} className="h-full w-full border-0" allow="fullscreen" />
+                  <iframe src={`${primaryEntry.arUrl.replace(/\/$/, '')}/embed`} title={`Model 3D ${activeObjectName}`} className="h-full w-full border-0" allow="fullscreen" />
                 </div>
               ) : previewSrc ? (
                 <div className="h-56 w-full overflow-hidden sm:h-72">
@@ -346,40 +350,68 @@ export default function NavigationStage() {
               <p className="mt-2 text-sm leading-relaxed text-neutral-600">Eksplorasi model 3D dan ajukan pertanyaan kepada AI untuk memahami objek ini.</p>
             </div>
 
-            {/* AR object list — one button per model3D entry */}
-            <div className="mt-4 flex flex-col gap-2">
+            {/* Per-object card list (Photo → Lihat Model 3D → Lihat QR) */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {model3D.length > 0 ? (
-                model3D.map((entry) => {
-                  const entryId = `${entry.page}-${entry.url}`;
+                model3D.map((entry, idx) => {
+                  const entryId = `${entry.page}-${entry.arUrl}`;
                   const explored = exploredIds.has(entryId);
-                  const valid = isValidUrl(entry.url);
+                  const valid = isValidUrl(entry.arUrl);
+                  const candidateQr = entry.qrImage?.trim() || '';
+                  const preview = entry.previewImage || `/images/navigation/komik-${comic.id}-ar.png`;
+
+                  function openQr() {
+                    setQrModalSrc(candidateQr || '');
+                    setQrModalOpen(true);
+                    // mark explored when QR is viewed
+                    setExploredIds((prev) => new Set(prev).add(entryId));
+                  }
+
                   return (
-                    <div key={entryId} className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAr(entry)}
-                        disabled={!valid}
-                        className={[
-                          'inline-flex min-h-[44px] flex-1 items-center justify-between rounded-2xl border px-4 py-2 text-sm font-semibold transition',
-                          explored
-                            ? 'border-accent-300 bg-accent-50 text-accent-700'
-                            : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50',
-                        ].join(' ')}
-                      >
-                        <span>{entry.title || 'Lihat AR Interaktif'}</span>
-                        {explored && <span className="ml-2 text-accent-600">✓</span>}
-                      </button>
+                    <div key={entryId} className="overflow-hidden rounded-[16px] border border-neutral-200 bg-white p-3">
+                      {/* 1. Foto asli bagian Candi Jawi */}
+                      <div className="h-40 w-full overflow-hidden rounded-md bg-neutral-100">
+                        <img src={preview} alt={entry.title || `Objek ${idx + 1}`} className="h-full w-full object-cover" />
+                      </div>
+
+                      {/* 2. Nama objek */}
+                      <div className="mt-3">
+                        <p className="text-xs font-semibold text-neutral-500">{`Objek ${idx + 1}`}</p>
+                        <h4 className="truncate text-base font-black text-neutral-900">{entry.title || 'Model 3D'}</h4>
+                      </div>
+
+                      {/* 3. Deskripsi singkat */}
+                      {entry.description && <p className="mt-2 text-sm text-neutral-600">{entry.description}</p>}
+
+                      {/* 4. Tombol Lihat Model 3D */}
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAr(entry)}
+                          disabled={!valid}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-3 py-2 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          <span>📦</span>
+                          <span>Lihat Model 3D</span>
+                        </button>
+
+                        {/* 5. Tombol Lihat QR (menggunakan entry.qrImage saja) */}
+                        <button
+                          type="button"
+                          onClick={openQr}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100"
+                        >
+                          <span>📱</span>
+                          <span>Lihat QR</span>
+                        </button>
+                      </div>
+
+                      {explored && <div className="mt-3"><span className="rounded-full bg-accent-100 px-2 py-1 text-xs font-bold text-accent-700">✓ Selesai</span></div>}
                     </div>
                   );
                 })
               ) : (
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-400 cursor-not-allowed"
-                >
-                  Objek AR belum tersedia
-                </button>
+                <div className="rounded-[16px] border border-neutral-200 bg-neutral-50 p-4 text-center text-sm text-neutral-500">Tidak ada objek AR untuk komik ini.</div>
               )}
             </div>
 
@@ -413,132 +445,109 @@ export default function NavigationStage() {
           </div>
         </section>
 
-        <aside
-          aria-label="AI Assistant"
-          className="flex flex-col gap-0 overflow-hidden rounded-[24px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white shadow-[0_8px_32px_rgba(47,128,237,0.10)]"
-        >
-          {/* Robot hero area */}
-          <div className="relative flex flex-col items-center bg-gradient-to-b from-[#EBF5FF] to-[#F5FBFF] px-5 pb-4 pt-6">
-            {/* Bubble chat */}
-            <div className="relative mb-3 max-w-[240px] rounded-[18px] border border-primary-100 bg-white px-4 py-2.5 text-center text-sm font-semibold leading-snug text-primary-700 shadow-[0_4px_16px_rgba(47,128,237,0.12)]">
-              Tanyakan apa saja tentang bangun ruang atau Candi Jawi!
-              {/* Bubble tail */}
-              <span className="absolute -bottom-[9px] left-1/2 -translate-x-1/2 h-0 w-0 border-l-[9px] border-r-[9px] border-t-[9px] border-l-transparent border-r-transparent border-t-white" />
-              <span className="absolute -bottom-[11px] left-1/2 -translate-x-1/2 h-0 w-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary-100" style={{ zIndex: -1 }} />
-            </div>
-
-            {/* Robot */}
-            <button
-              type="button"
-              aria-label="AI Assistant"
-              className="group mt-1 cursor-pointer select-none rounded-full border-0 bg-transparent p-0 focus:outline-none"
-            >
-              <div className={[
-                'flex h-28 w-28 items-center justify-center rounded-full bg-white/70 shadow-[0_12px_40px_rgba(47,128,237,0.18)] transition-transform duration-150 ease-out',
-                'group-hover:scale-105 group-active:scale-95',
-                isResponding ? 'animate-ai-blink' : 'animate-ai-float',
-              ].join(' ')}>
-                <img
-                  src="/images/ai/robot.svg"
-                  alt="Robot AI CINARAI"
-                  width={96}
-                  height={96}
-                  className="h-24 w-24 drop-shadow-md"
-                />
-              </div>
-            </button>
-
-            {/* Status badge */}
-            <div className="mt-3 flex items-center gap-1.5">
-              <span className={['h-2 w-2 rounded-full', isResponding ? 'animate-pulse bg-secondary-500' : 'bg-accent-500'].join(' ')} />
-              <span className="text-xs font-semibold text-neutral-500">
-                {isResponding ? 'Sedang berpikir...' : 'Siap membantu!'}
-              </span>
-            </div>
-          </div>
-
-          {/* Chat + input area */}
-          <div className="flex flex-col gap-3 p-4">
-            {/* Chat messages */}
-            {messages.length > 0 && (
-              <div className="flex max-h-48 flex-col gap-2 overflow-y-auto pr-1">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
-                  >
-                    <div className={[
-                      'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
-                      msg.role === 'user'
-                        ? 'rounded-br-sm bg-primary-600 text-white'
-                        : 'rounded-bl-sm border border-primary-100 bg-[#F5FBFF] text-neutral-800',
-                    ].join(' ')}>
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
-                {isResponding && (
-                  <div className="flex justify-start">
-                    <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-primary-100 bg-[#F5FBFF] px-4 py-3">
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '0ms' }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '150ms' }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary-400" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Quick questions */}
-            <div className="flex flex-wrap gap-1.5">
-              {quickQuestions.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => void handleSend(q)}
-                  disabled={isResponding}
-                  className="rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-semibold text-primary-700 shadow-sm transition hover:border-primary-400 hover:bg-primary-50 disabled:opacity-50"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Input row */}
-            <div className="flex items-end gap-2">
-              <textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                rows={2}
-                placeholder="Tulis pertanyaanmu..."
-                className="flex-1 resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
-              />
+        {/* Floating AI FAB & Chat Panel */}
+        <div aria-hidden className="relative">
+          {/* FAB (positioned inside the right column to avoid overlapping main nav) */}
+          <div>
+            {/* FAB: fixed bottom-right, responsive offset so it won't overlap Lanjut on small screens */}
+            <div className="fixed right-6 bottom-24 sm:bottom-6 z-50">
               <button
                 type="button"
-                onClick={() => void handleSend()}
-                disabled={isResponding || !draft.trim()}
-                className="mb-0.5 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-[0_4px_16px_rgba(47,128,237,0.30)] transition hover:bg-primary-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:shadow-none"
-                aria-label="Kirim pertanyaan"
+                onClick={() => {
+                  setAiPanelOpen((s) => !s);
+                  if (aiMinimized) setAiMinimized(false);
+                }}
+                aria-expanded={aiPanelOpen}
+                className="h-14 w-14 rounded-full bg-primary-600 shadow-lg flex items-center justify-center text-white"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <img src="/images/ai/robot.svg" alt="AI" className="h-8 w-8" />
               </button>
             </div>
-
-            {aiError && (
-              <div className="rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm font-semibold text-error-700">
-                Terjadi error: {aiError}
-              </div>
-            )}
           </div>
-        </aside>
+
+          {/* Chat panel overlay (absolute so it stays within right column) */}
+          {aiPanelOpen && (
+            <div className="fixed right-6 bottom-6 z-40 w-full max-w-md transform-gpu rounded-tl-2xl rounded-bl-2xl shadow-xl" style={{ height: aiMinimized ? '4.5rem' : '70vh' }}>
+              <div className="h-full w-full rounded-[14px] bg-white border border-neutral-200 shadow-lg overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-4 py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <img src="/images/ai/robot.svg" alt="AI" className="h-8 w-8" />
+                    <div>
+                      <p className="text-sm font-bold">AI Tutor</p>
+                      <p className="text-xs text-neutral-500">Opsional — minimize atau tutup untuk kembali ke eksplorasi</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setAiMinimized((s) => !s)} className="text-sm font-semibold text-neutral-600">{aiMinimized ? 'Restore' : 'Minimize'}</button>
+                    <button type="button" onClick={() => setAiPanelOpen(false)} className="text-sm font-semibold text-neutral-600">Tutup</button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-auto p-4">
+                  {/* Inline chat panel (uses existing messages/handleSend state) */}
+                  {primaryEntry ? (
+                    <div className="flex h-full flex-col">
+                      <div className="flex-1 overflow-y-auto pr-2">
+                        {messages.map((msg) => (
+                          <div key={msg.id} className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}>
+                            <div className={['max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed', msg.role === 'user' ? 'rounded-br-sm bg-primary-600 text-white' : 'rounded-bl-sm border border-primary-100 bg-[#F5FBFF] text-neutral-800'].join(' ')}>
+                              {msg.content}
+                            </div>
+                          </div>
+                        ))}
+                        {isResponding && (
+                          <div className="mt-2 text-sm text-neutral-500">AI sedang merespons…</div>
+                        )}
+                      </div>
+
+                      <div className="mt-3 flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          {quickQuestions.map((q) => (
+                            <button key={q} type="button" onClick={() => void handleSend(q)} disabled={isResponding} className="rounded-full border border-primary-200 bg-white px-3 py-1 text-xs font-semibold text-primary-700">{q}</button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={2} className="flex-1 resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+                          <button type="button" onClick={() => void handleSend()} disabled={isResponding || !draft.trim()} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-white">➤</button>
+                        </div>
+                        {aiError && <div className="text-sm text-error-700">{aiError}</div>}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-neutral-500">Pilih objek untuk memulai percakapan.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        {/* QR Modal */}
+        {qrModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+            <div className="w-full max-w-sm rounded-[20px] border border-neutral-200 bg-white p-5 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary-600">QR Assemblr</p>
+                  <h4 className="mt-1 text-lg font-black text-neutral-900">QR Code</h4>
+                </div>
+                <button type="button" onClick={() => setQrModalOpen(false)} className="rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">Tutup</button>
+              </div>
+
+              <div className="mt-4 rounded-[12px] border border-neutral-200 bg-neutral-50 p-4 flex items-center justify-center">
+                {qrModalSrc ? (
+                  // If src looks like an image or data URL, show image; otherwise show link
+                  (qrModalSrc.startsWith('data:') || /\.(png|jpe?g|webp|svg)$/i.test(qrModalSrc)) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={qrModalSrc} alt="QR Code" className="h-60 w-60 object-contain" />
+                  ) : (
+                    <a href={qrModalSrc} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-700 underline">Buka QR/Link: {qrModalSrc}</a>
+                  )
+                ) : (
+                  <p className="text-sm text-neutral-500">QR Code tidak tersedia pada metadata untuk objek ini.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        </div>
       </div>
     </div>
   );
