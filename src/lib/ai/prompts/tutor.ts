@@ -8,6 +8,7 @@ export interface TutorPromptContext {
   halaman: string;
   objek: string;
   tahap: string;
+  konteksObjekAr?: string;
 }
 
 export function buildTutorSystemPrompt(context: TutorPromptContext): string {
@@ -44,6 +45,7 @@ export function buildTutorSystemPrompt(context: TutorPromptContext): string {
     `- halaman: ${context.halaman}`,
     `- objek: ${context.objek}`,
     `- tahap: ${context.tahap}`,
+    `- konteks objek AR: ${context.konteksObjekAr ?? '- Tidak ada konteks objek AR.'}`,
     `- pertanyaan siswa: ${context.pertanyaanSiswa}`,
   ].join('\n');
 }

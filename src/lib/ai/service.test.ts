@@ -114,12 +114,21 @@ test('buildTutorPrompt includes navigation context and topic boundaries', () => 
     pageLabel: 'Halaman 13',
     objectName: 'Kubus',
     learningStage: 'Navigation',
+    objectDescription: 'Relief persegi dengan simetri.',
+    arProvider: 'Assemblr',
+    modelUrl: 'https://example.com/model',
+    learningGoal: 'Mengamati pola visual',
+    numeracyConcept: 'simetri',
+    cultureConcept: 'Candi Penataran',
   });
 
   assert.match(prompt, /Komik 1/i);
   assert.match(prompt, /Kubus/i);
   assert.match(prompt, /Navigation/i);
   assert.match(prompt, /hanya berdasarkan/i);
+  assert.match(prompt, /provider AR/i);
+  assert.match(prompt, /simetri/i);
+  assert.match(prompt, /Candi Penataran/i);
 });
 
 test('buildTutorPrompt enforces answer-first rule and forbids Socratic-only responses', () => {

@@ -26,6 +26,12 @@ export interface TutorContext {
   pageLabel?: string;
   objectName?: string;
   learningStage?: string;
+  objectDescription?: string;
+  arProvider?: string;
+  modelUrl?: string;
+  learningGoal?: string;
+  numeracyConcept?: string;
+  cultureConcept?: string;
 }
 
 export interface TutorResponse {
@@ -51,6 +57,15 @@ export function buildTutorPrompt(context: TutorContext): string {
     ? ['Riwayat sesi modul ini:', ...context.sessionHistory!.map((entry) => `- ${entry.role === 'user' ? 'siswa' : 'tutor'}: ${entry.content}`), ''].join('\n')
     : '';
 
+  const objectContextText = [
+    context.objectDescription ? `- deskripsi objek: ${context.objectDescription}` : '',
+    context.arProvider ? `- provider AR: ${context.arProvider}` : '',
+    context.modelUrl ? `- tautan model: ${context.modelUrl}` : '',
+    context.learningGoal ? `- tujuan belajar: ${context.learningGoal}` : '',
+    context.numeracyConcept ? `- konsep numerasi: ${context.numeracyConcept}` : '',
+    context.cultureConcept ? `- konsep budaya: ${context.cultureConcept}` : '',
+  ].filter(Boolean).join('\n');
+
   const systemPrompt = buildTutorSystemPrompt({
     modul: context.moduleName,
     identifikasi: identificationText || '- Tidak ada data identifikasi.',
@@ -61,6 +76,7 @@ export function buildTutorPrompt(context: TutorContext): string {
     halaman: context.pageLabel ?? '- Tidak ada informasi halaman.',
     objek: context.objectName ?? '- Tidak ada informasi objek.',
     tahap: context.learningStage ?? 'Navigation',
+    konteksObjekAr: objectContextText || '- Tidak ada konteks objek AR.',
   });
 
   return [
@@ -97,6 +113,14 @@ export async function generateTutorResponse(
       halaman: context.pageLabel ?? '- Tidak ada informasi halaman.',
       objek: context.objectName ?? '- Tidak ada informasi objek.',
       tahap: context.learningStage ?? 'Navigation',
+      konteksObjekAr: [
+        context.objectDescription ? `deskripsi objek: ${context.objectDescription}` : '',
+        context.arProvider ? `provider AR: ${context.arProvider}` : '',
+        context.modelUrl ? `tautan model: ${context.modelUrl}` : '',
+        context.learningGoal ? `tujuan belajar: ${context.learningGoal}` : '',
+        context.numeracyConcept ? `konsep numerasi: ${context.numeracyConcept}` : '',
+        context.cultureConcept ? `konsep budaya: ${context.cultureConcept}` : '',
+      ].filter(Boolean).join('; ') || '- Tidak ada konteks objek AR.',
     }),
     temperature: 0.7,
     maxTokens: 220,

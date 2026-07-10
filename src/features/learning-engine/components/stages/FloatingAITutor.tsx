@@ -18,6 +18,7 @@ interface FloatingAITutorProps {
   aiError: string | null;
   quickQuestions: string[];
   activeEntry: ComicAssetEntry | null;
+  activeObjectName?: string;
   onSendMessage: (text?: string) => Promise<void>;
   onDraftChange: (text: string) => void;
 }
@@ -29,10 +30,16 @@ export function FloatingAITutor({
   aiError,
   quickQuestions,
   activeEntry,
+  activeObjectName,
   onSendMessage,
   onDraftChange,
 }: FloatingAITutorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const objectSubtitle = [
+    activeEntry?.page ? `Halaman ${activeEntry.page}` : null,
+    activeEntry?.provider ? `Provider: ${activeEntry.provider}` : null,
+    activeEntry?.description ? activeEntry.description : null,
+  ].filter(Boolean).join(' • ');
 
   return (
     <>
@@ -57,8 +64,8 @@ export function FloatingAITutor({
                     <img src="/images/ai/robot.svg" alt="AI" className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-base font-black text-neutral-900">AI Tutor</p>
-                    <p className="text-xs text-neutral-600">Tekan untuk tanya</p>
+                    <p className="text-base font-black text-neutral-900">{activeObjectName ?? 'AI Tutor'}</p>
+                    <p className="text-xs text-neutral-600">{objectSubtitle || 'Tekan untuk tanya'}</p>
                   </div>
                 </div>
                 <button
@@ -74,6 +81,11 @@ export function FloatingAITutor({
             <div className="flex-1 overflow-y-auto p-4 sm:p-5">
               {activeEntry ? (
                 <div className="space-y-3">
+                  <div className="rounded-[16px] border border-primary-100 bg-primary-50/70 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary-700">Objek aktif</p>
+                    <p className="mt-1 text-sm font-bold text-neutral-900">{activeObjectName ?? activeEntry.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-neutral-600">{objectSubtitle || 'Amati bentuk, pola, dan hubungan matematikanya.'}</p>
+                  </div>
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
