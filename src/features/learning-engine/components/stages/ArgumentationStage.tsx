@@ -30,10 +30,10 @@ interface QuestionAnswer {
 // ─── Inline shape SVGs (covers limas & prisma not in /navigation/) ────────────
 
 /* eslint-disable @next/next/no-img-element */
-function ShapeIcon({ shapeKey, shapeSrc, shapeName }: { shapeKey: string; shapeSrc: string; shapeName: string }) {
+function ShapeIcon({ shapeKey, shapeSrc, shapeName, className }: { shapeKey: string; shapeSrc: string; shapeName: string; className?: string }) {
   if (shapeKey === 'limas') {
     return (
-      <svg viewBox="0 0 80 80" className="h-14 w-14" aria-label={shapeName}>
+      <svg viewBox="0 0 80 80" className={className} aria-label={shapeName}>
         <polygon points="40,8 72,68 8,68" fill="none" stroke="#1875cc" strokeWidth="2.5" strokeLinejoin="round" />
         <line x1="40" y1="8" x2="56" y2="44" stroke="#1875cc" strokeWidth="1.5" strokeDasharray="4,3" />
         <line x1="8" y1="68" x2="56" y2="44" stroke="#1875cc" strokeWidth="1.5" strokeDasharray="4,3" />
@@ -44,7 +44,7 @@ function ShapeIcon({ shapeKey, shapeSrc, shapeName }: { shapeKey: string; shapeS
   }
   if (shapeKey === 'prisma') {
     return (
-      <svg viewBox="0 0 80 80" className="h-14 w-14" aria-label={shapeName}>
+      <svg viewBox="0 0 80 80" className={className} aria-label={shapeName}>
         <polygon points="40,10 68,60 12,60" fill="none" stroke="#1875cc" strokeWidth="2.5" strokeLinejoin="round" />
         <polygon points="52,22 80,72 24,72" fill="none" stroke="#1875cc" strokeWidth="2" strokeLinejoin="round" />
         <line x1="40" y1="10" x2="52" y2="22" stroke="#1875cc" strokeWidth="1.5" />
@@ -53,9 +53,7 @@ function ShapeIcon({ shapeKey, shapeSrc, shapeName }: { shapeKey: string; shapeS
       </svg>
     );
   }
-  return (
-    <img src={shapeSrc} alt={shapeName} className="h-14 w-14 object-contain" />
-  );
+  return <img src={shapeSrc} alt={shapeName} className={className} />;
 }
 
 // ─── StarRating ───────────────────────────────────────────────────────────────
@@ -82,51 +80,54 @@ function StarRating({ score }: { score: number }) {
 
 function DynamicCover({ question }: { question: ArgumentationQuestion }) {
   return (
-    <div className="overflow-hidden rounded-[20px] border border-neutral-100 bg-white shadow-sm">
-      {/* Photo — real Candi Jawi photo with highlight overlay */}
-      <div className={['relative overflow-hidden border-b-4', question.highlightColor].join(' ')}>
+    <div className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white shadow-sm">
+      {/* Photo — real Candi Jawi photo with highlight outline */}
+      <div className={['relative overflow-hidden rounded-t-[20px] border-b-2 border-transparent bg-white', question.highlightColor].join(' ')}>
         <img
           src={question.photoSrc}
           alt={question.photoAlt}
-          className="h-52 w-full object-contain sm:h-64"
+          className="h-[260px] w-full object-cover sm:h-[320px]"
         />
         {question.overlaySrc && (
           <img
             src={question.overlaySrc}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover opacity-20"
+            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen pointer-events-none"
           />
         )}
         {/* Part label badge */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5">
-          <span className="text-xs font-bold text-white">📷</span>
-          <span className="text-xs font-bold capitalize text-white">{question.templePart}</span>
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 shadow-sm">
+          <span className="text-xs font-bold text-neutral-700">📷</span>
+          <span className="text-xs font-bold capitalize text-neutral-700">{question.templePart}</span>
         </div>
       </div>
 
       {/* Arrow connector */}
-      <div className="flex flex-col items-center gap-0 bg-neutral-50 py-3">
-        <div className="h-6 w-0.5 bg-neutral-300" />
-        <svg viewBox="0 0 16 10" className="h-3 w-4 text-neutral-400" fill="currentColor" aria-hidden="true">
+      <div className="flex flex-col items-center gap-1 bg-white py-4">
+        <div className="h-6 w-0.5 rounded-full bg-neutral-300" />
+        <svg viewBox="0 0 16 10" className="h-4 w-5 text-neutral-400" fill="currentColor" aria-hidden="true">
           <path d="M8 10L0 0h16z" />
         </svg>
-        <p className="mt-1.5 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-neutral-500">
           dimodelkan sebagai
         </p>
       </div>
 
       {/* Shape model */}
-      <div className="flex items-center justify-center bg-neutral-50 pb-5 pt-1">
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 border-primary-100 bg-white shadow-sm">
-            <ShapeIcon
-              shapeKey={question.shapeKey}
-              shapeSrc={question.shapeSrc}
-              shapeName={question.shapeName}
-            />
+      <div className="flex items-center justify-center bg-white pb-6 pt-2">
+        <div className="flex flex-col items-center gap-3">
+          <div className={['relative flex h-[148px] w-[148px] items-center justify-center rounded-[32px] border-2 bg-white shadow-[0_20px_40px_rgba(15,23,42,0.08)]', question.highlightColor].join(' ')}>
+            <div className="flex h-[116px] w-[116px] items-center justify-center rounded-3xl bg-neutral-50 p-4">
+              <ShapeIcon
+                shapeKey={question.shapeKey}
+                shapeSrc={question.shapeSrc}
+                shapeName={question.shapeName}
+                className="h-full w-full object-contain"
+              />
+            </div>
           </div>
-          <span className="text-sm font-black text-primary-700">{question.shapeName}</span>
+          <span className="text-sm font-black text-neutral-900">{question.shapeName}</span>
         </div>
       </div>
     </div>
