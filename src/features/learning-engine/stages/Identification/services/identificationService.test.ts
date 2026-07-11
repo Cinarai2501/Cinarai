@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createIdentificationState, resolveSelectedOptionId } from './identificationService';
+import { buildIdentificationFeedback, buildIdentificationTutorExplanations, buildIdentificationTutorExplanation, createIdentificationState, resolveSelectedOptionId } from './identificationService';
 
 test('identification questions for comic 1 use dedicated Candi Jawi photo assets', () => {
   const state = createIdentificationState(
@@ -58,4 +58,32 @@ test('stored answer text resolves to the shuffled option id', () => {
 
   assert.ok(correctOption);
   assert.equal(resolveSelectedOptionId(firstItem, correctOption?.text ?? null), correctOption?.id);
+});
+
+test('buildIdentificationTutorExplanation explains selected shapes in child-friendly language', () => {
+  const explanation = buildIdentificationTutorExplanation(['Kubus', 'Bola']);
+
+  assert.match(explanation, /Kubus/i);
+  assert.match(explanation, /Bola/i);
+  assert.match(explanation, /tidak ditemukan/i);
+});
+
+test('buildIdentificationTutorExplanations returns structured sections for every selected shape', () => {
+  const explanations = buildIdentificationTutorExplanations(['Kubus', 'Bola']);
+
+  assert.equal(explanations.length, 2);
+  assert.match(explanations[0].text, /Kubus/i);
+  assert.match(explanations[0].text, /Definisi/i);
+  assert.match(explanations[0].text, /Ciri-ciri/i);
+  assert.match(explanations[0].text, /ditemukan/i);
+  assert.match(explanations[1].text, /Bola/i);
+  assert.match(explanations[1].text, /tidak ditemukan/i);
+});
+
+test('buildIdentificationFeedback praises complete identification and flags distractors', () => {
+  const praise = buildIdentificationFeedback(['Balok', 'Kubus', 'Limas', 'Prisma'], ['Balok', 'Kubus', 'Limas', 'Prisma']);
+  const corrective = buildIdentificationFeedback(['Balok', 'Bola'], ['Balok', 'Kubus', 'Limas', 'Prisma']);
+
+  assert.match(praise, /Hebat/i);
+  assert.match(corrective, /tidak sesuai/i);
 });

@@ -119,71 +119,61 @@ const KOMIK_2_QUESTIONS: RawQuestion[] = [
  * image  : foto utama bagian candi
  * highlight : SVG overlay yang menandai bangun ruang pada foto
  */
+const SHAPE_OPTIONS: RawOption[] = [
+  { text: 'Kubus', correct: true },
+  { text: 'Balok', correct: true },
+  { text: 'Limas', correct: true },
+  { text: 'Prisma', correct: true },
+  { text: 'Kerucut', correct: false },
+  { text: 'Tabung', correct: false },
+  { text: 'Bola', correct: false },
+  { text: 'Prisma Segitiga', correct: false },
+  { text: 'Prisma Segi Lima', correct: false },
+  { text: 'Prisma Segi Enam', correct: false },
+  { text: 'Limas Segitiga', correct: false },
+  { text: 'Limas Segi Empat', correct: false },
+];
+
 const KOMIK_1_QUESTIONS: RawQuestion[] = [
   {
-    question: 'Perhatikan keseluruhan Candi Jawi. Bangun ruang apa yang paling dominan terlihat pada tubuh utama candi?',
+    question: 'Apa saja bangun ruang yang kamu temukan di Candi Jawi?',
     imageAlt: 'Foto keseluruhan Candi Jawi dengan overlay bangun ruang dominan.',
     image: '/images/identification/komik1-soal1.jpg',
     highlight: '/images/identification/komik1-soal1-tubuh-candi.svg',
-    options: [
-      { text: 'Balok', correct: true },
-      { text: 'Kerucut', correct: false },
-      { text: 'Bola', correct: false },
-      { text: 'Tabung', correct: false },
-    ],
-    explanation: 'Tubuh utama Candi Jawi berbentuk balok — memiliki panjang, lebar, dan tinggi yang berbeda dengan enam sisi berbentuk persegi panjang.',
+    options: SHAPE_OPTIONS,
+    explanation: 'Pada Candi Jawi, bentuk yang benar-benar terlihat adalah kubus, balok, limas, dan prisma. Bangun ruang lain seperti bola, tabung, dan prisma segi enam merupakan distractor yang tidak menjadi bagian utama candi.',
   },
   {
-    question: 'Amati bagian kaki Candi Jawi. Bangun ruang apa yang paling tepat menggambarkan susunan batu pada kaki candi?',
+    question: 'Apa saja bangun ruang yang kamu temukan di Candi Jawi?',
     imageAlt: 'Zoom bagian kaki Candi Jawi dengan highlight bentuk kubus dan balok.',
     image: '/images/identification/komik1-soal2.jpg',
     highlight: '/images/identification/komik1-soal2-kaki-candi.svg',
-    options: [
-      { text: 'Kubus', correct: true },
-      { text: 'Limas', correct: false },
-      { text: 'Prisma segitiga', correct: false },
-      { text: 'Kerucut', correct: false },
-    ],
-    explanation: 'Susunan batu pada kaki candi berbentuk kubus — keenam sisinya berbentuk persegi dengan panjang sisi yang sama.',
+    options: SHAPE_OPTIONS,
+    explanation: 'Susunan batu pada kaki candi membantu mengidentifikasi kubus dan balok. Bangun ruang yang lain tidak menjadi bentuk utama pada struktur candi.',
   },
   {
-    question: 'Perhatikan badan (tubuh tengah) Candi Jawi. Bangun ruang apa yang paling sesuai dengan bentuknya?',
+    question: 'Apa saja bangun ruang yang kamu temukan di Candi Jawi?',
     imageAlt: 'Zoom badan tengah Candi Jawi dengan highlight bentuk balok.',
     image: '/images/identification/komik1-soal3.jpg',
     highlight: '/images/identification/komik1-soal3-puncak-candi.svg',
-    options: [
-      { text: 'Balok', correct: true },
-      { text: 'Tabung', correct: false },
-      { text: 'Kubus', correct: false },
-      { text: 'Prisma segitiga', correct: false },
-    ],
-    explanation: 'Badan candi berbentuk balok karena memiliki tiga pasang sisi yang sejajar dan sama besar, dengan panjang, lebar, dan tinggi yang berbeda.',
+    options: SHAPE_OPTIONS,
+    explanation: 'Badan candi banyak menyerupai balok, sementara kubus dan limas terlihat pada bagian yang lain. Bentuk seperti bola dan tabung tidak muncul sebagai bagian utama.',
   },
   {
-    question: 'Amati bagian atap Candi Jawi yang meruncing ke atas. Bangun ruang apa yang paling tepat?',
+    question: 'Apa saja bangun ruang yang kamu temukan di Candi Jawi?',
     imageAlt: 'Zoom atap Candi Jawi dengan highlight bentuk limas segi empat.',
     image: '/images/identification/komik1-soal4.jpg',
     highlight: '/images/identification/komik1-soal4-atap-candi.svg',
-    options: [
-      { text: 'Limas segi empat', correct: true },
-      { text: 'Kerucut', correct: false },
-      { text: 'Balok', correct: false },
-      { text: 'Prisma segitiga', correct: false },
-    ],
-    explanation: 'Atap Candi Jawi berbentuk limas segi empat — alasnya berbentuk persegi dan keempat sisi tegaknya berbentuk segitiga yang bertemu di satu titik puncak.',
+    options: SHAPE_OPTIONS,
+    explanation: 'Atap Candi Jawi memberi kesan limas, sedangkan bagian lain candi menampilkan kubus, balok, dan prisma. Distractor seperti bola dan tabung tidak sesuai.',
   },
   {
-    question: 'Lihat keseluruhan Candi Jawi sekali lagi. Kombinasi bangun ruang apa yang membentuk struktur candi dari bawah ke atas?',
+    question: 'Apa saja bangun ruang yang kamu temukan di Candi Jawi?',
     imageAlt: 'Foto keseluruhan Candi Jawi dengan highlight kombinasi kubus, balok, dan limas.',
     image: '/images/identification/komik1-soal5.jpg',
     highlight: '/images/identification/komik1-soal5-dinding-candi.svg',
-    options: [
-      { text: 'Kubus, balok, dan limas', correct: true },
-      { text: 'Tabung, kerucut, dan bola', correct: false },
-      { text: 'Prisma, tabung, dan kerucut', correct: false },
-      { text: 'Balok, bola, dan kerucut', correct: false },
-    ],
-    explanation: 'Candi Jawi tersusun dari kubus (kaki), balok (badan), dan limas segi empat (atap) — kombinasi tiga bangun ruang yang membentuk struktur candi secara keseluruhan.',
+    options: SHAPE_OPTIONS,
+    explanation: 'Candi Jawi tersusun dari bangun ruang yang dapat diamati secara keseluruhan: kubus, balok, limas, dan prisma. Bentuk yang lain adalah distractor untuk melatih identifikasi.',
   },
 ];
 
@@ -316,6 +306,7 @@ export function createIdentificationState(
       explanation: question.explanation,
       status: 'PENDING',
       selectedOptionId: null,
+      selectedOptionIds: [],
       note: '',
       answerStatus: 'UNANSWERED',
       reason: '',
@@ -372,17 +363,30 @@ export function selectAnswer(
   itemId: string,
   optionId: string
 ): IdentificationState {
-  const updatedItems: IdentificationItem[] = state.items.map((item) =>
-    item.id === itemId
-      ? { ...item, selectedOptionId: optionId, answerStatus: 'SAVED', status: 'OBSERVED' }
-      : item
-  );
+  const updatedItems: IdentificationItem[] = state.items.map((item) => {
+    if (item.id !== itemId) return item;
+
+    const currentSelection = item.selectedOptionIds ?? (item.selectedOptionId ? [item.selectedOptionId] : []);
+    const alreadySelected = currentSelection.includes(optionId);
+    const nextSelection = alreadySelected
+      ? currentSelection.filter((id) => id !== optionId)
+      : [...currentSelection, optionId];
+
+    return {
+      ...item,
+      selectedOptionIds: nextSelection,
+      selectedOptionId: nextSelection[0] ?? null,
+      answerStatus: nextSelection.length > 0 ? 'SAVED' : 'UNANSWERED',
+      status: nextSelection.length > 0 ? 'OBSERVED' : item.status,
+    };
+  });
+
   const observedCount = updatedItems.filter((item) => item.status === 'OBSERVED').length;
   return {
     ...state,
     items: updatedItems,
     observedCount,
-    isComplete: updatedItems.every((item) => item.selectedOptionId !== null),
+    isComplete: updatedItems.every((item) => (item.selectedOptionIds ?? []).length > 0),
   };
 }
 
@@ -416,7 +420,12 @@ export function saveReason(state: IdentificationState, itemId: string): Identifi
       : item
   );
   const observedCount = updatedItems.filter((item) => item.status === 'OBSERVED').length;
-  return { ...state, items: updatedItems, observedCount, isComplete: updatedItems.every((item) => item.selectedOptionId !== null) };
+  return {
+    ...state,
+    items: updatedItems,
+    observedCount,
+    isComplete: updatedItems.every((item) => (item.selectedOptionIds ?? []).length > 0),
+  };
 }
 
 export function resetIdentificationState(state: IdentificationState): IdentificationState {
@@ -432,6 +441,7 @@ export function resetIdentificationState(state: IdentificationState): Identifica
         correctOptionId: correctOption?.id ?? options[0].id,
         status: 'PENDING',
         selectedOptionId: null,
+        selectedOptionIds: [],
         note: '',
         answerStatus: 'UNANSWERED',
         reason: '',
@@ -441,4 +451,179 @@ export function resetIdentificationState(state: IdentificationState): Identifica
     observedCount: 0,
     isComplete: false,
   };
+}
+
+interface IdentificationTutorEntry {
+  name: string;
+  definition: string;
+  characteristics: string[];
+  foundInCandiJawi: boolean;
+  location: string;
+  relationToComicPanel: string;
+}
+
+const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
+  Balok: {
+    name: 'Balok',
+    definition: 'Balok adalah bangun ruang yang memiliki 6 sisi berbentuk persegi panjang.',
+    characteristics: ['memiliki 6 sisi', 'memiliki 12 rusuk', 'memiliki 8 titik sudut'],
+    foundInCandiJawi: true,
+    location: 'bagian badan candi yang tersusun dari batu bangunan besar',
+    relationToComicPanel: 'pada panel komik, bentuk ini terlihat pada bagian badan candi yang menonjol dan tersusun rapi.',
+  },
+  Kubus: {
+    name: 'Kubus',
+    definition: 'Kubus adalah bangun ruang yang memiliki 6 sisi berbentuk persegi, 12 rusuk sama panjang, dan 8 titik sudut.',
+    characteristics: ['semua sisi berbentuk persegi', 'semua rusuk sama panjang', 'memiliki 8 titik sudut'],
+    foundInCandiJawi: true,
+    location: 'susunan batu pada bagian kaki candi',
+    relationToComicPanel: 'pada panel komik, bentuk ini terlihat pada bagian kaki candi yang tersusun seperti kotak-kotak.',
+  },
+  Limas: {
+    name: 'Limas',
+    definition: 'Limas adalah bangun ruang yang memiliki satu alas dan sisi-sisi tegak berbentuk segitiga.',
+    characteristics: ['memiliki satu alas', 'sisi tegak berbentuk segitiga', 'bertemu pada satu titik puncak'],
+    foundInCandiJawi: true,
+    location: 'bagian atap candi yang meruncing ke atas',
+    relationToComicPanel: 'pada panel komik, bentuk ini terlihat ketika atap candi tampak runcing dan menuju puncak.',
+  },
+  Prisma: {
+    name: 'Prisma',
+    definition: 'Prisma adalah bangun ruang yang memiliki dua bidang alas yang kongruen dan sisi tegak berbentuk persegi panjang.',
+    characteristics: ['memiliki dua alas yang sama', 'sisi tegak berbentuk persegi panjang', 'alas bisa berbentuk segitiga atau segi empat'],
+    foundInCandiJawi: true,
+    location: 'bagian struktur dinding candi yang tersusun berlapis',
+    relationToComicPanel: 'pada panel komik, bentuk ini terlihat pada susunan dinding candi yang panjang dan berlapis.',
+  },
+  Bola: {
+    name: 'Bola',
+    definition: 'Bola adalah bangun ruang yang seluruh sisinya melengkung.',
+    characteristics: ['tidak memiliki rusuk', 'seluruh permukaannya melengkung', 'memiliki bentuk bulat'],
+    foundInCandiJawi: false,
+    location: 'tidak ditemukan pada struktur utama Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bangun ini tidak muncul sebagai bagian utama bangunan candi.',
+  },
+  Tabung: {
+    name: 'Tabung',
+    definition: 'Tabung adalah bangun ruang yang memiliki dua alas berbentuk lingkaran.',
+    characteristics: ['memiliki 2 alas berbentuk lingkaran', 'sisi tegaknya melengkung', 'sering terlihat seperti kaleng'],
+    foundInCandiJawi: false,
+    location: 'tidak menjadi bentuk dominan pada struktur Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bangun ini tidak menjadi bentuk utama yang membangun candi.',
+  },
+  Kerucut: {
+    name: 'Kerucut',
+    definition: 'Kerucut adalah bangun ruang yang memiliki satu alas berbentuk lingkaran dan satu titik puncak.',
+    characteristics: ['memiliki satu alas lingkaran', 'memiliki satu titik puncak', 'sisi tegaknya melengkung'],
+    foundInCandiJawi: false,
+    location: 'tidak menjadi bagian utama struktur Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bentuk ini tidak menjadi bagian utama candi.',
+  },
+  'Limas Segitiga': {
+    name: 'Limas Segitiga',
+    definition: 'Limas segitiga adalah bangun ruang yang memiliki alas berbentuk segitiga dan sisi tegak berbentuk segitiga.',
+    characteristics: ['alas berbentuk segitiga', 'sisi tegak berbentuk segitiga', 'bertemu pada satu puncak'],
+    foundInCandiJawi: false,
+    location: 'tidak menjadi bentuk utama pada struktur Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bentuk ini tidak menjadi bentuk dominan yang terlihat pada candi.',
+  },
+  'Limas Segi Empat': {
+    name: 'Limas Segi Empat',
+    definition: 'Limas segi empat adalah bangun ruang dengan alas berbentuk persegi dan sisi tegak berbentuk segitiga.',
+    characteristics: ['alas berbentuk persegi', 'sisi tegak berbentuk segitiga', 'memiliki satu puncak'],
+    foundInCandiJawi: true,
+    location: 'bagian puncak candi yang runcing',
+    relationToComicPanel: 'pada panel komik, bentuk ini tampak pada bagian puncak candi yang menonjol.',
+  },
+  'Prisma Segitiga': {
+    name: 'Prisma Segitiga',
+    definition: 'Prisma segitiga adalah bangun ruang yang mempunyai dua alas berbentuk segitiga.',
+    characteristics: ['alas berbentuk segitiga', 'sisi tegak berbentuk persegi panjang', 'memiliki dua alas yang sama'],
+    foundInCandiJawi: false,
+    location: 'tidak ditemukan sebagai bentuk utama pada Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bentuk ini tidak menjadi bentuk utama yang terlihat pada candi.',
+  },
+  'Prisma Segi Lima': {
+    name: 'Prisma Segi Lima',
+    definition: 'Prisma segi lima adalah bangun ruang dengan dua alas berbentuk segi lima.',
+    characteristics: ['alas berbentuk segi lima', 'sisi tegak berbentuk persegi panjang', 'memiliki dua alas yang kongruen'],
+    foundInCandiJawi: false,
+    location: 'tidak ditemukan sebagai bentuk utama pada Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bentuk ini tidak muncul pada struktur utama candi.',
+  },
+  'Prisma Segi Enam': {
+    name: 'Prisma Segi Enam',
+    definition: 'Prisma segi enam adalah bangun ruang dengan dua alas berbentuk segi enam.',
+    characteristics: ['alas berbentuk segi enam', 'sisi tegak berbentuk persegi panjang', 'memiliki dua alas yang kongruen'],
+    foundInCandiJawi: false,
+    location: 'tidak ditemukan sebagai bentuk utama pada Candi Jawi',
+    relationToComicPanel: 'pada panel komik, bentuk ini tidak muncul pada struktur utama candi.',
+  },
+};
+
+export interface IdentificationTutorExplanation {
+  name: string;
+  text: string;
+}
+
+export function buildIdentificationTutorExplanations(selectedShapes: string[]): IdentificationTutorExplanation[] {
+  const normalized = selectedShapes.filter(Boolean);
+  if (normalized.length === 0) {
+    return [{ name: 'AI Tutor', text: 'Pilih bangun ruang yang kamu temukan, lalu aku akan jelaskan ciri-cirinya dengan bahasa sederhana.' }];
+  }
+
+  return normalized.map((shape) => {
+    const entry = IDENTIFICATION_TUTOR_DATA[shape] ?? {
+      name: shape,
+      definition: `${shape} adalah bangun ruang yang kamu pilih.`,
+      characteristics: ['memiliki ciri khusus yang bisa kamu amati'],
+      foundInCandiJawi: false,
+      location: 'belum dapat dipastikan dari panel komik yang diamati',
+      relationToComicPanel: 'hubungannya dengan panel komik masih perlu diperiksa lebih lanjut.',
+    };
+
+    const foundStatus = entry.foundInCandiJawi
+      ? `Ya, bangun ini ditemukan pada Candi Jawi pada bagian ${entry.location}.`
+      : `Tidak, bangun ini tidak ditemukan pada struktur utama Candi Jawi. ${entry.location}.`;
+
+    const text = [
+      `Nama bangun ruang: ${entry.name}`,
+      `Definisi: ${entry.definition}`,
+      `Ciri-ciri: ${entry.characteristics.join(', ')}`,
+      `Apakah ditemukan pada Candi Jawi: ${foundStatus}`,
+      `Kaitannya dengan panel komik: ${entry.relationToComicPanel}`,
+    ].join('\n');
+
+    return { name: entry.name, text };
+  });
+}
+
+export function buildIdentificationTutorExplanation(selectedShapes: string[]): string {
+  const explanations = buildIdentificationTutorExplanations(selectedShapes);
+  const content = explanations.map((item) => `- ${item.name}\n${item.text}`).join('\n\n');
+  return ['AI Tutor: Saya bantu jelaskan bangun ruang yang kamu pilih.', content].filter(Boolean).join('\n\n');
+}
+
+export function buildIdentificationFeedback(selectedShapes: string[], correctShapes: string[]): string {
+  const normalizedSelected = selectedShapes.filter(Boolean);
+  const normalizedCorrect = correctShapes.filter(Boolean);
+  const isComplete = normalizedSelected.length === normalizedCorrect.length && normalizedCorrect.every((shape) => normalizedSelected.includes(shape));
+
+  if (isComplete) {
+    return 'Hebat! Kamu berhasil mengidentifikasi bangun ruang yang terdapat pada Candi Jawi.';
+  }
+
+  const incorrect = normalizedSelected.filter((shape) => !normalizedCorrect.includes(shape));
+  const missing = normalizedCorrect.filter((shape) => !normalizedSelected.includes(shape));
+  const issues: string[] = [];
+
+  if (incorrect.length > 0) {
+    issues.push(`Bangun ruang ${incorrect.join(', ')} tidak sesuai dengan yang ditemukan pada Candi Jawi.`);
+  }
+
+  if (missing.length > 0) {
+    issues.push(`Kamu belum memilih ${missing.join(', ')} yang memang ada pada Candi Jawi.`);
+  }
+
+  return ['Ada jawaban yang belum sesuai.', ...issues, 'Perhatikan lagi bagian komik dan pilih bangun ruang yang benar-benar terlihat pada Candi Jawi.'].join(' ');
 }
