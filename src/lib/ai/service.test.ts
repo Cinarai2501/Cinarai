@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildTutorPrompt, generateTutorResponse } from './service';
+import { buildStudentInsightPrompt, buildTutorPrompt, generateStudentInsight, generateTutorResponse } from './service';
 import type { AiProvider } from './provider';
 
 test('buildTutorPrompt includes learning context and coaching instructions', () => {
@@ -78,6 +78,41 @@ test('generateTutorResponse uses an injected router result when provided', async
 
   assert.equal(response.answer, 'Jawaban dari router');
   assert.equal(response.provider, 'groq');
+});
+
+test('buildStudentInsightPrompt includes the expected student analysis sections', () => {
+  const prompt = buildStudentInsightPrompt({
+    studentName: 'Ayu',
+    email: 'ayu@example.com',
+    progressDocuments: [{ comicId: 1, percentage: 60, status: 'in_progress', completedStage: 'Identifikasi' }],
+    reflections: [{ rating: 4, stage: 'application' }],
+    activities: [{ title: 'Komik dimulai', description: 'Mulai komik 1', occurredAt: undefined }],
+  });
+
+  assert.match(prompt, /Kemampuan numerasi/i);
+  assert.match(prompt, /Stage terlemah/i);
+  assert.match(prompt, /Stage terbaik/i);
+  assert.match(prompt, /Pola kesalahan/i);
+  assert.match(prompt, /Rekomendasi guru/i);
+  assert.match(prompt, /Remedial/i);
+  assert.match(prompt, /Pengayaan/i);
+});
+
+test('generateStudentInsight falls back to a local summary when AI is unavailable', async () => {
+  const result = await generateStudentInsight(
+    {
+      studentName: 'Ayu',
+      email: 'ayu@example.com',
+      progressDocuments: [{ comicId: 1, percentage: 60, status: 'in_progress', completedStage: 'Identifikasi' }],
+      reflections: [],
+      activities: [],
+    },
+    { retryCount: 1, router: { generate: async () => ({ provider: 'gemini', content: '' }) } },
+  );
+
+  assert.match(result.capabilitySummary, /Ayu/i);
+  assert.match(result.weakestStage, /Identifikasi/i);
+  assert.match(result.teacherRecommendation, /fokus/i);
 });
 
 test('buildTutorPrompt prioritizes explicit short-answer instructions from the user', () => {

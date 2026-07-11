@@ -13,8 +13,9 @@ import {
   updateUserProfile,
 } from '@/lib/firebase/auth';
 import { initializeUserProgress } from '@/services/comicProgress';
-import { upsertUser } from '@/services/firestore';
+import { getFirestoreDocument, upsertUser } from '@/services/firestore';
 import type { User, AuthContextType, AuthState } from '@/types/auth';
+import type { UserRole } from '@/types/firestore';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -22,7 +23,7 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const mapFirebaseUserToUser = (firebaseUser: FirebaseUser): User => ({
+const mapFirebaseUserToUser = (firebaseUser: FirebaseUser, role: UserRole | null = null): User => ({
   uid: firebaseUser.uid,
   email: firebaseUser.email,
   displayName: firebaseUser.displayName,
@@ -31,6 +32,7 @@ const mapFirebaseUserToUser = (firebaseUser: FirebaseUser): User => ({
   createdAt: firebaseUser.metadata.creationTime
     ? new Date(firebaseUser.metadata.creationTime)
     : new Date(),
+  role,
 });
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -41,28 +43,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
   const router = useRouter();
 
+  const syncUserFromFirestore = useCallback(async (firebaseUser: FirebaseUser) => {
+    const userDocument = await getFirestoreDocument('users', firebaseUser.uid);
+    const role = userDocument?.role ?? null;
+    const user = mapFirebaseUserToUser(firebaseUser, role);
+
+    setState({ user, loading: false, error: null });
+
+    initializeUserProgress(firebaseUser.uid).catch((err) =>
+      console.warn('Progress init error:', err)
+    );
+  }, []);
+
   // Subscribe to auth changes on mount
   useEffect(() => {
     const unsubscribe = subscribeToAuthChanges((firebaseUser) => {
       if (firebaseUser) {
-        const user = mapFirebaseUserToUser(firebaseUser);
-        setState({ user, loading: false, error: null });
-        // Upsert user document + initialize progress (no-op if already exists)
-        upsertUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email ?? '',
-          displayName: firebaseUser.displayName ?? undefined,
-          photoURL: firebaseUser.photoURL ?? undefined,
-          role: 'student',
-          isActive: true,
-          lastLoginAt: undefined,
-          emailVerified: undefined,
-        } as Parameters<typeof upsertUser>[0]).catch((err) =>
-          console.warn('User upsert error:', err)
-        );
-        initializeUserProgress(firebaseUser.uid).catch((err) =>
-          console.warn('Progress init error:', err)
-        );
+        void syncUserFromFirestore(firebaseUser);
       } else {
         setState({
           user: null,
@@ -73,19 +70,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [syncUserFromFirestore]);
 
   const signUp = useCallback(
-    async (email: string, password: string, displayName: string) => {
+    async (email: string, password: string, displayName: string, role: UserRole = 'student') => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const { user: firebaseUser } = await firebaseSignUp(email, password);
         await updateUserProfile(firebaseUser, displayName);
-        setState({
-          user: mapFirebaseUserToUser(firebaseUser),
-          loading: false,
-          error: null,
-        });
+        await upsertUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName ?? displayName,
+          photoURL: firebaseUser.photoURL ?? undefined,
+          role,
+          isActive: true,
+          lastLoginAt: undefined,
+          emailVerified: undefined,
+        } as Parameters<typeof upsertUser>[0]);
+        await syncUserFromFirestore(firebaseUser);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to sign up';
@@ -97,18 +100,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
     },
-    []
+    [syncUserFromFirestore]
   );
 
   const signIn = useCallback(async (email: string, password: string) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const { user: firebaseUser } = await firebaseSignIn(email, password);
-      setState({
-        user: mapFirebaseUserToUser(firebaseUser),
-        loading: false,
-        error: null,
-      });
+      await syncUserFromFirestore(firebaseUser);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to sign in';
@@ -119,17 +118,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }));
       throw error;
     }
-  }, []);
+  }, [syncUserFromFirestore]);
 
   const signInWithGoogle = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const { user: firebaseUser } = await firebaseSignInWithGoogle();
-      setState({
-        user: mapFirebaseUserToUser(firebaseUser),
-        loading: false,
-        error: null,
-      });
+      await syncUserFromFirestore(firebaseUser);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to sign in with Google';
@@ -140,7 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }));
       throw error;
     }
-  }, []);
+  }, [syncUserFromFirestore]);
 
   const logout = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));

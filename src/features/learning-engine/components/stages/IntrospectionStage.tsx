@@ -396,7 +396,7 @@ ${data.suggestion}`;
     return () => {
       active = false;
     };
-  }, [user?.uid, comic.id]);
+  }, [checklistItems, comic.id, user?.uid]);
 
   const handleContinueToNextComic = async () => {
     if (!aiReflection) return;

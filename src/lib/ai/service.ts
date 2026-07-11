@@ -39,6 +39,189 @@ export interface TutorResponse {
   provider?: string;
 }
 
+export interface StudentInsightContext {
+  studentName: string;
+  email?: string;
+  progressDocuments: Array<{
+    comicId: number;
+    percentage?: number;
+    status?: string;
+    completedStage?: string;
+  }>;
+  reflections: Array<{
+    rating?: number | null;
+    stage?: string;
+    response?: string;
+    reflectionText?: string;
+  }>;
+  activities: Array<{
+    title?: string;
+    description?: string;
+    occurredAt?: unknown;
+  }>;
+}
+
+export interface StudentInsightResponse {
+  capabilitySummary: string;
+  weakestStage: string;
+  bestStage: string;
+  errorPattern: string;
+  teacherRecommendation: string;
+  remedial: string;
+  enrichment: string;
+  provider?: string;
+  fallbackUsed?: boolean;
+}
+
+interface GenerateTutorResponseOptions {
+  throwOnError?: boolean;
+  router?: Pick<AiRouter, 'generate'>;
+}
+
+interface GenerateStudentInsightOptions {
+  retryCount?: number;
+  router?: Pick<AiRouter, 'generate'>;
+}
+
+function formatActivitySummary(activities: StudentInsightContext['activities']): string {
+  if (!activities.length) {
+    return '- Belum ada riwayat aktivitas.';
+  }
+
+  return activities.slice(0, 5).map((activity) => `- ${activity.title ?? 'Aktivitas'}: ${activity.description ?? 'Tidak ada deskripsi.'}`).join('\n');
+}
+
+function getAverageProgress(progressDocuments: StudentInsightContext['progressDocuments']): number {
+  if (!progressDocuments.length) {
+    return 0;
+  }
+
+  const total = progressDocuments.reduce((sum, document) => sum + (document.percentage ?? 0), 0);
+  return Math.round(total / progressDocuments.length);
+}
+
+function buildFallbackStudentInsight(context: StudentInsightContext): StudentInsightResponse {
+  const averageProgress = getAverageProgress(context.progressDocuments);
+  const latestStage = context.progressDocuments.find((document) => document.completedStage)?.completedStage ?? 'Identifikasi';
+  const weakestStage = averageProgress < 50 ? latestStage : 'Identifikasi';
+  const bestStage = averageProgress >= 70 ? 'Refleksi' : 'Observasi';
+  const hasLowRatings = context.reflections.some((reflection) => typeof reflection.rating === 'number' && reflection.rating < 3);
+
+  return {
+    capabilitySummary: `${context.studentName} memiliki kemampuan numerasi ${averageProgress >= 70 ? 'cukup baik' : averageProgress >= 40 ? 'berkembang' : 'masih perlu pendampingan'} dengan rata-rata progres ${averageProgress}%.`,
+    weakestStage: weakestStage,
+    bestStage: bestStage,
+    errorPattern: hasLowRatings ? 'Cenderung membuat kesalahan saat memecahkan soal yang membutuhkan penjelasan alasan.' : 'Belum ada pola kesalahan yang sangat jelas dari data yang tersedia.',
+    teacherRecommendation: averageProgress < 50 ? 'Fokus pada bimbingan intensif dan latihan sederhana di tahap awal.' : 'Berikan penguatan pada bagian yang belum konsisten dan lanjutkan latihan bertahap.',
+    remedial: 'Berikan latihan singkat, contoh soal bertahap, dan pantau satu tahap per sesi.',
+    enrichment: 'Tingkatkan pemahaman melalui tantangan numerasi berbasis konteks dan refleksi mandiri.',
+    fallbackUsed: true,
+  };
+}
+
+function parseStudentInsightResponse(raw: string | undefined): StudentInsightResponse | null {
+  if (!raw?.trim()) {
+    return null;
+  }
+
+  const cleaned = raw.trim();
+  const jsonCandidate = cleaned.startsWith('{')
+    ? cleaned
+    : cleaned.match(/\{[\s\S]*\}/)?.[0];
+
+  if (!jsonCandidate) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(jsonCandidate) as Partial<StudentInsightResponse>;
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+
+    return {
+      capabilitySummary: parsed.capabilitySummary?.trim() || '—',
+      weakestStage: parsed.weakestStage?.trim() || '—',
+      bestStage: parsed.bestStage?.trim() || '—',
+      errorPattern: parsed.errorPattern?.trim() || '—',
+      teacherRecommendation: parsed.teacherRecommendation?.trim() || '—',
+      remedial: parsed.remedial?.trim() || '—',
+      enrichment: parsed.enrichment?.trim() || '—',
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function buildStudentInsightPrompt(context: StudentInsightContext): string {
+  const progressSummary = context.progressDocuments.length
+    ? context.progressDocuments.map((document) => `- Komik ${document.comicId}: ${document.percentage ?? 0}% | status=${document.status ?? 'not_started'} | tahap=${document.completedStage ?? '—'}`).join('\n')
+    : '- Belum ada progress komik.';
+
+  const reflectionSummary = context.reflections.length
+    ? context.reflections.map((reflection) => `- rating=${reflection.rating ?? '—'} | stage=${reflection.stage ?? '—'} | ${reflection.reflectionText || reflection.response || 'Tidak ada catatan.'}`).join('\n')
+    : '- Belum ada refleksi.';
+
+  return [
+    'Analisis AI untuk guru tentang perkembangan siswa.',
+    `Nama siswa: ${context.studentName}`,
+    `Email: ${context.email || '—'}`,
+    '',
+    'Data progress komik:',
+    progressSummary,
+    '',
+    'Data refleksi:',
+    reflectionSummary,
+    '',
+    'Riwayat aktivitas:',
+    formatActivitySummary(context.activities),
+    '',
+    'Tugas:',
+    'Buat penjelasan singkat dalam Bahasa Indonesia yang mencakup 7 bagian berikut:',
+    '- Kemampuan numerasi',
+    '- Stage terlemah',
+    '- Stage terbaik',
+    '- Pola kesalahan',
+    '- Rekomendasi guru',
+    '- Remedial',
+    '- Pengayaan',
+    '',
+    'Kembalikan jawaban sebagai JSON object dengan field: capabilitySummary, weakestStage, bestStage, errorPattern, teacherRecommendation, remedial, enrichment.',
+  ].join('\n');
+}
+
+export async function generateStudentInsight(
+  context: StudentInsightContext,
+  options?: GenerateStudentInsightOptions,
+): Promise<StudentInsightResponse> {
+  const retryCount = options?.retryCount ?? 2;
+  const router = options?.router ?? AiRouter.createDefault();
+  const payload: AiRequestPayload = {
+    prompt: buildStudentInsightPrompt(context),
+    systemPrompt: 'Kamu adalah asisten guru yang menganalisis perkembangan belajar siswa. Berikan jawaban singkat, jelas, dan berbasis data.',
+    temperature: 0.55,
+    maxTokens: 320,
+  };
+
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    try {
+      const response = await router.generate(payload) as AiResponse;
+      const parsed = parseStudentInsightResponse(response.content);
+      if (parsed) {
+        return {
+          ...parsed,
+          provider: response.provider,
+          fallbackUsed: false,
+        };
+      }
+    } catch (error) {
+      console.error('[generateStudentInsight] AI request failed', error);
+    }
+  }
+
+  return buildFallbackStudentInsight(context);
+}
+
 interface GenerateTutorResponseOptions {
   throwOnError?: boolean;
   router?: Pick<AiRouter, 'generate'>;
