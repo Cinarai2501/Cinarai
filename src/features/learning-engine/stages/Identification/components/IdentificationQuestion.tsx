@@ -59,6 +59,30 @@ export default function IdentificationQuestion({
   }, [correctOptionTexts, isChecked, selectedShapes]);
 
   const tutorExplanations = useMemo(() => buildIdentificationTutorExplanations(selectedShapes), [selectedShapes]);
+  const [visibleTutorCount, setVisibleTutorCount] = useState(0);
+
+  useEffect(() => {
+    if (!isChecked) {
+      setVisibleTutorCount(0);
+      return;
+    }
+
+    if (tutorExplanations.length === 0) {
+      setVisibleTutorCount(0);
+      return;
+    }
+
+    setVisibleTutorCount(0);
+    const timers = tutorExplanations.map((_, index) =>
+      window.setTimeout(() => {
+        setVisibleTutorCount((current) => (index + 1 > current ? index + 1 : current));
+      }, 220 + index * 500),
+    );
+
+    return () => {
+      timers.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, [isChecked, tutorExplanations]);
 
   return (
     <div className="flex flex-col gap-4 rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_16px_40px_-20px_rgba(15,23,42,0.28)] sm:p-6">
@@ -161,10 +185,43 @@ export default function IdentificationQuestion({
           <div className="rounded-[22px] border border-accent-200 bg-accent-50/80 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-accent-700">AI Tutor</p>
             <div className="mt-3 space-y-3">
-              {tutorExplanations.map((entry, index) => (
-                <div key={`${entry.name}-${index}`} className="rounded-2xl border border-white/70 bg-white/80 p-3">
-                  <p className="text-sm font-black text-accent-700">{entry.name}</p>
-                  <pre className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">{entry.text}</pre>
+              {tutorExplanations.slice(0, visibleTutorCount).map((entry, index) => (
+                <div
+                  key={`${entry.name}-${index}`}
+                  className="animate-fade-in-up rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      <span className="text-xl">{entry.icon}</span>
+                      <div>
+                        <p className="text-sm font-black text-accent-700">{entry.name}</p>
+                        <p className="mt-1 text-[11px] font-black uppercase tracking-[0.25em] text-accent-600">{entry.statusLabel}</p>
+                      </div>
+                    </div>
+                    <span className={['inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em]', entry.foundInTemple ? 'bg-accent-100 text-accent-700' : 'bg-error-100 text-error-700'].join(' ')}>
+                      {entry.badgeLabel}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm leading-relaxed text-neutral-700">{entry.definition}</p>
+
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-neutral-700">
+                    {entry.characteristics.map((characteristic) => (
+                      <li key={`${entry.name}-${characteristic}`}>{characteristic}</li>
+                    ))}
+                  </ul>
+
+                  <p className="mt-3 text-sm leading-relaxed text-neutral-700">
+                    <span className="font-black text-neutral-900">Penjelasan:</span> {entry.explanation}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                    <span className="font-black text-neutral-900">Hubungan dengan komik:</span> {entry.comicReference}
+                  </p>
+
+                  <div className="mt-3 rounded-2xl border border-primary-100 bg-primary-50/70 p-3">
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary-700">Refleksi</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-800">{entry.reflectionQuestion}</p>
+                  </div>
                 </div>
               ))}
             </div>

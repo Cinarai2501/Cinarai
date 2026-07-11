@@ -72,12 +72,16 @@ test('buildIdentificationTutorExplanations returns structured sections for every
   const explanations = buildIdentificationTutorExplanations(['Kubus', 'Bola']);
 
   assert.equal(explanations.length, 2);
-  assert.match(explanations[0].text, /Kubus/i);
-  assert.match(explanations[0].text, /Definisi/i);
-  assert.match(explanations[0].text, /Ciri-ciri/i);
-  assert.match(explanations[0].text, /ditemukan/i);
-  assert.match(explanations[1].text, /Bola/i);
-  assert.match(explanations[1].text, /tidak ditemukan/i);
+  assert.match(explanations[0].name, /Kubus/i);
+  assert.equal(explanations[0].icon, '🧊');
+  assert.equal(explanations[0].badgeLabel, '✅ Ditemukan');
+  assert.match(explanations[0].statusLabel, /ditemukan/i);
+  assert.match(explanations[0].definition, /kubus/i);
+  assert.match(explanations[0].explanation, /panel komik/i);
+  assert.match(explanations[0].reflectionQuestion, /mengapa/i);
+  assert.equal(explanations[1].badgeLabel, '❌ Tidak ditemukan');
+  assert.match(explanations[1].statusLabel, /tidak ditemukan/i);
+  assert.match(explanations[1].comicReference, /panel komik/i);
 });
 
 test('buildIdentificationFeedback praises complete identification and flags distractors', () => {
