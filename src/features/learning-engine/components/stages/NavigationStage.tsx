@@ -8,6 +8,7 @@ import { useSnackbar } from '@/context/SnackbarContext';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { Hero3DViewer } from './Hero3DViewer';
 import { AssemblrCard } from './AssemblrCard';
+import { getShapeKnowledgeEntry } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -29,21 +30,25 @@ export default function NavigationStage() {
   const { showSnackbar } = useSnackbar();
   const metadata = useComicMetadata(comic.id);
   const { model3D } = metadata.assets;
-  const primaryEntry = model3D[0] ?? null;
+  const navigationObjects = useMemo(
+    () => model3D.filter((entry) => Boolean(getShapeKnowledgeEntry(entry.title))),
+    [model3D],
+  );
+  const primaryEntry = navigationObjects[0] ?? null;
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const activeEntry = useMemo(() => {
-    if (!model3D.length) return null;
+    if (!navigationObjects.length) return null;
     if (activeObjectId) {
-      const matched = model3D.find((entry) => `${entry.page}-${entry.arUrl}` === activeObjectId);
+      const matched = navigationObjects.find((entry) => `${entry.page}-${entry.arUrl}` === activeObjectId);
       if (matched) return matched;
     }
     return primaryEntry;
-  }, [activeObjectId, model3D, primaryEntry]);
+  }, [activeObjectId, navigationObjects, primaryEntry]);
   const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
 
   const requiredIds = useMemo(
-    () => model3D.filter((e) => isValidUrl(e.arUrl)).map((e) => `${e.page}-${e.arUrl}`),
-    [model3D],
+    () => navigationObjects.filter((e) => isValidUrl(e.arUrl)).map((e) => `${e.page}-${e.arUrl}`),
+    [navigationObjects],
   );
   const allObjectsExplored = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
   const canAdvanceToArgumentation = allObjectsExplored;
@@ -144,8 +149,8 @@ export default function NavigationStage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {model3D.length > 0 ? (
-            model3D.map((entry, idx) => {
+          {navigationObjects.length > 0 ? (
+            navigationObjects.map((entry, idx) => {
               const entryId = `${entry.page}-${entry.arUrl}`;
               const isActive = activeEntry ? `${activeEntry.page}-${activeEntry.arUrl}` === entryId : idx === 0;
               const isValid = isValidUrl(entry.arUrl);

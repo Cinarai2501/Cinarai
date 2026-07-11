@@ -60,6 +60,22 @@ test('stored answer text resolves to the shuffled option id', () => {
   assert.equal(resolveSelectedOptionId(firstItem, correctOption?.text ?? null), correctOption?.id);
 });
 
+test('comic 1 identification options are built from comic knowledge and include kerucut as a correct shape', () => {
+  const state = createIdentificationState(
+    1,
+    'Candi Jawi',
+    [],
+    '/comics/komik-1/cover.png',
+    'Candi Jawi Identification',
+  );
+  const firstItem = state.items[0];
+  const correctLabels = firstItem.options.filter((option) => option.correct).map((option) => option.text);
+
+  assert.deepEqual(correctLabels, ['Balok', 'Kubus', 'Limas', 'Prisma', 'Kerucut']);
+  assert.equal(firstItem.options.find((option) => option.text === 'Bola')?.correct, false);
+  assert.equal(firstItem.options.find((option) => option.text === 'Tabung')?.correct, false);
+});
+
 test('buildIdentificationTutorExplanation explains selected shapes in child-friendly language', () => {
   const explanation = buildIdentificationTutorExplanation(['Kubus', 'Bola']);
 

@@ -9,6 +9,7 @@ import { firestore } from '@/lib/firebase/client';
 import { getComicById } from '@/lib/comicRepository';
 import type { Comic } from '@/types/comic';
 import type { ComicProgressDocument } from '@/types/firestore';
+import { getShapeKnowledgeEntries } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
 
 export default function ReportClient() {
   const router = useRouter();
@@ -58,6 +59,7 @@ export default function ReportClient() {
     ? introspection.aiReflection
     : null;
   const reportReady = Boolean(introspection?.completed);
+  const learnedShapes = useMemo(() => getShapeKnowledgeEntries().filter((entry) => entry.found), []);
 
   if (loading || isLoading) {
     return (
@@ -157,6 +159,20 @@ export default function ReportClient() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="rounded-[28px] bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-black text-neutral-900">Bangun ruang yang dipelajari</h2>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+                Ringkasan ini memakai data yang sama dari komik sebagai sumber utama untuk identifikasi dan navigasi.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {learnedShapes.map((shape) => (
+                  <span key={shape.id} className="rounded-full border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700">
+                    {shape.title}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-[28px] bg-white p-6 shadow-sm">
