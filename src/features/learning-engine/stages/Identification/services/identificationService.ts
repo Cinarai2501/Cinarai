@@ -293,21 +293,24 @@ export function createIdentificationState(
     const id = `${comicId}-identification-${index}`;
     const options = buildShuffledOptions(id, question.options);
     const correctOption = options.find((o) => o.correct);
+    const imageSrc = question.image || observationImage.imageSrc;
+    const hasDedicatedImage = Boolean(question.image);
+    const overlaySrc = question.highlight ?? (hasDedicatedImage ? undefined : buildObservationOverlaySvg({
+      label: `Soal ${index + 1}`,
+      description: question.question,
+    }));
     return {
       id,
       targetIndex: index,
       targetText: question.question,
       question: question.question,
-      image: observationImage.imageSrc,
+      image: imageSrc,
       imageAlt: question.imageAlt,
-      sourcePdfPath: observationImage.sourcePdfPath,
-      sourcePage: observationImage.sourcePage,
-      overlayType: question.overlayType,
-      crop: question.crop,
-      highlight: buildObservationOverlaySvg({
-        label: `Soal ${index + 1}`,
-        description: question.question,
-      }),
+      sourcePdfPath: hasDedicatedImage ? null : observationImage.sourcePdfPath,
+      sourcePage: hasDedicatedImage ? undefined : observationImage.sourcePage,
+      overlayType: question.overlayType ?? imageSrc,
+      crop: question.crop ?? imageSrc,
+      highlight: overlaySrc,
       options,
       correctOptionId: correctOption?.id ?? options[0].id,
       explanation: question.explanation,
