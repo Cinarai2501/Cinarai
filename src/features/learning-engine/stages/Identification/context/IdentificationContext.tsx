@@ -285,6 +285,7 @@ export function IdentificationProvider({
       setCheckedItems,
       selectOption: (itemId: string, optionId: string) => {
         identification.selectOption(itemId, optionId);
+        setCheckedItems((prev) => (prev[itemId] ? { ...prev, [itemId]: false } : prev));
         scheduleAutoSave(itemId);
       },
       setNote: (itemId: string, note: string) => {

@@ -455,6 +455,11 @@ interface IdentificationTutorEntry {
   icon: string;
   definition: string;
   characteristics: string[];
+  faces: string;
+  edges: string;
+  vertices: string;
+  surfaceFormula: string;
+  volumeFormula: string;
   foundInTemple: boolean;
   templeLocation: string;
   comicReference: string;
@@ -469,6 +474,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '📦',
     definition: 'Balok adalah bangun ruang yang punya 6 sisi berbentuk persegi panjang.',
     characteristics: ['6 sisi', '12 rusuk', '8 titik sudut'],
+    faces: '6',
+    edges: '12',
+    vertices: '8',
+    surfaceFormula: '2(pl + pt + lt)',
+    volumeFormula: 'p × l × t',
     foundInTemple: true,
     templeLocation: 'bagian badan candi yang tersusun dari batu bangunan besar',
     comicReference: 'Perhatikan kembali panel komik saat tokoh mengamati kaki dan badan candi.',
@@ -481,6 +491,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '🧊',
     definition: 'Kubus adalah bangun ruang yang punya 6 sisi berbentuk persegi dan semua rusuk sama panjang.',
     characteristics: ['6 sisi persegi', '12 rusuk sama panjang', '8 titik sudut'],
+    faces: '6',
+    edges: '12',
+    vertices: '8',
+    surfaceFormula: '6s²',
+    volumeFormula: 's³',
     foundInTemple: true,
     templeLocation: 'susunan batu pada bagian kaki candi',
     comicReference: 'Lihat kembali panel komik ketika tokoh mengamati bagian kaki candi yang kotak-kotak.',
@@ -493,6 +508,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '🔺',
     definition: 'Limas adalah bangun ruang yang punya satu alas dan sisi-sisi tegak berbentuk segitiga.',
     characteristics: ['satu alas', 'sisi tegak segitiga', 'puncak runcing'],
+    faces: 'n + 1',
+    edges: '2n',
+    vertices: 'n + 1',
+    surfaceFormula: 'L alas + ½ × keliling alas × t sisi',
+    volumeFormula: '⅓ × luas alas × tinggi',
     foundInTemple: true,
     templeLocation: 'bagian atap candi yang meruncing ke atas',
     comicReference: 'Lihat kembali gambar atap pada komik, saat bagian puncak candi tampak runcing.',
@@ -505,6 +525,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '🔷',
     definition: 'Prisma adalah bangun ruang yang punya dua alas yang sama dan sisi-sisi tegak yang menghubungkan kedua alas itu.',
     characteristics: ['dua alas sama', 'sisi tegak lurus', 'bisa terlihat seperti balok panjang'],
+    faces: 'n + 2',
+    edges: '3n',
+    vertices: '2n',
+    surfaceFormula: '2 × luas alas + keliling alas × tinggi',
+    volumeFormula: 'luas alas × tinggi',
     foundInTemple: true,
     templeLocation: 'bagian struktur dinding candi yang tersusun berlapis',
     comicReference: 'Perhatikan kembali panel komik saat tokoh melihat dinding dan susunan batu candi.',
@@ -517,6 +542,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '⚽',
     definition: 'Bola adalah bangun ruang yang seluruh permukaannya melengkung.',
     characteristics: ['tidak punya rusuk', 'permukaannya bulat', 'tidak punya sudut'],
+    faces: '1',
+    edges: '0',
+    vertices: '0',
+    surfaceFormula: '4πr²',
+    volumeFormula: '4/3 πr³',
     foundInTemple: false,
     templeLocation: 'tidak ada bagian utama Candi Jawi yang menyerupai bola',
     comicReference: 'Pada panel komik, tidak ada bagian utama candi yang tampak bulat seperti bola.',
@@ -529,6 +559,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '🛢',
     definition: 'Tabung adalah bangun ruang yang punya alas dan tutup berbentuk lingkaran.',
     characteristics: ['alas lingkaran', 'tutup lingkaran', 'sisi tegak melengkung'],
+    faces: '3',
+    edges: '2',
+    vertices: '0',
+    surfaceFormula: '2πr(r + t)',
+    volumeFormula: 'πr²t',
     foundInTemple: false,
     templeLocation: 'bukan bentuk dominan pada struktur utama Candi Jawi',
     comicReference: 'Perhatikan kembali panel komik, bagian candi yang kamu pilih tidak tampak seperti tabung.',
@@ -541,6 +576,11 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     icon: '🍦',
     definition: 'Kerucut adalah bangun ruang yang punya alas berbentuk lingkaran dan satu titik puncak.',
     characteristics: ['alas lingkaran', 'satu puncak', 'sisi tegak melengkung'],
+    faces: '2',
+    edges: '1',
+    vertices: '1',
+    surfaceFormula: 'πr(r + s)',
+    volumeFormula: '⅓ πr²t',
     foundInTemple: false,
     templeLocation: 'tidak menjadi bagian utama struktur Candi Jawi',
     comicReference: 'Sebaiknya lihat kembali panel komik untuk bagian yang paling dominan pada candi.',
@@ -564,6 +604,11 @@ function getTutorEntry(shape: string): IdentificationTutorEntry {
     icon: '🧩',
     definition: `${trimmed || 'Bangun ruang'} adalah bangun ruang yang kamu pilih.`,
     characteristics: ['memiliki ciri khusus yang bisa kamu amati'],
+    faces: 'tidak ditentukan',
+    edges: 'tidak ditentukan',
+    vertices: 'tidak ditentukan',
+    surfaceFormula: 'ditentukan dari bentuk alas',
+    volumeFormula: 'ditentukan dari bentuk alas',
     foundInTemple: false,
     templeLocation: 'belum dapat dipastikan dari panel komik yang diamati',
     comicReference: 'Perhatikan kembali panel komik untuk melihat hubungan bangun ini dengan bagian candi.',
@@ -580,20 +625,7 @@ export interface IdentificationTutorExplanation extends IdentificationTutorEntry
 export function buildIdentificationTutorExplanations(selectedShapes: string[]): IdentificationTutorExplanation[] {
   const normalized = selectedShapes.filter(Boolean).map((shape) => shape.trim()).filter(Boolean);
   if (normalized.length === 0) {
-    return [{
-      id: 'ai-tutor',
-      name: 'AI Tutor',
-      icon: '🤖',
-      definition: 'Pilih bangun ruang yang kamu temukan, lalu aku akan jelaskan ciri-cirinya dengan bahasa sederhana.',
-      characteristics: ['pilih satu bangun', 'amati bagian candi', 'hubungkan dengan komik'],
-      foundInTemple: false,
-      templeLocation: 'belum ada pilihan',
-      comicReference: 'Perhatikan kembali panel komik yang kamu amati.',
-      explanation: 'Aku akan membantu kamu melihat hubungan antara bentuk bangun ruang dengan bagian candi.',
-      reflectionQuestion: 'Bangun ruang mana yang paling menarik perhatianmu pada komik?',
-      badgeLabel: 'ℹ️ Siap membantu',
-      statusLabel: 'Belum ada pilihan',
-    }];
+    return [];
   }
 
   return normalized.map((shape) => {

@@ -62,6 +62,11 @@ export default function IdentificationQuestion({
     };
   }, [isChecked, setCanAdvance, tutorExplanations]);
 
+  useEffect(() => {
+    if (!isChecked) return;
+    setVisibleTutorCount(0);
+  }, [selectedOptionIds, isChecked]);
+
   const isTutorComplete = isChecked && visibleTutorCount >= tutorExplanations.length;
 
   return (
@@ -81,7 +86,6 @@ export default function IdentificationQuestion({
               key={option.id}
               label={option.text}
               selected={selected}
-              disabled={isChecked}
               onToggle={() => selectOption(item.id, option.id)}
             />
           );
@@ -136,13 +140,24 @@ export default function IdentificationQuestion({
 
                   <p className="mt-3 text-sm leading-relaxed text-neutral-700">{entry.definition}</p>
 
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-neutral-700">
+                  <div className="mt-3 grid gap-2 rounded-2xl border border-neutral-200 bg-neutral-50/70 p-3 text-sm text-neutral-700 sm:grid-cols-2">
+                    <p><span className="font-black text-neutral-900">Jumlah sisi:</span> {entry.faces}</p>
+                    <p><span className="font-black text-neutral-900">Jumlah rusuk:</span> {entry.edges}</p>
+                    <p><span className="font-black text-neutral-900">Jumlah titik sudut:</span> {entry.vertices}</p>
+                    <p><span className="font-black text-neutral-900">Rumus luas permukaan:</span> {entry.surfaceFormula}</p>
+                    <p className="sm:col-span-2"><span className="font-black text-neutral-900">Rumus volume:</span> {entry.volumeFormula}</p>
+                  </div>
+
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-relaxed text-neutral-700">
                     {entry.characteristics.map((characteristic) => (
                       <li key={`${entry.name}-${characteristic}`}>{characteristic}</li>
                     ))}
                   </ul>
 
                   <p className="mt-3 text-sm leading-relaxed text-neutral-700">
+                    <span className="font-black text-neutral-900">Lokasi bangun ruang pada Candi Jawi:</span> {entry.templeLocation}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-700">
                     <span className="font-black text-neutral-900">Penjelasan:</span> {entry.explanation}
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-neutral-700">

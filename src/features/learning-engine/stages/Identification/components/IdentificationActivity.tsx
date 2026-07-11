@@ -8,9 +8,7 @@ export default function IdentificationActivity() {
   const { items } = state;
 
   const currentItem = items[0] ?? null;
-  const currentChecked = currentItem
-    ? currentItem.answerStatus === 'SAVED' || Boolean(checkedItems[currentItem.id])
-    : false;
+  const currentChecked = currentItem ? Boolean(checkedItems[currentItem.id]) : false;
 
   if (!currentItem) return null;
 
