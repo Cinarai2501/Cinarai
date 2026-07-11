@@ -24,14 +24,16 @@ export default function IdentificationFeedback({
     >
       <div className="flex items-center gap-3">
         <span className={['text-base font-black', isCorrect ? 'text-accent-700' : 'text-error-700'].join(' ')}>
-          {isCorrect ? '✓ Hebat!' : '✗ Ada jawaban yang belum sesuai'}
+          {isCorrect ? '✓ Ringkasan hasil' : '✗ Ringkasan hasil'}
         </span>
       </div>
 
       <p className="text-sm leading-relaxed text-neutral-700">
-        {isCorrect
-          ? `Kamu memilih ${selectedOptionText}. ${explanation}`
-          : `Kamu memilih ${selectedOptionText}. ${explanation}`}
+        Pilihanmu: {selectedOptionText || 'Belum ada pilihan'}.
+      </p>
+
+      <p className="text-sm leading-relaxed text-neutral-700">
+        {explanation}
       </p>
 
       {!isCorrect && showCorrectOption && (
