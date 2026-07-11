@@ -44,18 +44,10 @@ export default function NavigationStage() {
     }
     return primaryEntry;
   }, [activeObjectId, navigationObjects, primaryEntry]);
-  const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
-
-  const requiredIds = useMemo(
-    () => navigationObjects.filter((e) => isValidUrl(e.arUrl)).map((e) => `${e.page}-${e.arUrl}`),
-    [navigationObjects],
-  );
-  const allObjectsExplored = requiredIds.length > 0 && requiredIds.every((id) => exploredIds.has(id));
-  const canAdvanceToArgumentation = allObjectsExplored;
 
   useEffect(() => {
-    setCanAdvance(canAdvanceToArgumentation);
-  }, [canAdvanceToArgumentation, setCanAdvance]);
+    setCanAdvance(true);
+  }, [setCanAdvance]);
 
   useEffect(() => {
     if (!primaryEntry) {
@@ -69,15 +61,13 @@ export default function NavigationStage() {
   }, [primaryEntry]);
 
   useEffect(() => {
-    if (!activeEntry || activeEntry.viewerType !== 'embed' || !activeEntry.embedUrl) return;
-    const entryId = `${activeEntry.page}-${activeEntry.arUrl}`;
-    setExploredIds((prev) => {
-      if (prev.has(entryId)) return prev;
-      const next = new Set(prev);
-      next.add(entryId);
-      return next;
-    });
-  }, [activeEntry]);
+    if (!activeObjectId || typeof window === 'undefined') return;
+
+    const target = document.querySelector(`[data-object-id="${activeObjectId}"]`);
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeObjectId]);
 
   useEffect(() => {
     if (!activeObjectId || typeof window === 'undefined') return;
@@ -106,28 +96,12 @@ export default function NavigationStage() {
       window.sessionStorage.setItem('navigationStageLastOpenedObjectId', entryId);
     }
     setActiveObjectId(entryId);
-    setExploredIds((prev) => {
-      if (prev.has(entryId)) return prev;
-      const next = new Set(prev);
-      next.add(entryId);
-      return next;
-    });
 
     const url = `/viewer/3d?url=${encodeURIComponent(entryUrl)}&title=${encodeURIComponent(entry.title)}&comicId=${comic.id}&page=${entry.page}`;
     router.push(openQr ? `${url}&mode=qr` : url);
   }
 
   function handleContinueToArgumentation() {
-    if (!canAdvanceToArgumentation) {
-      const remaining = requiredIds.length - exploredIds.size;
-      showSnackbar(
-        remaining === 1
-          ? 'Silakan eksplorasi 1 objek AR lagi sebelum melanjutkan.'
-          : `Silakan eksplorasi ${remaining} objek AR lagi sebelum melanjutkan.`,
-        'info',
-      );
-      return;
-    }
     void nextStage();
   }
 
@@ -187,19 +161,10 @@ export default function NavigationStage() {
         <button
           type="button"
           onClick={handleContinueToArgumentation}
-          disabled={!canAdvanceToArgumentation}
-          className="w-full rounded-[20px] bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-4 text-base font-black text-white shadow-lg transition hover:shadow-xl disabled:bg-neutral-300 disabled:cursor-not-allowed active:scale-95 min-h-[48px]"
+          className="w-full rounded-[20px] bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-4 text-base font-black text-white shadow-lg transition hover:shadow-xl active:scale-95 min-h-[48px]"
         >
           Lanjut ke Argumentasi
         </button>
-
-        {!canAdvanceToArgumentation && (
-          <p className="mt-3 text-center text-sm font-semibold text-primary-700">
-            {requiredIds.length > 1
-              ? `Eksplorasi ${requiredIds.length - exploredIds.size} objek lagi untuk melanjutkan`
-              : 'Buka viewer AR untuk melanjutkan'}
-          </p>
-        )}
       </div>
 
     </div>

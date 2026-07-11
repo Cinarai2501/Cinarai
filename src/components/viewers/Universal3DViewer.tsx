@@ -133,7 +133,8 @@ export default function Universal3DViewer({
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [qrLoading, setQrLoading] = useState(false);
   const [isAiOpen, setIsAiOpen] = useState(false);
-  const [showIntroBubble, setShowIntroBubble] = useState(false);
+  const [showAiSnackbar, setShowAiSnackbar] = useState(false);
+  const [showTipsCard, setShowTipsCard] = useState(false);
   const [aiDraft, setAiDraft] = useState('');
   const [aiMessages, setAiMessages] = useState<ChatMessage[]>([]);
   const [isAiResponding, setIsAiResponding] = useState(false);
@@ -143,7 +144,6 @@ export default function Universal3DViewer({
   const providerInfo = useMemo(() => detectProvider(resolvedUrl), [resolvedUrl]);
   const objectName = useMemo(() => detectObjectName(resolvedTitle, resolvedUrl), [resolvedTitle, resolvedUrl]);
   const objectHelp = OBJECT_HELP[objectName] ?? 'Aku akan membantu menjelaskan bentuk ini dengan bahasa sederhana dan mudah dimengerti.';
-  const introBubbleText = objectName === 'Model 3D' ? `Aku siap membantu menjelaskan tentang objek 3D.` : `Aku siap membantu menjelaskan tentang "${objectName}" 😊`;
   const suggestionChips = useMemo(() => {
     if (objectName === 'Model 3D') {
       return ['Apa itu objek ini?', 'Bagaimana bentuk ini dipakai?', 'Di bagian mana objek ini?'];
@@ -186,12 +186,14 @@ export default function Universal3DViewer({
   useEffect(() => {
     if (!isValidUrl) return undefined;
 
-    const enterDelay = window.setTimeout(() => setShowIntroBubble(true), 400);
-    const hideDelay = window.setTimeout(() => setShowIntroBubble(false), 5400);
+    const showDelay = window.setTimeout(() => setShowAiSnackbar(true), 300);
+    const hideSnackbar = window.setTimeout(() => setShowAiSnackbar(false), 3300);
+    const showTips = window.setTimeout(() => setShowTipsCard(true), 3600);
 
     return () => {
-      window.clearTimeout(enterDelay);
-      window.clearTimeout(hideDelay);
+      window.clearTimeout(showDelay);
+      window.clearTimeout(hideSnackbar);
+      window.clearTimeout(showTips);
     };
   }, [isValidUrl, objectName]);
 
@@ -441,46 +443,46 @@ export default function Universal3DViewer({
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-24 z-40 flex items-end justify-center px-4 sm:bottom-6 sm:justify-end">
-        <div className="w-full max-w-md rounded-3xl border border-neutral-200 bg-white/95 px-4 py-3 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:px-5">
-          <div className="flex items-center gap-3 text-sm text-neutral-700">
-            <span className="rounded-full bg-primary-100 px-2.5 py-1 font-semibold text-primary-700">💡 Tips</span>
-            <span>Tekan AI Tutor untuk bertanya tentang bentuk, sifat, dan letak bangun ruang pada Candi Jawi.</span>
-          </div>
-        </div>
-      </div>
-
-      {showIntroBubble && (
-        <div className="fixed bottom-32 right-5 z-50 w-[260px] rounded-[28px] border border-primary-100 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.16)] animate-[fade-in_300ms_ease-out]">
-          <p className="text-sm font-bold text-neutral-900">👋 Halo!</p>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-700">{introBubbleText}</p>
+      {showAiSnackbar && (
+        <div className="fixed bottom-[104px] right-5 z-40 min-w-[240px] max-w-sm rounded-2xl border border-sky-100 bg-white px-4 py-3 text-left shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-opacity duration-200">
+          <p className="text-sm font-bold text-sky-700">👋 Halo!</p>
+          <p className="mt-1 text-sm leading-relaxed text-slate-700">Aku siap membantu menjelaskan {objectName}.</p>
         </div>
       )}
 
       <button
         type="button"
         onClick={handleAiOpen}
-        className="fixed bottom-6 right-6 z-50 flex h-[88px] w-[88px] items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-sky-600 text-white shadow-[0_32px_60px_rgba(59,130,246,0.30)] transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-[0_36px_70px_rgba(59,130,246,0.36)] active:scale-95"
+        className="fixed bottom-6 right-5 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_12px_25px_rgba(15,23,42,0.18)] transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-95 sm:bottom-6 sm:right-6"
         aria-label="Buka AI Tutor"
       >
-        <span className="absolute inset-0 animate-pulse rounded-full bg-white/15" />
-        <div className="relative flex h-full w-full flex-col items-center justify-center gap-1 text-center px-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-primary-700 shadow-sm">
-            <img src="/images/ai/robot.svg" alt="AI" className="h-6 w-6" />
-          </div>
-          <span className="text-[11px] font-black uppercase tracking-[0.22em]">AI Tutor</span>
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm">
+          <img src="/images/ai/robot.svg" alt="Robot AI" className="h-6 w-6" />
+          <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-yellow-300 px-1.5 text-[10px] font-black uppercase text-slate-900 shadow-sm">
+            AI
+          </span>
         </div>
       </button>
+
+      {showTipsCard && (
+        <div className="fixed inset-x-0 bottom-24 z-40 flex items-end justify-center px-4 sm:bottom-6 sm:justify-end">
+          <div className="w-full max-w-md rounded-3xl border border-primary-100 bg-white/95 px-4 py-3 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:px-5 transition-opacity duration-250">
+            <div className="flex items-center gap-3 text-sm text-neutral-700">
+              <span className="rounded-full bg-yellow-100 px-2.5 py-1 font-semibold text-yellow-800">💡 Tips</span>
+              <span>Tekan AI Tutor jika kamu ingin bertanya tentang objek 3D ini.</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isAiOpen && (
         <div className="fixed inset-x-0 bottom-0 z-40 sm:left-6 sm:right-auto sm:bottom-6 sm:max-w-[420px] sm:rounded-[24px] rounded-t-[24px] bg-white shadow-[0_-24px_60px_rgba(15,23,42,0.20)]" style={{ maxHeight: '85vh' }}>
           <div className="flex h-full flex-col overflow-hidden">
-            <div className="border-b border-neutral-200 bg-gradient-to-r from-primary-50 via-white to-sky-50 px-5 py-4">
+            <div className="border-b border-neutral-200 bg-gradient-to-r from-sky-50 via-white to-yellow-50 px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-black text-neutral-900">🤖 AI Tutor</p>
-                  <p className="mt-1 text-xs font-semibold text-primary-700">{objectName}</p>
-                  <p className="mt-1 text-xs text-neutral-600">Aku siap membantu memahami objek yang sedang kamu pelajari.</p>
+                  <p className="text-sm font-black text-neutral-900">🤖 AI Tutor CINARAI</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">Aku siap menemanimu belajar tentang {objectName}.</p>
                 </div>
                 <button
                   type="button"
