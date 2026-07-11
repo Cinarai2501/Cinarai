@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEARNING_STAGES, type Stage } from '../../types';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
@@ -29,7 +30,9 @@ const STAGE_EMOJI: Record<string, string> = {
 
 export default function FinishStage() {
   const router = useRouter();
-  const { comic, progress, completedStages } = useLearningEngine();
+  const { comic, progress, completedStages, resetProgress } = useLearningEngine();
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const hours = Math.floor(comic.estimatedMinutes / 60);
   const minutes = comic.estimatedMinutes % 60;
@@ -112,6 +115,61 @@ export default function FinishStage() {
         >
           🏠 Kembali ke Dashboard
         </button>
+
+        {/* Reset / replay */}
+        <button
+          type="button"
+          onClick={() => setShowResetDialog(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-[20px] border border-neutral-200 bg-white px-5 py-3.5 text-base font-black text-neutral-700 shadow-sm transition-all hover:border-primary-200 hover:text-primary-700 active:scale-[0.98]"
+        >
+          🔄 Ulangi Petualangan
+        </button>
+
+        {/* Reset confirmation dialog */}
+        {showResetDialog && (
+          <div className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-sm">
+            <div className="px-5 py-4">
+              <h3 className="text-base font-black text-neutral-900">Ulangi Petualangan? 🔄</h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+                Kamu akan mengulang petualangan dari awal. Semua tahap akan kembali ke awal, tetapi kamu bisa belajar lagi kapan saja.
+              </p>
+              {isResetting && (
+                <div className="mt-3 flex items-center gap-2 rounded-2xl bg-primary-50 px-3 py-2.5">
+                  <div className="h-4 w-4 rounded-full border-2 border-primary-200 border-t-primary-600 animate-spin flex-shrink-0" />
+                  <span className="text-sm font-semibold text-primary-700">Mengatur ulang petualangan...</span>
+                </div>
+              )}
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  disabled={isResetting}
+                  onClick={() => setShowResetDialog(false)}
+                  className="flex-1 rounded-2xl border border-neutral-200 py-2.5 text-sm font-black text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={isResetting}
+                  onClick={async () => {
+                    setIsResetting(true);
+                    try {
+                      await resetProgress();
+                      setShowResetDialog(false);
+                    } catch {
+                      // error toast handled by context
+                    } finally {
+                      setIsResetting(false);
+                    }
+                  }}
+                  className="flex-1 rounded-2xl bg-primary-600 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
+                >
+                  {isResetting ? 'Mengulang...' : 'Ya, Ulangi'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

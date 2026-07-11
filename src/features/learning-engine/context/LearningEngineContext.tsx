@@ -287,12 +287,14 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       const next = await resetLearningProgress(user.uid, comicId);
       progressRef.current = next;
       setProgress(next);
+      // Reset initialSyncDoneRef so the next Firestore snapshot re-syncs stageIndex
+      initialSyncDoneRef.current = false;
       setStageIndex(0);
       setCanAdvance(true);
-      showSnackbar('Pembelajaran diulang dari awal ✓', 'success');
+      showSnackbar('Petualangan berhasil diulang. Selamat belajar kembali!', 'success');
     } catch (error) {
       const code = extractFirebaseErrorCode(error);
-      showSnackbar(`Gagal mengulang pembelajaran: ${code}`, 'error');
+      showSnackbar(`Tidak dapat mengatur ulang progres. Silakan coba lagi. (${code})`, 'error');
     }
   }, [user, comicId, showSnackbar]);
 

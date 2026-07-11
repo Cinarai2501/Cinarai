@@ -179,9 +179,16 @@ export async function resetComicProgress(userId: string, comicId: number): Promi
   const initialState = createInitialProgressState(comicId);
   const ref = progressDocRef(userId, comicId);
 
+  // Full overwrite (no merge) so stale fields like completedAt/introspection are removed
+  const resetDoc = {
+    ...toDocument(initialState),
+    completedAt: null,
+    introspection: null,
+  };
+
   try {
     await Promise.all([
-      setDoc(ref, toDocument(initialState)),
+      setDoc(ref, resetDoc),
       clearIdentificationAnswers(userId, comicId),
       clearApplicationActivities(userId, comicId),
       clearReflectionDocuments(userId, comicId),
