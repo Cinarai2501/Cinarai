@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
@@ -21,74 +21,6 @@ function isValidUrl(url: string): boolean {
   }
 }
 
-function getObjectDisplayName(entry: ComicAssetEntry | null | undefined): string {
-  const rawName = entry?.title?.trim();
-  if (rawName) return rawName;
-  return 'Kubus';
-}
-
-function getQuickQuestions(objectName: string, location: string): string[] {
-  const normalized = objectName.toLowerCase();
-  if (normalized.includes('persegi')) {
-    return [
-      'Apa nama bangun datar ini?',
-      'Berapa banyak sisi yang dimiliki?',
-      'Apakah bentuk ini memiliki simetri lipat?',
-      `Bagaimana pola ini terlihat di ${location}?`,
-    ];
-  }
-  if (normalized.includes('persegi panjang')) {
-    return [
-      'Apa nama bangun datar ini?',
-      'Apa ciri sisi-sisinya?',
-      'Apa bedanya dengan persegi?',
-      `Bagaimana bentuk ini membantu memahami pola di ${location}?`,
-    ];
-  }
-  if (normalized.includes('segitiga')) {
-    return [
-      'Apa nama bangun datar ini?',
-      'Berapa jumlah sudutnya?',
-      'Apakah bentuk ini dapat digunakan sebagai pola dekoratif?',
-      `Apa kaitannya dengan relief ${location}?`,
-    ];
-  }
-  if (normalized.includes('trapesium')) {
-    return [
-      'Apa nama bangun datar ini?',
-      'Apa ciri khusus sisi yang sejajar?',
-      'Bagaimana bentuk ini berbeda dari persegi panjang?',
-      `Apa hubungannya dengan pola di ${location}?`,
-    ];
-  }
-  return [
-    'Apa nama bangun datar ini?',
-    'Bagaimana bentuk sisi-sisinya?',
-    'Apakah bentuk ini simetris?',
-    `Apa kaitannya dengan ${location}?`,
-  ];
-}
-
-interface ChatMessage {
-  id: number;
-  role: 'assistant' | 'user';
-  content: string;
-}
-
-function createStarterMessages(objectName: string, location: string): ChatMessage[] {
-  return [
-    {
-      id: 1,
-      role: 'assistant',
-      content: `Halo! Aku siap membantu kamu mengamati ${objectName} dan mengaitkannya dengan bangun datar serta budaya di ${location}.`,
-    },
-  ];
-}
-
-function getEntrySessionId(entry: ComicAssetEntry | null | undefined): string {
-  return entry ? `${entry.page}-${entry.arUrl}` : 'default';
-}
-
 /* eslint-disable @next/next/no-img-element */
 
 export default function NavigationStage() {
@@ -107,11 +39,7 @@ export default function NavigationStage() {
     }
     return primaryEntry;
   }, [activeObjectId, model3D, primaryEntry]);
-  const [chatSessions, setChatSessions] = useState<Record<string, ChatMessage[]>>({});
-  const [draftBySession, setDraftBySession] = useState<Record<string, string>>({});
-  const [isResponding, setIsResponding] = useState(false);
   const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
-  const [aiErrors, setAiErrors] = useState<Record<string, string | null>>({});
 
   const requiredIds = useMemo(
     () => model3D.filter((e) => isValidUrl(e.arUrl)).map((e) => `${e.page}-${e.arUrl}`),
@@ -134,23 +62,6 @@ export default function NavigationStage() {
     const nextActiveId = storedId ? storedId : `${primaryEntry.page}-${primaryEntry.arUrl}`;
     setActiveObjectId((current) => (current ? current : nextActiveId));
   }, [primaryEntry]);
-
-  useEffect(() => {
-    setChatSessions((prev) => {
-      const next = { ...prev };
-      let changed = false;
-
-      for (const entry of model3D) {
-        const entryId = getEntrySessionId(entry);
-        if (!next[entryId]) {
-          next[entryId] = createStarterMessages(getObjectDisplayName(entry), comic.lokasi);
-          changed = true;
-        }
-      }
-
-      return changed ? next : prev;
-    });
-  }, [comic.lokasi, model3D]);
 
   useEffect(() => {
     if (!activeEntry || activeEntry.viewerType !== 'embed' || !activeEntry.embedUrl) return;
@@ -177,85 +88,6 @@ export default function NavigationStage() {
       unregisterSlideNav();
     };
   }, [unregisterSlideNav]);
-
-  const handleSendForEntry = useCallback(
-    async (entry: ComicAssetEntry, rawText?: string) => {
-      if (isResponding || !comic) return;
-
-      const entryId = getEntrySessionId(entry);
-      const objectName = getObjectDisplayName(entry);
-      const currentDraft = draftBySession[entryId] ?? '';
-      const trimmed = (rawText ?? currentDraft).trim();
-      if (!trimmed) return;
-
-      const currentMessages = chatSessions[entryId] ?? [];
-      const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
-      const nextMessages = [...currentMessages, userMessage];
-      const historyForPrompt = nextMessages.map(({ role, content }) => ({ role, content }));
-
-      setChatSessions((prev) => ({ ...prev, [entryId]: nextMessages }));
-      setDraftBySession((prev) => ({ ...prev, [entryId]: '' }));
-      setIsResponding(true);
-      setAiErrors((prev) => ({ ...prev, [entryId]: null }));
-
-      try {
-        const response = await fetch('/api/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            question: trimmed,
-            context: {
-              moduleName: comic.title,
-              identification: [],
-              objectInfo: {
-                location: comic.lokasi,
-                classLevel: comic.kelas,
-                synopsis: comic.synopsis,
-                learningTargets: comic.learningTargets,
-              },
-              observationAnswers: {},
-              sessionHistory: historyForPrompt,
-              comicTitle: comic.title,
-              pageLabel: entry ? `Halaman ${entry.page}` : undefined,
-              objectName,
-              learningStage: 'Navigation',
-              objectDescription: entry?.description,
-              arProvider: entry?.provider,
-              modelUrl: entry?.arUrl,
-              learningGoal: comic.learningTargets?.[0] ?? 'Mengamati objek AR',
-              numeracyConcept: 'bangun datar, simetri, dan pola visual',
-              cultureConcept: comic.lokasi ? `Konteks budaya di ${comic.lokasi}` : 'hubungan budaya dan matematika',
-            },
-          }),
-        });
-
-        const payload = await response.json() as { answer?: string; provider?: string; error?: string };
-
-        if (!response.ok || !payload.answer) {
-          throw new Error(payload.error ?? 'AI response was not available.');
-        }
-
-        const assistantMessage: ChatMessage = {
-          id: Date.now() + 1,
-          role: 'assistant',
-          content: payload.answer,
-        };
-        setChatSessions((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), assistantMessage] }));
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        setAiErrors((prev) => ({ ...prev, [entryId]: msg }));
-        const fallbackMessage: ChatMessage = {
-          id: Date.now() + 2,
-          role: 'assistant',
-          content: `Maaf, terjadi kesalahan saat menghubungi layanan AI: ${msg}`,
-        };
-        setChatSessions((prev) => ({ ...prev, [entryId]: [...(prev[entryId] ?? []), fallbackMessage] }));
-      } finally {
-        setIsResponding(false);
-      }
-    },
-    [chatSessions, comic, draftBySession, isResponding],
-  );
 
   function handleOpenAr(entry: ComicAssetEntry, openQr = false) {
     const entryUrl = entry.viewerType === 'embed' ? entry.embedUrl || entry.arUrl : entry.arUrl;
@@ -318,11 +150,6 @@ export default function NavigationStage() {
               const isActive = activeEntry ? `${activeEntry.page}-${activeEntry.arUrl}` === entryId : idx === 0;
               const isValid = isValidUrl(entry.arUrl);
 
-              const entryMessages = chatSessions[entryId] ?? [];
-              const entryDraft = draftBySession[entryId] ?? '';
-              const entryAiError = aiErrors[entryId] ?? null;
-              const entryQuickQuestions = getQuickQuestions(getObjectDisplayName(entry), comic.lokasi);
-
               return (
                 <AssemblrCard
                   key={entryId}
@@ -340,16 +167,6 @@ export default function NavigationStage() {
                     handleOpenAr(entry, true);
                   }}
                   isValidUrl={isValid}
-                  messages={entryMessages}
-                  draft={entryDraft}
-                  isResponding={isResponding}
-                  aiError={entryAiError}
-                  quickQuestions={entryQuickQuestions}
-                  onSendMessage={(text) => handleSendForEntry(entry, text)}
-                  onDraftChange={(value) => {
-                    if (!entryId) return;
-                    setDraftBySession((prev) => ({ ...prev, [entryId]: value }));
-                  }}
                 />
               );
             })

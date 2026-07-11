@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       pageLabel: context.pageLabel,
       objectName: context.objectName,
       learningStage: context.learningStage,
+      knowledgeContext: context.knowledgeContext,
     });
 
     return NextResponse.json({

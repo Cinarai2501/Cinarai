@@ -32,6 +32,7 @@ export interface TutorContext {
   learningGoal?: string;
   numeracyConcept?: string;
   cultureConcept?: string;
+  knowledgeContext?: string;
 }
 
 export interface TutorResponse {
@@ -247,6 +248,7 @@ export function buildTutorPrompt(context: TutorContext): string {
     context.learningGoal ? `- tujuan belajar: ${context.learningGoal}` : '',
     context.numeracyConcept ? `- konsep numerasi: ${context.numeracyConcept}` : '',
     context.cultureConcept ? `- konsep budaya: ${context.cultureConcept}` : '',
+    context.knowledgeContext ? `- pengetahuan objek:\n${context.knowledgeContext}` : '',
   ].filter(Boolean).join('\n');
 
   const systemPrompt = buildTutorSystemPrompt({
@@ -303,6 +305,7 @@ export async function generateTutorResponse(
         context.learningGoal ? `tujuan belajar: ${context.learningGoal}` : '',
         context.numeracyConcept ? `konsep numerasi: ${context.numeracyConcept}` : '',
         context.cultureConcept ? `konsep budaya: ${context.cultureConcept}` : '',
+        context.knowledgeContext ? `pengetahuan objek: ${context.knowledgeContext}` : '',
       ].filter(Boolean).join('; ') || '- Tidak ada konteks objek AR.',
     }),
     temperature: 0.7,
