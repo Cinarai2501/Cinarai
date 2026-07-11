@@ -170,7 +170,8 @@ export function BolaIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
 }
 
 // === Get icon component based on shape name ===
-// PENTING: Cek yang lebih specific DAHULU sebelum general fallback
+// PENTING: Explicit mapping untuk 7 bangun ruang saja
+// Kubus, Balok, Limas, Prisma, Kerucut, Tabung, Bola
 export function getShapeIcon(shape: string) {
   const shapeNormalized = shape.toLowerCase().trim();
 
@@ -183,16 +184,11 @@ export function getShapeIcon(shape: string) {
   if (shapeNormalized === 'balok') return BalokIcon;
   if (shapeNormalized === 'balok selasar') return BalokIcon;
   
-  // LIMAS - cek yang specific terlebih dahulu
-  if (shapeNormalized === 'limas segitiga') return LimasSegitigaIcon;
-  if (shapeNormalized === 'limas segi empat') return LimasIcon;
-  if (shapeNormalized === 'limas') return LimasIcon; // Default ke Limas Segi Empat
+  // LIMAS - sekarang hanya 'limas' saja
+  if (shapeNormalized === 'limas') return LimasIcon;
   
-  // PRISMA - cek yang specific terlebih dahulu
-  if (shapeNormalized === 'prisma segitiga') return PrismaSegitigaIcon;
-  if (shapeNormalized === 'prisma segi lima') return PrismaSegiLimaIcon;
-  if (shapeNormalized === 'prisma segi enam') return PrismaSegiEnamIcon;
-  if (shapeNormalized === 'prisma') return PrismaIcon; // Default ke Prisma Segi Empat
+  // PRISMA - sekarang hanya 'prisma' saja
+  if (shapeNormalized === 'prisma') return PrismaIcon;
   
   // KERUCUT
   if (shapeNormalized === 'kerucut') return KerucutIcon;

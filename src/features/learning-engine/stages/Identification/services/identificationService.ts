@@ -118,6 +118,10 @@ const KOMIK_2_QUESTIONS: RawQuestion[] = [
  * Setiap soal menggunakan gambar bagian candi yang berbeda.
  * image  : foto utama bagian candi
  * highlight : SVG overlay yang menandai bangun ruang pada foto
+ * 
+ * TOTAL 7 PILIHAN:
+ * - Correct: Kubus, Balok, Limas, Prisma
+ * - Distractor: Kerucut, Tabung, Bola
  */
 const SHAPE_OPTIONS: RawOption[] = [
   { text: 'Kubus', correct: true },
@@ -127,11 +131,6 @@ const SHAPE_OPTIONS: RawOption[] = [
   { text: 'Kerucut', correct: false },
   { text: 'Tabung', correct: false },
   { text: 'Bola', correct: false },
-  { text: 'Prisma Segitiga', correct: false },
-  { text: 'Prisma Segi Lima', correct: false },
-  { text: 'Prisma Segi Enam', correct: false },
-  { text: 'Limas Segitiga', correct: false },
-  { text: 'Limas Segi Empat', correct: false },
 ];
 
 const KOMIK_1_QUESTIONS: RawQuestion[] = [
@@ -550,66 +549,6 @@ const IDENTIFICATION_TUTOR_DATA: Record<string, IdentificationTutorEntry> = {
     comicReference: 'Sebaiknya lihat kembali panel komik untuk bagian yang paling dominan pada candi.',
     explanation: 'Bentuk kerucut lebih cocok untuk benda yang meruncing ke satu titik, tetapi bagian candi lebih banyak memakai bentuk yang datar. Pada panel komik, bentuk ini tidak terlihat sebagai bagian utama candi.',
     reflectionQuestion: 'Apa perbedaan paling mudah yang kamu lihat antara bentuk kerucut dan limas pada komik?',
-  },
-  'Limas Segitiga': {
-    id: 'limas-segitiga',
-    name: 'Limas Segitiga',
-    icon: '📐',
-    definition: 'Limas segitiga punya alas berbentuk segitiga dan sisi tegak yang bertemu di satu puncak.',
-    characteristics: ['alas segitiga', 'sisi tegak segitiga', 'puncak runcing'],
-    foundInTemple: false,
-    templeLocation: 'tidak menjadi bentuk utama pada struktur Candi Jawi',
-    comicReference: 'Pada panel komik, bentuk ini tidak menjadi bagian utama yang paling terlihat pada candi.',
-    explanation: 'Bentuk ini lebih mirip bentuk kecil yang sering dipakai pada benda lain, bukan bentuk dominan pada candi. Pada panel komik, bentuk ini tidak terlihat sebagai bagian utama.',
-    reflectionQuestion: 'Bagian apa pada komik yang lebih mirip dengan limas segi empat daripada limas segitiga?',
-  },
-  'Limas Segi Empat': {
-    id: 'limas-segi-empat',
-    name: 'Limas Segi Empat',
-    icon: '🏔️',
-    definition: 'Limas segi empat punya alas berbentuk persegi dan sisi tegak berbentuk segitiga.',
-    characteristics: ['alas persegi', 'sisi tegak segitiga', 'puncak runcing'],
-    foundInTemple: true,
-    templeLocation: 'bagian puncak candi yang runcing',
-    comicReference: 'Perhatikan kembali bagian puncak candi pada panel komik, saat bentuknya tampak runcing.',
-    explanation: 'Bentuk ini sangat cocok untuk bagian puncak candi karena terlihat tajam dan menonjol ke atas. Pada panel komik, bagian puncak candi tampak seperti limas yang runcing.',
-    reflectionQuestion: 'Mengapa bagian puncak candi lebih terasa seperti limas daripada kubus?',
-  },
-  'Prisma Segitiga': {
-    id: 'prisma-segitiga',
-    name: 'Prisma Segitiga',
-    icon: '🧱',
-    definition: 'Prisma segitiga punya dua alas berbentuk segitiga dan sisi tegak yang menghubungkan kedua alas itu.',
-    characteristics: ['alas segitiga', 'dua alas sama', 'sisi tegak lurus'],
-    foundInTemple: false,
-    templeLocation: 'tidak ditemukan sebagai bentuk utama pada Candi Jawi',
-    comicReference: 'Pada panel komik, bentuk ini tidak menjadi bagian utama yang paling terlihat.',
-    explanation: 'Bentuk prisma segitiga tidak menjadi bagian utama candi karena bagian candi lebih banyak memakai bentuk yang lebih sederhana dan kokoh. Pada panel komik, bagian ini tidak menjadi fokus utama.',
-    reflectionQuestion: 'Bagian mana yang menurutmu lebih mudah dikenali sebagai prisma atau balok pada komik?',
-  },
-  'Prisma Segi Lima': {
-    id: 'prisma-segi-lima',
-    name: 'Prisma Segi Lima',
-    icon: '🪟',
-    definition: 'Prisma segi lima punya dua alas berbentuk segi lima dan sisi tegak menghubungkan kedua alas.',
-    characteristics: ['alas segi lima', 'dua alas sama', 'sisi tegak lurus'],
-    foundInTemple: false,
-    templeLocation: 'tidak ditemukan sebagai bentuk utama pada Candi Jawi',
-    comicReference: 'Pada panel komik, bentuk ini tidak muncul pada struktur utama candi.',
-    explanation: 'Bentuk ini tidak terlihat pada bagian utama bangunan, sehingga lebih cocok dipelajari sebagai bentuk lain yang tidak dominan. Pada panel komik, bentuk ini tidak muncul pada struktur utama candi.',
-    reflectionQuestion: 'Menurutmu, bagian mana pada komik paling kuat menunjukkan bentuk utama candi?',
-  },
-  'Prisma Segi Enam': {
-    id: 'prisma-segi-enam',
-    name: 'Prisma Segi Enam',
-    icon: '🧩',
-    definition: 'Prisma segi enam punya dua alas berbentuk segi enam dan sisi tegak menghubungkan kedua alas.',
-    characteristics: ['alas segi enam', 'dua alas sama', 'sisi tegak lurus'],
-    foundInTemple: false,
-    templeLocation: 'tidak ditemukan sebagai bentuk utama pada Candi Jawi',
-    comicReference: 'Pada panel komik, bentuk ini tidak muncul pada struktur utama candi.',
-    explanation: 'Bentuk ini tidak menjadi bagian utama candi, jadi lebih baik kita fokus pada bentuk yang terlihat jelas pada bangunan. Pada panel komik, bentuk ini tidak menjadi bagian utama yang terlihat.',
-    reflectionQuestion: 'Bagian apa pada komik yang paling memudahkanmu membedakan kubus dan balok?',
   },
 };
 
