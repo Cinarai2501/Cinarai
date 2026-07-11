@@ -1,11 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import AnswerOptions from './AnswerOptions';
-
-void React;
 
 test('AnswerOptions marks every selected option when multiple ids are provided', () => {
   const html = renderToStaticMarkup(

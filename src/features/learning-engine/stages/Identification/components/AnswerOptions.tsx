@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import type { AnswerOption } from '../types';
 
 interface AnswerOptionsProps {
