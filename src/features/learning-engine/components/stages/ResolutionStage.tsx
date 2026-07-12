@@ -149,7 +149,7 @@ export default function ResolutionStage() {
           </div>
 
           <div className="mt-3 flex items-center gap-2">
-            {missions.map((_, index) => (
+            {missions.map((_: unknown, index: number) => (
               <span
                 key={index}
                 className={['h-2.5 w-2.5 rounded-full', index <= completedUpToIndex ? 'bg-accent-500' : index === currentIndex ? 'bg-primary-600' : 'bg-neutral-200'].join(' ')}

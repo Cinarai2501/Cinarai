@@ -65,7 +65,10 @@ export default function ApplicationStage() {
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   const [attemptCount, setAttemptCount] = useState(0);
   const applicationConfig = comicModule.application;
-  const options = useMemo(() => shuffle(applicationConfig.options.map((option) => option.value)), [applicationConfig.options]);
+  const options: string[] = useMemo(
+    () => shuffle(applicationConfig.options.map((option: { value: string }) => option.value)),
+    [applicationConfig.options],
+  );
   const arViewerUrl = comicModule.navigation.model3D?.[0]?.embedUrl || comicModule.navigation.model3D?.[0]?.arUrl || null;
 
   const hasCompletedPreparation = arViewed && explorationCompleted;
@@ -141,7 +144,7 @@ export default function ApplicationStage() {
     const payloadBody = {
       soal: applicationConfig.prompt,
       konteks: applicationConfig.context,
-      gambar: applicationConfig.images.map((image) => image.src),
+      gambar: applicationConfig.images.map((image: { src: string }) => image.src),
       jawabanSiswa: selectedAnswer,
       jawabanAlasan: studentReason,
       attempt: currentAttempt,
@@ -274,7 +277,7 @@ export default function ApplicationStage() {
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          {applicationConfig.images.map((item) => (
+          {applicationConfig.images.map((item: { src: string; alt: string; label: string; description: string }) => (
             <div key={item.src} className="overflow-hidden rounded-[20px] border border-neutral-200 bg-neutral-50">
               <div className="relative aspect-[4/3]">
                 {!imagesLoaded[item.src] && (
@@ -314,8 +317,8 @@ export default function ApplicationStage() {
 
         <div className="mt-5 grid gap-3">
           <div className="grid gap-2 sm:grid-cols-2">
-            {options.map((option) => {
-              const matchedOption = applicationConfig.options.find((item) => item.value === option);
+            {options.map((option: string) => {
+              const matchedOption = applicationConfig.options.find((item: { value: string; label: string }) => item.value === option);
               const label = matchedOption?.label ?? option;
               const checked = selectedAnswer.includes(option);
               return (

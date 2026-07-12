@@ -28,7 +28,16 @@ export default function NavigationStage() {
   const { showSnackbar } = useSnackbar();
   const navigationObjects = useMemo<ComicAssetEntry[]>(
     () =>
-      comicModule.navigation.learningObjects.map((object) => ({
+      comicModule.navigation.learningObjects.map((object: {
+        page: number;
+        title: string;
+        description: string;
+        provider?: string;
+        embedUrl?: string;
+        modelUrl?: string;
+        qrImage?: string;
+        aiPrompt?: string;
+      }) => ({
         page: object.page,
         title: object.title,
         description: object.description,

@@ -4,7 +4,7 @@ import { Comic3Module } from './comic-3';
 import { Comic4Module } from './comic-4';
 import { Comic5Module } from './comic-5';
 
-export type { ComicModuleLike } from './types';
+export type { ComicModule, ComicModuleLike } from './types';
 
 export const comicModules = {
   1: Comic1Module,

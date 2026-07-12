@@ -147,22 +147,3 @@ export function useIdentification({
 
   return { state, setObserveNote: handleSetObserveNote, completeObserve: handleCompleteObserve, selectOption, setNote, save, setReason: handleSetReason, saveReason: handleSaveReason, applyAnswers, reset, percentage };
 }
-          ),
-        };
-      }
-      const observedCount = next.items.filter((i) => i.status === 'OBSERVED').length;
-      return { ...next, observedCount, isComplete: next.items.every((i) => i.reasonStatus === 'SAVED') };
-    });
-  }, []);
-
-  const reset = useCallback(() => {
-    setState((prev) => resetIdentificationState(prev));
-  }, []);
-
-  const percentage = useMemo(() => {
-    if (state.items.length === 0) return 0;
-    return Math.round((state.observedCount / state.items.length) * 100);
-  }, [state.observedCount, state.items.length]);
-
-  return { state, setObserveNote: handleSetObserveNote, completeObserve: handleCompleteObserve, selectOption, setNote, save, setReason: handleSetReason, saveReason: handleSaveReason, applyAnswers, reset, percentage };
-}
