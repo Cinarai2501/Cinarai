@@ -155,6 +155,72 @@ export function TabungIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
   );
 }
 
+// === PERSEGI (Square) - Blue ===
+export function PersegiIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="12" width="24" height="24" rx="2" fill="#DBEAFE" stroke="#2563EB" strokeWidth="1.5" />
+      <path d="M24 12V36" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M12 24H36" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === PERSEGI PANJANG (Rectangle) - Green ===
+export function PersegiPanjangIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="16" width="28" height="16" rx="2" fill="#DCFCE7" stroke="#16A34A" strokeWidth="1.5" />
+      <path d="M10 24H38" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M18 16V32" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M30 16V32" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === SEGITIGA SAMA SISI (Equilateral Triangle) - Amber ===
+export function SegitigaSamaSisiIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 10L10 36H38Z" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M24 10V36" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M16 28H32" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === SEGITIGA SAMA KAKI (Isosceles Triangle) - Orange ===
+export function SegitigaSamaKakiIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 10L12 36H36Z" fill="#FFEDD5" stroke="#EA580C" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M24 10V36" stroke="#EA580C" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === LINGKARAN (Circle) - Rose ===
+export function LingkaranIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="14" fill="#FCE7F3" stroke="#DB2777" strokeWidth="1.5" />
+      <path d="M24 10V38" stroke="#DB2777" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M10 24H38" stroke="#DB2777" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === BELAH KETUPAT (Rhombus) - Violet ===
+export function BelahKetupatIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 10L36 24L24 38L12 24Z" fill="#EDE9FE" stroke="#7C3AED" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M24 10V38" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M12 24H36" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // === GARIS SIMETRI (Symmetry Line) - Indigo ===
 export function GarisSimetriIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
   return (
@@ -260,6 +326,14 @@ export function getShapeIcon(shape: string) {
   
   // BOLA
   if (shapeNormalized === 'bola') return BolaIcon;
+
+  // === Comic 2 / symmetry shapes ===
+  if (shapeNormalized === 'persegi' || shapeNormalized.includes('persegi')) return PersegiIcon;
+  if (shapeNormalized === 'persegi panjang' || shapeNormalized.includes('persegi panjang')) return PersegiPanjangIcon;
+  if (shapeNormalized.includes('segitiga sama sisi') || shapeNormalized.includes('segitiga sama sisi')) return SegitigaSamaSisiIcon;
+  if (shapeNormalized.includes('segitiga sama kaki') || shapeNormalized.includes('segitiga sama kaki')) return SegitigaSamaKakiIcon;
+  if (shapeNormalized.includes('lingkaran') || shapeNormalized.includes('lingkar')) return LingkaranIcon;
+  if (shapeNormalized.includes('belah ketupat') || shapeNormalized.includes('belahketupat')) return BelahKetupatIcon;
 
   // === Symmetry / comic 2 activity icons ===
   if (shapeNormalized.includes('garis simetri') || shapeNormalized.includes('garis-simetri') || shapeNormalized.includes('garis tengah')) return GarisSimetriIcon;
