@@ -1,0 +1,23 @@
+<svg width="960" height="640" viewBox="0 0 960 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="640" rx="36" fill="#FFF8EB"/>
+  <rect x="218" y="142" width="524" height="314" rx="20" fill="#F7D8A8"/>
+  <rect x="266" y="188" width="428" height="224" rx="16" fill="#C3884D"/>
+  <rect x="322" y="240" width="314" height="158" rx="12" fill="#A25E2A"/>
+  <rect x="360" y="284" width="240" height="94" rx="10" fill="#7B3F12"/>
+  <rect x="398" y="120" width="164" height="42" rx="10" fill="#9A5A1B"/>
+  <rect x="330" y="88" width="300" height="42" rx="10" fill="#C3884D"/>
+  <rect x="334" y="84" width="292" height="12" rx="6" fill="#F2C07C"/>
+  <rect x="248" y="498" width="462" height="42" rx="16" fill="#7A4A20"/>
+  <rect x="300" y="520" width="356" height="24" rx="10" fill="#A25E2A"/>
+  <rect x="402" y="286" width="42" height="88" rx="8" fill="#FFF8EB"/>
+  <rect x="516" y="286" width="42" height="88" rx="8" fill="#FFF8EB"/>
+  <rect x="366" y="160" width="228" height="18" rx="9" fill="#F2C07C"/>
+  <rect x="448" y="184" width="64" height="26" rx="8" fill="#F0A651"/>
+  <rect x="306" y="102" width="58" height="34" rx="10" fill="#D8A96F"/>
+  <rect x="596" y="102" width="58" height="34" rx="10" fill="#D8A96F"/>
+  <rect x="272" y="458" width="414" height="18" rx="9" fill="#E8B97C"/>
+  <rect x="344" y="158" width="272" height="14" rx="7" fill="#D6A35E"/>
+  <rect x="356" y="370" width="248" height="12" rx="6" fill="#E9BB80"/>
+  <rect x="142" y="104" width="222" height="42" rx="20" fill="#5F2F11" opacity="0.95"/>
+  <text x="180" y="132" fill="#FFF8EB" font-family="Arial, sans-serif" font-size="26" font-weight="700">📍 Bagian Tubuh</text>
+</svg>

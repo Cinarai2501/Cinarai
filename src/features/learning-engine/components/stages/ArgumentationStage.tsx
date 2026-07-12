@@ -9,6 +9,7 @@ import {
   getArgumentationLearningObjects,
   type ArgumentationLearningObject,
 } from '../../stages/Argumentation/data/argumentationQuestions';
+import { loadComicModule } from '@/features/comics';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -119,6 +120,7 @@ function FeedbackCard({ feedback, studentAnswer }: { feedback: AiFeedback; stude
 export default function ArgumentationStage() {
   const { comic, setCanAdvance, nextStage } = useLearningEngine();
   const { user } = useAuth();
+  const comicModule = useMemo(() => loadComicModule(comic.id), [comic.id]);
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<AiFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,7 +143,18 @@ export default function ArgumentationStage() {
   }, [comic.id, user?.uid]);
 
   const learningObject = useMemo(() => getArgumentationLearningObject(selectedShapes), [selectedShapes]);
-  const question = learningObject ? getQuestionForObject(learningObject) : 'Mengapa bagian candi ini dapat dimodelkan sebagai bangun ruang?';
+  const question = useMemo(() => {
+    if (!learningObject) {
+      return 'Mengapa bagian candi ini dapat dimodelkan sebagai bangun ruang?';
+    }
+
+    if (comic.id === 1) {
+      const comicQuestion = comicModule.argumentation.questions.find((entry) => entry.shapeName === learningObject.solid || entry.templePart === learningObject.objectName);
+      return comicQuestion?.question ?? getQuestionForObject(learningObject);
+    }
+
+    return getQuestionForObject(learningObject);
+  }, [comic.id, comicModule.argumentation.questions, learningObject]);
   const charCount = answer.trim().length;
   const canSubmit = charCount >= 20 && !isSubmitting && !feedback;
 
@@ -226,6 +239,11 @@ export default function ArgumentationStage() {
             <p className="text-sm font-black text-neutral-900">{learningObject.objectName}</p>
             <p className="text-lg font-black text-secondary-600">{learningObject.solid}</p>
           </div>
+          {comic.id === 1 && (
+            <div className="rounded-full border border-secondary-200 bg-secondary-50 px-3 py-1 text-xs font-black uppercase tracking-[0.25em] text-secondary-700">
+              {learningObject.objectName === 'Bagian Atap' ? '📍 Bagian Atap' : learningObject.objectName === 'Bagian Tubuh' ? '📍 Bagian Tubuh' : learningObject.objectName === 'Bagian Pintu' ? '📍 Bagian Pintu' : '📍 Bagian Tangga'}
+            </div>
+          )}
         </div>
       </div>
 
@@ -266,7 +284,9 @@ export default function ArgumentationStage() {
           <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-400">Umpan Balik Gambar</p>
         </div>
         <p className="mt-2 text-sm leading-relaxed text-neutral-700">
-          Bagian-bagian Candi Jawi dapat dimodelkan sebagai bangun ruang berikut.
+          {comic.id === 1
+            ? 'Bagian-bagian Candi Jawi yang berbeda dapat dimodelkan dengan bangun ruang yang sesuai.'
+            : 'Bagian-bagian Candi Jawi dapat dimodelkan sebagai bangun ruang berikut.'}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           {[learningObject, ...feedbackCards].slice(0, 4).map((entry) => (
