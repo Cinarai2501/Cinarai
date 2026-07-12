@@ -74,7 +74,7 @@ export default function IdentificationQuestion({
       <div className="rounded-[22px] border border-primary-100 bg-primary-50/70 p-4">
         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-700">IDENTIFICATION</p>
         <p id={`question-${item.id}`} className="mt-2 text-base font-black leading-relaxed text-neutral-900">
-          Apa saja bangun ruang yang kamu temukan di Candi Jawi?
+          {item.question}
         </p>
       </div>
 
