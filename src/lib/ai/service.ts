@@ -113,7 +113,7 @@ function buildFallbackStudentInsight(context: StudentInsightContext): StudentIns
     weakestStage: weakestStage,
     bestStage: bestStage,
     errorPattern: hasLowRatings ? 'Cenderung membuat kesalahan saat memecahkan soal yang membutuhkan penjelasan alasan.' : 'Belum ada pola kesalahan yang sangat jelas dari data yang tersedia.',
-    teacherRecommendation: averageProgress < 50 ? 'Fokus pada bimbingan intensif dan latihan sederhana di tahap awal.' : 'Berikan penguatan pada bagian yang belum konsisten dan lanjutkan latihan bertahap.',
+    teacherRecommendation: averageProgress < 50 ? 'Fokus pada bimbingan intensif dan latihan sederhana di tahap awal.' : 'Fokus pada bagian yang belum konsisten dan lanjutkan latihan bertahap.',
     remedial: 'Berikan latihan singkat, contoh soal bertahap, dan pantau satu tahap per sesi.',
     enrichment: 'Tingkatkan pemahaman melalui tantangan numerasi berbasis konteks dan refleksi mandiri.',
     fallbackUsed: true,

@@ -9,7 +9,7 @@ import { firestore } from '@/lib/firebase/client';
 import { getComicById } from '@/lib/comicRepository';
 import type { Comic } from '@/types/comic';
 import type { ComicProgressDocument } from '@/types/firestore';
-import { getShapeKnowledgeEntries } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
+import { getLearningContentPackage } from '@/features/learning-engine/content/contentPackages';
 
 export default function ReportClient() {
   const router = useRouter();
@@ -59,7 +59,11 @@ export default function ReportClient() {
     ? introspection.aiReflection
     : null;
   const reportReady = Boolean(introspection?.completed);
-  const learnedShapes = useMemo(() => getShapeKnowledgeEntries().filter((entry) => entry.found), []);
+  const packageContent = useMemo(() => getLearningContentPackage(comic?.id ?? 0), [comic?.id]);
+  const learnedShapes = useMemo(
+    () => packageContent.report.learnedShapes.map((shape) => ({ id: shape, title: shape })),
+    [packageContent.report.learnedShapes],
+  );
 
   if (loading || isLoading) {
     return (
@@ -80,7 +84,7 @@ export default function ReportClient() {
           <p className="text-sm font-black uppercase tracking-[0.3em] text-primary-100">Laporan Belajar</p>
           <h1 className="mt-3 text-3xl font-black sm:text-4xl">Ringkasan perjalananmu</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-primary-100 sm:text-base">
-            {comic?.title ? `Kamu telah menyelesaikan refleksi untuk ${comic.title}.` : 'Laporan ini merangkum hasil refleksi dan pemahamanmu.'}
+            {packageContent.report.summary || (comic?.title ? `Kamu telah menyelesaikan refleksi untuk ${comic.title}.` : 'Laporan ini merangkum hasil refleksi dan pemahamanmu.')}
           </p>
         </div>
 

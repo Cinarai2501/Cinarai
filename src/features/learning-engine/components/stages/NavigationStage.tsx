@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
-import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
 import { useSnackbar } from '@/context/SnackbarContext';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { Hero3DViewer } from './Hero3DViewer';
 import { AssemblrCard } from './AssemblrCard';
-import { getShapeKnowledgeEntry } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
+import { getLearningContentPackage } from '../../content/contentPackages';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -28,11 +27,23 @@ export default function NavigationStage() {
   const router = useRouter();
   const { comic, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
   const { showSnackbar } = useSnackbar();
-  const metadata = useComicMetadata(comic.id);
-  const { model3D } = metadata.assets;
-  const navigationObjects = useMemo(
-    () => model3D.filter((entry) => Boolean(getShapeKnowledgeEntry(entry.title))),
-    [model3D],
+  const packageContent = useMemo(() => getLearningContentPackage(comic.id), [comic.id]);
+  const navigationObjects = useMemo<ComicAssetEntry[]>(
+    () =>
+      packageContent.learningObjects.map((object) => ({
+        page: object.page,
+        title: object.title,
+        description: object.description,
+        buttonLabel: 'Lihat Model 3D',
+        provider: object.provider,
+        viewerType: object.embedUrl ? 'embed' : 'assemblr',
+        embedUrl: object.embedUrl,
+        arUrl: object.modelUrl ?? object.embedUrl ?? '',
+        qrImage: object.qrImage,
+        aiPrompt: object.aiPrompt,
+        knowledgeText: object.description,
+      })),
+    [packageContent.learningObjects],
   );
   const primaryEntry = navigationObjects[0] ?? null;
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);

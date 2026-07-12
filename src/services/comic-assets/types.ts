@@ -152,6 +152,10 @@ export interface ComicAssetEntry {
   arUrl: string;
   /** QR image asset used by the QR button */
   qrImage?: string;
+  /** Optional AI prompt from a reusable content package */
+  aiPrompt?: string;
+  /** Optional extra knowledge text for the AI tutor */
+  knowledgeText?: string;
 }
 
 export interface ComicAssetGroup {

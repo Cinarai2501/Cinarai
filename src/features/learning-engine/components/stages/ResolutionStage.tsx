@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+import { getLearningContentPackage } from '../../content/contentPackages';
 import { getResolutionMissions, type ResolutionMission } from './resolutionStage.helpers';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
@@ -79,7 +80,8 @@ export default function ResolutionStage() {
   const [isFinished, setIsFinished] = useState(false);
 
   const { comic, setCanAdvance, nextStage } = useLearningEngine();
-  const missions = useMemo(() => getResolutionMissions(comic.id, comic.lokasi), [comic.id, comic.lokasi]);
+  const packageContent = useMemo(() => getLearningContentPackage(comic.id), [comic.id]);
+  const missions = useMemo(() => packageContent.resolution.missions, [packageContent]);
   const currentMission = missions[currentIndex];
   const displayedProgress = useMemo(
     () => `${Math.min(completedUpToIndex + 2, missions.length)}/${missions.length}`,

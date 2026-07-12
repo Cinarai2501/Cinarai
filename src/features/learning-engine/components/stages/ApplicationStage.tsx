@@ -6,7 +6,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
-import { useComicMetadata } from '@/services/comic-assets/useComicMetadata';
+import { getLearningContentPackage } from '../../content/contentPackages';
 
 type CoachSummary = {
   mastered: string[];
@@ -20,67 +20,9 @@ type CoachResponse = {
   summary: CoachSummary;
 };
 
-const DEFAULT_OPTIONS = ['Kubus', 'Balok', 'Prisma Segi Empat', 'Limas Segi Empat', 'Kerucut', 'Tabung'] as const;
-const KOMIK_2_OPTIONS = ['Persegi', 'Persegi Panjang', 'Segitiga', 'Trapesium', 'Lingkaran'] as const;
-
 function getApplicationConfig(comicId: number) {
-  if (comicId === 2) {
-    return {
-      title: 'Terapkan Ilmu di Konteks Baru',
-      intro: 'Amati pola relief dan bentuk bangun datar pada Candi Penataran, lalu pilih bangun datar yang paling cocok.',
-      prompt: 'Relief Candi Penataran menampilkan pola yang simetris dan berulang. Pilih bangun datar yang paling cocok untuk menjelaskan pola tersebut dan jelaskan alasanmu.',
-      context: 'Pola simetri dan bentuk bangun datar pada relief Candi Penataran.',
-      images: [
-        {
-          src: '/assets/qr/komik-2/13-objek-1.jpeg',
-          alt: 'Relief Candi Penataran yang memperlihatkan pola persegi',
-          label: 'Relief Simetris',
-          description: 'Amati pola berulang yang seimbang di kiri dan kanan.',
-        },
-        {
-          src: '/assets/qr/komik-2/15-objek-2.jpeg',
-          alt: 'Bidang panjang pada Candi Penataran',
-          label: 'Bidang Panjang',
-          description: 'Perhatikan sisi panjang dan pendek pada bentuk yang terlihat.',
-        },
-        {
-          src: '/assets/qr/komik-2/17-objek-3.jpeg',
-          alt: 'Ornamen tajam pada Candi Penataran',
-          label: 'Ornamen Tajam',
-          description: 'Lihatlah sudut dan sisi yang membentuk bentuk tajam.',
-        },
-      ] as const,
-      options: KOMIK_2_OPTIONS,
-    };
-  }
-
-  return {
-    title: 'Terapkan Ilmu di Konteks Baru',
-    intro: 'Amati replika baru di museum, jelajahi sudut-sudut berbeda, lalu pilih bangun ruang yang paling cocok.',
-    prompt: 'Replika bangunan di museum menampilkan sudut baru yang belum pernah dilihat sebelumnya. Pilih bangun ruang yang paling cocok untuk menjelaskan bentuk replika ini dan tuliskan alasanmu.',
-    context: 'Replika bangunan dengan sudut pemandangan baru, ditampilkan sebagai objek pembelajaran di museum.',
-    images: [
-      {
-        src: '/images/identification/komik1-soal1.jpg',
-        alt: 'Replika bangunan tampak depan dengan badan utama yang jelas',
-        label: 'Tampak Depan',
-        description: 'Perhatikan bagaimana bentuk utama terlihat dari depan.',
-      },
-      {
-        src: '/images/identification/komik1-soal3.jpg',
-        alt: 'Replika bangunan tampak puncak yang meruncing',
-        label: 'Sudut Puncak',
-        description: 'Amati bentuk puncak replika yang meruncing dan simetris.',
-      },
-      {
-        src: '/images/identification/komik1-soal5.jpg',
-        alt: 'Replika bangunan tampak samping dengan dinding dan reliefnya',
-        label: 'Sudut Dinding',
-        description: 'Lihatlah sisi samping dan kecocokan bentuk dinding replika.',
-      },
-    ] as const,
-    options: DEFAULT_OPTIONS,
-  };
+  const packageContent = getLearningContentPackage(comicId);
+  return packageContent.application;
 }
 
 function isValidUrl(url: string): boolean {
@@ -122,7 +64,6 @@ function saveLocalApplicationActivity(comicId: number, payload: Record<string, u
 export default function ApplicationStage() {
   const { comic, setCanAdvance, completeCurrentStage } = useLearningEngine();
   const { user } = useAuth();
-  const metadata = useComicMetadata(comic.id);
   const [selectedAnswer, setSelectedAnswer] = useState<string[]>([]);
   const [studentReason, setStudentReason] = useState('');
   const [arViewed, setArViewed] = useState(false);
@@ -138,13 +79,10 @@ export default function ApplicationStage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   const [attemptCount, setAttemptCount] = useState(0);
+  const packageContent = useMemo(() => getLearningContentPackage(comic.id), [comic.id]);
   const applicationConfig = useMemo(() => getApplicationConfig(comic.id), [comic.id]);
-  const options = useMemo(() => shuffle(applicationConfig.options), [applicationConfig.options]);
-  const arModelEntry = useMemo(
-    () => metadata.assets.model3D.find((entry) => isValidUrl(entry.arUrl || entry.embedUrl || '')) ?? null,
-    [metadata.assets.model3D],
-  );
-  const arViewerUrl = arModelEntry?.embedUrl || arModelEntry?.arUrl || null;
+  const options = useMemo(() => shuffle(applicationConfig.options.map((option) => option.value)), [applicationConfig.options]);
+  const arViewerUrl = packageContent.model3D[0]?.embedUrl || packageContent.model3D[0]?.arUrl || null;
 
   const hasCompletedPreparation = arViewed && explorationCompleted;
   const minReasonLength = studentReason.trim().length;
@@ -393,6 +331,8 @@ export default function ApplicationStage() {
         <div className="mt-5 grid gap-3">
           <div className="grid gap-2 sm:grid-cols-2">
             {options.map((option) => {
+              const matchedOption = applicationConfig.options.find((item) => item.value === option);
+              const label = matchedOption?.label ?? option;
               const checked = selectedAnswer.includes(option);
               return (
                 <button
@@ -407,7 +347,7 @@ export default function ApplicationStage() {
                     checked ? 'border-primary-600 bg-primary-50 text-primary-900' : 'border-neutral-200 bg-white text-neutral-800 hover:border-primary-200 hover:bg-primary-50/50',
                   ].join(' ')}
                 >
-                  <span>{option}</span>
+                  <span>{label}</span>
                   <span className={['h-5 w-5 rounded-full border text-center text-xs font-black', checked ? 'border-primary-600 bg-primary-600 text-white' : 'border-neutral-300 bg-white text-neutral-400'].join(' ')}>
                     {checked ? '✓' : '+'}
                   </span>

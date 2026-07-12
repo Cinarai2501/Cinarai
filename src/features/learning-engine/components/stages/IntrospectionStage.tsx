@@ -13,15 +13,12 @@ import { getCurrentUser } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+import { getLearningContentPackage } from '../../content/contentPackages';
 
 function getChecklistItems(comicId: number) {
-  if (comicId === 2) {
-    return [
-      'Saya memahami pola simetri pada Candi Penataran',
-      'Saya dapat mengenali persegi, persegi panjang, segitiga, dan trapesium',
-      'Saya dapat menghitung luas dan keliling bangun datar',
-      'Saya lebih percaya diri menyelesaikan soal serupa',
-    ] as const;
+  const packageContent = getLearningContentPackage(comicId);
+  if (packageContent.introspection.checklist.length > 0) {
+    return packageContent.introspection.checklist as readonly string[];
   }
 
   return [

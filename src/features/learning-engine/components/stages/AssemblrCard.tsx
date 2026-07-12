@@ -62,6 +62,40 @@ export function AssemblrCard({
           Tampilkan QR
         </button>
       </div>
+<<<<<<< HEAD
+=======
+
+      {isTutorOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-950/60 p-2 sm:p-4" onClick={() => setIsTutorOpen(false)}>
+          <div className="w-full max-w-2xl rounded-t-[28px] bg-white shadow-[0_28px_60px_rgba(15,23,42,0.16)]" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-primary-700">AI Tutor</p>
+                <p className="text-sm font-black text-neutral-900">{entry.title || 'Objek 3D'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTutorOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="max-h-[78vh] overflow-y-auto px-3 py-3 sm:px-4">
+              <ObjectAITutor
+                objectId={objectId}
+                objectName={entry.title || 'Objek 3D'}
+                provider={entry.provider}
+                comicPage={entry.page}
+                modelUrl={entry.arUrl}
+                entry={entry}
+                initialPrompt={entry.aiPrompt}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+>>>>>>> 9be634a (Refactor learning engine to use content packages)
     </div>
   );
 }

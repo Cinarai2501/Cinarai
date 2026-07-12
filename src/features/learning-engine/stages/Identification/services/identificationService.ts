@@ -7,6 +7,7 @@ import type {
   IdentificationItem,
   IdentificationState,
 } from '../types';
+import { getLearningContentPackage } from '../../../content/contentPackages';
 import { getShapeKnowledgeEntry } from './shapeKnowledge';
 
 /** Fisher-Yates shuffle — urutan berbeda setiap kali dipanggil */
@@ -234,6 +235,20 @@ function buildFallbackQuestions(lokasi: string): RawQuestion[] {
 }
 
 function getQuestionsForComic(comicId: number, lokasi: string): RawQuestion[] {
+  const packageContent = getLearningContentPackage(comicId);
+  if (packageContent.identification.questions.length > 0) {
+    return packageContent.identification.questions.map((question) => ({
+      question: question.question,
+      imageAlt: question.imageAlt,
+      image: question.image,
+      overlayType: question.overlayType,
+      crop: question.crop,
+      highlight: question.highlight,
+      options: question.options.map((option) => ({ text: option.text, correct: option.correct })),
+      explanation: question.explanation,
+    }));
+  }
+
   if (comicId === 1) return KOMIK_1_QUESTIONS;
   if (comicId === 2) return KOMIK_2_QUESTIONS;
   return buildFallbackQuestions(lokasi);

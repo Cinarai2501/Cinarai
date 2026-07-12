@@ -18,6 +18,7 @@ interface ObjectAITutorProps {
   knowledge?: string;
   modelUrl?: string;
   entry?: ComicAssetEntry | null;
+  initialPrompt?: string;
 }
 
 const QUICK_QUESTIONS = [
@@ -27,11 +28,11 @@ const QUICK_QUESTIONS = [
   'Ada di halaman komik berapa?',
 ];
 
-function createInitialMessage(objectName: string): ChatMessage {
+function createInitialMessage(objectName: string, initialPrompt?: string): ChatMessage {
   return {
     id: 1,
     role: 'assistant',
-    content: `Aku adalah AI Tutor CINARAI. Aku akan membantu menjelaskan ${objectName} dengan bahasa sederhana dan sesuai dengan Candi Jawi.`,
+    content: initialPrompt || `Aku adalah AI Tutor CINARAI. Aku akan membantu menjelaskan ${objectName} dengan bahasa sederhana dan sesuai dengan Candi Jawi.`,
   };
 }
 
@@ -43,6 +44,7 @@ export function ObjectAITutor({
   knowledge,
   modelUrl,
   entry,
+  initialPrompt,
 }: ObjectAITutorProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -54,10 +56,10 @@ export function ObjectAITutor({
   const knowledgeText = useMemo(() => knowledge ?? buildShapeKnowledgeContext(shapeKnowledge), [knowledge, shapeKnowledge]);
 
   useEffect(() => {
-    setMessages([createInitialMessage(objectName)]);
+    setMessages([createInitialMessage(objectName, initialPrompt)]);
     setDraft('');
     setAiError(null);
-  }, [objectId, objectName]);
+  }, [objectId, objectName, initialPrompt]);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -85,7 +87,7 @@ export function ObjectAITutor({
             objectInfo: {
               location: entry?.title ? `Candi Jawi (${entry.title})` : 'Candi Jawi',
               classLevel: 'SD',
-              synopsis: 'Mengamati bentuk geometri pada Candi Jawi',
+              synopsis: initialPrompt ?? 'Mengamati bentuk geometri pada Candi Jawi',
               learningTargets: ['Mengamati bangun ruang', 'Menghubungkan bentuk dengan struktur candi'],
             },
             observationAnswers: {},

@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 export interface ArgumentationLearningObject {
+=======
+import { getLearningContentPackage } from '../../../content/contentPackages';
+
+export interface ArgumentationQuestion {
+>>>>>>> 9be634a (Refactor learning engine to use content packages)
   id: string;
   objectName: string;
   image: string;
@@ -91,6 +97,20 @@ export function getArgumentationLearningObject(selectedShapes: string[] = []): A
   return ARGUMENTATION_OBJECTS.find((entry) => entry.id === objectId) ?? ARGUMENTATION_OBJECTS[0] ?? null;
 }
 
+<<<<<<< HEAD
 export function getArgumentationLearningObjects(): ArgumentationLearningObject[] {
   return ARGUMENTATION_OBJECTS;
+=======
+export function getArgumentationQuestions(
+  comicId: number,
+  lokasi: string,
+  cover: string,
+): ArgumentationQuestion[] {
+  const packageContent = getLearningContentPackage(comicId);
+  if (packageContent.argumentation.questions.length > 0) {
+    return packageContent.argumentation.questions;
+  }
+
+  return ARGUMENTATION_QUESTIONS[comicId] ?? buildFallbackQuestions(lokasi, cover);
+>>>>>>> 9be634a (Refactor learning engine to use content packages)
 }
