@@ -6,18 +6,22 @@ interface AssemblrCardProps {
   entry: ComicAssetEntry;
   isActive: boolean;
   onSelect: () => void;
+  onExplore: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onOpenAr: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onOpenQr: (event: React.MouseEvent<HTMLButtonElement>) => void;
   isValidUrl: boolean;
+  useExploreOnly?: boolean;
 }
 
 export function AssemblrCard({
   entry,
   isActive,
   onSelect,
+  onExplore,
   onOpenAr,
   onOpenQr,
   isValidUrl,
+  useExploreOnly = false,
 }: AssemblrCardProps) {
   return (
     <div
@@ -39,28 +43,44 @@ export function AssemblrCard({
       ) : null}
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenAr(event);
-          }}
-          disabled={!isValidUrl}
-          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[20px] bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Lihat Model 3D
-        </button>
+        {useExploreOnly ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onExplore(event);
+            }}
+            disabled={!isValidUrl}
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[20px] bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Eksplorasi Objek
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenAr(event);
+              }}
+              disabled={!isValidUrl}
+              className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[20px] bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Lihat Model 3D
+            </button>
 
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenQr(event);
-          }}
-          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[20px] border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50 active:scale-95"
-        >
-          Tampilkan QR
-        </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenQr(event);
+              }}
+              className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[20px] border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50 active:scale-95"
+            >
+              Tampilkan QR
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

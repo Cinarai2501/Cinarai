@@ -11,6 +11,9 @@ interface Universal3DViewerProps {
   initialTitle?: string;
   initialComicId?: string | number | null;
   initialPage?: string | number | null;
+  initialAiPrompt?: string;
+  initialQrImage?: string;
+  initialViewMode?: string;
 }
 
 type SupportedProvider = 'sketchfab' | 'assemblr' | 'glb' | 'gltf' | 'unknown';
@@ -118,6 +121,9 @@ export default function Universal3DViewer({
   initialTitle,
   initialComicId,
   initialPage,
+  initialAiPrompt,
+  initialQrImage,
+  initialViewMode,
 }: Universal3DViewerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -127,6 +133,11 @@ export default function Universal3DViewer({
   const resolvedComicId = initialComicId ?? searchParams.get('comicId') ?? '-';
   const resolvedPage = initialPage ?? searchParams.get('page') ?? '-';
   const resolvedMode = searchParams.get('mode') ?? 'default';
+  const resolvedView = searchParams.get('view') ?? initialViewMode ?? 'default';
+  const resolvedAiPrompt = initialAiPrompt ?? searchParams.get('aiPrompt') ?? '';
+  const resolvedQrImage = initialQrImage ?? searchParams.get('qrImage') ?? '';
+  const isDetailExperience = resolvedView === 'object-detail' || resolvedMode === 'detail' || resolvedMode === 'object-detail';
+  const showAiTutor = isDetailExperience;
 
   const [isPreparing, setIsPreparing] = useState(true);
   const [isQrOpen, setIsQrOpen] = useState(resolvedMode === 'qr');
@@ -143,8 +154,12 @@ export default function Universal3DViewer({
   const isValidUrl = isValidHttpUrl(resolvedUrl);
   const providerInfo = useMemo(() => detectProvider(resolvedUrl), [resolvedUrl]);
   const objectName = useMemo(() => detectObjectName(resolvedTitle, resolvedUrl), [resolvedTitle, resolvedUrl]);
-  const objectHelp = OBJECT_HELP[objectName] ?? 'Aku akan membantu menjelaskan bentuk ini dengan bahasa sederhana dan mudah dimengerti.';
+  const objectHelp = resolvedAiPrompt || OBJECT_HELP[objectName] || 'Aku akan membantu menjelaskan bentuk ini dengan bahasa sederhana dan mudah dimengerti.';
   const suggestionChips = useMemo(() => {
+    if (resolvedAiPrompt) {
+      return ['Apa yang paling penting dari objek ini?', 'Bagaimana kaitannya dengan Candi Jawi?', 'Jelaskan bagian yang paling menarik dari objek ini.'];
+    }
+
     if (objectName === 'Model 3D') {
       return ['Apa itu objek ini?', 'Bagaimana bentuk ini dipakai?', 'Di bagian mana objek ini?'];
     }
@@ -157,9 +172,9 @@ export default function Universal3DViewer({
       `Apa bedanya ${objectName} dan ${compareShape}?`,
       `${objectName} berada di bagian mana pada Candi Jawi?`,
     ];
-  }, [objectName]);
-  const qrSource = resolvedUrl;
-  const showQrButton = Boolean(qrSource && isValidUrl);
+  }, [objectName, resolvedAiPrompt]);
+  const qrSource = resolvedQrImage || resolvedUrl;
+  const showQrButton = Boolean(resolvedQrImage || (qrSource && isValidUrl));
 
   useEffect(() => {
     setIsPreparing(true);
@@ -168,8 +183,8 @@ export default function Universal3DViewer({
   }, [resolvedUrl, providerInfo.embedUrl]);
 
   useEffect(() => {
-    if (!qrSource) {
-      setQrDataUrl('');
+    if (!qrSource || resolvedQrImage) {
+      setQrDataUrl(resolvedQrImage);
       setQrLoading(false);
       return;
     }
@@ -181,7 +196,7 @@ export default function Universal3DViewer({
         setQrDataUrl('');
       })
       .finally(() => setQrLoading(false));
-  }, [qrSource]);
+  }, [qrSource, resolvedQrImage]);
 
   useEffect(() => {
     if (!isValidUrl) return undefined;
@@ -381,7 +396,7 @@ export default function Universal3DViewer({
                     </div>
                   ) : (
                     <img
-                      src={qrDataUrl || undefined}
+                      src={resolvedQrImage || qrDataUrl || undefined}
                       alt={`QR untuk ${resolvedTitle}`}
                       className="h-60 w-60 rounded-2xl bg-white p-3 object-contain"
                     />
@@ -410,9 +425,13 @@ export default function Universal3DViewer({
           <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-4 px-6 py-10 text-center">
             <div className="w-full max-w-2xl rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
               <p className="text-3xl">🧊</p>
-              <h2 className="mt-4 text-xl font-black text-neutral-900">Model ini dipublikasikan di Assemblr.</h2>
+              <h2 className="mt-4 text-xl font-black text-neutral-900">
+                {isDetailExperience ? 'Objek ini siap dieksplorasi lebih lanjut.' : 'Model ini dipublikasikan di Assemblr.'}
+              </h2>
               <p className="mt-3 text-base leading-relaxed text-neutral-600">
-                Universal 3D Viewer tetap menjadi halaman utama. Anda dapat membuka model langsung di Assemblr untuk pengalaman interaktif penuh.
+                {isDetailExperience
+                  ? 'Pilih salah satu tindakan di bawah untuk melihat model 3D, QR, atau menutup pengalaman detail.'
+                  : 'Universal 3D Viewer tetap menjadi halaman utama. Anda dapat membuka model langsung di Assemblr untuk pengalaman interaktif penuh.'}
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <button
@@ -420,14 +439,23 @@ export default function Universal3DViewer({
                   onClick={handleOpenExternal}
                   className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-base font-semibold text-white"
                 >
-                  Buka di Assemblr
+                  {isDetailExperience ? 'Buka Model 3D' : 'Buka di Assemblr'}
                 </button>
+                {showQrButton && (
+                  <button
+                    type="button"
+                    onClick={handleOpenQr}
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700"
+                  >
+                    {isDetailExperience ? 'Lihat QR' : 'Tampilkan QR'}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleBack}
                   className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700"
                 >
-                  Tutup Viewer
+                  {isDetailExperience ? 'Tutup View' : 'Tutup Viewer'}
                 </button>
               </div>
             </div>
@@ -450,19 +478,21 @@ export default function Universal3DViewer({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleAiOpen}
-        className="fixed bottom-6 right-5 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_12px_25px_rgba(15,23,42,0.18)] transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-95 sm:bottom-6 sm:right-6"
-        aria-label="Buka AI Tutor"
-      >
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm">
-          <img src="/images/ai/robot.svg" alt="Robot AI" className="h-6 w-6" />
-          <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-yellow-300 px-1.5 text-[10px] font-black uppercase text-slate-900 shadow-sm">
-            AI
-          </span>
-        </div>
-      </button>
+      {showAiTutor && (
+        <button
+          type="button"
+          onClick={handleAiOpen}
+          className="fixed bottom-6 right-5 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_12px_25px_rgba(15,23,42,0.18)] transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-95 sm:bottom-6 sm:right-6"
+          aria-label="Buka AI Tutor"
+        >
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm">
+            <img src="/images/ai/robot.svg" alt="Robot AI" className="h-6 w-6" />
+            <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-yellow-300 px-1.5 text-[10px] font-black uppercase text-slate-900 shadow-sm">
+              AI
+            </span>
+          </div>
+        </button>
+      )}
 
       {showTipsCard && (
         <div className="fixed inset-x-0 bottom-24 z-40 flex items-end justify-center px-4 sm:bottom-6 sm:justify-end">

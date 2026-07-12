@@ -26,6 +26,7 @@ export default function NavigationStage() {
   const router = useRouter();
   const { comic, comicModule, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
   const { showSnackbar } = useSnackbar();
+  const isComic1Flow = comic.id === 1;
   const navigationObjects = useMemo<ComicAssetEntry[]>(
     () =>
       comicModule.navigation.learningObjects.map((object: {
@@ -37,19 +38,24 @@ export default function NavigationStage() {
         modelUrl?: string;
         qrImage?: string;
         aiPrompt?: string;
-      }) => ({
-        page: object.page,
-        title: object.title,
-        description: object.description,
-        buttonLabel: 'Lihat Model 3D',
-        provider: object.provider,
-        viewerType: object.embedUrl ? 'embed' : 'assemblr',
-        embedUrl: object.embedUrl,
-        arUrl: object.modelUrl ?? object.embedUrl ?? '',
-        qrImage: object.qrImage,
-        aiPrompt: object.aiPrompt,
-        knowledgeText: object.description,
-      })),
+      }) => {
+        const provider = object.provider?.toLowerCase() ?? '';
+        const isAssemblr = provider.includes('assemblr');
+
+        return {
+          page: object.page,
+          title: object.title,
+          description: object.description,
+          buttonLabel: 'Lihat Model 3D',
+          provider: object.provider,
+          viewerType: object.embedUrl && !isAssemblr ? 'embed' : 'assemblr',
+          embedUrl: object.embedUrl,
+          arUrl: object.modelUrl ?? object.embedUrl ?? '',
+          qrImage: object.qrImage,
+          aiPrompt: object.aiPrompt,
+          knowledgeText: object.description,
+        };
+      }),
     [comicModule.navigation.learningObjects],
   );
   const primaryEntry = navigationObjects[0] ?? null;
@@ -115,7 +121,26 @@ export default function NavigationStage() {
     }
     setActiveObjectId(entryId);
 
-    const url = `/viewer/3d?url=${encodeURIComponent(entryUrl)}&title=${encodeURIComponent(entry.title)}&comicId=${comic.id}&page=${entry.page}`;
+    const params = new URLSearchParams({
+      url: entryUrl,
+      title: entry.title,
+      comicId: String(comic.id),
+      page: String(entry.page),
+    });
+
+    if (isComic1Flow) {
+      params.set('view', 'object-detail');
+      if (entry.aiPrompt) {
+        params.set('aiPrompt', entry.aiPrompt);
+      }
+      if (entry.qrImage) {
+        params.set('qrImage', entry.qrImage);
+      }
+      router.push(`/viewer/3d?${params.toString()}`);
+      return;
+    }
+
+    const url = `/viewer/3d?${params.toString()}`;
     router.push(openQr ? `${url}&mode=qr` : url);
   }
 
@@ -123,7 +148,7 @@ export default function NavigationStage() {
     void nextStage();
   }
 
-  const featuredEntry = primaryEntry?.viewerType === 'embed' ? primaryEntry : null;
+  const featuredEntry = !isComic1Flow && primaryEntry?.viewerType === 'embed' ? primaryEntry : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden px-2 py-2 sm:px-4 sm:py-4">
@@ -134,9 +159,11 @@ export default function NavigationStage() {
       <div className="space-y-5">
         <div className="space-y-3 px-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary-600">Daftar Objek</p>
-          <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">Pilih objek untuk dipelajari</h1>
+          <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">{isComic1Flow ? 'Eksplorasi objek Candi Jawi' : 'Pilih objek untuk dipelajari'}</h1>
           <p className="max-w-2xl text-sm leading-relaxed text-neutral-600 sm:text-base">
-            Sentuh kartu untuk melihat detail dan buka Model 3D atau QR. Semakin banyak objek kamu eksplorasi, semakin cepat bisa lanjut.
+            {isComic1Flow
+              ? 'Sentuh objek untuk membuka pengalaman detail, melihat model, dan menanyakan AI Tutor tentang bentuk yang kamu amati.'
+              : 'Sentuh kartu untuk melihat detail dan buka Model 3D atau QR. Semakin banyak objek kamu eksplorasi, semakin cepat bisa lanjut.'}
           </p>
         </div>
 
@@ -153,6 +180,11 @@ export default function NavigationStage() {
                   entry={entry}
                   isActive={isActive}
                   onSelect={() => setActiveObjectId(entryId)}
+                  onExplore={(event) => {
+                    event.stopPropagation();
+                    setActiveObjectId(entryId);
+                    handleOpenAr(entry);
+                  }}
                   onOpenAr={(e) => {
                     e.stopPropagation();
                     setActiveObjectId(entryId);
@@ -164,6 +196,7 @@ export default function NavigationStage() {
                     handleOpenAr(entry, true);
                   }}
                   isValidUrl={isValid}
+                  useExploreOnly={isComic1Flow}
                 />
               );
             })
