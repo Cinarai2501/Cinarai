@@ -491,9 +491,9 @@ function makeComic2Package(): LearningContentPackage {
         feedback: 'Benar, segitiga mudah dikenali dari tiga sisi dan tiga sudut.',
       },
       {
-        id: 'komik2-trapesium',
-        title: 'Trapesium',
-        description: 'Relief yang memiliki sepasang sisi sejajar.',
+        id: 'komik2-belah-ketupat',
+        title: 'Belah Ketupat',
+        description: 'Relief yang menyerupai berlian (belah ketupat).',
         page: 4,
         qrImage: '/assets/qr/komik-2/18-objek-4.jpeg',
         objectImage: '/assets/qr/komik-2/18-objek-4.jpeg',
@@ -501,23 +501,23 @@ function makeComic2Package(): LearningContentPackage {
         embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
         viewerType: 'embed',
         provider: 'ModelViewer',
-        aiPrompt: 'Jelaskan sifat trapesium yang memiliki sepasang sisi sejajar.',
-        question: 'Apa ciri khas trapesium?',
-        answer: 'Trapesium memiliki sepasang sisi sejajar dan dua sisi lainnya bisa berbeda panjang.',
-        feedback: 'Bagus, trapesium dikenali dari sepasang sisi sejajar.',
+        aiPrompt: 'Jelaskan sifat belah ketupat yang memiliki dua pasang sisi sama panjang dan sifat simetrinya.',
+        question: 'Apa ciri khas belah ketupat?',
+        answer: 'Belah ketupat memiliki empat sisi sama panjang dan dua sumbu simetri.',
+        feedback: 'Bagus, belah ketupat dikenali dari sisi yang sama panjang dan bentuknya mirip berlian.',
       },
     ],
     qrCode: [
       { id: 'komik2-qr-1', imageSrc: '/assets/qr/komik-2/13-objek-1.jpeg', alt: 'QR Persegi', label: 'Persegi', description: 'Scan untuk melihat pola persegi.' },
       { id: 'komik2-qr-2', imageSrc: '/assets/qr/komik-2/15-objek-2.jpeg', alt: 'QR Persegi Panjang', label: 'Persegi Panjang', description: 'Scan untuk melihat bidang panjang.' },
       { id: 'komik2-qr-3', imageSrc: '/assets/qr/komik-2/17-objek-3.jpeg', alt: 'QR Segitiga', label: 'Segitiga', description: 'Scan untuk melihat ornamen tajam.' },
-      { id: 'komik2-qr-4', imageSrc: '/assets/qr/komik-2/18-objek-4.jpeg', alt: 'QR Trapesium', label: 'Trapesium', description: 'Scan untuk melihat relief trapesium.' },
+      { id: 'komik2-qr-4', imageSrc: '/assets/qr/komik-2/18-objek-4.jpeg', alt: 'QR Belah Ketupat', label: 'Belah Ketupat', description: 'Scan untuk melihat relief belah ketupat.' },
     ],
     model3D: [
       { id: 'komik2-model-1', title: 'Persegi', arUrl: 'https://modelviewer.dev/examples/scenegraph/index.html', page: 1, description: 'Model 3D persegi untuk mengamati simetri.' },
       { id: 'komik2-model-2', title: 'Persegi Panjang', arUrl: 'https://modelviewer.dev/examples/scenegraph/index.html', page: 2, description: 'Model 3D persegi panjang untuk mengamati sudut.' },
       { id: 'komik2-model-3', title: 'Segitiga', arUrl: 'https://modelviewer.dev/examples/scenegraph/index.html', page: 3, description: 'Model 3D segitiga untuk melihat sisi dan sudut.' },
-      { id: 'komik2-model-4', title: 'Trapesium', arUrl: 'https://modelviewer.dev/examples/scenegraph/index.html', page: 4, description: 'Model 3D trapesium untuk melihat pasangan sisi sejajar.' },
+      { id: 'komik2-model-4', title: 'Belah Ketupat', arUrl: 'https://modelviewer.dev/examples/scenegraph/index.html', page: 4, description: 'Model 3D belah ketupat untuk mengamati simetri.' },
     ],
     aiPrompt: {
       navigation: 'Gunakan bahasa sederhana untuk menjelaskan bentuk dan simetri pada bangun datar.',
@@ -595,12 +595,12 @@ function makeComic2Package(): LearningContentPackage {
           explanation: 'Relief dan ukiran lingkaran pada Candi Naga serta Candi Induk berbentuk lingkaran yang memiliki simetri putar tak terhingga.',
         },
         {
-          id: 'komik2-ident-6',
+          { id: 'komik2-ident-6',
           question: 'Amati bangunan runtuh pendopo yang tampak seperti berlian. Bangun datar apakah yang paling sesuai?',
           image: '/assets/qr/komik-2/18-objek-4.jpeg',
           imageAlt: 'Bangunan runtuh pendopo pada Candi Penataran yang tampak seperti berlian.',
           options: [
-            { text: 'Belah Ketupat', correct: true },
+                { text: 'Belah Ketupat', correct: true },
             { text: 'Lingkaran', correct: false },
             { text: 'Persegi', correct: false },
             { text: 'Sisi Kanan', correct: false },
@@ -628,7 +628,7 @@ function makeComic2Package(): LearningContentPackage {
         { value: 'Persegi', label: 'Persegi' },
         { value: 'Persegi Panjang', label: 'Persegi Panjang' },
         { value: 'Segitiga', label: 'Segitiga' },
-        { value: 'Trapesium', label: 'Trapesium' },
+        { value: 'Belah Ketupat', label: 'Belah Ketupat' },
       ],
     },
     argumentation: {
@@ -641,7 +641,7 @@ function makeComic2Package(): LearningContentPackage {
           photoAlt: 'Relief Candi Penataran tampak berulang dalam pola persegi',
           shapeName: 'Persegi',
           shapeKey: 'persegi',
-          shapeSrc: '/images/navigation/default.svg',
+          shapeSrc: '/images/navigation/persegi.svg',
           highlightColor: 'border-primary-500',
         },
         {
@@ -652,7 +652,7 @@ function makeComic2Package(): LearningContentPackage {
           photoAlt: 'Bidang panjang pada Candi Penataran',
           shapeName: 'Persegi Panjang',
           shapeKey: 'persegi-panjang',
-          shapeSrc: '/images/navigation/default.svg',
+          shapeSrc: '/images/navigation/persegi-panjang.svg',
           highlightColor: 'border-secondary-500',
         },
       ],
@@ -678,7 +678,7 @@ function makeComic2Package(): LearningContentPackage {
           aiHint: 'Ingat rumus luas persegi: L = s².',
           context: 'Pola persegi pada relief Candi Penataran menunjukkan susunan yang sama di kiri dan kanan.',
           accent: 'from-primary-600 to-primary-700',
-          illustration: '/images/navigation/default.svg',
+          illustration: '/images/navigation/persegi.svg',
         },
         {
           id: 2,
@@ -699,14 +699,14 @@ function makeComic2Package(): LearningContentPackage {
           aiHint: 'Kalikan panjang dan lebar dengan hati-hati.',
           context: 'Bidang panjang pada Candi Penataran membantu kita melihat bentuk yang lebih lebar dari persegi.',
           accent: 'from-secondary-500 to-secondary-600',
-          illustration: '/images/navigation/default.svg',
+          illustration: '/images/navigation/persegi-panjang.svg',
         },
       ],
     },
-    introspection: {
+      introspection: {
       checklist: [
         'Saya memahami pola simetri pada Candi Penataran.',
-        'Saya dapat mengenali persegi, persegi panjang, segitiga, dan trapesium.',
+        'Saya dapat mengenali persegi, persegi panjang, segitiga, dan belah ketupat.',
         'Saya lebih percaya diri menyelesaikan soal serupa tentang luas.',
       ],
       completionMessage: 'Kamu telah menyelesaikan pembelajaran pada Candi Penataran.',
@@ -714,7 +714,7 @@ function makeComic2Package(): LearningContentPackage {
     },
     report: {
       summary: 'Laporan ini menampilkan hasil pemahamanmu terhadap bangun datar pada candi.',
-      learnedShapes: ['Persegi', 'Persegi Panjang', 'Segitiga', 'Trapesium'],
+      learnedShapes: ['Persegi', 'Persegi Panjang', 'Segitiga', 'Belah Ketupat'],
     },
   };
 }
@@ -789,17 +789,17 @@ function makeComic3Package(): LearningContentPackage {
     identification: {
       questions: [
         {
-          id: 'komik3-ident-1',
-          question: 'Bangun datar apa yang paling sering kamu lihat di rumah ini?',
-          image: '/assets/qr/komik-2/13-objek-1.jpeg',
-          imageAlt: 'Bentuk persegi pada bangunan.',
+          id: 'komik2-ident-6',
+          question: 'Amati bangunan runtuh pendopo yang tampak seperti berlian. Bangun datar apakah yang paling sesuai?',
+          image: '/assets/qr/komik-2/18-objek-4.jpeg',
+          imageAlt: 'Bangunan runtuh pendopo pada Candi Penataran yang tampak seperti berlian.',
           options: [
-            { text: 'Persegi', correct: true },
-            { text: 'Segitiga', correct: false },
+            { text: 'Belah Ketupat', correct: true },
             { text: 'Lingkaran', correct: false },
-            { text: 'Jajar Genjang', correct: false },
+            { text: 'Persegi', correct: false },
+            { text: 'Sisi Kanan', correct: false },
           ],
-          explanation: 'Bentuk persegi sering muncul pada bagian bangunan yang berbentuk kotak.',
+          explanation: 'Bangunan runtuh pendopo pada komik menggambarkan belah ketupat, bentuk yang memiliki dua garis simetri.',
         },
         {
           id: 'komik3-ident-2',
