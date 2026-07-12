@@ -25,16 +25,6 @@ function getApplicationConfig(comicId: number) {
   return packageContent.application;
 }
 
-function isValidUrl(url: string): boolean {
-  if (!url) return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 function shuffle<T>(array: ReadonlyArray<T>): T[] {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i -= 1) {

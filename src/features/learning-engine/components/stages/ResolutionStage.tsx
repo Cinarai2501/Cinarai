@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { getLearningContentPackage } from '../../content/contentPackages';
-import { getResolutionMissions, type ResolutionMission } from './resolutionStage.helpers';
+import type { ResolutionMission } from './resolutionStage.helpers';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (isCorrect) {
