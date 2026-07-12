@@ -1,16 +1,25 @@
-<<<<<<< HEAD
-export interface ArgumentationLearningObject {
-=======
 import { getLearningContentPackage } from '../../../content/contentPackages';
 
-export interface ArgumentationQuestion {
->>>>>>> 9be634a (Refactor learning engine to use content packages)
+export interface ArgumentationLearningObject {
   id: string;
   objectName: string;
   image: string;
   solid: string;
   explanation: string;
   aiFeedback: string;
+}
+
+export interface ArgumentationQuestion {
+  id: string;
+  templePart: string;
+  question: string;
+  photoSrc: string;
+  photoAlt: string;
+  overlaySrc?: string;
+  shapeName: string;
+  shapeKey: string;
+  shapeSrc: string;
+  highlightColor: string;
 }
 
 const ARGUMENTATION_OBJECTS: ArgumentationLearningObject[] = [
@@ -72,6 +81,33 @@ const SOLID_TO_OBJECT_ID: Record<string, string> = {
   Prisma: 'tangga',
 };
 
+function buildFallbackQuestions(lokasi: string, cover: string): ArgumentationQuestion[] {
+  return [
+    {
+      id: 'atap',
+      templePart: 'Bagian Atap',
+      question: `Mengapa bagian atap di ${lokasi} dapat dimodelkan sebagai bangun ruang?`,
+      photoSrc: cover,
+      photoAlt: `Bagian atap di ${lokasi}`,
+      shapeName: 'Kerucut',
+      shapeKey: 'kerucut',
+      shapeSrc: '/images/identification/komik1-soal4.jpg',
+      highlightColor: '#ef4444',
+    },
+    {
+      id: 'tubuh',
+      templePart: 'Bagian Tubuh',
+      question: `Mengapa bagian tubuh di ${lokasi} dapat dimodelkan sebagai bangun ruang?`,
+      photoSrc: cover,
+      photoAlt: `Bagian tubuh di ${lokasi}`,
+      shapeName: 'Kubus',
+      shapeKey: 'kubus',
+      shapeSrc: '/images/identification/komik1-soal1.jpg',
+      highlightColor: '#3b82f6',
+    },
+  ];
+}
+
 export function getArgumentationLearningObject(selectedShapes: string[] = []): ArgumentationLearningObject | null {
   const normalized = selectedShapes
     .map((shape) => shape?.trim())
@@ -97,20 +133,32 @@ export function getArgumentationLearningObject(selectedShapes: string[] = []): A
   return ARGUMENTATION_OBJECTS.find((entry) => entry.id === objectId) ?? ARGUMENTATION_OBJECTS[0] ?? null;
 }
 
-<<<<<<< HEAD
 export function getArgumentationLearningObjects(): ArgumentationLearningObject[] {
   return ARGUMENTATION_OBJECTS;
-=======
+}
+
 export function getArgumentationQuestions(
   comicId: number,
   lokasi: string,
   cover: string,
 ): ArgumentationQuestion[] {
   const packageContent = getLearningContentPackage(comicId);
-  if (packageContent.argumentation.questions.length > 0) {
-    return packageContent.argumentation.questions;
+  const packageQuestions = packageContent.argumentation.questions;
+
+  if (packageQuestions.length > 0) {
+    return packageQuestions.map((question) => ({
+      id: question.id,
+      templePart: question.templePart,
+      question: question.question,
+      photoSrc: question.photoSrc,
+      photoAlt: question.photoAlt,
+      overlaySrc: question.overlaySrc,
+      shapeName: question.shapeName,
+      shapeKey: question.shapeKey,
+      shapeSrc: question.shapeSrc,
+      highlightColor: question.highlightColor,
+    }));
   }
 
-  return ARGUMENTATION_QUESTIONS[comicId] ?? buildFallbackQuestions(lokasi, cover);
->>>>>>> 9be634a (Refactor learning engine to use content packages)
+  return buildFallbackQuestions(lokasi, cover);
 }
