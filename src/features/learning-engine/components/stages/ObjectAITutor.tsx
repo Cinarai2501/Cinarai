@@ -32,7 +32,7 @@ function createInitialMessage(objectName: string, initialPrompt?: string): ChatM
   return {
     id: 1,
     role: 'assistant',
-    content: initialPrompt || `Aku adalah AI Tutor CINARAI. Aku akan membantu menjelaskan ${objectName} dengan bahasa sederhana dan sesuai dengan Candi Jawi.`,
+    content: initialPrompt || `Aku adalah AI Tutor CINARAI. Aku akan membantu menjelaskan ${objectName} dengan bahasa sederhana dan sesuai dengan isi komik saat ini.`,
   };
 }
 
@@ -54,6 +54,35 @@ export function ObjectAITutor({
 
   const shapeKnowledge = useMemo(() => getShapeKnowledgeEntry(objectName), [objectName]);
   const knowledgeText = useMemo(() => knowledge ?? buildShapeKnowledgeContext(shapeKnowledge), [knowledge, shapeKnowledge]);
+  const isSymmetryContext = useMemo(() => {
+    const text = `${initialPrompt ?? ''} ${knowledgeText}`.toLowerCase();
+    return text.includes('simetri') || text.includes('pencerminan') || text.includes('seimbang') || text.includes('garis');
+  }, [initialPrompt, knowledgeText]);
+  const locationLabel = useMemo(() => {
+    const text = `${initialPrompt ?? ''} ${knowledgeText}`.toLowerCase();
+    if (text.includes('candi penataran')) return 'Candi Penataran';
+    if (text.includes('candi')) return 'Candi';
+    return 'komik saat ini';
+  }, [initialPrompt, knowledgeText]);
+  const contextSynopsis = useMemo(() => {
+    if (initialPrompt) return initialPrompt;
+    if (isSymmetryContext) {
+      return 'Mengamati simetri, garis simetri, dan keseimbangan bentuk pada bangunan.';
+    }
+    return 'Mengamati bentuk dan pola pada komik ini.';
+  }, [initialPrompt, isSymmetryContext]);
+  const learningGoal = useMemo(() => {
+    if (isSymmetryContext) {
+      return 'Memahami simetri, garis simetri, dan keseimbangan bentuk pada Candi Penataran';
+    }
+    return 'Memahami bentuk, ciri, dan letak objek pada komik ini';
+  }, [isSymmetryContext]);
+  const cultureConcept = useMemo(() => {
+    if (isSymmetryContext) {
+      return 'hubungan simetri dengan pola dan arsitektur Candi Penataran';
+    }
+    return 'hubungan bentuk visual dengan konteks komik';
+  }, [isSymmetryContext]);
 
   useEffect(() => {
     setMessages([createInitialMessage(objectName, initialPrompt)]);
@@ -85,10 +114,12 @@ export function ObjectAITutor({
             moduleName: 'CINARAI Navigation',
             identification: [],
             objectInfo: {
-              location: entry?.title ? `Candi Jawi (${entry.title})` : 'Candi Jawi',
+              location: entry?.title ? `${locationLabel} (${entry.title})` : locationLabel,
               classLevel: 'SD',
-              synopsis: initialPrompt ?? 'Mengamati bentuk geometri pada Candi Jawi',
-              learningTargets: ['Mengamati bangun ruang', 'Menghubungkan bentuk dengan struktur candi'],
+              synopsis: contextSynopsis,
+              learningTargets: isSymmetryContext
+                ? ['Mengamati simetri', 'Menghubungkan bentuk dengan pola candi']
+                : ['Mengamati bangun ruang', 'Menghubungkan bentuk dengan struktur candi'],
             },
             observationAnswers: {},
             sessionHistory: [],
@@ -99,9 +130,9 @@ export function ObjectAITutor({
             objectDescription: entry?.description,
             arProvider: provider,
             modelUrl,
-            learningGoal: 'Memahami bentuk, ciri, dan letak bangun ruang pada Candi Jawi',
-            numeracyConcept: 'bangun ruang, sisi, rusuk, titik sudut, rumus',
-            cultureConcept: 'hubungan bentuk geometri dengan arsitektur Candi Jawi',
+            learningGoal,
+            numeracyConcept: isSymmetryContext ? 'simetri, garis simetri, keseimbangan, pencerminan' : 'bangun ruang, sisi, rusuk, titik sudut, rumus',
+            cultureConcept,
             knowledgeContext: knowledgeText,
           },
         }),

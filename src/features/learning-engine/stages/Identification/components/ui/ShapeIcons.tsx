@@ -155,6 +155,68 @@ export function TabungIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
   );
 }
 
+// === GARIS SIMETRI (Symmetry Line) - Indigo ===
+export function GarisSimetriIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="12" width="32" height="24" rx="6" fill="#EEF2FF" stroke="#4338CA" strokeWidth="1.5" />
+      <path d="M24 12V36" stroke="#4338CA" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M14 18L20 24L14 30" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M34 18L28 24L34 30" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// === CERMIN (Mirror) - Sky ===
+export function CerminIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="10" width="24" height="28" rx="6" fill="#E0F2FE" stroke="#0369A1" strokeWidth="1.5" />
+      <path d="M20 16H28" stroke="#0369A1" strokeWidth="2" strokeLinecap="round" />
+      <path d="M18 22H30" stroke="#0369A1" strokeWidth="2" strokeLinecap="round" />
+      <path d="M20 28H28" stroke="#0369A1" strokeWidth="2" strokeLinecap="round" />
+      <path d="M24 10V38" stroke="#0369A1" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === BANGUNAN (Building) - Amber ===
+export function BangunanIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="16" width="24" height="20" rx="2" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5" />
+      <path d="M18 16V12H30V16" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M18 24H30" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M18 30H30" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M16 36H32" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// === KIRI-KANAN (Left/Right) - Emerald ===
+export function KiriKananIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="14" width="32" height="20" rx="6" fill="#ECFDF5" stroke="#059669" strokeWidth="1.5" />
+      <path d="M18 24H30" stroke="#059669" strokeWidth="2" strokeLinecap="round" />
+      <path d="M20 20L16 24L20 28" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M28 20L32 24L28 28" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// === SIMETRI (Symmetry) - Rose ===
+export function SimetriIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 12C20 18 20 30 16 36" stroke="#E11D48" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M32 12C28 18 28 30 32 36" stroke="#E11D48" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M24 12V36" stroke="#E11D48" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="24" cy="24" r="4" fill="#FBCFE8" stroke="#E11D48" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 // === BOLA (Sphere) - Pink ===
 export function BolaIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
   return (
@@ -198,6 +260,14 @@ export function getShapeIcon(shape: string) {
   
   // BOLA
   if (shapeNormalized === 'bola') return BolaIcon;
+
+  // === Symmetry / comic 2 activity icons ===
+  if (shapeNormalized.includes('garis simetri') || shapeNormalized.includes('garis-simetri') || shapeNormalized.includes('garis tengah')) return GarisSimetriIcon;
+  if (shapeNormalized.includes('pencerminan') || shapeNormalized.includes('cermin')) return CerminIcon;
+  if (shapeNormalized.includes('bangunan simetris') || shapeNormalized.includes('bangunan tidak simetris')) return BangunanIcon;
+  if (shapeNormalized.includes('sisi kiri') || shapeNormalized.includes('sisi kanan') || shapeNormalized.includes('titik tengah') || shapeNormalized.includes('kiri') || shapeNormalized.includes('kanan')) return KiriKananIcon;
+  if (shapeNormalized.includes('relief') || shapeNormalized.includes('pintu candi') || shapeNormalized.includes('tangga')) return BangunanIcon;
+  if (shapeNormalized.includes('simetri')) return SimetriIcon;
 
   // Default fallback
   return KubusIcon;
