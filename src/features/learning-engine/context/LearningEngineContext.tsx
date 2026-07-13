@@ -19,7 +19,7 @@ import {
   completeStage as persistCompleteStage,
   resetLearningProgress,
 } from '../services/learningEngineService';
-import { clearStoredComicReadingProgress } from '@/context/ComicReadingProgressContext';
+import { clearStoredComicReadingProgressEntry } from '@/lib/comicReadingProgressStorage';
 import {
   Stage,
   ALL_STAGES,
@@ -290,7 +290,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       const next = await resetLearningProgress(user.uid, comicId);
       progressRef.current = next;
       setProgress(next);
-      clearStoredComicReadingProgress(comicId);
+      clearStoredComicReadingProgressEntry(comicId);
       // Reset initialSyncDoneRef so the next Firestore snapshot re-syncs stageIndex
       initialSyncDoneRef.current = false;
       setStageIndex(0);

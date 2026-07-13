@@ -1,0 +1,44 @@
+[1mdiff --git a/src/features/learning-engine/context/LearningEngineContext.tsx b/src/features/learning-engine/context/LearningEngineContext.tsx[m
+[1mindex cd79f25..d8a9954 100644[m
+[1m--- a/src/features/learning-engine/context/LearningEngineContext.tsx[m
+[1m+++ b/src/features/learning-engine/context/LearningEngineContext.tsx[m
+[36m@@ -19,7 +19,7 @@[m [mimport {[m
+   completeStage as persistCompleteStage,[m
+   resetLearningProgress,[m
+ } from '../services/learningEngineService';[m
+[31m-import { clearStoredComicReadingProgress } from '@/context/ComicReadingProgressContext';[m
+[32m+[m[32mimport { clearStoredComicReadingProgressEntry } from '@/lib/comicReadingProgressStorage';[m
+ import {[m
+   Stage,[m
+   ALL_STAGES,[m
+[36m@@ -290,7 +290,7 @@[m [mexport function LearningEngineProvider({ comic, children }: LearningEngineProvid[m
+       const next = await resetLearningProgress(user.uid, comicId);[m
+       progressRef.current = next;[m
+       setProgress(next);[m
+[31m-      clearStoredComicReadingProgress(comicId);[m
+[32m+[m[32m      clearStoredComicReadingProgressEntry(comicId);[m
+       // Reset initialSyncDoneRef so the next Firestore snapshot re-syncs stageIndex[m
+       initialSyncDoneRef.current = false;[m
+       setStageIndex(0);[m
+[1mdiff --git a/src/hooks/useAllComicProgress.ts b/src/hooks/useAllComicProgress.ts[m
+[1mindex 9b6ce08..2338c89 100644[m
+[1m--- a/src/hooks/useAllComicProgress.ts[m
+[1m+++ b/src/hooks/useAllComicProgress.ts[m
+[36m@@ -4,7 +4,7 @@[m [mimport { useCallback, useEffect, useState } from 'react';[m
+ import { useAuth } from '@/hooks/useAuth';[m
+ import { useSnackbar } from '@/context/SnackbarContext';[m
+ import { resetComicProgress, subscribeToAllComicProgress } from '@/services/comicProgress';[m
+[31m-import { clearStoredComicReadingProgress } from '@/context/ComicReadingProgressContext';[m
+[32m+[m[32mimport { clearStoredComicReadingProgressEntry } from '@/lib/comicReadingProgressStorage';[m
+ import type { ComicProgressState } from '@/types/progress';[m
+ [m
+ export function useAllComicProgress() {[m
+[36m@@ -45,7 +45,7 @@[m [mexport function useAllComicProgress() {[m
+   const resetProgressForComic = useCallback(async (comicId: number) => {[m
+     if (!user?.uid) throw new Error('unauthenticated');[m
+     const result = await resetComicProgress(user.uid, comicId);[m
+[31m-    clearStoredComicReadingProgress(comicId);[m
+[32m+[m[32m    clearStoredComicReadingProgressEntry(comicId);[m
+     setStates((prev) => prev.filter((state) => state.comicId !== comicId));[m
+     return result;[m
+   }, [user?.uid]);[m

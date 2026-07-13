@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { resetComicProgress, subscribeToAllComicProgress } from '@/services/comicProgress';
-import { clearStoredComicReadingProgress } from '@/context/ComicReadingProgressContext';
+import { clearStoredComicReadingProgressEntry } from '@/lib/comicReadingProgressStorage';
 import type { ComicProgressState } from '@/types/progress';
 
 export function useAllComicProgress() {
@@ -45,7 +45,7 @@ export function useAllComicProgress() {
   const resetProgressForComic = useCallback(async (comicId: number) => {
     if (!user?.uid) throw new Error('unauthenticated');
     const result = await resetComicProgress(user.uid, comicId);
-    clearStoredComicReadingProgress(comicId);
+    clearStoredComicReadingProgressEntry(comicId);
     setStates((prev) => prev.filter((state) => state.comicId !== comicId));
     return result;
   }, [user?.uid]);
