@@ -193,27 +193,24 @@ export default function Comic1ArgumentationStage({
             <p className="mt-3 text-base leading-relaxed text-neutral-900 font-semibold">{question.argumentationQuestion}</p>
           </div>
 
-          <div className="rounded-[24px] bg-neutral-100 p-5">
-            <div className="grid gap-5">
-              <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">Foto bagian candi</p>
-                <div className="overflow-hidden rounded-[24px] bg-neutral-200">
-                  <Image
-                    src={question.argumentationPhoto}
-                    alt={question.photoAlt ?? 'Foto bagian candi'}
-                    width={1200}
-                    height={800}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+          <div className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white p-4">
+            <div className="flex flex-col items-center justify-center gap-4 md:flex-row md:gap-6">
+              <div className="flex w-full max-w-[300px] overflow-hidden rounded-[24px] bg-neutral-100">
+                <Image
+                  src={question.photoSrc}
+                  alt={question.photoAlt ?? 'Foto bagian candi'}
+                  width={1200}
+                  height={800}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
-              <div className="flex justify-center">
-                <svg width="40" height="40" viewBox="0 0 40 40" className="text-neutral-500">
+              <div className="flex items-center justify-center">
+                <svg width="32" height="32" viewBox="0 0 24 24" className="text-neutral-500">
                   <path
-                    d="M20 8v18M20 26l-6-6M20 26l6-6"
+                    d="M4 12h16M14 6l6 6-6 6"
                     stroke="currentColor"
-                    strokeWidth="3"
+                    strokeWidth="2"
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -221,20 +218,14 @@ export default function Comic1ArgumentationStage({
                 </svg>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">Bangun ruang</p>
-                  <p className="text-sm font-semibold text-neutral-700">{question.shapeName}</p>
-                </div>
-                <div className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white p-6">
-                  <Image
-                    src={shapePreview.src}
-                    alt={`Ilustrasi ${question.shapeName}`}
-                    width={shapePreview.width}
-                    height={shapePreview.height}
-                    className="mx-auto h-auto max-h-[220px] w-full object-contain"
-                  />
-                </div>
+              <div className="flex h-[170px] w-[170px] items-center justify-center overflow-hidden rounded-[24px] bg-neutral-100">
+                <Image
+                  src={shapePreview.src}
+                  alt={`Ilustrasi bangun ruang`}
+                  width={shapePreview.width}
+                  height={shapePreview.height}
+                  className="h-full w-auto object-contain"
+                />
               </div>
             </div>
           </div>
