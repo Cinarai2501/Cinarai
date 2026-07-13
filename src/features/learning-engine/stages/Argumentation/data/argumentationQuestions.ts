@@ -13,15 +13,20 @@ export interface ArgumentationLearningObject {
 
 export interface ArgumentationQuestion {
   id: string;
+  title?: string;
   templePart: string;
   question: string;
   photoSrc: string;
+  image?: string;
   photoAlt: string;
   overlaySrc?: string;
   shape?: string;
   shapeName: string;
   shapeKey: string;
   shapeSrc: string;
+  icon?: string;
+  aiContext?: string;
+  feedback?: string;
   highlightColor: string;
 }
 
@@ -136,13 +141,13 @@ function buildAiFeedback(objectName: string, solid: string) {
 function mapPackageQuestionsToLearningObjects(questions: ArgumentationQuestion[]): ArgumentationLearningObject[] {
   return questions.map((question) => ({
     id: question.id,
-    objectName: buildObjectName(question.templePart),
-    image: question.photoSrc,
+    objectName: question.title ?? buildObjectName(question.templePart),
+    image: question.image ?? question.photoSrc,
     overlaySrc: question.overlaySrc,
     solid: question.shapeName,
     question: question.question,
-    explanation: question.question,
-    aiFeedback: buildAiFeedback(buildObjectName(question.templePart), question.shapeName),
+    explanation: question.feedback ?? question.question,
+    aiFeedback: question.feedback ?? buildAiFeedback(question.title ?? buildObjectName(question.templePart), question.shapeName),
   }));
 }
 
@@ -210,7 +215,7 @@ export function getArgumentationLearningObjects(argumentationPackage?: { questio
 }
 
 export function getArgumentationQuestions(
-  argumentationPackage: { questions?: any[] } | null | undefined,
+  argumentationPackage: { questions?: Array<Partial<ArgumentationQuestion>> } | null | undefined,
   lokasi: string,
   cover: string,
 ): ArgumentationQuestion[] {
@@ -218,17 +223,17 @@ export function getArgumentationQuestions(
 
   if (packageQuestions.length > 0) {
     return packageQuestions.map((question) => ({
-      id: question.id,
-      templePart: question.templePart,
-      question: question.question,
-      photoSrc: question.photoSrc,
-      photoAlt: question.photoAlt,
+      id: question.id ?? 'unknown-argumentation',
+      templePart: question.templePart ?? 'Bagian Candi',
+      question: question.question ?? `Mengapa bagian candi ini dapat dimodelkan sebagai bangun ruang?`,
+      photoSrc: question.photoSrc ?? cover,
+      photoAlt: question.photoAlt ?? `Bagian candi di ${lokasi}`,
       overlaySrc: question.overlaySrc,
-      shapeName: question.shapeName,
-      shapeKey: question.shapeKey,
-      shapeSrc: question.shapeSrc,
-      highlightColor: question.highlightColor,
-    }));
+      shapeName: question.shapeName ?? 'Bangun Ruang',
+      shapeKey: question.shapeKey ?? 'default',
+      shapeSrc: question.shapeSrc ?? '/images/navigation/default.svg',
+      highlightColor: question.highlightColor ?? 'border-neutral-200',
+    } as ArgumentationQuestion));
   }
 
   return buildFallbackQuestions(lokasi, cover);

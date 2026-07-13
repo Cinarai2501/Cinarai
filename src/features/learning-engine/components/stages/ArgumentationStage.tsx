@@ -4,11 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { loadIdentificationAnswers } from '../../stages/Identification/services/identificationAnswerService';
-import {
-  getArgumentationLearningObject,
-  getArgumentationLearningObjects,
-  type ArgumentationLearningObject,
-} from '../../stages/Argumentation/data/argumentationQuestions';
+import { getArgumentationLearningObject } from '../../stages/Argumentation/data/argumentationQuestions';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -59,6 +55,18 @@ function ShapeIcon({ solid, className }: { solid: string; className?: string }) 
     );
   }
 
+  if (normalized.includes('limas')) {
+    return (
+      <div className={className} aria-label={solid}>
+        <svg viewBox="0 0 120 120" className="h-full w-full">
+          <path d="M20 90 L60 20 L100 90 Z" fill="none" stroke="#1875cc" strokeWidth="6" />
+          <path d="M20 90 L60 60 L100 90" fill="none" stroke="#1875cc" strokeWidth="6" />
+          <path d="M60 20 L60 60" fill="none" stroke="#1875cc" strokeWidth="6" />
+        </svg>
+      </div>
+    );
+  }
+
   if (normalized.includes('prisma')) {
     return (
       <div className={className} aria-label={solid}>
@@ -78,10 +86,6 @@ function ShapeIcon({ solid, className }: { solid: string; className?: string }) 
       </svg>
     </div>
   );
-}
-
-function getQuestionForObject(object: ArgumentationLearningObject) {
-  return object.question || `Mengapa ${object.objectName.toLowerCase()} Candi Jawi dapat dimodelkan sebagai ${object.solid.toLowerCase()}?`;
 }
 
 function FeedbackCard({ feedback, studentAnswer }: { feedback: AiFeedback; studentAnswer: string }) {
@@ -144,7 +148,7 @@ export default function ArgumentationStage() {
     () => getArgumentationLearningObject(selectedShapes, comicModule.argumentation),
     [selectedShapes, comicModule.argumentation],
   );
-  const question = learningObject ? getQuestionForObject(learningObject) : 'Mengapa bagian candi ini dapat dimodelkan sebagai bangun ruang?';
+  const question = learningObject ? learningObject.question : 'Mengapa bagian candi ini dapat dimodelkan sebagai bangun ruang?';
   const charCount = answer.trim().length;
   const canSubmit = charCount >= 20 && !isSubmitting && !feedback;
 
@@ -194,6 +198,11 @@ export default function ArgumentationStage() {
     }
   }, [answer, canSubmit, comic.kelas, comic.lokasi, comic.title, learningObject, question]);
 
+  useEffect(() => {
+    setAnswer('');
+    setFeedback(null);
+  }, [learningObject?.id]);
+
   if (!learningObject) {
     return (
       <div className="rounded-[24px] bg-white p-5 text-sm text-neutral-600 shadow-sm">
@@ -201,8 +210,6 @@ export default function ArgumentationStage() {
       </div>
     );
   }
-
-  const feedbackCards = getArgumentationLearningObjects(comicModule.argumentation).filter((entry) => entry.id !== learningObject.id).slice(0, 4);
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in-up">
@@ -213,12 +220,12 @@ export default function ArgumentationStage() {
 
       <div className="rounded-[24px] bg-white p-4 shadow-sm">
         <p className="text-[10px] font-black uppercase tracking-[0.35em] text-secondary-600">Pertanyaan Argumentasi</p>
-        <p className="mt-2 text-base font-black leading-relaxed text-neutral-900">{question}</p>
+        <p className="mt-3 text-base font-black leading-relaxed text-neutral-900">{question}</p>
       </div>
 
-      <div className="rounded-[24px] border border-neutral-200 bg-white p-3 shadow-sm">
-        <div className="relative overflow-hidden rounded-[20px] bg-neutral-50">
-          <img src={learningObject.image} alt={learningObject.objectName} className="h-56 w-full object-cover sm:h-64" />
+      <div className="grid gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm sm:grid-cols-[240px_1fr]">
+        <div className="overflow-hidden rounded-[24px] bg-neutral-50">
+          <img src={learningObject.image} alt={learningObject.objectName} className="h-64 w-full object-cover" />
           {learningObject.overlaySrc ? (
             <img
               src={learningObject.overlaySrc}
@@ -226,18 +233,29 @@ export default function ArgumentationStage() {
               className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-90"
             />
           ) : null}
-          <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-black uppercase tracking-[0.35em] text-secondary-700 shadow-sm">
-            📍 {learningObject.objectName}
-          </div>
         </div>
-        <div className="mt-4 flex flex-col items-center gap-3 rounded-[20px] bg-white p-4">
-          <div className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-400">Dimodelkan sebagai</div>
-          <div className="flex h-36 w-36 items-center justify-center rounded-[28px] border border-neutral-200 bg-neutral-50 p-4 shadow-sm">
-            <ShapeIcon solid={learningObject.solid} className="h-full w-full" />
+        <div className="flex flex-col justify-between gap-4">
+          <div className="space-y-3">
+            <div className="rounded-[20px] border border-secondary-100 bg-secondary-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary-700">Bagian</p>
+              <p className="mt-2 text-lg font-black text-neutral-900">{learningObject.objectName}</p>
+            </div>
+            <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Bangun ruang</p>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex h-16 w-16 items-center justify-center rounded-[18px] bg-white shadow-sm">
+                  <ShapeIcon solid={learningObject.solid} className="h-11 w-11" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-neutral-900">{learningObject.solid}</p>
+                  <p className="text-sm text-neutral-500">Modelkan bagian ini sebagai bangun ruang.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-sm font-black text-neutral-900">{learningObject.objectName}</p>
-            <p className="text-lg font-black text-secondary-600">{learningObject.solid}</p>
+          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Panduan singkat</p>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-700">Gunakan jawabanmu untuk menjelaskan ciri bagian candi dan alasan mengapa itu cocok digambarkan sebagai {learningObject.solid.toLowerCase()}.</p>
           </div>
         </div>
       </div>
@@ -245,7 +263,7 @@ export default function ArgumentationStage() {
       {!feedback ? (
         <div className="rounded-[24px] bg-white p-4 shadow-sm">
           <label htmlFor="argumentation-answer" className="mb-2 block text-sm font-black text-neutral-700">
-            Tuliskan alasanmu di sini...
+            Jawabanmu
           </label>
           <textarea
             id="argumentation-answer"
@@ -255,8 +273,8 @@ export default function ArgumentationStage() {
             placeholder="Tuliskan alasanmu di sini..."
             className="w-full resize-none rounded-[20px] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-secondary-400 focus:bg-white"
           />
-          <div className="mt-2 flex items-center justify-between">
-            <span className={charCount < 20 ? 'text-sm font-semibold text-warning-600' : 'text-sm font-semibold text-accent-600'}>
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <span className={charCount < 20 ? 'font-semibold text-warning-600' : 'font-semibold text-accent-600'}>
               {charCount < 20 ? `Minimal 20 karakter (${charCount}/20)` : `${charCount} karakter ✓`}
             </span>
           </div>
@@ -272,30 +290,6 @@ export default function ArgumentationStage() {
       ) : (
         <FeedbackCard feedback={feedback} studentAnswer={answer} />
       )}
-
-      <div className="rounded-[24px] bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🖼️</span>
-          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-400">Umpan Balik Gambar</p>
-        </div>
-        <p className="mt-2 text-sm leading-relaxed text-neutral-700">
-          Bagian-bagian Candi Jawi dapat dimodelkan sebagai bangun ruang berikut.
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {[learningObject, ...feedbackCards].slice(0, 4).map((entry) => (
-            <div key={entry.id} className="overflow-hidden rounded-[20px] border border-neutral-200 bg-neutral-50">
-              <img src={entry.image} alt={entry.objectName} className="h-24 w-full object-cover" />
-              <div className="flex flex-col items-center gap-2 px-3 py-3 text-center">
-                <div className="text-[10px] font-black uppercase tracking-[0.25em] text-neutral-400">{entry.objectName}</div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-white p-2 shadow-sm">
-                  <ShapeIcon solid={entry.solid} className="h-full w-full" />
-                </div>
-                <p className="text-sm font-black text-neutral-900">{entry.solid}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {feedback && (
         <button
