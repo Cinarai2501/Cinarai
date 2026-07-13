@@ -38,7 +38,6 @@ export default function ArgumentationStage() {
   const { user } = useAuth();
   const [selectedShapes, setSelectedShapes] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<AiFeedback | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user?.uid || !comic.id) return;
@@ -68,7 +67,6 @@ export default function ArgumentationStage() {
   const handleFeedback = useCallback(
     (newFeedback: AiFeedback) => {
       setFeedback(newFeedback);
-      setIsSubmitting(false);
     },
     []
   );
@@ -103,7 +101,6 @@ export default function ArgumentationStage() {
         question={argObj}
         onSubmitFeedback={handleFeedback}
         onNext={handleNext}
-        isSubmitting={isSubmitting}
         feedback={feedback}
         comicTitle={comic.title}
         comicLocation={comic.lokasi ?? 'Lokasi'}
