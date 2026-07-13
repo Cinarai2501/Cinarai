@@ -68,6 +68,7 @@ export function ComicReadingProgressProvider({ children }: ComicReadingProgressP
   const updateProgress = useCallback((comicId: number, page: number, totalPages: number) => {
     setCurrentComicId(comicId);
     setAllProgress((prev) => {
+      const nextPage = Math.max(1, Math.min(page, totalPages));
       const current = prev[comicId] || {
         comicId,
         currentPage: 1,
@@ -75,19 +76,32 @@ export function ComicReadingProgressProvider({ children }: ComicReadingProgressP
         completed: false,
         lastPage: 1,
       };
+
+      const nextState = {
+        ...current,
+        currentPage: nextPage,
+        totalPages,
+        lastPage: current.completed ? current.lastPage : nextPage,
+      };
+
+      if (
+        current.currentPage === nextState.currentPage &&
+        current.totalPages === nextState.totalPages &&
+        current.completed === nextState.completed &&
+        current.lastPage === nextState.lastPage
+      ) {
+        return prev;
+      }
+
       return {
         ...prev,
-        [comicId]: {
-          ...current,
-          currentPage: page,
-          totalPages,
-          lastPage: current.completed ? current.lastPage : page, // Update lastPage only if not completed yet
-        },
+        [comicId]: nextState,
       };
     });
   }, []);
 
   const markCompleted = useCallback((comicId: number, totalPages: number) => {
+    setCurrentComicId(comicId);
     setAllProgress((prev) => {
       const current = prev[comicId] || {
         comicId,
@@ -96,15 +110,26 @@ export function ComicReadingProgressProvider({ children }: ComicReadingProgressP
         completed: false,
         lastPage: totalPages,
       };
+      const nextState = {
+        ...current,
+        completed: true,
+        currentPage: totalPages,
+        totalPages,
+        lastPage: totalPages,
+      };
+
+      if (
+        current.completed === nextState.completed &&
+        current.currentPage === nextState.currentPage &&
+        current.totalPages === nextState.totalPages &&
+        current.lastPage === nextState.lastPage
+      ) {
+        return prev;
+      }
+
       return {
         ...prev,
-        [comicId]: {
-          ...current,
-          completed: true,
-          currentPage: totalPages,
-          totalPages,
-          lastPage: totalPages, // Save last page when completed
-        },
+        [comicId]: nextState,
       };
     });
   }, []);

@@ -40,7 +40,7 @@ export default function PdfViewer({
   initialPage = 1,
 }: PdfViewerProps) {
   const [numPages, setNumPages] = useState(0);
-  const [page, setPage] = useState(initialPage);
+  const [page, setPage] = useState(1);
   const [workerReady, setWorkerReady] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -64,6 +64,13 @@ export default function PdfViewer({
   useEffect(() => {
     if (numPages > 0) onPageChange?.(page, numPages);
   }, [numPages, onPageChange, page]);
+
+  useEffect(() => {
+    setPage((current) => {
+      const nextPage = Math.max(1, initialPage ?? 1);
+      return current === nextPage ? current : nextPage;
+    });
+  }, [initialPage, pdfPath]);
 
   useEffect(() => {
     const updateViewport = () => {
@@ -122,7 +129,7 @@ export default function PdfViewer({
   const onDocumentLoadSuccess = useCallback(
     ({ numPages: n }: { numPages: number }) => {
       setNumPages(n);
-      setPage(initialPage ?? 1);
+      setPage(Math.min(Math.max(initialPage ?? 1, 1), n));
     },
     [initialPage]
   );

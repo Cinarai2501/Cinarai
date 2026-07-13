@@ -34,13 +34,11 @@ export default function PdfReader({
   completeButtonLabelWhenDone = "Lanjut ke Identification",
 }: PdfReaderProps) {
   const { getLastPage } = useComicReadingProgress();
-  // If comic is completed, get last page from localStorage (will be populated by ContextualizationStage)
-  // Otherwise default to page 1
+
   const getInitialPage = (): number => {
-    // Prefer reading last page from ComicReadingProgressContext (single source of truth)
-    if (!comicId || !isComicCompleted) return 1;
+    if (!comicId) return 1;
     try {
-      return getLastPage(comicId) ?? 1;
+      return getLastPage(comicId) || 1;
     } catch {
       return 1;
     }
