@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title">
-  <title>Bagian Tangga Candi - Balok</title>
-  <rect x="30" y="120" width="200" height="90" rx="14" fill="#dbeafe" stroke="#1e40af" stroke-width="10" />
-  <path d="M30 120 L230 120" fill="none" stroke="#1e40af" stroke-width="10" />
-  <path d="M30 150 L230 150" fill="none" stroke="#1e40af" stroke-width="10" />
-  <path d="M30 180 L230 180" fill="none" stroke="#1e40af" stroke-width="10" />
-  <path d="M30 210 L230 210" fill="none" stroke="#1e40af" stroke-width="10" />
-  <text x="130" y="245" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#1e3a8a">Tangga Candi</text>
-</svg>

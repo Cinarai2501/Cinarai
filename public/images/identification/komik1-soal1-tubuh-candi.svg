@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
-  <!-- Outline tubuh utama candi (BALOK) -->
-  <rect x="560" y="220" width="480" height="420" fill="none" stroke="#f97316" stroke-width="4" stroke-dasharray="12 6" rx="4"/>
-  <!-- Label -->
-  <rect x="560" y="188" width="200" height="32" rx="6" fill="#f97316"/>
-  <text x="572" y="209" font-family="sans-serif" font-size="18" font-weight="bold" fill="white">Tubuh Candi (Balok)</text>
-  <!-- Garis penunjuk sudut -->
-  <line x1="560" y1="220" x2="540" y2="200" stroke="#f97316" stroke-width="2"/>
-</svg>

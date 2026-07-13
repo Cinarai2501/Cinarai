@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title">
-  <title>Bagian Ornamen Candi - Prisma Segi Empat</title>
-  <polygon points="60,180 200,140 200,80 60,120" fill="#cffafe" stroke="#0f766e" stroke-width="10" />
-  <path d="M60 120 L60 180" fill="none" stroke="#0f766e" stroke-width="10" />
-  <path d="M200 80 L200 140" fill="none" stroke="#0f766e" stroke-width="10" />
-  <path d="M60 120 L200 80" fill="none" stroke="#0f766e" stroke-width="10" />
-  <path d="M60 180 L200 140" fill="none" stroke="#0f766e" stroke-width="10" />
-  <text x="130" y="245" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#115e59">Ornamen Candi</text>
-</svg>

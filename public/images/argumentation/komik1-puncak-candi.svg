@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title">
-  <title>Bagian Puncak Candi - Limas Segi Empat</title>
-  <polygon points="130,30 40,210 220,210" fill="#ede9fe" stroke="#5b21b6" stroke-width="10" />
-  <path d="M130 30 L130 210" fill="none" stroke="#5b21b6" stroke-width="10" />
-  <path d="M40 210 L220 210" fill="none" stroke="#5b21b6" stroke-width="10" />
-  <text x="130" y="245" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#4c1d95">Puncak Candi</text>
-</svg>

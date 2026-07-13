@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title">
-  <title>Bagian Badan Candi - Kubus</title>
-  <rect x="20" y="70" width="220" height="140" rx="16" fill="#fef3c7" stroke="#c2410c" stroke-width="10" />
-  <path d="M20 70 L130 20 L240 70" fill="none" stroke="#c2410c" stroke-width="10" />
-  <path d="M240 70 L240 210" fill="none" stroke="#c2410c" stroke-width="10" />
-  <path d="M130 20 L130 160" fill="none" stroke="#c2410c" stroke-width="10" />
-  <text x="130" y="245" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#92400e">Badan Candi</text>
-</svg>

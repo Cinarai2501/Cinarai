@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title">
-  <title>Bagian Ornamen Puncak - Kerucut</title>
-  <path d="M60,200 Q130,40 200,200 Z" fill="#fee2e2" stroke="#991b1b" stroke-width="10" />
-  <line x1="130" y1="40" x2="130" y2="200" stroke="#991b1b" stroke-width="10" />
-  <ellipse cx="130" cy="200" rx="65" ry="20" fill="#fecdd3" stroke="#991b1b" stroke-width="10" />
-  <text x="130" y="245" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#881337">Ornamen Puncak</text>
-</svg>

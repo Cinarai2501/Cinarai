@@ -5,6 +5,26 @@ import qrPrisma from '@/features/comics/comic-1/assets/qr/22-prisma.jpeg';
 import qrLimas from '@/features/comics/comic-1/assets/qr/17-limas.jpeg';
 import qrKerucut from '@/features/comics/comic-1/assets/qr/28-kerucut.jpeg';
 
+import coverImg from '@/features/comics/comic-1/assets/cover/cover.png';
+
+import identKubus from '@/features/comics/comic-1/assets/identification/Kubus.png';
+import identBalok from '@/features/comics/comic-1/assets/identification/Balok.png';
+import identPrisma from '@/features/comics/comic-1/assets/identification/Prismasegiempat.png';
+import identLimas from '@/features/comics/comic-1/assets/identification/Limassegiempat.png';
+import identKerucut from '@/features/comics/comic-1/assets/identification/Kerucut.png';
+
+import argKubus from '@/features/comics/comic-1/assets/argumentation/Kubus.png';
+import argBalok from '@/features/comics/comic-1/assets/argumentation/Balok.png';
+import argPrisma from '@/features/comics/comic-1/assets/argumentation/Prismasegiempat.png';
+import argLimas from '@/features/comics/comic-1/assets/argumentation/Limassegiempat.png';
+import argKerucut from '@/features/comics/comic-1/assets/argumentation/Kerucut.png';
+
+import navKubus from '@/features/comics/comic-1/assets/navigation/kubus.svg';
+import navBalok from '@/features/comics/comic-1/assets/navigation/balok.svg';
+import navPrismaPreview from '@/features/comics/comic-1/assets/navigation/prisma-preview.svg';
+import navKerucut from '@/features/comics/comic-1/assets/navigation/kerucut.svg';
+import navDefault from '@/features/comics/comic-1/assets/navigation/default.svg';
+
 export const packageContent: Comic1PackageContent = {
   metadata: {
     comicId: 1,
@@ -12,8 +32,8 @@ export const packageContent: Comic1PackageContent = {
     subtitle: 'Etnomatematika Bangun Ruang',
     location: 'Candi Jawi, Pasuruan',
     classLevel: 'VI',
-    cover: '/comics/komik-1/cover.png',
-    thumbnail: '/comics/komik-1/thumbnail.png',
+    cover: coverImg.src,
+    thumbnail: coverImg.src,
     learningTargets: [
       'Mengamati bentuk pada komik',
       'Menghubungkan konsep bangun ruang dengan objek nyata',
@@ -28,7 +48,7 @@ export const packageContent: Comic1PackageContent = {
       description: 'Bentuk kotak pada bagian pilar utama candi.',
       page: 1,
       qrImage: qrKubus.src,
-      objectImage: '/images/identification/komik1-soal1.jpg',
+      objectImage: identKubus.src,
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       viewerType: 'embed',
@@ -44,7 +64,7 @@ export const packageContent: Comic1PackageContent = {
       description: 'Bentuk persegi panjang yang menyusun badan candi.',
       page: 2,
       qrImage: qrBalok.src,
-      objectImage: '/images/identification/komik1-soal3.jpg',
+      objectImage: identBalok.src,
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       viewerType: 'embed',
@@ -60,7 +80,7 @@ export const packageContent: Comic1PackageContent = {
       description: 'Bentuk prisma pada sisi bangunan yang tegak.',
       page: 3,
       qrImage: qrPrisma.src,
-      objectImage: '/images/identification/komik1-soal5.jpg',
+      objectImage: identPrisma.src,
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       viewerType: 'embed',
@@ -76,7 +96,7 @@ export const packageContent: Comic1PackageContent = {
       description: 'Puncak bangunan yang meruncing ke satu titik.',
       page: 4,
       qrImage: qrLimas.src,
-      objectImage: '/images/identification/komik1-soal4.jpg',
+      objectImage: identLimas.src,
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       viewerType: 'embed',
@@ -92,7 +112,7 @@ export const packageContent: Comic1PackageContent = {
       description: 'Bagian atap yang meruncing ke atas.',
       page: 5,
       qrImage: qrKerucut.src,
-      objectImage: '/images/identification/komik1-soal4.jpg',
+      objectImage: identKerucut.src,
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       viewerType: 'embed',
@@ -130,9 +150,9 @@ export const packageContent: Comic1PackageContent = {
       {
         id: 'komik1-ident-1',
         question: 'Apa saja bangun ruang yang kamu temukan pada komik ini?',
-        image: '/images/identification/komik1-soal1.jpg',
+        image: identKubus.src,
         imageAlt: 'Foto keseluruhan Candi Jawi dengan overlay bangun ruang dominan.',
-        overlayType: '/images/identification/komik1-soal1-tubuh-candi.svg',
+        overlayType: identKubus.src,
         options: [
           { text: 'Kubus', correct: true },
           { text: 'Balok', correct: true },
@@ -145,9 +165,9 @@ export const packageContent: Comic1PackageContent = {
       {
         id: 'komik1-ident-2',
         question: 'Bangun ruang mana yang paling cocok untuk menggambarkan pilar utama?',
-        image: '/images/identification/komik1-soal2.jpg',
+        image: identBalok.src,
         imageAlt: 'Zoom bagian kaki Candi Jawi.',
-        overlayType: '/images/identification/komik1-soal2-kaki-candi.svg',
+        overlayType: identBalok.src,
         options: [
           { text: 'Kubus', correct: true },
           { text: 'Balok', correct: false },
@@ -159,9 +179,9 @@ export const packageContent: Comic1PackageContent = {
       {
         id: 'komik1-ident-3',
         question: 'Bagian badan candi paling mirip dengan bangun ruang apa?',
-        image: '/images/identification/komik1-soal3.jpg',
+        image: identPrisma.src,
         imageAlt: 'Zoom badan tengah Candi Jawi.',
-        overlayType: '/images/identification/komik1-soal3-puncak-candi.svg',
+        overlayType: identPrisma.src,
         options: [
           { text: 'Balok', correct: true },
           { text: 'Prisma Segi Empat', correct: false },
@@ -173,9 +193,9 @@ export const packageContent: Comic1PackageContent = {
       {
         id: 'komik1-ident-4',
         question: 'Struktur puncak yang meruncing bisa diterangkan dengan bangun ruang apa?',
-        image: '/images/identification/komik1-soal4.jpg',
+        image: identLimas.src,
         imageAlt: 'Zoom atap Candi Jawi.',
-        overlayType: '/images/identification/komik1-soal4-atap-candi.svg',
+        overlayType: identLimas.src,
         options: [
           { text: 'Limas Segi Empat', correct: true },
           { text: 'Kerucut', correct: true },
@@ -197,9 +217,9 @@ export const packageContent: Comic1PackageContent = {
     prompt: 'Pilih bangun ruang yang paling cocok untuk menjelaskan objek yang kamu lihat dan jelaskan alasanmu.',
     context: 'Objek baru yang menyimpan bentuk serupa dengan bangun ruang yang dipelajari di candi.',
     images: [
-      { src: '/images/identification/komik1-soal1.jpg', alt: 'Tampak depan', label: 'Tampak Depan', description: 'Perhatikan bentuk utama dari depan.' },
-      { src: '/images/identification/komik1-soal3.jpg', alt: 'Sudut puncak', label: 'Sudut Puncak', description: 'Perhatikan bentuk puncak yang meruncing.' },
-      { src: '/images/identification/komik1-soal5.jpg', alt: 'Sudut samping', label: 'Sudut Samping', description: 'Perhatikan sisi samping dan bentuk bidangnya.' },
+      { src: identKubus.src, alt: 'Tampak depan', label: 'Tampak Depan', description: 'Perhatikan bentuk utama dari depan.' },
+      { src: identPrisma.src, alt: 'Sudut puncak', label: 'Sudut Puncak', description: 'Perhatikan bentuk puncak yang meruncing.' },
+      { src: identPrisma.src, alt: 'Sudut samping', label: 'Sudut Samping', description: 'Perhatikan sisi samping dan bentuk bidangnya.' },
     ],
     options: [
       { value: 'Kubus', label: 'Kubus' },
@@ -216,10 +236,10 @@ export const packageContent: Comic1PackageContent = {
         title: 'Bagian Badan Candi',
         templePart: 'Badan Candi',
         question: 'Mengapa bagian badan Candi Jawi dapat dimodelkan sebagai kubus?',
-        photoSrc: '/images/argumentation/komik1-badan-candi.svg',
-        image: '/src/features/comics/comic-1/assets/argumentation/Kubus.png',
-        argumentationPhoto: '/images/identification/komik1-soal1.jpg',
-        argumentationHighlight: '/images/argumentation/komik1-badan-candi.svg',
+        photoSrc: argKubus.src,
+        image: argKubus.src,
+        argumentationPhoto: identKubus.src,
+        argumentationHighlight: argKubus.src,
         argumentationPrompt: 'Jelaskan mengapa badan candi bisa dimodelkan sebagai kubus, sebutkan ciri sisi dan rusuknya, serta hubungkan dengan foto yang diberikan.',
         argumentationQuestion: 'Mengapa bagian badan Candi Jawi dapat dimodelkan sebagai kubus?',
         argumentationTitle: 'Bagian Badan Candi',
@@ -227,8 +247,8 @@ export const packageContent: Comic1PackageContent = {
         shape: 'Kubus',
         shapeName: 'Kubus',
         shapeKey: 'kubus',
-        shapeSrc: '/images/navigation/kubus.svg',
-        icon: '/images/navigation/kubus.svg',
+        shapeSrc: navKubus.src,
+        icon: navKubus.src,
         aiContext: 'Jelaskan mengapa badan candi bisa dimodelkan sebagai kubus, dan sebutkan ciri sisi serta rusuknya.',
         feedback: 'Bagus! Badan candi terlihat seperti bangun ruang kotak dengan sisi-sisi sejajar dan rusuk yang tegas, sehingga cocok dimodelkan sebagai kubus.',
         highlightColor: 'border-primary-500',
@@ -238,10 +258,10 @@ export const packageContent: Comic1PackageContent = {
         title: 'Bagian Tangga Candi',
         templePart: 'Tangga Candi',
         question: 'Mengapa bagian tangga Candi Jawi dapat dimodelkan sebagai balok?',
-        photoSrc: '/images/argumentation/komik1-tangga-candi.svg',
-        image: '/src/features/comics/comic-1/assets/argumentation/Balok.png',
-        argumentationPhoto: '/images/identification/komik1-soal5.jpg',
-        argumentationHighlight: '/images/argumentation/komik1-tangga-candi.svg',
+        photoSrc: argBalok.src,
+        image: argBalok.src,
+        argumentationPhoto: identPrisma.src,
+        argumentationHighlight: argBalok.src,
         argumentationPrompt: 'Jelaskan mengapa tangga candi dapat dilihat sebagai balok, bandingkan panjang, lebar, dan tinggi dengan foto.',
         argumentationQuestion: 'Mengapa bagian tangga Candi Jawi dapat dimodelkan sebagai balok?',
         argumentationTitle: 'Bagian Tangga Candi',
@@ -249,8 +269,8 @@ export const packageContent: Comic1PackageContent = {
         shape: 'Balok',
         shapeName: 'Balok',
         shapeKey: 'balok',
-        shapeSrc: '/images/navigation/balok.svg',
-        icon: '/images/navigation/balok.svg',
+        shapeSrc: navBalok.src,
+        icon: navBalok.src,
         aiContext: 'Jelaskan mengapa tangga candi dapat dilihat sebagai balok dan sebutkan panjang, lebar, dan tinggi yang membedakannya dari kubus.',
         feedback: 'Bagus! Tangga candi memiliki bentuk memanjang dengan tiga ukuran berbeda, jadi balok adalah bangun ruang yang tepat untuk menggambarkannya.',
         highlightColor: 'border-amber-500',
@@ -260,10 +280,10 @@ export const packageContent: Comic1PackageContent = {
         title: 'Bagian Ornamen Candi',
         templePart: 'Ornamen Candi',
         question: 'Mengapa bagian ornamen Candi Jawi dapat dimodelkan sebagai prisma segi empat?',
-        photoSrc: '/images/argumentation/komik1-ornamen-candi.svg',
-        image: '/src/features/comics/comic-1/assets/argumentation/Prismasegiempat.png',
-        argumentationPhoto: '/images/identification/komik1-soal3.jpg',
-        argumentationHighlight: '/images/argumentation/komik1-ornamen-candi.svg',
+        photoSrc: argPrisma.src,
+        image: argPrisma.src,
+        argumentationPhoto: identPrisma.src,
+        argumentationHighlight: argPrisma.src,
         argumentationPrompt: 'Jelaskan mengapa ornamen candi cocok dimodelkan sebagai prisma segi empat dan hubungkan dengan foto.',
         argumentationQuestion: 'Mengapa bagian ornamen Candi Jawi dapat dimodelkan sebagai prisma segi empat?',
         argumentationTitle: 'Bagian Ornamen Candi',
@@ -271,8 +291,8 @@ export const packageContent: Comic1PackageContent = {
         shape: 'Prisma Segi Empat',
         shapeName: 'Prisma Segi Empat',
         shapeKey: 'prisma',
-        shapeSrc: '/images/navigation/prisma.svg',
-        icon: '/images/navigation/prisma.svg',
+        shapeSrc: navPrismaPreview.src,
+        icon: navPrismaPreview.src,
         aiContext: 'Jelaskan mengapa ornamen candi cocok dimodelkan sebagai prisma segi empat, dan tunjukkan hubungan antara alas dan sisi tegaknya.',
         feedback: 'Bagus! Ornamen candi memiliki alas dan sisi tegak yang sejajar sehingga cocok sebagai prisma segi empat.',
         highlightColor: 'border-cyan-500',
@@ -282,10 +302,10 @@ export const packageContent: Comic1PackageContent = {
         title: 'Bagian Puncak Candi',
         templePart: 'Puncak Candi',
         question: 'Mengapa bagian puncak Candi Jawi dapat dimodelkan sebagai limas segi empat?',
-        photoSrc: '/images/argumentation/komik1-puncak-candi.svg',
-        image: '/src/features/comics/comic-1/assets/argumentation/Limassegiempat.png',
-        argumentationPhoto: '/images/identification/komik1-soal4.jpg',
-        argumentationHighlight: '/images/argumentation/komik1-puncak-candi.svg',
+        photoSrc: argLimas.src,
+        image: argLimas.src,
+        argumentationPhoto: identLimas.src,
+        argumentationHighlight: argLimas.src,
         argumentationPrompt: 'Jelaskan mengapa puncak candi dapat dimodelkan sebagai limas segi empat, sebutkan alas dan sisi-sisi segitiga.',
         argumentationQuestion: 'Mengapa bagian puncak Candi Jawi dapat dimodelkan sebagai limas segi empat?',
         argumentationTitle: 'Bagian Puncak Candi',
@@ -293,8 +313,8 @@ export const packageContent: Comic1PackageContent = {
         shape: 'Limas Segi Empat',
         shapeName: 'Limas Segi Empat',
         shapeKey: 'limas',
-        shapeSrc: '/images/navigation/limas.svg',
-        icon: '/images/navigation/limas.svg',
+        shapeSrc: navDefault.src,
+        icon: navDefault.src,
         aiContext: 'Jelaskan mengapa puncak candi dapat dilihat sebagai limas segi empat, dan sebutkan alas serta sisi-sisi segitiga yang membentuknya.',
         feedback: 'Bagus! Puncak candi memiliki alas segi empat dan sisi-sisi yang bertemu di satu titik puncak, sehingga sesuai dengan limas segi empat.',
         highlightColor: 'border-secondary-500',
@@ -304,10 +324,10 @@ export const packageContent: Comic1PackageContent = {
         title: 'Bagian Ornamen Puncak',
         templePart: 'Ornamen Puncak',
         question: 'Mengapa ornamen puncak Candi Jawi dapat dimodelkan sebagai kerucut?',
-        photoSrc: '/images/argumentation/komik1-ornamen-puncak.svg',
-        image: '/src/features/comics/comic-1/assets/argumentation/Kerucut.png',
-        argumentationPhoto: '/images/identification/komik1-soal4.jpg',
-        argumentationHighlight: '/images/argumentation/komik1-ornamen-puncak.svg',
+        photoSrc: argKerucut.src,
+        image: argKerucut.src,
+        argumentationPhoto: identLimas.src,
+        argumentationHighlight: argKerucut.src,
         argumentationPrompt: 'Jelaskan mengapa ornamen puncak cocok dimodelkan sebagai kerucut dan sebutkan ciri alas bundar serta puncaknya.',
         argumentationQuestion: 'Mengapa ornamen puncak Candi Jawi dapat dimodelkan sebagai kerucut?',
         argumentationTitle: 'Bagian Ornamen Puncak',
@@ -315,8 +335,8 @@ export const packageContent: Comic1PackageContent = {
         shape: 'Kerucut',
         shapeName: 'Kerucut',
         shapeKey: 'kerucut',
-        shapeSrc: '/images/navigation/kerucut.svg',
-        icon: '/images/navigation/kerucut.svg',
+        shapeSrc: navKerucut.src,
+        icon: navKerucut.src,
         aiContext: 'Jelaskan mengapa ornamen puncak cocok dimodelkan sebagai kerucut dan sebutkan ciri alas bundar serta puncaknya.',
         feedback: 'Bagus! Ornamen puncak candi meruncing dan memiliki bentuk yang paling mirip dengan kerucut.',
         highlightColor: 'border-secondary-500',
@@ -344,7 +364,7 @@ export const packageContent: Comic1PackageContent = {
         aiHint: 'Gunakan rumus volume kubus: V = s³.',
         context: 'Pilar utama candi dapat dipandang sebagai susunan kubus yang padat.',
         accent: 'from-primary-600 to-primary-700',
-        illustration: '/images/navigation/kubus.svg',
+        illustration: navKubus.src,
       },
       {
         id: 2,
@@ -365,7 +385,7 @@ export const packageContent: Comic1PackageContent = {
         aiHint: 'Kalikan panjang, lebar, dan tinggi dengan hati-hati.',
         context: 'Badan candi menyerupai balok yang memanjang ke atas.',
         accent: 'from-secondary-500 to-secondary-600',
-        illustration: '/images/navigation/balok.svg',
+        illustration: navBalok.src,
       },
     ],
   },
