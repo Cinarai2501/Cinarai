@@ -1,11 +1,12 @@
 'use client';
 
-import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, type Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, type Unsubscribe, collection, type QuerySnapshot, type DocumentData } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import { getAllComics } from '@/lib/comicRepository';
 import { deleteFirestoreDocument, queryFirestoreCollection } from '@/services/firestore';
 import { clearStoredComicReadingProgressEntry, dispatchComicReadingProgressReset } from '@/lib/comicReadingProgressStorage';
-import type { ComicProgressState } from '@/types/progress';
+import type { ComicProgressState, SintaksProgress } from '@/types/progress';
+import type { FirestoreTimestamp } from '@/types/firestore';
 import { SINTAKS } from '@/types/progress';
 
 // New minimal Firestore shape (Progress Engine V2)
@@ -15,8 +16,8 @@ interface ComicProgressV2 {
   completedStages: string[];
   readerPage?: number;
   readerCompleted?: boolean;
-  lastOpened?: any;
-  updatedAt?: any;
+  lastOpened?: unknown;
+  updatedAt?: FirestoreTimestamp | unknown;
 }
 
 function log(...args: unknown[]) {
@@ -35,20 +36,20 @@ function progressDocRef(userId: string, comicId: number) {
 
 function buildCompatState(comicId: number, doc: ComicProgressV2 | null): ComicProgressState {
   // Build a compatible `ComicProgressState` used by existing UI code
-  const completedSet = new Set((doc?.completedStages ?? []) as string[]);
+  const completedSet = new Set<string>(doc?.completedStages ?? []);
   const current = doc?.currentStage ?? SINTAKS[0];
 
-  const sintaksList = SINTAKS.map((s) => {
-    if (completedSet.has(s)) return { sintaks: s, status: 'COMPLETED' } as const;
-    if (s === current) return { sintaks: s, status: 'CURRENT' } as const;
-    return { sintaks: s, status: 'LOCKED' } as const;
+  const sintaksList: SintaksProgress[] = SINTAKS.map((s) => {
+    if (completedSet.has(s)) return { sintaks: s, status: 'COMPLETED' } as SintaksProgress;
+    if (s === current) return { sintaks: s, status: 'CURRENT' } as SintaksProgress;
+    return { sintaks: s, status: 'LOCKED' } as SintaksProgress;
   });
 
   const completedCount = sintaksList.filter((s) => s.status === 'COMPLETED').length;
   const percentage = Math.round((completedCount / SINTAKS.length) * 1000) / 10;
   return {
     comicId,
-    sintaksList: sintaksList as any,
+    sintaksList,
     completedCount,
     percentage,
     isCompleted: completedCount === SINTAKS.length,
@@ -63,9 +64,8 @@ async function clearIdentificationAnswers(userId: string, comicId: number): Prom
       { field: 'comicId', operator: '==', value: comicId },
     ],
   });
-
   await Promise.all(
-    answers.map((a) => deleteFirestoreDocument('identification_answers', a.id ?? `${userId}_${comicId}_${(a as any).step}`))
+    answers.map((a) => deleteFirestoreDocument('identification_answers', a.id ?? `${userId}_${comicId}_${(a as unknown as { step?: number }).step ?? 0}`))
   );
 }
 
@@ -76,19 +76,19 @@ async function clearApplicationActivities(userId: string, comicId: number): Prom
       { field: 'comicId', operator: '==', value: comicId },
     ],
   });
-
   await Promise.all(
-    activities.map((a) => deleteFirestoreDocument('application_activity', a.id ?? `${userId}_${comicId}_${(a as any).attempt}`))
+    activities.map((a) => deleteFirestoreDocument('application_activity', a.id ?? `${userId}_${comicId}_${(a as unknown as { attempt?: number }).attempt ?? 0}`))
   );
 }
 
 async function clearReflectionDocuments(userId: string, comicId: number): Promise<void> {
   const reflections = await queryFirestoreCollection('reflection', { filters: [{ field: 'userId', operator: '==', value: userId }] });
   const matching = reflections.filter((r) => {
-    const rid = (r as any).id;
-    return rid?.startsWith(`${userId}_${comicId}_`) || String((r as any).comicId) === String(comicId);
+    const rid = (r as unknown as { id?: string }).id;
+    const reflectionComicId = (r as unknown as { comicId?: unknown }).comicId;
+    return rid?.startsWith(`${userId}_${comicId}_`) || String(reflectionComicId) === String(comicId);
   });
-  await Promise.all(matching.map((r) => deleteFirestoreDocument('reflection', (r as any).id ?? `${userId}_${comicId}_reflection`)));
+  await Promise.all(matching.map((r) => deleteFirestoreDocument('reflection', (r as unknown as { id?: string }).id ?? `${userId}_${comicId}_reflection`)));
 }
 
 export async function initializeUserProgress(userId: string): Promise<void> {
@@ -134,7 +134,7 @@ export function extractFirebaseErrorCode(error: unknown): string {
 export async function saveComicProgress(
   userId: string,
   comicId: number,
-  stateOrPayload: ComicProgressState | Partial<ComicProgressV2>,
+  stateOrPayload: unknown,
   extraData?: Record<string, unknown>
 ): Promise<void> {
   if (!userId) throw new Error('unauthenticated');
@@ -143,7 +143,7 @@ export async function saveComicProgress(
   // Backwards-compatible: if a full ComicProgressState is supplied, convert
   // it to the V2 payload shape. Otherwise assume it's already a V2 partial.
   let payload: Partial<ComicProgressV2>;
-  if ((stateOrPayload as ComicProgressState).sintaksList !== undefined) {
+  if (typeof stateOrPayload === 'object' && stateOrPayload !== null && 'sintaksList' in (stateOrPayload as object)) {
     const st = stateOrPayload as ComicProgressState;
     const completedStages = st.sintaksList.filter((s) => s.status === 'COMPLETED').map((s) => s.sintaks);
     const current = st.sintaksList.find((s) => s.status === 'CURRENT')?.sintaks ?? SINTAKS[0];
@@ -155,18 +155,17 @@ export async function saveComicProgress(
       ...(extraData ?? {}),
     } as Partial<ComicProgressV2>;
   } else {
-    payload = stateOrPayload as Partial<ComicProgressV2>;
-    (payload as any).updatedAt = serverTimestamp();
+    payload = (stateOrPayload as Partial<ComicProgressV2>) ?? {};
+    payload.updatedAt = serverTimestamp();
   }
-
-  const docPayload = {
+  const docPayload: Partial<ComicProgressV2> = {
     ...payload,
     comicId,
     updatedAt: serverTimestamp(),
-  } as any;
+  };
   log('saveComicProgress', userId, comicId, docPayload);
   try {
-    await setDoc(ref, docPayload, { merge: true } as any);
+    await setDoc(ref, docPayload, { merge: true });
   } catch (error) {
     const code = extractFirebaseErrorCode(error);
     throw new Error(code);
@@ -201,21 +200,17 @@ export function subscribeToComicProgress(userId: string, comicId: number, cb: (s
 export function subscribeToAllComicProgress(userId: string, cb: (states: ComicProgressState[]) => void, onError?: (e: Error) => void): Unsubscribe {
   // Subscribe to the entire progress collection under user
   return onSnapshot(
-    // use onSnapshot on collection reference
-    // build a query reference manually
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - use client SDK collection ref
-    (doc as any)(firestore, 'users', userId, 'progress'),
-    (snap: any) => {
+    collection(firestore, 'users', userId, 'progress'),
+    (snap: QuerySnapshot<DocumentData>) => {
       const docs = snap.docs ?? [];
       const states = docs
-        .map((d: any) => {
-          const data = { id: d.id, ...d.data() } as ComicProgressV2;
+        .map((d) => {
+          const data = d.data() as ComicProgressV2;
           const cid = data.comicId ?? Number(d.id.replace('comic-', ''));
-          if (!cid) return null;
+          if (!cid || Number.isNaN(cid)) return null;
           return buildCompatState(cid, data);
         })
-        .filter((s: any) => s !== null) as ComicProgressState[];
+        .filter((s): s is ComicProgressState => s !== null);
       cb(states);
     },
     onError
@@ -223,8 +218,9 @@ export function subscribeToAllComicProgress(userId: string, cb: (states: ComicPr
 }
 
 if (typeof window !== 'undefined') {
-  (window as any).__cinaraiDebug = {
-    ...(window as any).__cinaraiDebug,
+  const w = window as Window & { __cinaraiDebug?: unknown };
+  w.__cinaraiDebug = {
+    ...(w.__cinaraiDebug as object | undefined),
     resetComicProgress,
     saveComicProgress,
   };
