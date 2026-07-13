@@ -14,6 +14,10 @@ import { firestore } from '@/lib/firebase/client';
 import { getAllComics } from '@/lib/comicRepository';
 import { createInitialProgressState, restoreProgressState } from '@/lib/progressEngine';
 import { deleteFirestoreDocument, queryFirestoreCollection } from '@/services/firestore';
+import {
+  clearStoredComicReadingProgressEntry,
+  dispatchComicReadingProgressReset,
+} from '@/lib/comicReadingProgressStorage';
 import type { ComicProgressDocument } from '@/types/firestore';
 import type { ComicProgressState } from '@/types/progress';
 
@@ -193,6 +197,9 @@ export async function resetComicProgress(userId: string, comicId: number): Promi
       clearApplicationActivities(userId, comicId),
       clearReflectionDocuments(userId, comicId),
     ]);
+
+    clearStoredComicReadingProgressEntry(comicId);
+    dispatchComicReadingProgressReset(comicId);
     return initialState;
   } catch (error) {
     const code = extractFirebaseErrorCode(error);
