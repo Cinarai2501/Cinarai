@@ -1,4 +1,9 @@
 import type { Comic1PackageContent } from './types';
+import qrKubus from '@/features/comics/comic-1/assets/qr/13-kubus.jpeg';
+import qrBalok from '@/features/comics/comic-1/assets/qr/16-balok.jpeg';
+import qrPrisma from '@/features/comics/comic-1/assets/qr/22-prisma.jpeg';
+import qrLimas from '@/features/comics/comic-1/assets/qr/17-limas.jpeg';
+import qrKerucut from '@/features/comics/comic-1/assets/qr/28-kerucut.jpeg';
 
 export const packageContent: Comic1PackageContent = {
   metadata: {
@@ -22,7 +27,7 @@ export const packageContent: Comic1PackageContent = {
       title: 'Kubus',
       description: 'Bentuk kotak pada bagian pilar utama candi.',
       page: 1,
-      qrImage: '/assets/qr/komik-1/13-kubus.jpeg',
+      qrImage: qrKubus.src,
       objectImage: '/images/identification/komik1-soal1.jpg',
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
@@ -38,7 +43,7 @@ export const packageContent: Comic1PackageContent = {
       title: 'Balok',
       description: 'Bentuk persegi panjang yang menyusun badan candi.',
       page: 2,
-      qrImage: '/assets/qr/komik-1/16-balok.jpeg',
+      qrImage: qrBalok.src,
       objectImage: '/images/identification/komik1-soal3.jpg',
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
@@ -54,7 +59,7 @@ export const packageContent: Comic1PackageContent = {
       title: 'Prisma Segi Empat',
       description: 'Bentuk prisma pada sisi bangunan yang tegak.',
       page: 3,
-      qrImage: '/assets/qr/komik-1/22-prisma.jpeg',
+      qrImage: qrPrisma.src,
       objectImage: '/images/identification/komik1-soal5.jpg',
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
@@ -70,7 +75,7 @@ export const packageContent: Comic1PackageContent = {
       title: 'Limas Segi Empat',
       description: 'Puncak bangunan yang meruncing ke satu titik.',
       page: 4,
-      qrImage: '/assets/qr/komik-1/17-limas.jpeg',
+      qrImage: qrLimas.src,
       objectImage: '/images/identification/komik1-soal4.jpg',
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
@@ -86,7 +91,7 @@ export const packageContent: Comic1PackageContent = {
       title: 'Kerucut',
       description: 'Bagian atap yang meruncing ke atas.',
       page: 5,
-      qrImage: '/assets/qr/komik-1/28-kerucut.jpeg',
+      qrImage: qrKerucut.src,
       objectImage: '/images/identification/komik1-soal4.jpg',
       modelUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
       embedUrl: 'https://modelviewer.dev/examples/scenegraph/index.html',
@@ -99,11 +104,11 @@ export const packageContent: Comic1PackageContent = {
     },
   ],
   qrCode: [
-    { id: 'komik1-qr-1', imageSrc: '/assets/qr/komik-1/13-kubus.jpeg', alt: 'QR Kubus', label: 'Kubus', description: 'Scan untuk membuka model 3D kubus.' },
-    { id: 'komik1-qr-2', imageSrc: '/assets/qr/komik-1/16-balok.jpeg', alt: 'QR Balok', label: 'Balok', description: 'Scan untuk membuka model 3D balok.' },
-    { id: 'komik1-qr-3', imageSrc: '/assets/qr/komik-1/22-prisma.jpeg', alt: 'QR Prisma', label: 'Prisma', description: 'Scan untuk membuka model 3D prisma.' },
-    { id: 'komik1-qr-4', imageSrc: '/assets/qr/komik-1/17-limas.jpeg', alt: 'QR Limas', label: 'Limas', description: 'Scan untuk membuka model 3D limas.' },
-    { id: 'komik1-qr-5', imageSrc: '/assets/qr/komik-1/28-kerucut.jpeg', alt: 'QR Kerucut', label: 'Kerucut', description: 'Scan untuk membuka model 3D kerucut.' },
+    { id: 'komik1-qr-1', imageSrc: qrKubus.src, alt: 'QR Kubus', label: 'Kubus', description: 'Scan untuk membuka model 3D kubus.' },
+    { id: 'komik1-qr-2', imageSrc: qrBalok.src, alt: 'QR Balok', label: 'Balok', description: 'Scan untuk membuka model 3D balok.' },
+    { id: 'komik1-qr-3', imageSrc: qrPrisma.src, alt: 'QR Prisma', label: 'Prisma', description: 'Scan untuk membuka model 3D prisma.' },
+    { id: 'komik1-qr-4', imageSrc: qrLimas.src, alt: 'QR Limas', label: 'Limas', description: 'Scan untuk membuka model 3D limas.' },
+    { id: 'komik1-qr-5', imageSrc: qrKerucut.src, alt: 'QR Kerucut', label: 'Kerucut', description: 'Scan untuk membuka model 3D kerucut.' },
   ],
   model3D: [
     { id: 'komik1-model-1', title: 'Kubus', arUrl: 'https://modelviewer.dev/examples/scenegraph/index.html', page: 1, description: 'Model 3D kubus untuk pengamatan sisi dan rusuk.' },
