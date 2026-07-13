@@ -32,6 +32,26 @@ function createFakeStorage(initial: Record<string, string> = {}) {
   };
 }
 
+test('saves and reads progress for each comic under its own storage key', () => {
+  const storage = createFakeStorage();
+  (globalThis as typeof globalThis & { window: typeof window }).window = {
+    localStorage: storage,
+  } as unknown as Window & typeof globalThis;
+
+  saveStoredComicReadingProgress({
+    1: { comicId: 1, currentPage: 37, totalPages: 37, completed: true, lastPage: 37 },
+    2: { comicId: 2, currentPage: 4, totalPages: 10, completed: false, lastPage: 4 },
+  });
+
+  assert.equal(storage.getItem('comic-reader-comic-1'), JSON.stringify({ comicId: 1, currentPage: 37, totalPages: 37, completed: true, lastPage: 37 }));
+  assert.equal(storage.getItem('comic-reader-comic-2'), JSON.stringify({ comicId: 2, currentPage: 4, totalPages: 10, completed: false, lastPage: 4 }));
+  assert.equal(storage.getItem(COMIC_READING_PROGRESS_STORAGE_KEY), null);
+  assert.deepEqual(getStoredComicReadingProgress(), {
+    1: { comicId: 1, currentPage: 37, totalPages: 37, completed: true, lastPage: 37 },
+    2: { comicId: 2, currentPage: 4, totalPages: 10, completed: false, lastPage: 4 },
+  });
+});
+
 test('clearStoredComicReadingProgressEntry removes only the requested comic progress entry', () => {
   const storage = createFakeStorage();
   (globalThis as typeof globalThis & { window: typeof window }).window = {
@@ -49,7 +69,8 @@ test('clearStoredComicReadingProgressEntry removes only the requested comic prog
   assert.deepEqual(stored, {
     2: { comicId: 2, currentPage: 4, totalPages: 10, completed: false, lastPage: 4 },
   });
-  assert.equal(storage.getItem(COMIC_READING_PROGRESS_STORAGE_KEY), JSON.stringify(stored));
+  assert.equal(storage.getItem('comic-reader-comic-2'), JSON.stringify({ comicId: 2, currentPage: 4, totalPages: 10, completed: false, lastPage: 4 }));
+  assert.equal(storage.getItem('comic-reader-comic-1'), null);
 });
 
 test('clearAllStoredComicReadingProgress removes the entire storage entry', () => {

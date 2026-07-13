@@ -146,9 +146,23 @@ export async function initializeUserProgress(userId: string): Promise<void> {
 
 // ─── Update ───────────────────────────────────────────────────────────────────
 
+/** Read a single comic progress document by comicId. */
+export async function getComicProgress(userId: string, comicId: number): Promise<ComicProgressState> {
+  if (!userId) {
+    throw new Error('unauthenticated');
+  }
+
+  const ref = progressDocRef(userId, comicId);
+  const snap = await getDoc(ref);
+  return snap.exists()
+    ? fromDocument(comicId, { id: snap.id, ...snap.data() } as ComicProgressDocument)
+    : createInitialProgressState(comicId);
+}
+
 /** Persist updated progress state to Firestore. Creates the document if it does not exist (merge: true). */
 export async function saveComicProgress(
   userId: string,
+  comicId: number,
   state: ComicProgressState,
   extraData?: Record<string, unknown>
 ): Promise<void> {
@@ -157,7 +171,7 @@ export async function saveComicProgress(
     throw new Error('unauthenticated');
   }
 
-  const ref = progressDocRef(userId, state.comicId);
+  const ref = progressDocRef(userId, comicId);
   const payload = {
     ...toDocument(state),
     ...(state.isCompleted ? { completedAt: serverTimestamp() } : {}),
@@ -175,6 +189,24 @@ export async function saveComicProgress(
 }
 
 /** Reset a comic's learning progress back to the initial state and clear saved answers. */
+export async function resumeComicProgress(
+  userId: string,
+  comicId: number,
+  state: ComicProgressState,
+  extraData?: Record<string, unknown>
+): Promise<void> {
+  return saveComicProgress(userId, comicId, state, extraData);
+}
+
+export async function completeComicProgress(
+  userId: string,
+  comicId: number,
+  state: ComicProgressState,
+  extraData?: Record<string, unknown>
+): Promise<void> {
+  return saveComicProgress(userId, comicId, state, extraData);
+}
+
 export async function resetComicProgress(userId: string, comicId: number): Promise<ComicProgressState> {
   if (!userId) {
     throw new Error('unauthenticated');

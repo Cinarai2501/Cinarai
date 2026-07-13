@@ -29,7 +29,7 @@ export async function completeStage(
     throw err;
   }
   const next = completeSintaks(current, stage);
-  await saveComicProgress(userId, next, extraData);
+  await saveComicProgress(userId, current.comicId, next, extraData);
   return next;
 }
 
