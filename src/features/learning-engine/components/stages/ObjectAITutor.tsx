@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import RobotMascot from '@/components/ai/RobotMascot';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { getShapeKnowledgeEntry, buildShapeKnowledgeContext } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
@@ -160,7 +160,7 @@ export function ObjectAITutor({
     <div className="mt-4 rounded-[24px] border border-primary-100 bg-primary-50/70 p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
-          <Image src="/images/ai/robot.svg" alt="AI Tutor" width={32} height={32} className="h-8 w-8" />
+          <RobotMascot variant="desktop" />
         </div>
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-700">AI Tutor</p>
@@ -171,9 +171,18 @@ export function ObjectAITutor({
       <div className="mt-4 space-y-3">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[92%] rounded-[18px] px-4 py-3 text-sm leading-relaxed shadow-sm ${message.role === 'user' ? 'bg-primary-600 text-white' : 'bg-white text-neutral-800'}`}>
-              {message.content}
-            </div>
+            {message.role === 'assistant' ? (
+              <div className="flex items-start gap-3">
+                <RobotMascot variant="inline" className="mt-1" />
+                <div className={`max-w-[92%] rounded-[18px] px-4 py-3 text-sm leading-relaxed shadow-sm bg-white text-neutral-800`}>
+                  {message.content}
+                </div>
+              </div>
+            ) : (
+              <div className={`max-w-[92%] rounded-[18px] px-4 py-3 text-sm leading-relaxed shadow-sm bg-primary-600 text-white`}>
+                {message.content}
+              </div>
+            )}
           </div>
         ))}
 

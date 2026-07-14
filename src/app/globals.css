@@ -108,10 +108,39 @@ a, button {
 /* ── AI Robot animations ───────────────────────────────────────────────── */
 @keyframes aiFloat {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
+  50%       { transform: translateY(-6px); }
 }
 .animate-ai-float {
-  animation: aiFloat 3s ease-in-out infinite;
+  animation: aiFloat 2.8s ease-in-out infinite;
+}
+
+/* New utility classes following spec */
+.ai-float {
+  animation: aiFloat 2.8s ease-in-out infinite;
+}
+
+@keyframes aiThinking {
+  0% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-2px) rotate(-1deg); }
+  50% { transform: translateY(0) rotate(0); }
+  75% { transform: translateY(-2px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+.ai-thinking {
+  animation: aiThinking 1s ease-in-out infinite;
+}
+
+@keyframes aiTypingGlow {
+  0% { box-shadow: 0 0 0 rgba(59,130,246,0); }
+  50% { box-shadow: 0 6px 18px rgba(59,130,246,0.12); }
+  100% { box-shadow: 0 0 0 rgba(59,130,246,0); }
+}
+.ai-typing-glow {
+  animation: aiTypingGlow 1.6s ease-in-out infinite;
+}
+
+.ai-hover-scale {
+  transition: transform 200ms ease-in-out;
 }
 
 @keyframes aiBlink {

@@ -18,6 +18,7 @@ import {
   type RecentActivitySummary,
   type StageProgressSummary,
 } from '@/app/teacher/dashboardData';
+import RobotMascot from '@/components/ai/RobotMascot';
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -189,7 +190,7 @@ function TeacherDashboardContent() {
             href="/teacher"
             className="flex flex-col items-center gap-2 rounded-2xl bg-white px-3 py-4 shadow-sm border border-neutral-100 hover:border-primary-200 hover:bg-primary-50 transition-colors text-center"
           >
-            <span className="text-2xl">🤖</span>
+            <RobotMascot variant="inline" />
             <span className="text-xs font-black text-neutral-700">Analisis AI</span>
           </Link>
         </div>
@@ -293,7 +294,7 @@ function TeacherDashboardContent() {
         {!loading && aiInsight && (
           <div className="rounded-3xl bg-gradient-to-br from-primary-500 to-primary-700 px-5 py-5 shadow-md">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">🤖</span>
+              <RobotMascot variant="inline" />
               <p className="text-[11px] font-bold uppercase tracking-widest text-primary-200">Insight AI Kelas</p>
             </div>
             <p className="text-sm font-semibold text-white leading-relaxed">{aiInsight}</p>
@@ -301,7 +302,7 @@ function TeacherDashboardContent() {
               href="/teacher"
               className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-white/20 px-3 py-2 text-xs font-black text-white hover:bg-white/30 transition-colors"
             >
-              🤖 Analisis Lebih Lanjut →
+              <RobotMascot variant="inline" /> Analisis Lebih Lanjut →
             </Link>
           </div>
         )}

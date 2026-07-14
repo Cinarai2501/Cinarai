@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
 import { useEffect, useMemo, useState } from 'react';
+import RobotMascot from '@/components/ai/RobotMascot';
 import { toDataURL } from 'qrcode';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -530,8 +531,13 @@ export default function Universal3DViewer({
 
       {showAiSnackbar && (
         <div className="fixed bottom-[104px] right-5 z-40 min-w-[240px] max-w-sm rounded-2xl border border-sky-100 bg-white px-4 py-3 text-left shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-opacity duration-200">
-          <p className="text-sm font-bold text-sky-700">👋 Halo!</p>
-          <p className="mt-1 text-sm leading-relaxed text-slate-700">Aku siap membantu menjelaskan {objectName}.</p>
+          <div className="flex items-center gap-3">
+            <RobotMascot variant="desktop" />
+            <div>
+              <p className="text-sm font-bold text-sky-700">Halo!</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-700">Aku siap membantu menjelaskan {objectName}.</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -542,12 +548,12 @@ export default function Universal3DViewer({
           className="fixed bottom-6 right-5 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_12px_25px_rgba(15,23,42,0.18)] transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-95 sm:bottom-6 sm:right-6"
           aria-label="Buka AI Tutor"
         >
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm">
-            <img src="/images/ai/robot.svg" alt="Robot AI" className="h-6 w-6" />
-            <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-yellow-300 px-1.5 text-[10px] font-black uppercase text-slate-900 shadow-sm">
-              AI
-            </span>
-          </div>
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm">
+              <RobotMascot variant="fab" />
+              <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-yellow-300 px-1.5 text-[10px] font-black uppercase text-slate-900 shadow-sm">
+                AI
+              </span>
+            </div>
         </button>
       )}
 
@@ -567,9 +573,12 @@ export default function Universal3DViewer({
           <div className="flex h-full flex-col overflow-hidden">
             <div className="border-b border-neutral-200 bg-gradient-to-r from-sky-50 via-white to-yellow-50 px-5 py-4">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-neutral-900">🤖 AI Tutor CINARAI</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-700">Aku siap menemanimu belajar tentang {objectName}.</p>
+                <div className="flex items-center gap-3">
+                  <RobotMascot variant="desktop" />
+                  <div>
+                    <p className="text-sm font-black text-neutral-900">AI Tutor CINARAI</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">Aku siap menemanimu belajar tentang {objectName}.</p>
+                  </div>
                 </div>
                 <button
                   type="button"

@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getComicById } from '@/lib/comicRepository';
 import { mergeFirestoreDocument } from '@/services/firestore';
 import { useSnackbar } from '@/context/SnackbarContext';
+import RobotMascot from '@/components/ai/RobotMascot';
 
 interface ObservasiClientProps {
   comicId: number;
@@ -291,7 +292,10 @@ export default function ObservasiClient({ comicId }: ObservasiClientProps) {
                   disabled={!isSaved}
                   className="inline-flex min-h-[52px] flex-1 items-center justify-center rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-base font-semibold text-neutral-700 shadow-sm transition-all hover:border-primary-300 hover:text-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400"
                 >
-                  🤖 Lanjut ke AI Tutor
+                  <div className="flex items-center gap-3">
+                    <RobotMascot variant="mobile" />
+                    <span>Lanjut ke AI Tutor</span>
+                  </div>
                 </button>
               </div>
             </div>

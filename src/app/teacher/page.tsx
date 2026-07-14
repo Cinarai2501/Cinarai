@@ -23,11 +23,13 @@ import {
   type ValueBucketSummary,
 } from './dashboardData';
 
+import RobotMascot from '@/components/ai/RobotMascot';
+
 const menuItems = [
   { href: '/teacher', icon: '📊', title: 'Dashboard', description: 'Ringkasan aktivitas mengajar' },
   { href: '/teacher', icon: '👥', title: 'Data Siswa', description: 'Daftar siswa dan kelas' },
   { href: '/teacher', icon: '📈', title: 'Progress', description: 'Perkembangan belajar siswa' },
-  { href: '/teacher', icon: '🤖', title: 'Insight AI', description: 'Rekomendasi pembelajaran' },
+  { href: '/teacher', icon: <RobotMascot variant="inline" />, title: 'Insight AI', description: 'Rekomendasi pembelajaran' },
   { href: '/teacher/report', icon: '📝', title: 'Laporan', description: 'Catatan dan evaluasi' },
   { href: '/teacher', icon: '⚙️', title: 'Pengaturan', description: 'Konfigurasi akun dan kelas' },
 ];

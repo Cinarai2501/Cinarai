@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState } from 'react';
+import RobotMascot from '@/components/ai/RobotMascot';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 
 interface ChatMessage {
@@ -51,7 +52,9 @@ export function FloatingAITutor({
         title="AI Tutor"
       >
         <span className="absolute inset-0 animate-pulse rounded-full bg-primary-500/20" />
-        <img src="/images/ai/robot.svg" alt="AI" className="relative h-8 w-8" />
+        <div className="relative">
+          <RobotMascot variant="fab" />
+        </div>
       </button>
 
       {isOpen && (
@@ -61,7 +64,7 @@ export function FloatingAITutor({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
-                    <img src="/images/ai/robot.svg" alt="AI" className="h-6 w-6" />
+                    <RobotMascot variant="desktop" />
                   </div>
                   <div>
                     <p className="text-base font-black text-neutral-900">{activeObjectName ?? 'AI Tutor'}</p>
@@ -87,19 +90,19 @@ export function FloatingAITutor({
                     <p className="mt-1 text-xs leading-relaxed text-neutral-600">{objectSubtitle || 'Amati bentuk, pola, dan hubungan matematikanya.'}</p>
                   </div>
                   {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-[18px] px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                          msg.role === 'user'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-neutral-100 text-neutral-800'
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
+                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      {msg.role === 'assistant' ? (
+                        <div className="flex items-start gap-3">
+                          <RobotMascot variant="inline" className="mt-1" />
+                          <div className="max-w-[80%] rounded-[18px] px-4 py-3 text-sm leading-relaxed shadow-sm bg-neutral-100 text-neutral-800">
+                            {msg.content}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="max-w-[80%] rounded-[18px] px-4 py-3 text-sm leading-relaxed shadow-sm bg-primary-600 text-white">
+                          {msg.content}
+                        </div>
+                      )}
                     </div>
                   ))}
 

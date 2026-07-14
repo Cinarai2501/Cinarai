@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import type { ResolutionMission } from './resolutionStage.helpers';
+import RobotMascot from '@/components/ai/RobotMascot';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (isCorrect) {
@@ -414,7 +415,9 @@ function MissionCard({
         {/* AI Tutor Panel */}
         <div ref={aiPanelRef} className="rounded-[20px] border border-primary-100 bg-gradient-to-b from-[#F5FBFF] to-white p-4 shadow-sm overflow-y-auto max-h-96">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-lg text-white">🤖</div>
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-lg text-white">
+              <RobotMascot variant="mobile" />
+            </div>
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary-600">AI Tutor</p>
               <p className="text-sm font-black text-neutral-800">Guru Matematika {comic.lokasi}</p>

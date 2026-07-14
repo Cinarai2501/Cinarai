@@ -13,6 +13,7 @@ import { getCurrentUser } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+import RobotMascot from '@/components/ai/RobotMascot';
 
 function getChecklistItems(checklist: readonly string[]) {
   if (checklist.length > 0) {
@@ -545,9 +546,12 @@ ${data.suggestion}`;
       {saved && aiReflection && (
         <section className="rounded-[24px] bg-white p-5 shadow-sm animate-fade-in-up">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.3em] text-primary-700">🤖 Refleksi AI</p>
-              <h2 className="mt-2 text-2xl font-black text-neutral-900">Refleksi AI</h2>
+            <div className="flex items-center gap-3">
+              <RobotMascot variant="desktop" />
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.3em] text-primary-700">Refleksi AI</p>
+                <h2 className="mt-2 text-2xl font-black text-neutral-900">Refleksi AI</h2>
+              </div>
             </div>
             <button
               type="button"
