@@ -12,7 +12,8 @@ export default function NavigationStage() {
   // Use packageContent as single source of truth for object list
   const objects = useMemo(() => packageContent.learningObjects.slice(0, 5), []);
 
-  const candiEmbed = 'https://sketchfab.com/3d-models/candi-jawi-with-precision-geometry-83da3450467747fda7872c5a9392ffac';
+  const candiEntry = packageContent.model3D.find((entry) => entry.title === 'Candi Jawi');
+  const candiEmbed = candiEntry?.arUrl ?? candiEntry?.embedUrl ?? '';
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-4 py-6">
