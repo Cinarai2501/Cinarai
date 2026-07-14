@@ -1,7 +1,0 @@
-<svg width="960" height="640" viewBox="0 0 960 640" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="960" height="640" rx="40" fill="#F8FAFC"/>
-  <rect x="220" y="170" width="520" height="300" rx="28" fill="#FFFFFF" stroke="#1E94FF" stroke-width="8"/>
-  <circle cx="340" cy="300" r="86" fill="#DDEBFF" stroke="#1E94FF" stroke-width="8"/>
-  <rect x="470" y="240" width="170" height="120" rx="16" fill="#B9D9FF" stroke="#1E94FF" stroke-width="8"/>
-  <text x="180" y="560" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#1F2937">Bangun Ruang</text>
-</svg>

@@ -136,6 +136,7 @@ export default function Universal3DViewer({
   const resolvedView = searchParams.get('view') ?? initialViewMode ?? 'default';
   const resolvedAiPrompt = initialAiPrompt ?? searchParams.get('aiPrompt') ?? '';
   const resolvedQrImage = initialQrImage ?? searchParams.get('qrImage') ?? '';
+  const resolvedNavImage = searchParams.get('navImage') ?? '';
   const isDetailExperience = resolvedView === 'object-detail' || resolvedMode === 'detail' || resolvedMode === 'object-detail';
   const showAiTutor = isDetailExperience;
 
@@ -419,6 +420,62 @@ export default function Universal3DViewer({
             <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-8 shadow-sm">
               <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
               <p className="mt-4 text-base font-semibold text-neutral-700">Menyiapkan viewer model 3D…</p>
+            </div>
+          </div>
+        ) : isDetailExperience ? (
+          <div className="flex h-full w-full flex-col items-center justify-start gap-6 px-6 py-10">
+            <div className="w-full max-w-3xl">
+              <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <h2 className="text-xl font-black text-neutral-900">{resolvedTitle}</h2>
+                <p className="mt-1 text-sm text-neutral-500">Komik {resolvedComicId} • Halaman {resolvedPage}</p>
+              </div>
+
+              {resolvedNavImage ? (
+                <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 text-center">
+                  <img src={resolvedNavImage} alt={resolvedTitle} className="mx-auto max-h-[420px] object-contain" />
+                </div>
+              ) : null}
+
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleOpenExternal}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-base font-semibold text-white"
+                >
+                  Lihat Model 3D
+                </button>
+                {showQrButton && (
+                  <button
+                    type="button"
+                    onClick={handleOpenQr}
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700"
+                  >
+                    Lihat QR
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700"
+                >
+                  Tutup Viewer
+                </button>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">AI Tutor</p>
+                <p className="mt-2 text-lg font-black text-neutral-900">{resolvedTitle}</p>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600">{objectHelp}</p>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={handleAiOpen}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700"
+                  >
+                    Buka AI Tutor
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ) : providerInfo.provider === 'assemblr' ? (

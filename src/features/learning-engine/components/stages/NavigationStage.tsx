@@ -52,6 +52,7 @@ export default function NavigationStage() {
           embedUrl: object.embedUrl,
           arUrl: object.modelUrl ?? object.embedUrl ?? '',
           qrImage: object.qrImage,
+          navImage: (object as any).navImage,
           aiPrompt: object.aiPrompt,
           knowledgeText: object.description,
         };
@@ -136,6 +137,9 @@ export default function NavigationStage() {
       if (entry.qrImage) {
         params.set('qrImage', entry.qrImage);
       }
+      if ((entry as any).navImage) {
+        params.set('navImage', (entry as any).navImage as string);
+      }
       router.push(`/viewer/3d?${params.toString()}`);
       return;
     }
@@ -148,7 +152,7 @@ export default function NavigationStage() {
     void nextStage();
   }
 
-  const featuredEntry = !isComic1Flow && primaryEntry?.viewerType === 'embed' ? primaryEntry : null;
+  const featuredEntry = primaryEntry?.viewerType === 'embed' ? primaryEntry : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden px-2 py-2 sm:px-4 sm:py-4">
@@ -159,10 +163,10 @@ export default function NavigationStage() {
       <div className="space-y-5">
         <div className="space-y-3 px-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary-600">Daftar Objek</p>
-          <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">{isComic1Flow ? 'Eksplorasi objek Candi Jawi' : 'Pilih objek untuk dipelajari'}</h1>
+          <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">{isComic1Flow ? 'NAVIGASI AR & AI' : 'Pilih objek untuk dipelajari'}</h1>
           <p className="max-w-2xl text-sm leading-relaxed text-neutral-600 sm:text-base">
             {isComic1Flow
-              ? 'Sentuh objek untuk membuka pengalaman detail, melihat model, dan menanyakan AI Tutor tentang bentuk yang kamu amati.'
+              ? 'Gunakan tampilan ini untuk menavigasi objek Candi Jawi. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.'
               : 'Sentuh kartu untuk melihat detail dan buka Model 3D atau QR. Semakin banyak objek kamu eksplorasi, semakin cepat bisa lanjut.'}
           </p>
         </div>

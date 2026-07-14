@@ -16,6 +16,7 @@ export interface ComicContentPackageLike {
     description: string;
     page: number;
     qrImage?: string;
+    navImage?: string;
     objectImage?: string;
     modelUrl?: string;
     embedUrl?: string;
