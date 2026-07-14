@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Kubus">
+  <rect x="44" y="54" width="118" height="118" rx="10" fill="#FDE68A" stroke="#92400E" stroke-width="6"/>
+  <rect x="78" y="24" width="118" height="118" rx="10" fill="#FBBF24" stroke="#92400E" stroke-width="6"/>
+  <path d="M78 24v118l-34 30v-118z" fill="#F59E0B" stroke="#92400E" stroke-width="6"/>
+  <path d="M196 54v118l-34 30V84z" fill="#F59E0B" stroke="#92400E" stroke-width="6"/>
+  <path d="M78 142l118-30" stroke="#92400E" stroke-width="6"/>
+</svg>

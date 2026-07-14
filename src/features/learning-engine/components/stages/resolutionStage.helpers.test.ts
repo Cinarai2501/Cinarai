@@ -5,7 +5,7 @@ import { RESOLUTION_MISSIONS, getMissionHint, isCorrectSelection } from './resol
 test('resolution missions include five sequential numeracy missions', () => {
   assert.equal(RESOLUTION_MISSIONS.length, 5);
   assert.equal(RESOLUTION_MISSIONS[0].shape, 'Kubus');
-  assert.equal(RESOLUTION_MISSIONS[4].shape, 'Bola');
+  assert.equal(RESOLUTION_MISSIONS[4].shape, 'Kerucut');
 });
 
 test('correct selection is validated per mission', () => {
@@ -13,7 +13,7 @@ test('correct selection is validated per mission', () => {
   assert.equal(isCorrectSelection(RESOLUTION_MISSIONS[1], 'C'), true);
   assert.equal(isCorrectSelection(RESOLUTION_MISSIONS[2], 'B'), true);
   assert.equal(isCorrectSelection(RESOLUTION_MISSIONS[3], 'B'), true);
-  assert.equal(isCorrectSelection(RESOLUTION_MISSIONS[4], 'A'), true);
+  assert.equal(isCorrectSelection(RESOLUTION_MISSIONS[4], 'B'), true);
 });
 
 test('hints are capped at three clues for each mission', () => {

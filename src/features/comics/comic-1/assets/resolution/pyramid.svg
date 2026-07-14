@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Limas Segi Empat">
+  <path d="M120 34L50 172h140z" fill="#A7F3D0" stroke="#047857" stroke-width="6"/>
+  <rect x="74" y="108" width="92" height="70" rx="10" fill="#34D399" stroke="#047857" stroke-width="6"/>
+  <path d="M74 108h92" stroke="#047857" stroke-width="6"/>
+  <path d="M120 34v138" stroke="#047857" stroke-width="6"/>
+</svg>

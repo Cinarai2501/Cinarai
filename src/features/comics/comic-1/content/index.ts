@@ -4,6 +4,7 @@ export { navigation } from './navigation';
 export { identification } from './identification';
 export { argumentation } from './argumentation';
 export { resolution } from './resolution';
+export { resolutionContent } from './resolutionContent';
 export { application } from './application';
 export { introspection } from './introspection';
 export { report } from './report';

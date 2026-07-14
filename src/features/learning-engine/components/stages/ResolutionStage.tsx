@@ -11,7 +11,7 @@ function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attemp
     return [
       '✨ Selamat! Jawabanmu benar!',
       '',
-      'Aku bangga dengan kamu. Mari kita lihat bagaimana cara mengerjakannya:',
+      mission.correctFeedback ?? 'Bagus sekali! Kamu sudah menerapkan rumus dengan benar.',
       '',
       `📚 Bangun yang kita gunakan: ${mission.shape}`,
       '',
@@ -30,13 +30,13 @@ function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attemp
     return [
       '💡 Hmm, jawaban itu belum tepat. Jangan khawatir!',
       '',
-      'Mari kita periksa bersama-sama:',
+      mission.incorrectFeedback ?? 'Coba ulangi langkah penyelesaiannya dengan lebih teliti.',
       '',
       `🔍 Bangun yang sedang kita hitung adalah: ${mission.shape}`,
       '',
       `📏 Rumus yang kita pakai: ${mission.formula.split('=')[0].trim()}`,
       '',
-      'Coba perhatikan langkah-langkahnya lebih teliti. Masukkan angka dengan hati-hati.',
+      mission.hint ?? 'Coba perhatikan langkah-langkahnya lebih teliti. Masukkan angka dengan hati-hati.',
       '',
       'Ingat: Kesalahan adalah guru terbaik. Ayo coba lagi! 💪',
     ].join('\n');
@@ -345,6 +345,18 @@ function MissionCard({
             />
           </div>
           <p className="mt-3 text-center text-sm font-black text-neutral-700">{mission.shape}</p>
+          <div className="mt-4 rounded-[16px] border border-primary-100 bg-white p-3 text-sm text-neutral-700">
+            <p className="font-black text-primary-700">Data Soal</p>
+            <ul className="mt-2 space-y-1">
+              {mission.problemData?.map((item) => (
+                <li key={item} className="leading-relaxed">• {item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-3 rounded-[16px] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <p className="font-black">Hint</p>
+            <p className="mt-1 leading-relaxed">{mission.hint ?? 'Gunakan rumus yang sesuai dengan bangun ruang ini.'}</p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -397,7 +409,7 @@ function MissionCard({
             <span className="text-3xl">✅</span>
             <div>
               <p className="font-black text-accent-700">Jawaban Benar!</p>
-              <p className="text-sm text-accent-600">Bagus sekali! Mari kita pelajari bersama-sama.</p>
+              <p className="text-sm text-accent-600">{mission.correctFeedback ?? 'Bagus sekali! Mari kita pelajari bersama-sama.'}</p>
             </div>
           </div>
         )}
@@ -407,7 +419,7 @@ function MissionCard({
             <span className="text-3xl">💡</span>
             <div>
               <p className="font-black text-amber-700">Mari Coba Lagi</p>
-              <p className="text-sm text-amber-600">AI Guru sedang memberikan petunjuk di bawah.</p>
+              <p className="text-sm text-amber-600">{mission.incorrectFeedback ?? 'AI Guru sedang memberikan petunjuk di bawah.'}</p>
             </div>
           </div>
         )}

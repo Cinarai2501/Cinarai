@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Balok">
+  <rect x="44" y="54" width="132" height="114" rx="10" fill="#BFDBFE" stroke="#1D4ED8" stroke-width="6"/>
+  <rect x="76" y="24" width="132" height="114" rx="10" fill="#60A5FA" stroke="#1D4ED8" stroke-width="6"/>
+  <path d="M76 24v114l-32 30V84z" fill="#3B82F6" stroke="#1D4ED8" stroke-width="6"/>
+  <path d="M208 54v114l-32 30V84z" fill="#3B82F6" stroke="#1D4ED8" stroke-width="6"/>
+  <path d="M76 138l132-30" stroke="#1D4ED8" stroke-width="6"/>
+</svg>
