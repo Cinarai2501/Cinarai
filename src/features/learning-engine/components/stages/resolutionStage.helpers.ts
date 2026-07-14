@@ -204,9 +204,9 @@ function getResolutionFormulaDetails(mission: ResolutionMission) {
       volumeFormula: 'V = p × l × t',
       surfaceFormula: 'LP = 2 × (p × l + p × t + l × t)',
       legend: 'V = Volume\np = panjang\nl = lebar\nt = tinggi',
-      substitution: 'p = 12 cm\nl = 5 cm\nt = 4 cm',
-      steps: '12 × 5 = 60\n60 × 4 = 240',
-      conclusion: '240 cm³',
+      substitution: 'p = 12 cm\nl = 6 cm\nt = 5 cm',
+      steps: '12 × 6 = 72\n72 × 5 = 360',
+      conclusion: '360 cm³',
     };
   }
 
@@ -215,9 +215,9 @@ function getResolutionFormulaDetails(mission: ResolutionMission) {
       volumeFormula: 'V = Luas Alas × Tinggi',
       surfaceFormula: 'LP = 2 × Luas Alas + Keliling Alas × Tinggi',
       legend: 'V = Volume\nLuas Alas = luas bidang alas\nTinggi = tinggi prisma',
-      substitution: 'Luas Alas = 30 cm²\nTinggi = 10 cm',
-      steps: '30 × 10 = 300',
-      conclusion: '300 cm³',
+      substitution: 'Luas Alas = 36 cm²\nTinggi = 10 cm',
+      steps: '36 × 10 = 360',
+      conclusion: '360 cm³',
     };
   }
 
@@ -226,9 +226,9 @@ function getResolutionFormulaDetails(mission: ResolutionMission) {
       volumeFormula: 'V = ⅓ × Luas Alas × Tinggi',
       surfaceFormula: 'LP = Luas Alas + Luas Selimut',
       legend: 'V = Volume\nLuas Alas = luas bidang alas\nTinggi = tinggi limas',
-      substitution: 'Luas Alas = 81 cm²\nTinggi = 12 cm',
-      steps: '81 × 12 = 972\n972 ÷ 3 = 324',
-      conclusion: '324 cm³',
+      substitution: 'Luas Alas = 64 cm²\nTinggi = 9 cm',
+      steps: '64 × 9 = 576\n576 ÷ 3 = 192',
+      conclusion: '192 cm³',
     };
   }
 
@@ -299,10 +299,13 @@ function getResolutionFormulaDetails(mission: ResolutionMission) {
 
 export function buildResolutionTutorExplanation(mission: ResolutionMission, isCorrect: boolean): string {
   const details = getResolutionFormulaDetails(mission);
+  const candiConnection = mission.context.includes('Candi Jawi')
+    ? 'Hubungkan pemahamanmu dengan bentuk bangun ruang yang sering terlihat pada struktur arsitektur Candi Jawi.'
+    : 'Hubungkan pemahamanmu dengan sifat bangun ruang yang sedang dipelajari.';
 
   if (isCorrect) {
     return [
-      '✨ Selamat! Jawabanmu benar!',
+      '✨ Jawabanmu benar. Mari kita lihat mengapa begitu.',
       '',
       `Bangun ruang: ${mission.shape}`,
       '',
@@ -320,14 +323,14 @@ export function buildResolutionTutorExplanation(mission: ResolutionMission, isCo
       '',
       `Hasil akhir: ${details.conclusion}`,
       '',
-      `Hubungan dengan materi: ${mission.context}`,
+      candiConnection,
       '',
-      'Bagus! Kamu sudah memahami rumusnya dengan baik.',
+      'Kamu sudah menggunakan langkah yang tepat dan memahami hubungan antara rumus dengan bangun ruang.',
     ].join('\n');
   }
 
   return [
-    '💡 Jawabanmu belum tepat.',
+    '💡 Jawabanmu belum tepat. Mari kita perbaiki langkahnya.',
     '',
     `Bangun ruang: ${mission.shape}`,
     '',
@@ -348,7 +351,9 @@ export function buildResolutionTutorExplanation(mission: ResolutionMission, isCo
     '',
     `Hasil akhir: ${details.conclusion}`,
     '',
-    'Cobalah kerjakan kembali menggunakan langkah-langkah di atas.',
+    candiConnection,
+    '',
+    'Coba ulang dari awal dengan langkah yang lebih teliti agar pilihan yang benar menjadi jelas.',
   ].join('\n');
 }
 

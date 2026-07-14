@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Kerucut">
-  <path d="M120 40c44 0 74 52 74 98 0 24-18 48-44 56-22 6-48 6-70 0-26-8-44-32-44-56 0-46 30-98 74-98z" fill="#FECACA" stroke="#B91C1C" stroke-width="6"/>
-  <path d="M120 40v154" stroke="#B91C1C" stroke-width="6"/>
-  <ellipse cx="120" cy="138" rx="74" ry="34" fill="#F87171" stroke="#B91C1C" stroke-width="6"/>
-  <path d="M120 40c-18 30-24 58-24 98" stroke="#B91C1C" stroke-width="6"/>
-</svg>

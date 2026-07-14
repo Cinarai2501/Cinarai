@@ -5,6 +5,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import type { ResolutionMission } from './resolutionStage.helpers';
 import RobotMascot from '@/components/ai/RobotMascot';
+import { useAuth } from '@/hooks/useAuth';
+import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
+
+interface PersistedMissionState {
+  id: number;
+  selected: string | null;
+  answerFeedback: 'correct' | 'incorrect' | null;
+  tutorMessage: string | null;
+  attempts: number;
+  isSolved: boolean;
+}
+
+interface PersistedResolutionState {
+  currentIndex: number;
+  completedMissionIds: number[];
+  isFinished: boolean;
+  missions: PersistedMissionState[];
+}
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (isCorrect) {
@@ -78,8 +96,12 @@ export default function ResolutionStage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [completedMissionIds, setCompletedMissionIds] = useState<number[]>([]);
+  const [missionStates, setMissionStates] = useState<PersistedMissionState[]>([]);
+  const [hasRestored, setHasRestored] = useState(false);
 
   const { comic, comicModule, setCanAdvance, nextStage } = useLearningEngine();
+  const { user } = useAuth();
   const missions = comicModule.resolution.missions;
   const currentMission = missions[currentIndex];
   const displayedProgress = useMemo(
@@ -91,6 +113,52 @@ export default function ResolutionStage() {
     setCanAdvance(false);
   }, [misiStarted, setCanAdvance]);
 
+  useEffect(() => {
+    if (!user?.uid || !comic.id || hasRestored) return;
+    let isMounted = true;
+    void (async () => {
+      try {
+        const progressDoc = await loadComicProgress(user.uid, comic.id);
+        const persisted = progressDoc?.stageData?.resolution as PersistedResolutionState | undefined;
+        if (!isMounted || !persisted) {
+          setHasRestored(true);
+          return;
+        }
+        setCurrentIndex(typeof persisted.currentIndex === 'number' ? persisted.currentIndex : 0);
+        setCompletedMissionIds(Array.isArray(persisted.completedMissionIds) ? persisted.completedMissionIds : []);
+        setMissionStates(Array.isArray(persisted.missions) ? persisted.missions : []);
+        setIsFinished(Boolean(persisted.isFinished));
+        setCompletedUpToIndex(Math.max(0, (Array.isArray(persisted.completedMissionIds) ? persisted.completedMissionIds.length : 0) - 1));
+      } catch (error) {
+        console.error('[ResolutionStage] gagal memuat progres dari Firestore', error);
+      } finally {
+        if (isMounted) {
+          setHasRestored(true);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.uid, comic.id, hasRestored]);
+
+  useEffect(() => {
+    if (!hasRestored || !user?.uid || !comic.id) return;
+    void saveComicProgress(user.uid, comic.id, {
+      stageData: {
+        resolution: {
+          currentIndex,
+          completedMissionIds,
+          isFinished,
+          missions: missionStates,
+        },
+      },
+    }).catch((error) => {
+      console.error('[ResolutionStage] gagal menyimpan progres ke Firestore', error);
+    });
+  }, [hasRestored, user?.uid, comic.id, currentIndex, completedMissionIds, isFinished, missionStates]);
+
   // Reset state ketika berpindah soal
   useEffect(() => {
     if (!misiStarted) return;
@@ -98,15 +166,16 @@ export default function ResolutionStage() {
   }, [currentIndex, misiStarted]);
 
   const handleAdvanceToNextMission = () => {
+    const nextCompleted = [...completedMissionIds, currentMission.id];
+    setCompletedMissionIds(nextCompleted);
+
     if (currentIndex === missions.length - 1) {
-      // Ini soal terakhir, mark sebagai finished
       setIsFinished(true);
       setCompletedUpToIndex(currentIndex);
       setCanAdvance(true);
       return;
     }
 
-    // Bukan soal terakhir, lanjut ke soal berikutnya
     setCompletedUpToIndex(currentIndex);
     setIsTransitioning(true);
     window.setTimeout(() => {
@@ -166,6 +235,13 @@ export default function ResolutionStage() {
           totalMissions={missions.length}
           selected={selected}
           onSelect={setSelected}
+          onMissionStateChange={(nextState) => {
+            setMissionStates((prev) => {
+              const filtered = prev.filter((item) => item.id !== nextState.id);
+              return [...filtered, nextState];
+            });
+          }}
+          savedMissionState={missionStates.find((item) => item.id === currentMission.id) ?? null}
           onReadyToAdvance={handleAdvanceToNextMission}
           isTransitioning={isTransitioning}
         />
@@ -204,6 +280,8 @@ function MissionCard({
   totalMissions,
   selected,
   onSelect,
+  onMissionStateChange,
+  savedMissionState,
   onReadyToAdvance,
   isTransitioning,
 }: {
@@ -213,6 +291,8 @@ function MissionCard({
   totalMissions: number;
   selected: string | null;
   onSelect: (key: string) => void;
+  onMissionStateChange: (state: PersistedMissionState) => void;
+  savedMissionState: PersistedMissionState | null;
   onReadyToAdvance: () => void;
   isTransitioning: boolean;
 }) {
@@ -228,16 +308,19 @@ function MissionCard({
   const aiPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setTutorMessage(null);
-    setTypedText('');
+    const nextState = savedMissionState;
+    setTutorMessage(nextState?.tutorMessage ?? null);
+    setTypedText(nextState?.tutorMessage ?? '');
     setIsTyping(false);
-    setIsSolved(false);
-    setAttempts(0);
-    setAnswerFeedback(null);
-  }, [mission.id]);
+    setIsSolved(nextState?.isSolved ?? false);
+    setAttempts(nextState?.attempts ?? 0);
+    setAnswerFeedback(nextState?.answerFeedback ?? null);
+  }, [mission.id, savedMissionState]);
+
+  const activeSelected = savedMissionState?.selected ?? selected;
 
   const handleSubmitAnswer = async () => {
-    if (!selected || isSolved || isSubmitting) return;
+    if (!activeSelected || isSolved || isSubmitting) return;
     setIsSubmitting(true);
     setTutorMessage(null);
     setTypedText('');
@@ -248,7 +331,7 @@ function MissionCard({
       const response = await fetch('/api/ai/resolution', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selected, attempt: attempts, missionId: mission.id, comicId: comic.id }),
+        body: JSON.stringify({ selected: activeSelected, attempt: attempts, missionId: mission.id, comicId: comic.id }),
       });
       const data = await response.json();
       const answerIsCorrect = Boolean(data.correct);
@@ -261,13 +344,28 @@ function MissionCard({
         setIsSolved(true);
         setAnswerFeedback('correct');
         setTutorMessage(aiText);
-        setCanAdvance(false); // JANGAN auto advance - tunggu user menekan tombol
+        setCanAdvance(false);
+        onMissionStateChange({
+          id: mission.id,
+          selected: activeSelected,
+          answerFeedback: 'correct',
+          tutorMessage: aiText,
+          attempts,
+          isSolved: true,
+        });
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
         setAnswerFeedback('incorrect');
         setTutorMessage(aiText);
-        // Untuk jawaban salah: siswa tetap di soal yang sama, pilihan tetap aktif
+        onMissionStateChange({
+          id: mission.id,
+          selected: activeSelected,
+          answerFeedback: 'incorrect',
+          tutorMessage: aiText,
+          attempts: nextAttempt,
+          isSolved: false,
+        });
       }
     } catch {
       const fallbackText = getTutorFallback(mission, false, attempts);
@@ -320,28 +418,43 @@ function MissionCard({
     }
   };
 
+  const handleChoiceSelect = (key: string) => {
+    onSelect(key);
+    onMissionStateChange({
+      id: mission.id,
+      selected: key,
+      answerFeedback: savedMissionState?.answerFeedback ?? null,
+      tutorMessage: savedMissionState?.tutorMessage ?? null,
+      attempts: savedMissionState?.attempts ?? attempts,
+      isSolved: savedMissionState?.isSolved ?? isSolved,
+    });
+  };
+
   const isReadyToAdvance = isSolved && !isTyping && tutorMessage !== null;
 
   return (
     <div className={['transition-all duration-200', isTransitioning ? 'translate-x-4 opacity-0' : 'translate-x-0 opacity-100'].join(' ')}>
       <div className="flex flex-col gap-4 px-5 py-5">
         <div className="rounded-[20px] border border-primary-100 bg-primary-50 px-4 py-4">
-          <p className="text-sm leading-relaxed text-neutral-700 sm:text-base">
-            Bagian: <span className="font-black text-primary-700">{mission.part}</span>
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-neutral-700 sm:text-base">
-            Bangun: <span className="font-black text-primary-700">{mission.shape}</span>
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary-600">Misi {missionIndex + 1}</p>
+              <h4 className="mt-1 text-lg font-black text-neutral-900">{mission.part}</h4>
+            </div>
+            <div className="rounded-full bg-white px-3 py-1 text-sm font-black text-primary-700 shadow-sm">
+              {mission.shape}
+            </div>
+          </div>
           <p className="mt-3 text-base font-bold leading-relaxed text-neutral-800">{mission.prompt}</p>
         </div>
 
         <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
-          <div className="flex items-center justify-center overflow-hidden rounded-[16px] border border-neutral-200 bg-white p-3">
+          <div className="flex items-center justify-center overflow-hidden rounded-[16px] border border-neutral-200 bg-white p-3 sm:p-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={mission.illustration}
               alt={`Ilustrasi ${mission.shape}`}
-              className="h-44 w-full max-w-[240px] object-contain"
+              className="h-44 w-full max-w-[220px] object-contain sm:max-w-[240px]"
             />
           </div>
           <p className="mt-3 text-center text-sm font-black text-neutral-700">{mission.shape}</p>
@@ -364,12 +477,12 @@ function MissionCard({
             <button
               key={key}
               type="button"
-              onClick={() => onSelect(key)}
+              onClick={() => handleChoiceSelect(key)}
               disabled={isSolved}
               className={[
                 'flex min-h-[52px] w-full items-center gap-4 rounded-2xl border-2 px-4 py-3 text-left transition active:scale-[0.98]',
-                isSolved && selected !== key ? 'opacity-60 cursor-not-allowed' : '',
-                selected === key
+                isSolved && activeSelected !== key ? 'opacity-60 cursor-not-allowed' : '',
+                activeSelected === key
                   ? 'border-primary-500 bg-primary-50'
                   : 'border-neutral-200 bg-white hover:border-primary-200 hover:bg-primary-50/50'
               ].join(' ')}
@@ -377,7 +490,7 @@ function MissionCard({
               <span
                 className={[
                   'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-black',
-                  selected === key ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-600'
+                  activeSelected === key ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-600'
                 ].join(' ')}
               >
                 {key}
@@ -385,7 +498,7 @@ function MissionCard({
               <span
                 className={[
                   'text-base font-bold',
-                  selected === key ? 'text-primary-700' : 'text-neutral-800'
+                  activeSelected === key ? 'text-primary-700' : 'text-neutral-800'
                 ].join(' ')}
               >
                 {label}
@@ -397,29 +510,29 @@ function MissionCard({
         <button
           type="button"
           onClick={() => void handleSubmitAnswer()}
-          disabled={!selected || isSolved || isSubmitting}
+          disabled={!activeSelected || isSolved || isSubmitting}
           className="inline-flex min-h-[46px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
         >
-          {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
+          {isSubmitting ? 'Mengonfirmasi...' : 'Konfirmasi Jawaban'}
         </button>
 
         {/* Feedback untuk jawaban */}
         {answerFeedback === 'correct' && !isTyping && (
-          <div className="rounded-[20px] border-2 border-accent-300 bg-accent-50 px-4 py-4 flex items-center gap-3 animate-pulse">
+          <div className="rounded-[20px] border-2 border-accent-300 bg-accent-50 px-4 py-4 flex items-start gap-3 animate-pulse">
             <span className="text-3xl">✅</span>
             <div>
-              <p className="font-black text-accent-700">Jawaban Benar!</p>
+              <p className="font-black text-accent-700">Jawaban Benar</p>
               <p className="text-sm text-accent-600">{mission.correctFeedback ?? 'Bagus sekali! Mari kita pelajari bersama-sama.'}</p>
             </div>
           </div>
         )}
 
         {answerFeedback === 'incorrect' && (
-          <div className="rounded-[20px] border-2 border-amber-300 bg-amber-50 px-4 py-4 flex items-center gap-3">
+          <div className="rounded-[20px] border-2 border-amber-300 bg-amber-50 px-4 py-4 flex items-start gap-3">
             <span className="text-3xl">💡</span>
             <div>
-              <p className="font-black text-amber-700">Mari Coba Lagi</p>
-              <p className="text-sm text-amber-600">{mission.incorrectFeedback ?? 'AI Guru sedang memberikan petunjuk di bawah.'}</p>
+              <p className="font-black text-amber-700">Mari Periksa Kembali</p>
+              <p className="text-sm text-amber-600">{mission.incorrectFeedback ?? 'AI Guru sedang memberikan penjelasan langkah demi langkah di bawah ini.'}</p>
             </div>
           </div>
         )}
