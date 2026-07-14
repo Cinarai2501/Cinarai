@@ -1,228 +1,64 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLearningEngine } from '../../hooks/useLearningEngine';
-import { useSnackbar } from '@/context/SnackbarContext';
-import type { ComicAssetEntry } from '@/services/comic-assets/types';
-import { Hero3DViewer } from './Hero3DViewer';
-import { AssemblrCard } from './AssemblrCard';
-
-/* eslint-disable @next/next/no-img-element */
-
-function isValidUrl(url: string): boolean {
-  if (!url) return false;
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
-/* eslint-disable @next/next/no-img-element */
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { packageContent } from '@/features/comics/comic-1/content/packageContent';
+import { COMIC_QR_DATA } from '@/data/comicQrData';
 
 export default function NavigationStage() {
   const router = useRouter();
-  const { comic, comicModule, setCanAdvance, unregisterSlideNav, nextStage } = useLearningEngine();
-  const { showSnackbar } = useSnackbar();
-  const isComic1Flow = comic.id === 1;
-  const navigationObjects = useMemo<ComicAssetEntry[]>(
-    () =>
-      comicModule.navigation.learningObjects.map((object: {
-        page: number;
-        title: string;
-        description: string;
-        provider?: string;
-        embedUrl?: string;
-        modelUrl?: string;
-        qrImage?: string;
-        aiPrompt?: string;
-      }) => {
-        const provider = object.provider?.toLowerCase() ?? '';
-        const isAssemblr = provider.includes('assemblr');
 
-        return {
-          page: object.page,
-          title: object.title,
-          description: object.description,
-          buttonLabel: 'Lihat Model 3D',
-          provider: object.provider,
-          viewerType: object.embedUrl && !isAssemblr ? 'embed' : 'assemblr',
-          embedUrl: object.embedUrl,
-          arUrl: object.modelUrl ?? object.embedUrl ?? '',
-          qrImage: object.qrImage,
-          navImage: (object as any).navImage,
-          aiPrompt: object.aiPrompt,
-          knowledgeText: object.description,
-        };
-      }),
-    [comicModule.navigation.learningObjects],
-  );
-  const primaryEntry = navigationObjects[0] ?? null;
-  const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
-  const activeEntry = useMemo(() => {
-    if (!navigationObjects.length) return null;
-    if (activeObjectId) {
-      const matched = navigationObjects.find((entry) => `${entry.page}-${entry.arUrl}` === activeObjectId);
-      if (matched) return matched;
-    }
-    return primaryEntry;
-  }, [activeObjectId, navigationObjects, primaryEntry]);
+  // Use packageContent as single source of truth for object list
+  const objects = useMemo(() => packageContent.learningObjects.slice(0, 5), []);
 
-  useEffect(() => {
-    setCanAdvance(true);
-  }, [setCanAdvance]);
-
-  useEffect(() => {
-    if (!primaryEntry) {
-      setActiveObjectId(null);
-      return;
-    }
-
-    const storedId = typeof window !== 'undefined' ? window.sessionStorage.getItem('navigationStageLastOpenedObjectId') : null;
-    const nextActiveId = storedId ? storedId : `${primaryEntry.page}-${primaryEntry.arUrl}`;
-    setActiveObjectId((current) => (current ? current : nextActiveId));
-  }, [primaryEntry]);
-
-  useEffect(() => {
-    if (!activeObjectId || typeof window === 'undefined') return;
-
-    const target = document.querySelector(`[data-object-id="${activeObjectId}"]`);
-    if (target instanceof HTMLElement) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [activeObjectId]);
-
-  useEffect(() => {
-    if (!activeObjectId || typeof window === 'undefined') return;
-
-    const target = document.querySelector(`[data-object-id="${activeObjectId}"]`);
-    if (target instanceof HTMLElement) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [activeObjectId]);
-
-  useEffect(() => {
-    return () => {
-      unregisterSlideNav();
-    };
-  }, [unregisterSlideNav]);
-
-  function handleOpenAr(entry: ComicAssetEntry, openQr = false) {
-    const entryUrl = entry.viewerType === 'embed' ? entry.embedUrl || entry.arUrl : entry.arUrl;
-    if (!isValidUrl(entryUrl)) {
-      showSnackbar('Link AR belum tersedia.', 'info');
-      return;
-    }
-
-    const entryId = `${entry.page}-${entry.arUrl}`;
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('navigationStageLastOpenedObjectId', entryId);
-    }
-    setActiveObjectId(entryId);
-
-    const params = new URLSearchParams({
-      url: entryUrl,
-      title: entry.title,
-      comicId: String(comic.id),
-      page: String(entry.page),
-    });
-
-    if (isComic1Flow) {
-      params.set('view', 'object-detail');
-      if (entry.aiPrompt) {
-        params.set('aiPrompt', entry.aiPrompt);
-      }
-      if (entry.qrImage) {
-        params.set('qrImage', entry.qrImage);
-      }
-      if ((entry as any).navImage) {
-        params.set('navImage', (entry as any).navImage as string);
-      }
-      if (openQr) params.set('mode', 'qr');
-      router.push(`/viewer/3d?${params.toString()}`);
-      return;
-    }
-
-    const url = `/viewer/3d?${params.toString()}`;
-    router.push(openQr ? `${url}&mode=qr` : url);
-  }
-
-  function handleContinueToArgumentation() {
-    void nextStage();
-  }
-
-  const featuredEntry = primaryEntry?.viewerType === 'embed' ? primaryEntry : null;
+  // Sketchfab embed for full Candi Jawi (from COMIC_QR_DATA)
+  const candiEntry = COMIC_QR_DATA[1]?.qrList?.[0];
+  const candiEmbed = candiEntry?.qrUrl ?? '';
 
   return (
-    <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden px-2 py-2 sm:px-4 sm:py-4">
-      {featuredEntry && (
-        <Hero3DViewer entry={featuredEntry} />
-      )}
+    <div className="flex min-w-0 flex-col gap-6 px-4 py-6">
+      <div className="space-y-3">
+        <h1 className="text-3xl font-black text-neutral-900">NAVIGASI AR & AI</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">Gunakan tampilan ini untuk menavigasi objek Candi Jawi. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.</p>
+      </div>
 
-      <div className="space-y-5">
-        <div className="space-y-3 px-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary-600">Daftar Objek</p>
-          <h1 className="text-3xl font-black text-neutral-900 sm:text-4xl">{isComic1Flow ? 'NAVIGASI AR & AI' : 'Pilih objek untuk dipelajari'}</h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-neutral-600 sm:text-base">
-            {isComic1Flow
-              ? 'Gunakan tampilan ini untuk menavigasi objek Candi Jawi. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.'
-              : 'Sentuh kartu untuk melihat detail dan buka Model 3D atau QR. Semakin banyak objek kamu eksplorasi, semakin cepat bisa lanjut.'}
-          </p>
-        </div>
+      {candiEmbed ? (
+        <section className="overflow-hidden rounded-[20px] bg-white shadow-sm">
+          <div className="relative aspect-[16/9] w-full">
+            <iframe
+              src={candiEmbed}
+              title="Candi Jawi"
+              className="absolute inset-0 h-full w-full border-0"
+              allow="fullscreen"
+            />
+          </div>
+        </section>
+      ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {navigationObjects.length > 0 ? (
-            navigationObjects.map((entry, idx) => {
-              const entryId = `${entry.page}-${entry.arUrl}`;
-              const isActive = activeEntry ? `${activeEntry.page}-${activeEntry.arUrl}` === entryId : idx === 0;
-              const isValid = isValidUrl(entry.arUrl);
-
-              return (
-                <AssemblrCard
-                  key={entryId}
-                  entry={entry}
-                  isActive={isActive}
-                  onSelect={() => setActiveObjectId(entryId)}
-                  onExplore={(event) => {
-                    event.stopPropagation();
-                    setActiveObjectId(entryId);
-                    handleOpenAr(entry);
-                  }}
-                  onOpenAr={(e) => {
-                    e.stopPropagation();
-                    setActiveObjectId(entryId);
-                    handleOpenAr(entry);
-                  }}
-                  onOpenQr={(e) => {
-                    e.stopPropagation();
-                    setActiveObjectId(entryId);
-                    handleOpenAr(entry, true);
-                  }}
-                  isValidUrl={isValid}
-                  useExploreOnly={isComic1Flow}
-                />
-              );
-            })
-          ) : (
-            <div className="col-span-full rounded-[20px] bg-neutral-50 p-5 text-center text-sm text-neutral-500 shadow-sm">
-              Tidak ada objek AR untuk komik ini.
+      <section className="space-y-4">
+        <h2 className="text-lg font-bold">Daftar Objek</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {objects.map((obj) => (
+            <div key={obj.id} className="rounded-[12px] border border-neutral-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-neutral-900">{obj.title}</h3>
+                  <p className="mt-1 text-sm text-neutral-500">Komik {packageContent.metadata.comicId} • Halaman {obj.page}</p>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/viewer/object/${encodeURIComponent(obj.id)}`)}
+                    className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-sm font-bold text-white"
+                  >
+                    Explore
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
+          ))}
         </div>
-      </div>
-
-      <div className="sticky bottom-0 z-10 mx-auto w-full max-w-2xl rounded-t-[20px] bg-white/90 px-4 py-5 shadow-[0_-16px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:px-6">
-        <button
-          type="button"
-          onClick={handleContinueToArgumentation}
-          className="w-full rounded-[20px] bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-4 text-base font-black text-white shadow-lg transition hover:shadow-xl active:scale-95 min-h-[48px]"
-        >
-          Lanjut ke Argumentasi
-        </button>
-      </div>
-
+      </section>
     </div>
   );
 }
