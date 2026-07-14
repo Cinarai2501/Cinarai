@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { packageContent } from '@/features/comics/comic-1/content/packageContent';
 import { getComic1QrAssetForObject } from '@/features/comics/comic-1/content/qrAssetRegistry';
 import { ObjectAITutor } from '@/features/learning-engine/components/stages/ObjectAITutor';
+import type { ComicAssetEntry } from '@/services/comic-assets/types';
 
 type Obj = {
   id: string;
@@ -16,6 +17,7 @@ type Obj = {
   modelUrl?: string;
   embedUrl?: string;
   aiPrompt?: string;
+  provider?: string;
 };
 
 export default function ObjectDetailClient({ id }: { id: string }) {
@@ -54,25 +56,32 @@ export default function ObjectDetailClient({ id }: { id: string }) {
           ) : null}
 
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">AI Tutor</p>
-            <p className="mt-2 text-lg font-black text-neutral-900">{obj.title}</p>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600">{obj.aiPrompt}</p>
-          </div>
-
-          <div className="mt-6">
-            <ObjectAITutor
-              objectId={obj.id}
-              objectName={obj.title}
-              initialPrompt={obj.aiPrompt}
-            />
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Deskripsi</p>
+            <p className="mt-3 text-base leading-relaxed text-neutral-700">{obj.aiPrompt}</p>
           </div>
 
           <div className="mt-6 flex flex-col gap-3">
-            <button onClick={handleOpenModel} className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-primary-600 px-4 py-3 text-sm font-bold text-white">Lihat Model 3D</button>
-            <button onClick={() => setIsQrOpen(true)} className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900">Lihat QR</button>
-            <button onClick={() => router.push('/comic/1/learn')} className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900">Tutup Viewer</button>
+            <button onClick={handleOpenModel} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700">
+              Lihat Model 3D
+            </button>
+            <button onClick={() => setIsQrOpen(true)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
+              Lihat QR
+            </button>
+            <button onClick={() => router.push('/comic/1/learn')} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
+              Tutup Viewer
+            </button>
           </div>
         </div>
+
+        <ObjectAITutor
+          objectId={obj.id}
+          objectName={obj.title}
+          provider={obj.provider}
+          comicPage={obj.page}
+          modelUrl={obj.modelUrl}
+          entry={obj as ComicAssetEntry}
+          initialPrompt={obj.aiPrompt}
+        />
       </div>
 
       {isQrOpen && qrImage && (
