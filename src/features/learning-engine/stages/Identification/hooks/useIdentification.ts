@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { useComicReadingProgress } from '@/context/ComicReadingProgressContext';
+import { getPdfReaderInitialPage } from '@/components/comic/pdfReaderInitialPage';
 import type { IdentificationAnswerDocument } from '@/types/firestore';
 import type { IdentificationState } from '../types';
 import {
@@ -52,11 +52,10 @@ export function useIdentification({
   sourcePage,
   pdfPath,
 }: UseIdentificationOptions): UseIdentificationReturn {
-  const { getLastPage } = useComicReadingProgress();
   const resolvedSourcePage = useMemo(() => {
     if (typeof sourcePage === 'number' && sourcePage > 0) return sourcePage;
-    return getLastPage(comicId) || 1;
-  }, [comicId, getLastPage, sourcePage]);
+    return getPdfReaderInitialPage(comicId);
+  }, [comicId, sourcePage]);
 
   const [state, setState] = useState<IdentificationState>(() => {
     // eslint-disable-next-line no-console

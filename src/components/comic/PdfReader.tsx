@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ComicAsset } from "@/lib/comicAsset";
-import { useComicReadingProgress } from '@/context/ComicReadingProgressContext';
+import { getPdfReaderInitialPage } from '@/components/comic/pdfReaderInitialPage';
 
 const PdfViewer = dynamic(() => import("@/components/pdf/PdfViewer"), { ssr: false });
 
@@ -33,20 +33,9 @@ export default function PdfReader({
   isComicCompleted = false,
   completeButtonLabelWhenDone = "Lanjut ke Identification",
 }: PdfReaderProps) {
-  const { getLastPage } = useComicReadingProgress();
-
-  const getInitialPage = (): number => {
-    if (!comicId) return 1;
-    try {
-      return getLastPage(comicId) || 1;
-    } catch {
-      return 1;
-    }
-  };
-
   const resolvedPdfPath = asset?.sourcePdfPath ?? pdfPath ?? "";
   const resolvedTitle = comicTitle ?? asset?.title ?? undefined;
-  const initialPage = getInitialPage();
+  const initialPage = getPdfReaderInitialPage(comicId);
 
   if (!resolvedPdfPath) {
     return (

@@ -5,9 +5,6 @@ import {
   COMIC_READING_PROGRESS_RESET_EVENT,
   clearAllStoredComicReadingProgress,
   clearStoredComicReadingProgressEntry,
-  getStoredComicReadingProgress,
-  saveStoredComicReadingProgress,
-  type StoredComicReadingProgress,
 } from '@/lib/comicReadingProgressStorage';
 
 /** Progress membaca satu komik */
@@ -52,22 +49,6 @@ function logReadingProgress(functionName: string, comicId: number, page: number,
   console.log('[reading-progress-stack]', new Error().stack?.split('\n').slice(1, 4).join(' | '));
 }
 
-function mapStoredProgress(data: Record<number, StoredComicReadingProgress>): Record<number, ComicReadingProgress> {
-  return Object.entries(data).reduce<Record<number, ComicReadingProgress>>((acc, [key, value]) => {
-    const comicId = Number(key);
-    if (!Number.isNaN(comicId)) {
-      acc[comicId] = {
-        comicId,
-        currentPage: value.currentPage ?? 1,
-        totalPages: value.totalPages ?? 1,
-        completed: Boolean(value.completed),
-        lastPage: value.lastPage ?? value.currentPage ?? 1,
-      };
-    }
-    return acc;
-  }, {});
-}
-
 // Global `__cinaraiDebug` declared in src/types/cinarai-debug.d.ts
 
 interface ComicReadingProgressProviderProps {
@@ -75,9 +56,7 @@ interface ComicReadingProgressProviderProps {
 }
 
 export function ComicReadingProgressProvider({ children }: ComicReadingProgressProviderProps) {
-  const [allProgress, setAllProgress] = useState<Record<number, ComicReadingProgress>>(() =>
-    mapStoredProgress(getStoredComicReadingProgress())
-  );
+  const [allProgress, setAllProgress] = useState<Record<number, ComicReadingProgress>>({});
   const [currentComicId, setCurrentComicId] = useState<number | null>(null);
   // Suppress resuming for comics that were just reset. When a comic is reset,
   // we want to ignore any stored `lastPage` until the user explicitly
@@ -111,22 +90,6 @@ export function ComicReadingProgressProvider({ children }: ComicReadingProgressP
     window.addEventListener(COMIC_READING_PROGRESS_RESET_EVENT, handleReset as EventListener);
     return () => window.removeEventListener(COMIC_READING_PROGRESS_RESET_EVENT, handleReset as EventListener);
   }, []);
-
-  // Sync state to localStorage whenever it changes
-  useEffect(() => {
-    saveStoredComicReadingProgress(
-      Object.entries(allProgress).reduce<Record<number, StoredComicReadingProgress>>((acc, [key, value]) => {
-        acc[Number(key)] = {
-          comicId: value.comicId,
-          currentPage: value.currentPage,
-          totalPages: value.totalPages,
-          completed: value.completed,
-          lastPage: value.lastPage,
-        };
-        return acc;
-      }, {})
-    );
-  }, [allProgress]);
 
   const updateProgress = useCallback((comicId: number, page: number, totalPages: number) => {
     logReadingProgress('updateProgress', comicId, page, totalPages, false);
@@ -219,8 +182,8 @@ export function ComicReadingProgressProvider({ children }: ComicReadingProgressP
 
   const getLastPage = useCallback((comicId: number): number => {
     if (suppressedResumesRef.current.has(comicId)) return 1;
-    return allProgress[comicId]?.lastPage ?? 1;
-  }, [allProgress]);
+    return 1;
+  }, []);
 
   const isComicCompleted = useCallback((comicId: number): boolean => {
     return allProgress[comicId]?.completed ?? false;
