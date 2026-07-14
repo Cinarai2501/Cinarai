@@ -1,13 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from 'next/image';
 import { useRouter } from "next/navigation";
+import { useAuth } from '@/hooks/useAuth';
+import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { packageContent } from '@/features/comics/comic-1/content/packageContent';
 import { getComic1QrAssetForObject } from '@/features/comics/comic-1/content/qrAssetRegistry';
+import { useLearningEngine } from '../../hooks/useLearningEngine';
 
 export default function NavigationStage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { comic } = useLearningEngine();
 
   // Use packageContent as single source of truth for object list
   const objects = useMemo(() => packageContent.learningObjects.slice(0, 5), []);
@@ -17,6 +22,47 @@ export default function NavigationStage() {
   const candiQrImage = getComic1QrAssetForObject('Candi Jawi');
   const candiFullscreenUrl = candiEntry?.arUrl ?? candiEntry?.embedUrl ?? '';
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [objectVisited, setObjectVisited] = useState<string[]>([]);
+  const [openedObjects, setOpenedObjects] = useState<string[]>([]);
+  const [hasHydratedProgress, setHasHydratedProgress] = useState(false);
+
+  useEffect(() => {
+    if (!user?.uid || !hasHydratedProgress) return;
+    void saveComicProgress(user.uid, comic.id, {
+      stageData: {
+        navigation: {
+          objectVisited,
+          openedObjects,
+        },
+      },
+    });
+  }, [comic.id, hasHydratedProgress, objectVisited, openedObjects, user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    let active = true;
+    void (async () => {
+      try {
+        const document = await loadComicProgress(user.uid, comic.id);
+        if (!active) return;
+        const stageData = document?.stageData?.navigation;
+        if (stageData) {
+          if (Array.isArray(stageData.objectVisited)) {
+            setObjectVisited(stageData.objectVisited);
+          }
+          if (Array.isArray(stageData.openedObjects)) {
+            setOpenedObjects(stageData.openedObjects);
+          }
+        }
+        setHasHydratedProgress(true);
+      } catch (error) {
+        console.error('[NavigationStage] gagal memuat progress', error);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [comic.id, user?.uid]);
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-4 py-6">
@@ -90,12 +136,21 @@ export default function NavigationStage() {
           {objects.map((obj) => (
             <div key={obj.id} className="flex h-full flex-col justify-between rounded-[16px] border border-neutral-200 bg-white p-4 shadow-sm">
               <div className="space-y-2">
+                {obj.navImage ? (
+                  <div className="relative mb-3 h-28 overflow-hidden rounded-[12px] border border-neutral-200 bg-neutral-50">
+                    <Image src={obj.navImage} alt={obj.title} fill className="object-contain p-2" />
+                  </div>
+                ) : null}
                 <h3 className="text-base font-black text-neutral-900">{obj.title}</h3>
                 <p className="text-sm leading-relaxed text-neutral-600">{obj.description}</p>
               </div>
               <button
                 type="button"
-                onClick={() => router.push(`/viewer/object/${encodeURIComponent(obj.id)}`)}
+                onClick={() => {
+                  setObjectVisited((prev) => Array.from(new Set([...prev, obj.id])));
+                  setOpenedObjects((prev) => Array.from(new Set([...prev, obj.id])));
+                  router.push(`/viewer/object/${encodeURIComponent(obj.id)}`);
+                }}
                 className="mt-4 inline-flex min-h-[40px] items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-sm font-bold text-white"
               >
                 Explore

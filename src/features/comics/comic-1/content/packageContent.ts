@@ -14,19 +14,14 @@ import identKubus from '@/features/comics/comic-1/assets/identification/Kubus.pn
 import identBalok from '@/features/comics/comic-1/assets/identification/Balok.png';
 import identPrisma from '@/features/comics/comic-1/assets/identification/Prismasegiempat.png';
 import identLimas from '@/features/comics/comic-1/assets/identification/Limassegiempat.png';
-import appKubus from '@/features/comics/comic-1/assets/identification/Kubus.png';
-import appBalok from '@/features/comics/comic-1/assets/identification/Balok.png';
-import appPrisma from '@/features/comics/comic-1/assets/identification/Prismasegiempat.png';
-import appLimas from '@/features/comics/comic-1/assets/identification/Limassegiempat.png';
-import appKerucut from '@/features/comics/comic-1/assets/identification/Kerucut.png';
 
 import { KubusImg as argKubus, BalokImg as argBalok, PrismaImg as argPrisma, LimasImg as argLimas, KerucutImg as argKerucut } from '@/features/comics/comic-1/assets/argument';
 
-import navKubus from '@/features/comics/comic-1/assets/navigation/kubus.svg';
-import navBalok from '@/features/comics/comic-1/assets/navigation/balok.svg';
-import navPrismaPreview from '@/features/comics/comic-1/assets/navigation/prisma-preview.svg';
-import navKerucut from '@/features/comics/comic-1/assets/navigation/kerucut.svg';
-import navDefault from '@/features/comics/comic-1/assets/navigation/default.svg';
+import navKubus from '@/features/comics/comic-1/assets/navigation/Tubuhcandi.png';
+import navBalok from '@/features/comics/comic-1/assets/navigation/Tanggacandi.png';
+import navPrismaPreview from '@/features/comics/comic-1/assets/navigation/Ornamentcandi.png';
+import navKerucut from '@/features/comics/comic-1/assets/navigation/Pucukcandi.png';
+import navLimas from '@/features/comics/comic-1/assets/navigation/Atapcandi.png';
 
 export const packageContent: Comic1PackageContent = {
   metadata: {
@@ -52,7 +47,7 @@ export const packageContent: Comic1PackageContent = {
       page: 1,
       qrImage: qrKubus.src,
       navImage: navKubus.src,
-      objectImage: appKubus.src,
+      objectImage: navKubus.src,
       modelUrl: 'https://app-edu.assemblrworld.com/en/creation/-eGQgkYkAKlbGegmVGej',
       embedUrl: 'https://app-edu.assemblrworld.com/en/creation/-eGQgkYkAKlbGegmVGej',
       viewerType: 'url',
@@ -69,7 +64,7 @@ export const packageContent: Comic1PackageContent = {
       page: 2,
       qrImage: qrBalok.src,
       navImage: navBalok.src,
-      objectImage: appBalok.src,
+      objectImage: navBalok.src,
       modelUrl: 'https://app-edu.assemblrworld.com/en/creation/-hwhAtiZhyCivpQ2Jl5Z',
       embedUrl: 'https://app-edu.assemblrworld.com/en/creation/-hwhAtiZhyCivpQ2Jl5Z',
       viewerType: 'url',
@@ -86,7 +81,7 @@ export const packageContent: Comic1PackageContent = {
       page: 3,
       qrImage: qrPrisma.src,
       navImage: navPrismaPreview.src,
-      objectImage: appPrisma.src,
+      objectImage: navPrismaPreview.src,
       modelUrl: 'https://app-edu.assemblrworld.com/en/creation/-PdcSjQ4sYkREdgHK3rX',
       embedUrl: 'https://app-edu.assemblrworld.com/en/creation/-PdcSjQ4sYkREdgHK3rX',
       viewerType: 'url',
@@ -102,8 +97,8 @@ export const packageContent: Comic1PackageContent = {
       description: 'Bangun ruang yang sesuai untuk bagian puncak yang menonjol dan meruncing.',
       page: 4,
       qrImage: qrLimas.src,
-      navImage: navDefault.src,
-      objectImage: appLimas.src,
+      navImage: navLimas.src,
+      objectImage: navLimas.src,
       modelUrl: 'https://app-edu.assemblrworld.com/en/creation/-499KAWhzbvlKt5wECkt',
       embedUrl: 'https://app-edu.assemblrworld.com/en/creation/-499KAWhzbvlKt5wECkt',
       viewerType: 'url',
@@ -120,7 +115,7 @@ export const packageContent: Comic1PackageContent = {
       page: 5,
       qrImage: qrKerucut.src,
       navImage: navKerucut.src,
-      objectImage: appKerucut.src,
+      objectImage: navKerucut.src,
       modelUrl: 'https://app-edu.assemblrworld.com/en/creation/-HE74wRR8CK9nJFAybzt',
       embedUrl: 'https://app-edu.assemblrworld.com/en/creation/-HE74wRR8CK9nJFAybzt',
       viewerType: 'url',
@@ -323,8 +318,8 @@ export const packageContent: Comic1PackageContent = {
         shape: 'Limas Segi Empat',
         shapeName: 'Limas Segi Empat',
         shapeKey: 'limas',
-        shapeSrc: navDefault.src,
-        icon: navDefault.src,
+        shapeSrc: navLimas.src,
+        icon: navLimas.src,
         aiContext: 'Jelaskan mengapa puncak candi dapat dilihat sebagai limas segi empat, dan sebutkan alas serta sisi-sisi segitiga yang membentuknya.',
         feedback: 'Bagus! Puncak candi memiliki alas segi empat dan sisi-sisi yang bertemu di satu titik puncak, sehingga sesuai dengan limas segi empat.',
         highlightColor: 'border-secondary-500',
