@@ -111,7 +111,12 @@ export function subscribeToReflections(
   callback: (reflections: ReflectionDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  return subscribeToFirestoreCollection('reflection', callback, undefined, onError);
+  return subscribeToFirestoreCollection(
+    'reflection',
+    callback,
+    { orderByField: 'createdAt', orderDirection: 'desc', limitCount: 500 },
+    onError
+  );
 }
 
 function normalizeProgressDocument(documentSnapshot: QueryDocumentSnapshot): ComicProgressDocument {

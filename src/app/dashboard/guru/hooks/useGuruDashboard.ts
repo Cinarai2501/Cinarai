@@ -14,6 +14,16 @@ export function useGuruDashboard() {
     loading,
     error,
     debugEntries,
+    usersLoading,
+    usersError,
+    comicsLoading,
+    comicsError,
+    progressLoading,
+    progressError,
+    activitiesLoading,
+    activitiesError,
+    reflectionsLoading,
+    reflectionsError,
   } = useGuruDashboardSource();
 
   const summary = useMemo(() => {
@@ -40,5 +50,15 @@ export function useGuruDashboard() {
     loading,
     error,
     debugEntries,
+    usersLoading,
+    usersError,
+    comicsLoading,
+    comicsError,
+    progressLoading,
+    progressError,
+    activitiesLoading,
+    activitiesError,
+    reflectionsLoading,
+    reflectionsError,
   };
 }

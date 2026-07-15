@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { useGuruDashboard } from '../hooks/useGuruDashboard';
 import { GuruDashboardLayout } from './GuruDashboardLayout';
 import { GuruHeader } from './GuruHeader';
@@ -11,8 +11,56 @@ import { GuruSidebar } from './GuruSidebar';
 import { GuruStatCards } from './GuruStatCards';
 import { GuruQuickActions } from './GuruQuickActions';
 
+function DashboardWidget({
+  loading,
+  error,
+  loadingLabel,
+  errorLabel,
+  children,
+}: {
+  loading: boolean;
+  error: string | null;
+  loadingLabel: string;
+  errorLabel: string;
+  children: ReactNode;
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70">
+        <p className="text-sm font-semibold text-neutral-600">{loadingLabel}</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6 shadow-sm shadow-rose-200/70">
+        <p className="text-sm font-semibold text-rose-900">{errorLabel}</p>
+        <p className="mt-2 text-sm text-rose-700">{error}</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export default function GuruDashboardContent() {
-  const { summary, progressItems, modules, recentActivities, loading, error, debugEntries } = useGuruDashboard();
+  const {
+    summary,
+    progressItems,
+    modules,
+    recentActivities,
+    loading,
+    error,
+    debugEntries,
+    usersLoading,
+    comicsLoading,
+    comicsError,
+    progressLoading,
+    progressError,
+    activitiesLoading,
+    activitiesError,
+  } = useGuruDashboard();
 
   const statCards = useMemo(() => {
     if (!summary) return [];
@@ -29,6 +77,14 @@ export default function GuruDashboardContent() {
   const guruModules = modules;
   const guruActivities = recentActivities;
   const debugEntriesList = Array.isArray(debugEntries) ? debugEntries : [];
+  const summaryLoading = usersLoading || comicsLoading || progressLoading;
+  const summaryError = comicsError ?? progressError;
+  const moduleLoading = comicsLoading || progressLoading;
+  const moduleError = comicsError ?? progressError;
+  const progressWidgetLoading = progressLoading;
+  const progressWidgetError = progressError;
+  const activityWidgetLoading = activitiesLoading;
+  const activityWidgetError = activitiesError;
 
   if (loading) {
     return (
@@ -77,14 +133,45 @@ export default function GuruDashboardContent() {
                 </div>
               </div>
 
-              <GuruStatCards stats={statCards} />
               <GuruQuickActions />
+
+              <DashboardWidget
+                loading={summaryLoading}
+                error={summaryError}
+                loadingLabel="Memuat ringkasan kelas…"
+                errorLabel="Gagal memuat beberapa data ringkasan"
+              >
+                <GuruStatCards stats={statCards} />
+              </DashboardWidget>
             </div>
 
             <div className="space-y-6">
-              <GuruProgressOverview items={guruProgressItems} />
-              <GuruModuleCards modules={guruModules} />
-              <GuruRecentActivity activities={guruActivities} />
+              <DashboardWidget
+                loading={progressWidgetLoading}
+                error={progressWidgetError}
+                loadingLabel="Memuat progress pembelajaran…"
+                errorLabel="Gagal memuat progress siswa"
+              >
+                <GuruProgressOverview items={guruProgressItems} />
+              </DashboardWidget>
+
+              <DashboardWidget
+                loading={moduleLoading}
+                error={moduleError}
+                loadingLabel="Memuat modul pembelajaran…"
+                errorLabel="Gagal memuat daftar modul"
+              >
+                <GuruModuleCards modules={guruModules} />
+              </DashboardWidget>
+
+              <DashboardWidget
+                loading={activityWidgetLoading}
+                error={activityWidgetError}
+                loadingLabel="Memuat aktivitas terbaru…"
+                errorLabel="Gagal memuat aktivitas siswa"
+              >
+                <GuruRecentActivity activities={guruActivities} />
+              </DashboardWidget>
             </div>
           </div>
 

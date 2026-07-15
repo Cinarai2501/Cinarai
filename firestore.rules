@@ -12,7 +12,10 @@ service cloud.firestore {
     }
 
     function isTeacher() {
-      return isSignedIn() && authUser().exists() && authUser().data.role == 'teacher';
+      return isSignedIn() && authUser().exists() && (
+        authUser().data.role == 'teacher'
+        || authUser().data.role == 'admin'
+      );
     }
 
     function isStudent() {
@@ -82,6 +85,14 @@ service cloud.firestore {
     match /comics/{docId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    match /progress/{docId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid
+        || isTeacher()
+      );
+      allow write: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     // ── Semua collection lain: tolak ─────────────────────────────────────────

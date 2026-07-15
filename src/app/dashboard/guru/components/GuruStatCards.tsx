@@ -26,7 +26,7 @@ function renderIcon(icon: GuruStatCardProps['icon'], className: string) {
 
 export function GuruStatCards({ stats }: { stats: GuruStatCardProps[] }) {
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {stats.map((stat) => (
         <div key={stat.title} className="rounded-[24px] border border-neutral-100 bg-white p-4 shadow-sm shadow-neutral-200/70">
           <div className={`inline-flex rounded-2xl p-3 ${stat.accent}`}>

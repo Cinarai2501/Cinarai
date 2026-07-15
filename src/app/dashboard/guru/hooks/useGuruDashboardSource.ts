@@ -96,7 +96,7 @@ export function useGuruDashboardSource(): GuruDashboardSourceState & { debugEntr
       });
       setState((current) => ({
         ...current,
-        error: `${sourceName} load failed: ${error.message}`,
+        ...(key === 'users' ? { error: `${sourceName} load failed: ${error.message}` } : {}),
       }));
       markLoaded(key);
     };
