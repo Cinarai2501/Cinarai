@@ -155,16 +155,28 @@ export default function ArgumentationStage() {
   );
 
   const handleNext = useCallback(() => {
-    if (!learningObject) return;
+    console.log('[ArgumentationFlow] STEP 3: handleNext invoked', {
+      currentIndex,
+      totalPages,
+      hasLearningObject: Boolean(learningObject),
+      feedback: Boolean(feedback),
+    });
+
+    if (!learningObject) {
+      console.log('[ArgumentationFlow] STEP 3a: no learning object; stopping');
+      return;
+    }
 
     if (currentIndex < orderedLearningObjects.length - 1) {
+      console.log('[ArgumentationFlow] STEP 3b: moving to next argumentation page');
       setCurrentIndex((prev) => prev + 1);
       setFeedback(null);
       return;
     }
 
-    nextStage();
-  }, [currentIndex, learningObject, nextStage, orderedLearningObjects.length]);
+    console.log('[ArgumentationFlow] STEP 4: calling nextStage from ArgumentationStage');
+    void nextStage();
+  }, [currentIndex, feedback, learningObject, nextStage, orderedLearningObjects.length, totalPages]);
 
   if (!learningObject) {
     return (

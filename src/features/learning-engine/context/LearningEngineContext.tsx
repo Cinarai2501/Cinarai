@@ -239,11 +239,33 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   }, [user, currentStage, showSnackbar]);
 
   const nextStage = useCallback(async () => {
-    if (!canAdvance || isSavingRef.current || stageIndex >= totalStages - 1) return;
+    console.log('[ArgumentationFlow] STEP 5: nextStage called', {
+      canAdvance,
+      isSaving: isSavingRef.current,
+      stageIndex,
+      totalStages,
+      currentStage,
+    });
+
+    if (!canAdvance) {
+      console.log('[ArgumentationFlow] STEP 5a: blocked because canAdvance is false');
+      return;
+    }
+
+    if (isSavingRef.current) {
+      console.log('[ArgumentationFlow] STEP 5a: blocked because save already in progress');
+      return;
+    }
+
+    if (stageIndex >= totalStages - 1) {
+      console.log('[ArgumentationFlow] STEP 5a: blocked because already at last stage');
+      return;
+    }
 
     const sintaks = stageToSintaks(currentStage);
 
     if (!user?.uid) {
+      console.log('[ArgumentationFlow] STEP 5a: blocked because user is not authenticated');
       showSnackbar('Gagal menyimpan progress: login diperlukan.', 'error');
       return;
     }
@@ -255,14 +277,17 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       isSavingRef.current = true;
       setIsSaving(true);
 
-      (async () => {
+      void (async () => {
         try {
+          console.log('[ArgumentationFlow] STEP 6: saving progress to Firestore');
           const next = await persistCompleteStage(user.uid, progressRef.current, sintaks);
           progressRef.current = next;
           setProgress(next);
           showSnackbar('Progress berhasil disimpan ✓', 'success');
+          console.log('[ArgumentationFlow] STEP 7: progress saved successfully');
         } catch (error) {
           const code = extractFirebaseErrorCode(error);
+          console.log('[ArgumentationFlow] STEP 7a: progress save failed', { code });
           showSnackbar(`Gagal menyimpan progress: ${code}`, 'error');
         } finally {
           isSavingRef.current = false;
@@ -272,7 +297,12 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     }
 
     // Advance UI immediately
-    setStageIndex((i) => Math.min(i + 1, totalStages - 1));
+    console.log('[ArgumentationFlow] STEP 8: setting next stage index immediately');
+    setStageIndex((i) => {
+      const nextIndex = Math.min(i + 1, totalStages - 1);
+      console.log('[ArgumentationFlow] STEP 8a: stage index updated', { from: i, to: nextIndex });
+      return nextIndex;
+    });
   }, [user, stageIndex, totalStages, currentStage, canAdvance, showSnackbar]);
 
   const previousStage = useCallback(() => {

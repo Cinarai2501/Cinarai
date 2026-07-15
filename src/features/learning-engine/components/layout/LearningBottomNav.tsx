@@ -54,7 +54,7 @@ export default function LearningBottomNav() {
   return (
     <nav
       aria-label="Navigasi stage"
-      className="sticky bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-sm shadow-sm"
+      className="pointer-events-none sticky bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-sm shadow-sm"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-3 py-2 md:max-w-3xl md:px-4">
@@ -63,7 +63,7 @@ export default function LearningBottomNav() {
           onClick={handlePrev}
           disabled={prevDisabled}
           aria-label="Sebelumnya"
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-600 transition duration-200 hover:bg-neutral-100 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40"
+          className="pointer-events-auto flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-600 transition duration-200 hover:bg-neutral-100 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -74,7 +74,7 @@ export default function LearningBottomNav() {
           type="button"
           onClick={handleNext}
           disabled={nextDisabled}
-          className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 text-sm font-black text-white shadow-sm transition duration-200 hover:bg-primary-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-primary-300"
+          className="pointer-events-auto flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 text-sm font-black text-white shadow-sm transition duration-200 hover:bg-primary-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-primary-300"
         >
           {isSaving ? (
             <>

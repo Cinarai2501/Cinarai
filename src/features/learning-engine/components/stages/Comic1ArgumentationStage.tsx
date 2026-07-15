@@ -240,7 +240,16 @@ export default function Comic1ArgumentationStage({
               </span>
               <button
                 type="button"
-                onClick={() => void handleSubmit()}
+                onClick={() => {
+                  console.log('[ArgumentationFlow] STEP 1: submit button clicked', {
+                    currentIndex,
+                    totalItems,
+                    charCount,
+                    canSubmit,
+                    isSubmitting,
+                  });
+                  void handleSubmit();
+                }}
                 disabled={!canSubmit}
                 className="inline-flex items-center justify-center rounded-[20px] bg-accent-600 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-accent-700 disabled:bg-neutral-300 disabled:cursor-not-allowed"
               >
@@ -256,8 +265,15 @@ export default function Comic1ArgumentationStage({
           <FeedbackCard feedback={feedback} />
           <button
             type="button"
-            onClick={() => void onNext()}
-            className="w-full rounded-[24px] bg-accent-600 px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-accent-700"
+            onClick={() => {
+              console.log('[ArgumentationFlow] STEP 2: continue button clicked', {
+                currentIndex,
+                totalItems,
+                feedback: !!feedback,
+              });
+              void onNext();
+            }}
+            className="relative z-10 w-full rounded-[24px] bg-accent-600 px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-accent-700"
           >
             Lanjut
           </button>
