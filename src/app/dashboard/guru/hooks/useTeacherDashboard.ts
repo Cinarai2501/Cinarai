@@ -23,7 +23,7 @@ export function useTeacherDashboard() {
   const progressItems = useMemo(() => {
     if (!students.length || !comics.length) return [];
     return buildTeacherProgressOverview(students, progressByStudent);
-  }, [students, progressByStudent]);
+  }, [students, comics, progressByStudent]);
 
   const modules = useMemo(() => {
     if (!comics.length) return [];

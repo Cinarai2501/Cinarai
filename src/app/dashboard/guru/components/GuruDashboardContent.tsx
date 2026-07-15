@@ -14,14 +14,7 @@ export default function GuruDashboardContent() {
   const { summary, progressItems, modules, recentActivities, loading, error } = useTeacherDashboard();
 
   const statCards = useMemo(() => {
-    if (!summary) {
-      return [
-        { title: 'Jumlah Siswa', value: '0', icon: 'people' as const, accent: 'bg-primary-50 text-primary-700' },
-        { title: 'Siswa Aktif', value: '0', icon: 'school' as const, accent: 'bg-secondary-50 text-secondary-700' },
-        { title: 'Modul Pembelajaran', value: '0', icon: 'menuBook' as const, accent: 'bg-amber-50 text-amber-700' },
-        { title: 'Rata-rata Progress', value: '0%', icon: 'trendingUp' as const, accent: 'bg-emerald-50 text-emerald-700' },
-      ];
-    }
+    if (!summary) return [];
 
     return [
       { title: 'Jumlah Siswa', value: `${summary.totalStudents}`, icon: 'people' as const, accent: 'bg-primary-50 text-primary-700' },
@@ -31,13 +24,19 @@ export default function GuruDashboardContent() {
     ];
   }, [summary]);
 
+  const teacherProgressItems = progressItems;
+  const teacherModules = modules;
+  const teacherActivities = recentActivities;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
         <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
-          <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70">
-            <p className="text-lg font-black text-neutral-900">Memuat data Dashboard Guru…</p>
-            <p className="mt-2 text-sm text-neutral-600">Sedang mengambil statistik kelas dan aktivitas siswa dari Firestore.</p>
+          <div className="space-y-6">
+            <div className="rounded-[28px] border border-neutral-100 bg-white p-5 shadow-sm shadow-neutral-200/70">
+              <p className="text-lg font-black text-neutral-900">Memuat data Dashboard Guru…</p>
+              <p className="mt-2 text-sm text-neutral-600">Menyiapkan statistik kelas dan aktivitas siswa secara realtime.</p>
+            </div>
           </div>
         </TeacherDashboardLayout>
       </div>
@@ -46,11 +45,27 @@ export default function GuruDashboardContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
         <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
-          <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6 shadow-sm shadow-rose-200/70">
-            <p className="text-lg font-black text-rose-900">Gagal memuat Dashboard Guru</p>
-            <p className="mt-2 text-sm text-rose-700">{error}</p>
+          <div className="space-y-6">
+            <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-5 shadow-sm shadow-rose-200/70">
+              <p className="text-lg font-black text-rose-900">Gagal memuat data</p>
+              <p className="mt-2 text-sm text-rose-700">{error}</p>
+            </div>
+          </div>
+        </TeacherDashboardLayout>
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
+        <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
+          <div className="space-y-6">
+            <div className="rounded-[28px] border border-dashed border-neutral-200 bg-neutral-50 p-5 text-center text-sm text-neutral-500">
+              Tidak ada data kelas yang tersedia saat ini.
+            </div>
           </div>
         </TeacherDashboardLayout>
       </div>
@@ -58,16 +73,16 @@ export default function GuruDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
       <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
         <div className="space-y-6">
           <TeacherStatCards stats={statCards} />
 
           <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <TeacherProgressOverview items={progressItems} />
+            <TeacherProgressOverview items={teacherProgressItems} />
             <div className="space-y-6">
-              <TeacherModuleCards modules={modules} />
-              <TeacherRecentActivity activities={recentActivities} />
+              <TeacherModuleCards modules={teacherModules} />
+              <TeacherRecentActivity activities={teacherActivities} />
             </div>
           </div>
 

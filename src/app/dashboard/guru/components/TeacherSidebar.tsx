@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const items = [
-  { label: 'Dashboard', href: '/dashboard/guru', active: true },
-  { label: 'Siswa', href: '/dashboard/guru/siswa', active: true },
-  { label: 'Statistik', href: '/dashboard/guru/statistik', active: false },
-  { label: 'Analisis AI', href: '/dashboard/guru/analisis-ai', active: false },
-  { label: 'Laporan', href: '/dashboard/guru/laporan', active: false },
-  { label: 'Pengaturan', href: '/dashboard/guru/pengaturan', active: false },
+  { label: 'Dashboard', href: '/dashboard/guru', enabled: true },
+  { label: 'Siswa', href: '/dashboard/guru/siswa', enabled: false },
+  { label: 'Statistik', href: '/dashboard/guru/statistik', enabled: false },
+  { label: 'Analisis AI', href: '/dashboard/guru/analisis-ai', enabled: false },
+  { label: 'Laporan', href: '/dashboard/guru/laporan', enabled: false },
+  { label: 'Pengaturan', href: '/dashboard/guru/pengaturan', enabled: false },
 ];
 
 export function TeacherSidebar() {
@@ -21,14 +21,14 @@ export function TeacherSidebar() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Menu Guru</p>
         <div className="mt-4 space-y-2">
           {items.map((item) => {
-            const isActive = pathname === item.href || (item.href === '/dashboard/guru' && pathname === '/dashboard/guru');
-            const isEnabled = item.active;
+            const isActive = pathname === item.href;
+            const isEnabled = item.enabled;
 
             if (!isEnabled) {
               return (
                 <div
                   key={item.label}
-                  className="flex w-full cursor-not-allowed items-center justify-between rounded-2xl px-3 py-2 text-left text-sm font-semibold text-neutral-600 opacity-80"
+                  className="flex w-full cursor-not-allowed items-center justify-between rounded-2xl border border-dashed border-neutral-200 bg-white/80 px-3 py-2 text-left text-sm font-semibold text-neutral-500 opacity-90"
                 >
                   <span>{item.label}</span>
                   <span className="text-xs">→</span>
