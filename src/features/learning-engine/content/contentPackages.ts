@@ -75,10 +75,6 @@ export interface LearningContentResolutionMission {
   illustration: string;
 }
 
-import { packageContent as comic1PackageContent } from '@/features/comics/comic-1/content/packageContent';
-import { packageContent as comic2PackageContent } from '@/features/comics/comic-2/content/packageContent';
-import { packageContent as comic3PackageContent } from '@/features/comics/comic-3/content/packageContent';
-
 export interface LearningContentPackage {
   metadata: {
     comicId: number;
@@ -129,15 +125,15 @@ export interface LearningContentPackage {
 }
 
 function makeComic1Package(): LearningContentPackage {
-  return comic1PackageContent as LearningContentPackage;
+  return makeFallbackPackage(1);
 }
 
 function makeComic2Package(): LearningContentPackage {
-  return comic2PackageContent as LearningContentPackage;
+  return makeFallbackPackage(2);
 }
 
 function makeComic3Package(): LearningContentPackage {
-  return comic3PackageContent as LearningContentPackage;
+  return makeFallbackPackage(3);
 }
 
 function makeFallbackPackage(comicId: number): LearningContentPackage {

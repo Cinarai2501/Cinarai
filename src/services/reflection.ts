@@ -1,7 +1,5 @@
 'use client';
 
-import { serverTimestamp } from 'firebase/firestore';
-import { mergeFirestoreDocument } from '@/services/firestore';
 
 export interface ReflectionSaveInput {
   userId: string;
@@ -28,14 +26,33 @@ export interface ReflectionDocumentPayload {
   reflectionText: string;
   stage: string;
   status: string;
-  timestamp: ReturnType<typeof serverTimestamp>;
-  createdAt: ReturnType<typeof serverTimestamp>;
-  submittedAt: ReturnType<typeof serverTimestamp>;
+  timestamp: unknown;
+  createdAt: unknown;
+  submittedAt: unknown;
   aiReflection?: { appreciation: string; needsImprovement: string; suggestion: string } | string;
   response?: string;
 }
 
-export function buildReflectionDocumentPayload(input: ReflectionSaveInput): ReflectionDocumentPayload {
+export interface ReflectionDependencies {
+  getCurrentUser: () => { uid?: string } | null | undefined;
+  getFirestoreDocument: (collection: string, docId: string) => Promise<unknown>;
+  mergeFirestoreDocument: (collection: string, docId: string, payload: Record<string, unknown>) => Promise<void>;
+  serverTimestamp: () => unknown;
+}
+
+const MIN_REFLECTION_LENGTH = 10;
+
+const defaultDependencies: ReflectionDependencies = {
+  getCurrentUser: () => ({ uid: undefined }),
+  getFirestoreDocument: async () => null,
+  mergeFirestoreDocument: async () => undefined,
+  serverTimestamp: () => ({ __type: 'serverTimestamp' }),
+};
+
+export function buildReflectionDocumentPayload(
+  input: ReflectionSaveInput,
+  serverTimestampFn: ReflectionDependencies['serverTimestamp'] = defaultDependencies.serverTimestamp,
+): ReflectionDocumentPayload {
   const payload: ReflectionDocumentPayload = {
     userId: input.userId,
     studentId: input.userId,
@@ -48,9 +65,9 @@ export function buildReflectionDocumentPayload(input: ReflectionSaveInput): Refl
     reflectionText: input.reflectionText.trim(),
     stage: input.stage,
     status: input.status ?? 'completed',
-    timestamp: serverTimestamp(),
-    createdAt: serverTimestamp(),
-    submittedAt: serverTimestamp(),
+    timestamp: serverTimestampFn(),
+    createdAt: serverTimestampFn(),
+    submittedAt: serverTimestampFn(),
   };
 
   if (input.aiReflection !== undefined && input.aiReflection !== null) {
@@ -64,8 +81,41 @@ export function buildReflectionDocumentPayload(input: ReflectionSaveInput): Refl
   return payload;
 }
 
+export async function saveReflection(
+  input: ReflectionSaveInput,
+  deps: ReflectionDependencies = defaultDependencies,
+): Promise<void> {
+  const authUser = deps.getCurrentUser();
+  const resolvedUserId = input.userId || authUser?.uid;
+
+  if (!resolvedUserId?.trim()) {
+    throw new Error('Invalid user');
+  }
+
+  const reflectionText = input.reflectionText.trim();
+  if (reflectionText.length < MIN_REFLECTION_LENGTH) {
+    throw new Error('Invalid reflection');
+  }
+
+  const docId = `${resolvedUserId}_${input.comicId}_introspection`;
+  const existingDocument = await deps.getFirestoreDocument('reflection', docId);
+
+  if (existingDocument) {
+    throw new Error('Duplicate reflection submission');
+  }
+
+  const payload = buildReflectionDocumentPayload(
+    {
+      ...input,
+      userId: resolvedUserId,
+      reflectionText,
+    },
+    deps.serverTimestamp,
+  );
+
+  await deps.mergeFirestoreDocument('reflection', docId, payload as unknown as Record<string, unknown>);
+}
+
 export async function saveReflectionDocument(input: ReflectionSaveInput): Promise<void> {
-  const docId = `${input.userId}_${input.comicId}_introspection`;
-  const payload = buildReflectionDocumentPayload(input);
-  await mergeFirestoreDocument('reflection', docId, payload);
+  await saveReflection(input);
 }
