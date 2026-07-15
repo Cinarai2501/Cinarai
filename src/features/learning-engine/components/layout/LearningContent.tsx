@@ -84,7 +84,7 @@ export default function LearningContent({ children }: LearningContentProps) {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <div className="mx-auto w-full max-w-2xl px-3 pb-8 pt-3 animate-fade-in sm:px-4 md:max-w-3xl md:px-6 md:pb-10 md:pt-5 lg:px-8 lg:pb-12 lg:pt-6">
+      <div className="mx-auto w-full max-w-2xl px-3 pb-24 pt-3 animate-fade-in sm:px-4 md:max-w-3xl md:px-6 md:pb-28 md:pt-5 lg:px-8 lg:pb-32 lg:pt-6">
         {children}
 
         {/* Reset — below stage content, only when not finished */}

@@ -248,25 +248,30 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       return;
     }
 
+    // To avoid blocking UI navigation on slow networks, persist progress in background.
+    // Navigation (stageIndex) is advanced immediately while the save runs async.
     if (sintaks) {
+      // mark saving ref and set saving indicator while background save runs
       isSavingRef.current = true;
       setIsSaving(true);
-      try {
-        const next = await persistCompleteStage(user.uid, progressRef.current, sintaks);
-        setProgress(next);
-        showSnackbar('Progress berhasil disimpan ✓', 'success');
-      } catch (error) {
-        const code = extractFirebaseErrorCode(error);
-        showSnackbar(`Gagal menyimpan progress: ${code}`, 'error');
-        isSavingRef.current = false;
-        setIsSaving(false);
-        return;
-      } finally {
-        isSavingRef.current = false;
-        setIsSaving(false);
-      }
+
+      (async () => {
+        try {
+          const next = await persistCompleteStage(user.uid, progressRef.current, sintaks);
+          progressRef.current = next;
+          setProgress(next);
+          showSnackbar('Progress berhasil disimpan ✓', 'success');
+        } catch (error) {
+          const code = extractFirebaseErrorCode(error);
+          showSnackbar(`Gagal menyimpan progress: ${code}`, 'error');
+        } finally {
+          isSavingRef.current = false;
+          setIsSaving(false);
+        }
+      })();
     }
 
+    // Advance UI immediately
     setStageIndex((i) => Math.min(i + 1, totalStages - 1));
   }, [user, stageIndex, totalStages, currentStage, canAdvance, showSnackbar]);
 
