@@ -19,7 +19,7 @@ export function GuruQuickActions() {
           className="rounded-[20px] border border-neutral-100 bg-primary-50 px-4 py-4 text-left text-sm font-semibold text-primary-700 transition hover:border-primary-200 hover:bg-primary-100"
         >
           <p className="text-sm font-semibold">Lihat daftar siswa</p>
-          <p className="mt-1 text-xs text-neutral-600">Cari, sortir, dan pantau progress siswa.</p>
+          <p className="mt-1 text-xs text-neutral-600">Pantau siswa dan progress mereka.</p>
         </Link>
 
         <Link
@@ -27,7 +27,7 @@ export function GuruQuickActions() {
           className="rounded-[20px] border border-neutral-100 bg-white px-4 py-4 text-left text-sm font-semibold text-neutral-900 transition hover:border-primary-200 hover:bg-primary-50"
         >
           <p className="text-sm font-semibold">Analisis kelas</p>
-          <p className="mt-1 text-xs text-neutral-600">Pelajari performa kelas dan modul favorit.</p>
+          <p className="mt-1 text-xs text-neutral-600">Lihat performa kelas dengan cepat.</p>
         </Link>
 
         <Link
@@ -35,7 +35,7 @@ export function GuruQuickActions() {
           className="rounded-[20px] border border-neutral-100 bg-white px-4 py-4 text-left text-sm font-semibold text-neutral-900 transition hover:border-primary-200 hover:bg-primary-50"
         >
           <p className="text-sm font-semibold">AI Analytics</p>
-          <p className="mt-1 text-xs text-neutral-600">Gunakan wawasan AI untuk dukung siswa.</p>
+          <p className="mt-1 text-xs text-neutral-600">Dapatkan insight pembelajaran AI.</p>
         </Link>
 
         <Link
@@ -43,7 +43,7 @@ export function GuruQuickActions() {
           className="rounded-[20px] border border-neutral-100 bg-white px-4 py-4 text-left text-sm font-semibold text-neutral-900 transition hover:border-primary-200 hover:bg-primary-50"
         >
           <p className="text-sm font-semibold">Buat laporan</p>
-          <p className="mt-1 text-xs text-neutral-600">Siapkan laporan kelas untuk pertemuan berikutnya.</p>
+          <p className="mt-1 text-xs text-neutral-600">Siapkan laporan untuk pertemuan berikutnya.</p>
         </Link>
       </div>
     </section>

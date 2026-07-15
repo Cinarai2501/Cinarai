@@ -1,19 +1,10 @@
 import { useMemo } from 'react';
 import { useGuruDashboardSource } from './useGuruDashboardSource';
-import { buildGuruDashboardSummary } from '../services/guru/dashboard/stats';
-import { buildGuruModuleSummaries } from '../services/guru/dashboard/module';
-import { buildGuruProgressOverview } from '../services/guru/dashboard/progress';
-import { buildGuruRecentActivities } from '../services/guru/dashboard/activity';
 
 export function useGuruDashboard() {
   const {
-    students,
-    comics,
-    progressByStudent,
-    activities,
     loading,
     error,
-    debugEntries,
     usersLoading,
     usersError,
     comicsLoading,
@@ -24,23 +15,13 @@ export function useGuruDashboard() {
     activitiesError,
     reflectionsLoading,
     reflectionsError,
+    dashboardSnapshot,
   } = useGuruDashboardSource();
 
-  const summary = useMemo(() => {
-    return buildGuruDashboardSummary(students, comics, progressByStudent);
-  }, [students, comics, progressByStudent]);
-
-  const progressItems = useMemo(() => {
-    return buildGuruProgressOverview(students, progressByStudent);
-  }, [students, progressByStudent]);
-
-  const modules = useMemo(() => {
-    return buildGuruModuleSummaries(comics, progressByStudent);
-  }, [comics, progressByStudent]);
-
-  const recentActivities = useMemo(() => {
-    return buildGuruRecentActivities(activities, students);
-  }, [activities, students]);
+  const summary = useMemo(() => dashboardSnapshot.summary, [dashboardSnapshot.summary]);
+  const progressItems = useMemo(() => dashboardSnapshot.progressItems, [dashboardSnapshot.progressItems]);
+  const modules = useMemo(() => dashboardSnapshot.modules, [dashboardSnapshot.modules]);
+  const recentActivities = useMemo(() => dashboardSnapshot.recentActivities, [dashboardSnapshot.recentActivities]);
 
   return {
     summary,
@@ -49,7 +30,6 @@ export function useGuruDashboard() {
     recentActivities,
     loading,
     error,
-    debugEntries,
     usersLoading,
     usersError,
     comicsLoading,

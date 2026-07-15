@@ -27,15 +27,21 @@ function renderIcon(icon: GuruStatCardProps['icon'], className: string) {
 export function GuruStatCards({ stats }: { stats: GuruStatCardProps[] }) {
   return (
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      {stats.map((stat) => (
-        <div key={stat.title} className="rounded-[24px] border border-neutral-100 bg-white p-4 shadow-sm shadow-neutral-200/70">
-          <div className={`inline-flex rounded-2xl p-3 ${stat.accent}`}>
-            {renderIcon(stat.icon, 'h-5 w-5')}
-          </div>
-          <p className="mt-4 text-sm font-semibold text-neutral-500">{stat.title}</p>
-          <p className="mt-1 text-2xl font-black text-neutral-900">{stat.value}</p>
+      {stats.length === 0 ? (
+        <div className="col-span-full rounded-[24px] border border-dashed border-neutral-200 bg-neutral-50 p-5 text-sm text-neutral-500">
+          Belum ada data ringkasan untuk ditampilkan.
         </div>
-      ))}
+      ) : (
+        stats.map((stat) => (
+          <div key={stat.title} className="rounded-[24px] border border-neutral-100 bg-white p-4 shadow-sm shadow-neutral-200/70">
+            <div className={`inline-flex rounded-2xl p-3 ${stat.accent}`}>
+              {renderIcon(stat.icon, 'h-5 w-5')}
+            </div>
+            <p className="mt-4 text-sm font-semibold text-neutral-500">{stat.title}</p>
+            <p className="mt-1 text-2xl font-black text-neutral-900">{stat.value}</p>
+          </div>
+        ))
+      )}
     </section>
   );
 }

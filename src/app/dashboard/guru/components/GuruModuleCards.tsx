@@ -26,9 +26,9 @@ export function GuruModuleCards({ modules }: { modules: ModuleItem[] }) {
         </div>
       ) : (
         <div className="mt-5 overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-[max-content] lg:grid lg:min-w-0 lg:grid-cols-2 lg:flex-none">
+          <div className="flex gap-3 min-w-[max-content] lg:grid lg:min-w-0 lg:grid-cols-2 lg:flex-none">
             {modules.map((module) => (
-              <div key={module.title} className="min-w-[280px] flex-shrink-0 overflow-hidden rounded-[24px] border border-neutral-100 bg-neutral-50 shadow-sm lg:min-w-0 lg:w-auto">
+              <div key={module.title} className="min-w-[260px] flex-shrink-0 overflow-hidden rounded-[24px] border border-neutral-100 bg-neutral-50 shadow-sm lg:min-w-0 lg:w-auto">
                 <div className="relative h-28 bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 text-white">
                   <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.5),_transparent_35%)]" />
                   <div className="absolute inset-x-0 bottom-3 px-4">

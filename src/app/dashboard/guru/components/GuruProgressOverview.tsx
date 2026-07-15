@@ -17,7 +17,7 @@ export function GuruProgressOverview({ items }: { items: ProgressItem[] }) {
       </div>
 
       {items.length === 0 ? (
-        <div className="mt-6 rounded-[24px] bg-neutral-50 p-5 text-center text-sm text-neutral-500">
+        <div className="mt-6 rounded-[24px] border border-dashed border-neutral-200 bg-neutral-50 p-5 text-center text-sm text-neutral-500">
           Belum ada data progress kelas saat ini.
         </div>
       ) : (

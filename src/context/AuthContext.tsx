@@ -59,8 +59,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const userDocument = await getFirestoreDocument('users', firebaseUser.uid);
-      const claimsResult = await firebaseUser.getIdTokenResult();
+      const [userDocument, claimsResult] = await Promise.all([
+        getFirestoreDocument('users', firebaseUser.uid),
+        firebaseUser.getIdTokenResult(),
+      ]);
       const resolvedRole = resolveUserRoleFromProfileAndClaims(userDocument?.role, claimsResult.claims.role);
 
       if (!resolvedRole) {
@@ -132,7 +134,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { user: firebaseUser } = await firebaseSignUp(email, password);
         await updateUserProfile(firebaseUser, displayName);
 
-        // Build user object with only defined fields, then clean to remove any undefined values
         const userData = cleanObject({
           uid: firebaseUser.uid,
           email: firebaseUser.email ?? '',
@@ -145,6 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
 
         await upsertUser(userData as Parameters<typeof upsertUser>[0]);
+        await firebaseUser.getIdTokenResult(true);
         await syncUserFromFirestore(firebaseUser);
       } catch (error) {
         const errorMessage =

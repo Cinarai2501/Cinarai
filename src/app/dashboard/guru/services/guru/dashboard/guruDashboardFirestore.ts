@@ -1,17 +1,3 @@
-import {
-  collectionGroup,
-  getDocs,
-  onSnapshot,
-  query,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore';
-import { GuruFirestoreInspector } from '@/app/dashboard/guru/services/guru/debug/GuruFirestoreInspector';
-import { firestore } from '@/lib/firebase/client';
-import {
-  getFirestoreCollection,
-  queryFirestoreCollection,
-  subscribeToFirestoreCollection,
-} from '@/services/firestore';
 import type {
   ActivityDocument,
   ComicDocument,
@@ -20,141 +6,173 @@ import type {
   UserDocument,
 } from '@/types/firestore';
 
-export async function loadAllUsers(): Promise<UserDocument[]> {
-  return GuruFirestoreInspector.run(
-    {
-      collection: 'users',
-      path: 'users',
-      where: [],
-      orderBy: [],
-      limit: null,
+async function fetchDashboardData() {
+  const token = await (await import('@/lib/firebase/auth')).getUserToken();
+  if (!token) {
+    throw new Error('Sesi guru tidak tersedia.');
+  }
+
+  const response = await fetch('/api/dashboard/guru', {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-    async () => getFirestoreCollection('users')
-  );
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error ?? 'Dashboard guru gagal dimuat');
+  }
+
+  return response.json();
+}
+
+export async function loadAllUsers(): Promise<UserDocument[]> {
+  const payload = await fetchDashboardData();
+  return payload.students ?? [];
 }
 
 export function subscribeToUsers(
   callback: (users: UserDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  return subscribeToFirestoreCollection('users', callback, undefined, onError);
+  let timer: ReturnType<typeof setInterval> | undefined;
+
+  const refresh = async () => {
+    try {
+      const payload = await fetchDashboardData();
+      callback(payload.students ?? []);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to load users'));
+    }
+  };
+
+  void refresh();
+  timer = setInterval(() => {
+    void refresh();
+  }, 10000);
+
+  return () => {
+    if (timer) clearInterval(timer);
+  };
 }
 
 export async function loadAllComics(): Promise<ComicDocument[]> {
-  return GuruFirestoreInspector.run(
-    {
-      collection: 'comics',
-      path: 'comics',
-      where: [],
-      orderBy: [],
-      limit: null,
-    },
-    () => getFirestoreCollection('comics')
-  );
+  const payload = await fetchDashboardData();
+  return payload.comics ?? [];
 }
 
 export function subscribeToComics(
   callback: (comics: ComicDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  return subscribeToFirestoreCollection('comics', callback, undefined, onError);
+  let timer: ReturnType<typeof setInterval> | undefined;
+
+  const refresh = async () => {
+    try {
+      const payload = await fetchDashboardData();
+      callback(payload.comics ?? []);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to load comics'));
+    }
+  };
+
+  void refresh();
+  timer = setInterval(() => {
+    void refresh();
+  }, 10000);
+
+  return () => {
+    if (timer) clearInterval(timer);
+  };
 }
 
 export async function loadRecentActivities(limitCount = 20): Promise<ActivityDocument[]> {
-  return GuruFirestoreInspector.run(
-    {
-      collection: 'activity',
-      path: 'activity',
-      where: [],
-      orderBy: [{ field: 'occurredAt', direction: 'desc' }],
-      limit: limitCount,
-    },
-    () => queryFirestoreCollection('activity', {
-      orderByField: 'occurredAt',
-      orderDirection: 'desc',
-      limitCount,
-    })
-  );
+  const payload = await fetchDashboardData();
+  return (payload.activities ?? []).slice(0, limitCount);
 }
 
 export function subscribeToRecentActivities(
   callback: (activities: ActivityDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  return subscribeToFirestoreCollection(
-    'activity',
-    callback,
-    { orderByField: 'occurredAt', orderDirection: 'desc', limitCount: 20 },
-    onError
-  );
+  let timer: ReturnType<typeof setInterval> | undefined;
+
+  const refresh = async () => {
+    try {
+      const payload = await fetchDashboardData();
+      callback((payload.activities ?? []).slice(0, 20));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to load activities'));
+    }
+  };
+
+  void refresh();
+  timer = setInterval(() => {
+    void refresh();
+  }, 10000);
+
+  return () => {
+    if (timer) clearInterval(timer);
+  };
 }
 
 export async function loadAllReflections(): Promise<ReflectionDocument[]> {
-  return GuruFirestoreInspector.run(
-    {
-      collection: 'reflection',
-      path: 'reflection',
-      where: [],
-      orderBy: [],
-      limit: null,
-    },
-    // Limit reflections to recent 500 to avoid loading entire collection for dashboard.
-    () => queryFirestoreCollection('reflection', {
-      orderByField: 'createdAt',
-      orderDirection: 'desc',
-      limitCount: 500,
-    })
-  );
+  const payload = await fetchDashboardData();
+  return (payload.reflections ?? []).slice(0, 200);
 }
 
 export function subscribeToReflections(
   callback: (reflections: ReflectionDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  return subscribeToFirestoreCollection(
-    'reflection',
-    callback,
-    { orderByField: 'createdAt', orderDirection: 'desc', limitCount: 500 },
-    onError
-  );
-}
+  let timer: ReturnType<typeof setInterval> | undefined;
 
-function normalizeProgressDocument(documentSnapshot: QueryDocumentSnapshot): ComicProgressDocument {
-  const data = documentSnapshot.data() as Partial<ComicProgressDocument>;
-  const userId = documentSnapshot.ref.parent.parent?.id ?? '';
-  return {
-    id: documentSnapshot.id,
-    ...data,
-    userId,
-    comicId: data.comicId ?? Number(documentSnapshot.id.replace('comic-', '')),
-  } as ComicProgressDocument;
+  const refresh = async () => {
+    try {
+      const payload = await fetchDashboardData();
+      callback((payload.reflections ?? []).slice(0, 200));
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to load reflections'));
+    }
+  };
+
+  void refresh();
+  timer = setInterval(() => {
+    void refresh();
+  }, 10000);
+
+  return () => {
+    if (timer) clearInterval(timer);
+  };
 }
 
 export async function loadAllProgressDocuments(): Promise<ComicProgressDocument[]> {
-  return GuruFirestoreInspector.run(
-    {
-      collection: 'progress',
-      path: 'progress (collectionGroup)',
-      where: [],
-      orderBy: [],
-      limit: null,
-    },
-    async () => {
-      const snapshot = await getDocs(query(collectionGroup(firestore, 'progress')));
-      return snapshot.docs.map(normalizeProgressDocument);
-    }
-  );
+  const payload = await fetchDashboardData();
+  return payload.progressDocuments ?? [];
 }
 
 export function subscribeToAllProgressDocuments(
   callback: (progressDocuments: ComicProgressDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  return onSnapshot(
-    query(collectionGroup(firestore, 'progress')),
-    (snapshot) => {
-      callback(snapshot.docs.map(normalizeProgressDocument));
-    },
-    onError
-  );
+  let timer: ReturnType<typeof setInterval> | undefined;
+
+  const refresh = async () => {
+    try {
+      const payload = await fetchDashboardData();
+      callback(payload.progressDocuments ?? []);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('Failed to load progress'));
+    }
+  };
+
+  void refresh();
+  timer = setInterval(() => {
+    void refresh();
+  }, 10000);
+
+  return () => {
+    if (timer) clearInterval(timer);
+  };
 }

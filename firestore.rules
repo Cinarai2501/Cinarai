@@ -36,6 +36,11 @@ service cloud.firestore {
       }
     }
 
+    match /dashboard/{docId} {
+      allow read: if isSignedIn() && isTeacher();
+      allow write: if false;
+    }
+
     // ── reflection ───────────────────────────────────────────────────────────
     match /reflection/{docId} {
       allow read: if isSignedIn() && (
