@@ -15,8 +15,19 @@ import {
 import { initializeUserProgress } from '@/services/comicProgress';
 import { getFirestoreDocument, upsertUser } from '@/services/firestore';
 import { cleanObject } from '@/lib/firestore.helpers';
+import { resolveUserRoleFromProfileAndClaims } from '@/lib/auth/role';
 import type { User, AuthContextType, AuthState } from '@/types/auth';
 import type { UserRole } from '@/types/firestore';
+
+declare global {
+  interface Window {
+    __cinaraiAuthDebug?: {
+      uid?: string;
+      role?: string;
+      route?: string;
+    };
+  }
+}
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -24,7 +35,7 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const mapFirebaseUserToUser = (firebaseUser: FirebaseUser, role: UserRole = 'student'): User => ({
+const mapFirebaseUserToUser = (firebaseUser: FirebaseUser, role: UserRole): User => ({
   uid: firebaseUser.uid,
   email: firebaseUser.email,
   displayName: firebaseUser.displayName,
@@ -45,17 +56,57 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
 
   const syncUserFromFirestore = useCallback(async (firebaseUser: FirebaseUser) => {
-    const userDocument = await getFirestoreDocument('users', firebaseUser.uid);
-    let role: UserRole = userDocument?.role ?? 'student';
-    if (!userDocument?.role) {
-      console.warn(
-        `[AuthContext] Role tidak ditemukan untuk uid=${firebaseUser.uid}. Default ke 'student'.`
-      );
-      role = 'student';
-    }
-    const user = mapFirebaseUserToUser(firebaseUser, role);
+    setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    setState({ user, loading: false, error: null });
+    try {
+      const userDocument = await getFirestoreDocument('users', firebaseUser.uid);
+      const claimsResult = await firebaseUser.getIdTokenResult();
+      const resolvedRole = resolveUserRoleFromProfileAndClaims(userDocument?.role, claimsResult.claims.role);
+
+      if (!resolvedRole) {
+        const message = 'Akun belum memiliki role yang valid. Hubungi admin.';
+        console.warn('[Auth] role not available', {
+          uid: firebaseUser.uid,
+          profileRole: userDocument?.role ?? null,
+          claimsRole: claimsResult.claims.role ?? null,
+        });
+        setState({ user: null, loading: false, error: message });
+        return;
+      }
+
+      const user = mapFirebaseUserToUser(firebaseUser, resolvedRole);
+
+      if (typeof window !== 'undefined') {
+        window.__cinaraiAuthDebug = {
+          ...(window.__cinaraiAuthDebug ?? {}),
+          uid: firebaseUser.uid,
+          role: resolvedRole,
+        };
+      }
+
+      console.info('[Auth] login resolved', {
+        uid: firebaseUser.uid,
+        role: resolvedRole,
+      });
+
+      setState({ user, loading: false, error: null });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync user profile';
+      console.warn('[Auth] profile sync failed', {
+        uid: firebaseUser.uid,
+        errorMessage: message,
+      });
+
+      if (typeof window !== 'undefined') {
+        window.__cinaraiAuthDebug = {
+          ...(window.__cinaraiAuthDebug ?? {}),
+          uid: firebaseUser.uid,
+          role: undefined,
+        };
+      }
+
+      setState({ user: null, loading: false, error: message });
+    }
 
     initializeUserProgress(firebaseUser.uid).catch((err) =>
       console.warn('Progress init error:', err)
@@ -68,6 +119,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (firebaseUser) {
         void syncUserFromFirestore(firebaseUser);
       } else {
+        if (typeof window !== 'undefined') {
+          window.__cinaraiAuthDebug = {
+            ...(window.__cinaraiAuthDebug ?? {}),
+            uid: undefined,
+            role: undefined,
+          };
+        }
         setState({
           user: null,
           loading: false,

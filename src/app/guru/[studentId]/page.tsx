@@ -65,7 +65,7 @@ export default function StudentDetailPage() {
 
       try {
         const studentRef = doc(firestore, 'users', studentId);
-        const [studentSnapshot, progressSnapshot, reflectionSnapshot, activitySnapshot] = await Promise.all([
+        const [studentResult, progressResult, reflectionResult, activityResult] = await Promise.allSettled([
           getDoc(studentRef),
           getDocs(collection(firestore, 'users', studentId, 'progress')),
           getDocs(collection(firestore, 'reflection')),
@@ -74,7 +74,12 @@ export default function StudentDetailPage() {
 
         if (!active) return;
 
-        const progressDocuments = progressSnapshot.docs.map((documentSnapshot) => {
+        const studentSnapshot = studentResult.status === 'fulfilled' ? studentResult.value : null;
+        const progressSnapshot = progressResult.status === 'fulfilled' ? progressResult.value : null;
+        const reflectionSnapshot = reflectionResult.status === 'fulfilled' ? reflectionResult.value : null;
+        const activitySnapshot = activityResult.status === 'fulfilled' ? activityResult.value : null;
+
+        const progressDocuments = (progressSnapshot?.docs ?? []).map((documentSnapshot) => {
           const data = documentSnapshot.data() as Partial<ComicProgressDocument>;
           return {
             ...data,
@@ -83,11 +88,11 @@ export default function StudentDetailPage() {
           } as ComicProgressDocument;
         });
 
-        const reflections = reflectionSnapshot.docs
+        const reflections = (reflectionSnapshot?.docs ?? [])
           .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ReflectionDocument))
           .filter((reflection) => reflection.userId === studentId || reflection.studentId === studentId);
 
-        const activities = activitySnapshot.docs
+        const activities = (activitySnapshot?.docs ?? [])
           .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ActivityDocument))
           .filter((activity) => activity.userId === studentId)
           .sort((left, right) => {
@@ -96,8 +101,37 @@ export default function StudentDetailPage() {
             return rightTime - leftTime;
           });
 
+        if (studentResult.status === 'rejected') {
+          console.warn('[StudentDetail] profile query failed', {
+            uid: studentId,
+            errorCode: 'unknown',
+            errorMessage: studentResult.reason instanceof Error ? studentResult.reason.message : String(studentResult.reason),
+          });
+        }
+        if (progressResult.status === 'rejected') {
+          console.warn('[StudentDetail] progress query failed', {
+            uid: studentId,
+            errorCode: 'unknown',
+            errorMessage: progressResult.reason instanceof Error ? progressResult.reason.message : String(progressResult.reason),
+          });
+        }
+        if (reflectionResult.status === 'rejected') {
+          console.warn('[StudentDetail] reflection query failed', {
+            uid: studentId,
+            errorCode: 'unknown',
+            errorMessage: reflectionResult.reason instanceof Error ? reflectionResult.reason.message : String(reflectionResult.reason),
+          });
+        }
+        if (activityResult.status === 'rejected') {
+          console.warn('[StudentDetail] activity query failed', {
+            uid: studentId,
+            errorCode: 'unknown',
+            errorMessage: activityResult.reason instanceof Error ? activityResult.reason.message : String(activityResult.reason),
+          });
+        }
+
         setState({
-          student: studentSnapshot.exists() ? ({ id: studentSnapshot.id, ...studentSnapshot.data() } as UserDocument) : null,
+          student: studentSnapshot?.exists() ? ({ id: studentSnapshot.id, ...studentSnapshot.data() } as UserDocument) : null,
           progressDocuments,
           reflections,
           activities,
