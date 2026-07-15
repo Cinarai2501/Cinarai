@@ -1,12 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ActivityDocument, ApplicationActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
-import { loadStudentApplicationActivities, subscribeToStudentApplicationActivities } from '../services/teacher/student-detail/application';
-import { loadStudentProfile, subscribeToStudentProfile } from '../services/teacher/student-detail/profile';
-import { loadStudentProgress, subscribeToStudentProgress } from '../services/teacher/student-detail/progress';
-import { loadStudentReflections, subscribeToStudentReflections } from '../services/teacher/student-detail/reflection';
-import { loadStudentTimeline, subscribeToStudentTimeline } from '../services/teacher/student-detail/timeline';
+import type { ActivityDocument, ApplicationActivityDocument, ComicProgressDocument, IdentificationAnswerDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
+import { loadStudentDetailData, subscribeToStudentDetailData } from '../services/teacher/student-detail/StudentDetailService';
 
 export type StudentDetailSourceState = {
   profile: UserDocument | null;
@@ -14,6 +10,7 @@ export type StudentDetailSourceState = {
   reflections: ReflectionDocument[];
   activities: ActivityDocument[];
   applicationActivities: ApplicationActivityDocument[];
+  identificationAnswers: IdentificationAnswerDocument[];
   loading: boolean;
   error: string | null;
 };
@@ -24,6 +21,7 @@ const initialState: StudentDetailSourceState = {
   reflections: [],
   activities: [],
   applicationActivities: [],
+  identificationAnswers: [],
   loading: true,
   error: null,
 };
@@ -43,59 +41,36 @@ export function useStudentDetailSource(studentId?: string) {
       setState((current) => ({ ...current, loading: false, error: error.message || 'Gagal memuat data siswa.' }));
     };
 
-    const profileUnsub = subscribeToStudentProfile(
-      studentId,
-      (profile) => {
+    const subscriptions = subscribeToStudentDetailData(studentId, {
+      onProfile: (profile) => {
         if (!active) return;
         setState((current) => ({ ...current, profile }));
       },
-      loadError
-    );
-
-    const progressUnsub = subscribeToStudentProgress(
-      studentId,
-      (progressDocuments) => {
+      onProgress: (progressDocuments) => {
         if (!active) return;
         setState((current) => ({ ...current, progressDocuments }));
       },
-      loadError
-    );
-
-    const reflectionsUnsub = subscribeToStudentReflections(
-      studentId,
-      (reflections) => {
+      onReflections: (reflections) => {
         if (!active) return;
         setState((current) => ({ ...current, reflections }));
       },
-      loadError
-    );
-
-    const activitiesUnsub = subscribeToStudentTimeline(
-      studentId,
-      (activities) => {
+      onActivities: (activities) => {
         if (!active) return;
         setState((current) => ({ ...current, activities }));
       },
-      loadError
-    );
-
-    const applicationUnsub = subscribeToStudentApplicationActivities(
-      studentId,
-      (applicationActivities) => {
+      onApplicationActivities: (applicationActivities) => {
         if (!active) return;
         setState((current) => ({ ...current, applicationActivities }));
       },
-      loadError
-    );
+      onIdentificationAnswers: (identificationAnswers) => {
+        if (!active) return;
+        setState((current) => ({ ...current, identificationAnswers }));
+      },
+      onError: loadError,
+    });
 
-    Promise.all([
-      loadStudentProfile(studentId),
-      loadStudentProgress(studentId),
-      loadStudentReflections(studentId),
-      loadStudentTimeline(studentId),
-      loadStudentApplicationActivities(studentId),
-    ])
-      .then(([profile, progressDocuments, reflections, activities, applicationActivities]) => {
+    loadStudentDetailData(studentId)
+      .then(({ profile, progressDocuments, reflections, activities, applicationActivities, identificationAnswers }) => {
         if (!active) return;
         setState({
           profile,
@@ -103,6 +78,7 @@ export function useStudentDetailSource(studentId?: string) {
           reflections,
           activities,
           applicationActivities,
+          identificationAnswers,
           loading: false,
           error: null,
         });
@@ -114,11 +90,7 @@ export function useStudentDetailSource(studentId?: string) {
 
     return () => {
       active = false;
-      profileUnsub();
-      progressUnsub();
-      reflectionsUnsub();
-      activitiesUnsub();
-      applicationUnsub();
+      Object.values(subscriptions).forEach((unsubscribe) => unsubscribe());
     };
   }, [studentId]);
 
