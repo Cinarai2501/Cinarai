@@ -17,22 +17,18 @@ export function useGuruDashboard() {
   } = useGuruDashboardSource();
 
   const summary = useMemo(() => {
-    if (!students.length) return null;
     return buildGuruDashboardSummary(students, comics, progressByStudent);
   }, [students, comics, progressByStudent]);
 
   const progressItems = useMemo(() => {
-    if (!students.length) return [];
     return buildGuruProgressOverview(students, progressByStudent);
   }, [students, progressByStudent]);
 
   const modules = useMemo(() => {
-    if (!comics.length) return [];
     return buildGuruModuleSummaries(comics, progressByStudent);
   }, [comics, progressByStudent]);
 
   const recentActivities = useMemo(() => {
-    if (!activities.length) return [];
     return buildGuruRecentActivities(activities, students);
   }, [activities, students]);
 

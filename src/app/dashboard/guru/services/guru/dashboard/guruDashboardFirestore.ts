@@ -29,10 +29,10 @@ export async function loadAllUsers(): Promise<UserDocument[]> {
       orderBy: [],
       limit: null,
     },
-    // Only load users with role === 'student' to reduce reads for dashboard
-    () => queryFirestoreCollection('users', {
-      filters: [{ field: 'role', operator: '==', value: 'student' }],
-    })
+    async () => {
+      const users = await getFirestoreCollection('users');
+      return users.filter((user) => user.role === 'student');
+    }
   );
 }
 

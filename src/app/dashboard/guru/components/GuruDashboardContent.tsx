@@ -59,20 +59,6 @@ export default function GuruDashboardContent() {
     );
   }
 
-  if (!summary) {
-    return (
-      <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
-        <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
-          <div className="space-y-6">
-            <div className="rounded-[28px] border border-dashed border-neutral-200 bg-neutral-50 p-5 text-center text-sm text-neutral-500">
-              Tidak ada data kelas yang tersedia saat ini.
-            </div>
-          </div>
-        </GuruDashboardLayout>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
       <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
