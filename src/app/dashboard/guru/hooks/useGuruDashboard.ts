@@ -17,12 +17,12 @@ export function useGuruDashboard() {
   } = useGuruDashboardSource();
 
   const summary = useMemo(() => {
-    if (!students.length || !comics.length) return null;
+    if (!students.length) return null;
     return buildGuruDashboardSummary(students, comics, progressByStudent);
   }, [students, comics, progressByStudent]);
 
   const progressItems = useMemo(() => {
-    if (!students.length || !comics.length) return [];
+    if (!students.length) return [];
     return buildGuruProgressOverview(students, progressByStudent);
   }, [students, comics, progressByStudent]);
 

@@ -29,7 +29,38 @@ export async function loadAllUsers(): Promise<UserDocument[]> {
       orderBy: [],
       limit: null,
     },
-    () => getFirestoreCollection('users')
+    async () => {
+      const users = await getFirestoreCollection('users');
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          // eslint-disable-next-line no-console
+          console.table(
+            users.map((user) => ({
+              uid: user.uid ?? user.id ?? null,
+              displayName: user.displayName ?? '',
+              role: user.role ?? '',
+              gradeLevel: user.gradeLevel ?? null,
+              isActive: !!user.isActive,
+            }))
+          );
+
+          // eslint-disable-next-line no-console
+          console.log('Total User:', users.length);
+          // eslint-disable-next-line no-console
+          console.log('Teacher:', users.filter((u) => u.role === 'teacher').length);
+          // eslint-disable-next-line no-console
+          console.log('Student:', users.filter((u) => u.role === 'student').length);
+          // eslint-disable-next-line no-console
+          console.log('Grade Terisi:', users.filter((u) => u.gradeLevel != null).length);
+          // eslint-disable-next-line no-console
+          console.log('Grade Kosong:', users.filter((u) => u.gradeLevel == null).length);
+        } catch (err) {
+          // ignore logging errors
+        }
+      }
+
+      return users;
+    }
   );
 }
 
