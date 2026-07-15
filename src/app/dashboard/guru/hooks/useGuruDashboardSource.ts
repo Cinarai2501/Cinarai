@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { GuruFirestoreInspector } from '@/app/dashboard/guru/services/guru/debug/GuruFirestoreInspector';
 import type {
   ActivityDocument,
   ComicDocument,
@@ -7,11 +8,11 @@ import type {
   UserDocument,
 } from '@/types/firestore';
 import {
-  subscribeToAllProgressDocuments,
-  subscribeToComics,
-  subscribeToRecentActivities,
-  subscribeToReflections,
-  subscribeToUsers,
+  loadAllComics,
+  loadAllProgressDocuments,
+  loadAllReflections,
+  loadAllUsers,
+  loadRecentActivities,
 } from '@/app/dashboard/guru/services/guru/dashboard/guruDashboardFirestore';
 
 export type GuruDashboardSourceState = {
@@ -36,8 +37,9 @@ const initialSourceState: GuruDashboardSourceState = {
   error: null,
 };
 
-export function useGuruDashboardSource(): GuruDashboardSourceState {
+export function useGuruDashboardSource(): GuruDashboardSourceState & { debugEntries: ReturnType<typeof GuruFirestoreInspector.getEntries> } {
   const [state, setState] = useState(initialSourceState);
+  const [debugEntries, setDebugEntries] = useState(() => GuruFirestoreInspector.getEntries());
   const loaded = useRef({ users: false, comics: false, progress: false, activities: false, reflections: false });
 
   useEffect(() => {
@@ -63,73 +65,63 @@ export function useGuruDashboardSource(): GuruDashboardSourceState {
       markLoaded(key);
     };
 
-    const usersUnsubscribe = subscribeToUsers(
-      (users) => {
-        if (!active) return;
-        setState((current) => ({ ...current, students: users.filter((user) => user.role === 'student') }));
+    const unsubscribeInspector = GuruFirestoreInspector.subscribe((entries) => {
+      setDebugEntries(entries);
+    });
+
+    void (async () => {
+      const [usersResult, comicsResult, progressResult, activitiesResult, reflectionsResult] = await Promise.allSettled([
+        loadAllUsers(),
+        loadAllComics(),
+        loadAllProgressDocuments(),
+        loadRecentActivities(20),
+        loadAllReflections(),
+      ]);
+
+      if (!active) return;
+
+      if (usersResult.status === 'fulfilled') {
+        setState((current) => ({
+          ...current,
+          students: usersResult.value.filter((user) => user.role === 'student'),
+        }));
         markLoaded('users');
-      },
-      (error) => {
-        if (!active) return;
-        handleSourceError('users', error, 'users');
+      } else {
+        handleSourceError('users', usersResult.reason as Error, 'users');
       }
-    );
 
-    const comicsUnsubscribe = subscribeToComics(
-      (comics) => {
-        if (!active) return;
-        setState((current) => ({ ...current, comics }));
+      if (comicsResult.status === 'fulfilled') {
+        setState((current) => ({ ...current, comics: comicsResult.value }));
         markLoaded('comics');
-      },
-      (error) => {
-        if (!active) return;
-        handleSourceError('comics', error, 'comics');
+      } else {
+        handleSourceError('comics', comicsResult.reason as Error, 'comics');
       }
-    );
 
-    const progressUnsubscribe = subscribeToAllProgressDocuments(
-      (progressDocuments) => {
-        if (!active) return;
-        setState((current) => ({ ...current, progressDocuments }));
+      if (progressResult.status === 'fulfilled') {
+        setState((current) => ({ ...current, progressDocuments: progressResult.value }));
         markLoaded('progress');
-      },
-      (error) => {
-        if (!active) return;
-        handleSourceError('progress', error, 'progress');
+      } else {
+        handleSourceError('progress', progressResult.reason as Error, 'progress');
       }
-    );
 
-    const activitiesUnsubscribe = subscribeToRecentActivities(
-      (activities) => {
-        if (!active) return;
-        setState((current) => ({ ...current, activities }));
+      if (activitiesResult.status === 'fulfilled') {
+        setState((current) => ({ ...current, activities: activitiesResult.value }));
         markLoaded('activities');
-      },
-      (error) => {
-        if (!active) return;
-        handleSourceError('activities', error, 'activities');
+      } else {
+        handleSourceError('activities', activitiesResult.reason as Error, 'activities');
       }
-    );
 
-    const reflectionsUnsubscribe = subscribeToReflections(
-      (reflections) => {
-        if (!active) return;
-        setState((current) => ({ ...current, reflections }));
+      if (reflectionsResult.status === 'fulfilled') {
+        setState((current) => ({ ...current, reflections: reflectionsResult.value }));
         markLoaded('reflections');
-      },
-      (error) => {
-        if (!active) return;
-        handleSourceError('reflections', error, 'reflections');
+      } else {
+        handleSourceError('reflections', reflectionsResult.reason as Error, 'reflections');
       }
-    );
+    })();
 
     return () => {
       active = false;
-      usersUnsubscribe();
-      comicsUnsubscribe();
-      progressUnsubscribe();
-      activitiesUnsubscribe();
-      reflectionsUnsubscribe();
+      unsubscribeInspector();
     };
   }, []);
 
@@ -148,5 +140,6 @@ export function useGuruDashboardSource(): GuruDashboardSourceState {
   return {
     ...state,
     progressByStudent,
+    debugEntries: process.env.NODE_ENV === 'development' ? debugEntries : [],
   };
 }

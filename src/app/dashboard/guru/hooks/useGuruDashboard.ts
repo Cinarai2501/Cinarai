@@ -13,6 +13,7 @@ export function useGuruDashboard() {
     activities,
     loading,
     error,
+    debugEntries,
   } = useGuruDashboardSource();
 
   const summary = useMemo(() => {
@@ -42,5 +43,6 @@ export function useGuruDashboard() {
     recentActivities,
     loading,
     error,
+    debugEntries,
   };
 }

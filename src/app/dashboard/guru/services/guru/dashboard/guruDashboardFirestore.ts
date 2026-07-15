@@ -5,6 +5,7 @@ import {
   query,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
+import { GuruFirestoreInspector } from '@/app/dashboard/guru/services/guru/debug/GuruFirestoreInspector';
 import { firestore } from '@/lib/firebase/client';
 import {
   getFirestoreCollection,
@@ -20,7 +21,16 @@ import type {
 } from '@/types/firestore';
 
 export async function loadAllUsers(): Promise<UserDocument[]> {
-  return getFirestoreCollection('users');
+  return GuruFirestoreInspector.run(
+    {
+      collection: 'users',
+      path: 'users',
+      where: [],
+      orderBy: [],
+      limit: null,
+    },
+    () => getFirestoreCollection('users')
+  );
 }
 
 export function subscribeToUsers(
@@ -31,7 +41,16 @@ export function subscribeToUsers(
 }
 
 export async function loadAllComics(): Promise<ComicDocument[]> {
-  return getFirestoreCollection('comics');
+  return GuruFirestoreInspector.run(
+    {
+      collection: 'comics',
+      path: 'comics',
+      where: [],
+      orderBy: [],
+      limit: null,
+    },
+    () => getFirestoreCollection('comics')
+  );
 }
 
 export function subscribeToComics(
@@ -42,11 +61,20 @@ export function subscribeToComics(
 }
 
 export async function loadRecentActivities(limitCount = 20): Promise<ActivityDocument[]> {
-  return queryFirestoreCollection('activity', {
-    orderByField: 'occurredAt',
-    orderDirection: 'desc',
-    limitCount,
-  });
+  return GuruFirestoreInspector.run(
+    {
+      collection: 'activity',
+      path: 'activity',
+      where: [],
+      orderBy: [{ field: 'occurredAt', direction: 'desc' }],
+      limit: limitCount,
+    },
+    () => queryFirestoreCollection('activity', {
+      orderByField: 'occurredAt',
+      orderDirection: 'desc',
+      limitCount,
+    })
+  );
 }
 
 export function subscribeToRecentActivities(
@@ -62,7 +90,16 @@ export function subscribeToRecentActivities(
 }
 
 export async function loadAllReflections(): Promise<ReflectionDocument[]> {
-  return getFirestoreCollection('reflection');
+  return GuruFirestoreInspector.run(
+    {
+      collection: 'reflection',
+      path: 'reflection',
+      where: [],
+      orderBy: [],
+      limit: null,
+    },
+    () => getFirestoreCollection('reflection')
+  );
 }
 
 export function subscribeToReflections(
@@ -84,12 +121,19 @@ function normalizeProgressDocument(documentSnapshot: QueryDocumentSnapshot): Com
 }
 
 export async function loadAllProgressDocuments(): Promise<ComicProgressDocument[]> {
-  try {
-    const snapshot = await getDocs(query(collectionGroup(firestore, 'progress')));
-    return snapshot.docs.map(normalizeProgressDocument);
-  } catch (error) {
-    throw error;
-  }
+  return GuruFirestoreInspector.run(
+    {
+      collection: 'progress',
+      path: 'progress (collectionGroup)',
+      where: [],
+      orderBy: [],
+      limit: null,
+    },
+    async () => {
+      const snapshot = await getDocs(query(collectionGroup(firestore, 'progress')));
+      return snapshot.docs.map(normalizeProgressDocument);
+    }
+  );
 }
 
 export function subscribeToAllProgressDocuments(
