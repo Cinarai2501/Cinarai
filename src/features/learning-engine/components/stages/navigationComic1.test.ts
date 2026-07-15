@@ -7,6 +7,7 @@ test('comic 1 navigation content exposes sketchfab and assemblr object data with
   const comicModule = getComicModule(1);
   const kubus = comicModule.navigation.learningObjects.find((object) => object.title === 'Kubus');
   const limas = comicModule.navigation.learningObjects.find((object) => object.title === 'Limas Segi Empat');
+  const kerucut = comicModule.navigation.learningObjects.find((object) => object.title === 'Kerucut');
 
   assert.ok(kubus, 'Kubus object should exist in comic 1 navigation content');
   assert.match((kubus?.provider ?? '').toLowerCase(), /sketchfab/);
@@ -19,4 +20,8 @@ test('comic 1 navigation content exposes sketchfab and assemblr object data with
   assert.match((limas?.modelUrl ?? '').toLowerCase(), /asblr|assemblr/);
   assert.ok(limas?.qrImage);
   assert.match(limas?.aiPrompt ?? '', /limas/i);
+  assert.match(limas?.navImage ?? '', /ornamentcandi/i);
+
+  assert.ok(kerucut, 'Kerucut object should exist in comic 1 navigation content');
+  assert.match(kerucut?.navImage ?? '', /puncakcandi/i);
 });
