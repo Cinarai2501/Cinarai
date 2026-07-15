@@ -23,8 +23,6 @@ export default function LearningBottomNav() {
   const onLastSlide = !hasSlides || slideNav.slideIndex === slideNav.totalSlides - 1;
 
   const handlePrev = useCallback(() => {
-    // eslint-disable-next-line no-console
-    console.log('[LearningBottomNav] Prev clicked', { hasSlides, onFirstSlide, currentStage });
     if (hasSlides && !onFirstSlide) {
       slideNav.goPrev();
     } else {
@@ -33,8 +31,6 @@ export default function LearningBottomNav() {
   }, [hasSlides, onFirstSlide, slideNav, previousStage]);
 
   const handleNext = useCallback(() => {
-    // eslint-disable-next-line no-console
-    console.log('[LearningBottomNav] Next clicked', { hasSlides, onLastSlide, canAdvance, currentStage });
     if (hasSlides && !onLastSlide) {
       slideNav.goNext();
     } else {

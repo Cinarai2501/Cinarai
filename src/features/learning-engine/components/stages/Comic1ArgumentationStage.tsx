@@ -241,13 +241,6 @@ export default function Comic1ArgumentationStage({
               <button
                 type="button"
                 onClick={() => {
-                  console.log('[ArgumentationFlow] STEP 1: submit button clicked', {
-                    currentIndex,
-                    totalItems,
-                    charCount,
-                    canSubmit,
-                    isSubmitting,
-                  });
                   void handleSubmit();
                 }}
                 disabled={!canSubmit}
@@ -266,11 +259,6 @@ export default function Comic1ArgumentationStage({
           <button
             type="button"
             onClick={() => {
-              console.log('[ArgumentationFlow] STEP 2: continue button clicked', {
-                currentIndex,
-                totalItems,
-                feedback: !!feedback,
-              });
               void onNext();
             }}
             className="relative z-10 w-full rounded-[24px] bg-accent-600 px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-accent-700"

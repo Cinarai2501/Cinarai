@@ -272,11 +272,7 @@ function MissionCard({
 
   const handleSubmitAnswer = async () => {
     if (!selected || isSolved || isSubmitting) return;
-    // Audit logging
-    // eslint-disable-next-line no-console
-    console.log('[Resolution] Submit answer clicked', { selected, attempts, missionId: mission.id, timestamp: new Date().toISOString() });
 
-    console.time('[Resolution] Submit');
     setIsSubmitting(true);
     setTutorMessage(null);
     setTypedText('');
@@ -284,17 +280,12 @@ function MissionCard({
     setAnswerFeedback(null);
 
     try {
-      // Log before calling AI
-      // eslint-disable-next-line no-console
-      console.time('[Resolution] AI');
       const response = await fetch('/api/ai/resolution', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ selected, attempt: attempts, missionId: mission.id, comicId: comic.id }),
       });
       const data = await response.json();
-      // eslint-disable-next-line no-console
-      console.timeEnd('[Resolution] AI');
       const answerIsCorrect = Boolean(data.correct);
       const fallbackText = getTutorFallback(mission, answerIsCorrect, attempts);
       const aiText = typeof data.explanation === 'string' && data.explanation.trim()
@@ -306,8 +297,6 @@ function MissionCard({
         setAnswerFeedback('correct');
         setTutorMessage(aiText);
         setCanAdvance(false); // JANGAN auto advance - tunggu user menekan tombol
-        // eslint-disable-next-line no-console
-        console.log('[Resolution] Answer correct - ready to advance', { missionId: mission.id, timestamp: new Date().toISOString() });
       } else {
         const nextAttempt = attempts + 1;
         setAttempts(nextAttempt);
@@ -321,9 +310,6 @@ function MissionCard({
       setAnswerFeedback('incorrect');
     } finally {
       setIsSubmitting(false);
-      console.timeEnd('[Resolution] Submit');
-      // eslint-disable-next-line no-console
-      console.log('[Resolution] Submit finished', { selected, attempts, missionId: mission.id, timestamp: new Date().toISOString() });
     }
   };
 
@@ -511,18 +497,8 @@ function MissionCard({
         {isReadyToAdvance && (
           <button
             type="button"
-            onClick={(e) => {
-              // eslint-disable-next-line no-console
-              console.log('[Resolution] Button Clicked', { missionIndex, totalMissions, pointerType: (e as any).pointerType ?? null, timestamp: new Date().toISOString() });
+            onClick={() => {
               void onReadyToAdvance();
-            }}
-            onPointerDown={(e) => {
-              // eslint-disable-next-line no-console
-              console.log('[Resolution] onPointerDown', { pointerType: (e as any).pointerType, timestamp: new Date().toISOString() });
-            }}
-            onTouchStart={(e) => {
-              // eslint-disable-next-line no-console
-              console.log('[Resolution] onTouchStart', { touches: e.touches?.length ?? null, timestamp: new Date().toISOString() });
             }}
             style={{ zIndex: 40, position: 'relative', pointerEvents: 'auto' }}
             className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent-500 to-accent-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:from-accent-600 hover:to-accent-700 active:scale-[0.98] animate-pulse"

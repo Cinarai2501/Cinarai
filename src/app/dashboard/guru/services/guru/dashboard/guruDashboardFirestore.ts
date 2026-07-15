@@ -36,8 +36,6 @@ export function subscribeToUsers(
   callback: (users: UserDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  let timer: ReturnType<typeof setInterval> | undefined;
-
   const refresh = async () => {
     try {
       const payload = await fetchDashboardData();
@@ -48,12 +46,12 @@ export function subscribeToUsers(
   };
 
   void refresh();
-  timer = setInterval(() => {
+  const timer = setInterval(() => {
     void refresh();
   }, 10000);
 
   return () => {
-    if (timer) clearInterval(timer);
+    clearInterval(timer);
   };
 }
 
@@ -66,8 +64,6 @@ export function subscribeToComics(
   callback: (comics: ComicDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  let timer: ReturnType<typeof setInterval> | undefined;
-
   const refresh = async () => {
     try {
       const payload = await fetchDashboardData();
@@ -78,12 +74,12 @@ export function subscribeToComics(
   };
 
   void refresh();
-  timer = setInterval(() => {
+  const timer = setInterval(() => {
     void refresh();
   }, 10000);
 
   return () => {
-    if (timer) clearInterval(timer);
+    clearInterval(timer);
   };
 }
 
@@ -96,8 +92,6 @@ export function subscribeToRecentActivities(
   callback: (activities: ActivityDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  let timer: ReturnType<typeof setInterval> | undefined;
-
   const refresh = async () => {
     try {
       const payload = await fetchDashboardData();
@@ -108,12 +102,12 @@ export function subscribeToRecentActivities(
   };
 
   void refresh();
-  timer = setInterval(() => {
+  const timer = setInterval(() => {
     void refresh();
   }, 10000);
 
   return () => {
-    if (timer) clearInterval(timer);
+    clearInterval(timer);
   };
 }
 
@@ -126,8 +120,6 @@ export function subscribeToReflections(
   callback: (reflections: ReflectionDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  let timer: ReturnType<typeof setInterval> | undefined;
-
   const refresh = async () => {
     try {
       const payload = await fetchDashboardData();
@@ -138,12 +130,12 @@ export function subscribeToReflections(
   };
 
   void refresh();
-  timer = setInterval(() => {
+  const timer = setInterval(() => {
     void refresh();
   }, 10000);
 
   return () => {
-    if (timer) clearInterval(timer);
+    clearInterval(timer);
   };
 }
 
@@ -156,8 +148,6 @@ export function subscribeToAllProgressDocuments(
   callback: (progressDocuments: ComicProgressDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  let timer: ReturnType<typeof setInterval> | undefined;
-
   const refresh = async () => {
     try {
       const payload = await fetchDashboardData();
@@ -168,11 +158,11 @@ export function subscribeToAllProgressDocuments(
   };
 
   void refresh();
-  timer = setInterval(() => {
+  const timer = setInterval(() => {
     void refresh();
   }, 10000);
 
   return () => {
-    if (timer) clearInterval(timer);
+    clearInterval(timer);
   };
 }
