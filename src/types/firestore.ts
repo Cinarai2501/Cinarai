@@ -58,6 +58,7 @@ export interface IntrospectionProgressMetadata {
 
 export interface ComicProgressDocument {
   id?: string;
+  userId?: string;
   createdAt?: FirestoreTimestamp;
   comicId: number;
   completedStage: string;

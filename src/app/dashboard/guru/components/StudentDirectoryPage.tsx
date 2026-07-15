@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStudents } from '../hooks/useStudents';
 import { useStudentSearch } from '../hooks/useStudentSearch';
 import { useStudentFilter } from '../hooks/useStudentFilter';
+import { useStudentSort } from '../hooks/useStudentSort';
 import { TeacherDashboardLayout } from './TeacherDashboardLayout';
 import { TeacherHeader } from './TeacherHeader';
 import { TeacherSidebar } from './TeacherSidebar';
@@ -44,20 +45,20 @@ export function StudentDirectoryPage() {
   const { query, setQuery, filteredRows: searchedRows } = useStudentSearch(rows);
   const { filter, setFilter, filteredRows: filteredByStatus } = useStudentFilter(searchedRows);
 
-  const sortedRows = useMemo(() => {
-    const nextRows = [...filteredByStatus];
-    nextRows.sort((left, right) => {
-      switch (filter) {
-        case 'completed':
-          return right.progress - left.progress;
-        case 'active':
-          return right.progress - left.progress;
-        default:
-          return left.name.localeCompare(right.name);
-      }
-    });
-    return nextRows;
-  }, [filteredByStatus, filter]);
+  const { sort, setSort, sortedRows: sortedByOption } = useStudentSort(filteredByStatus);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const pageCount = Math.max(1, Math.ceil(sortedByOption.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, filter, sort]);
+
+  const pageRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedByOption.slice(start, start + pageSize);
+  }, [sortedByOption, currentPage]);
 
   const summary = useMemo(() => {
     const totalStudents = rows.length;
@@ -147,7 +148,11 @@ export function StudentDirectoryPage() {
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-semibold text-neutral-600">Urutkan</label>
-                <select className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 outline-none">
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as typeof sort)}
+                  className="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 outline-none"
+                >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -157,66 +162,157 @@ export function StudentDirectoryPage() {
               </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-[24px] border border-neutral-100">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-100 text-sm">
-                  <thead className="bg-neutral-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Avatar</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Nama</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Kelas</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Email</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Progress</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Modul Terakhir</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Nilai Terakhir</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Aktivitas Terakhir</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Status</th>
-                      <th className="px-4 py-3 text-left font-semibold text-neutral-600">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100 bg-white">
-                    {sortedRows.map((row) => (
-                      <tr key={row.id} className="hover:bg-neutral-50">
-                        <td className="px-4 py-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
-                            {row.avatar}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="font-semibold text-neutral-900">{row.name}</div>
-                        </td>
-                        <td className="px-4 py-3 text-neutral-600">{row.grade}</td>
-                        <td className="px-4 py-3 text-neutral-600">{row.email}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2.5 w-24 rounded-full bg-neutral-100">
-                              <div className="h-2.5 rounded-full bg-primary-500" style={{ width: `${row.progress}%` }} />
+            <div className="mt-6 space-y-4">
+              {sortedByOption.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
+                  Tidak ditemukan siswa sesuai filter atau pencarian.
+                </div>
+              ) : (
+                <>
+                  <div className="hidden md:block overflow-hidden rounded-[24px] border border-neutral-100">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-neutral-100 text-sm">
+                        <thead className="bg-neutral-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Avatar</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Nama</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Kelas</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Email</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Progress</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Modul Terakhir</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Nilai Terakhir</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Aktivitas Terakhir</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Status</th>
+                            <th className="px-4 py-3 text-left font-semibold text-neutral-600">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 bg-white">
+                          {pageRows.map((row) => (
+                            <tr key={row.id} className="hover:bg-neutral-50">
+                              <td className="px-4 py-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+                                  {row.avatar}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="font-semibold text-neutral-900">{row.name}</div>
+                              </td>
+                              <td className="px-4 py-3 text-neutral-600">{row.grade}</td>
+                              <td className="px-4 py-3 text-neutral-600">{row.email}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2.5 w-24 rounded-full bg-neutral-100">
+                                    <div className="h-2.5 rounded-full bg-primary-500" style={{ width: `${row.progress}%` }} />
+                                  </div>
+                                  <span className="text-sm font-semibold text-neutral-700">{row.progress}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-neutral-600">{row.lastModule}</td>
+                              <td className="px-4 py-3 text-neutral-600">{row.lastScore}%</td>
+                              <td className="px-4 py-3 text-neutral-600">{row.lastActivity}</td>
+                              <td className="px-4 py-3">
+                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(row.status)}`}>
+                                  {row.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Link
+                                  href={`/dashboard/guru/siswa/${row.id}`}
+                                  className="rounded-full bg-primary-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-700"
+                                >
+                                  Lihat Detail
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:hidden">
+                    {pageRows.map((row) => (
+                      <div key={row.id} className="rounded-[24px] border border-neutral-100 bg-neutral-50 p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+                              {row.avatar}
                             </div>
-                            <span className="text-sm font-semibold text-neutral-700">{row.progress}%</span>
+                            <div>
+                              <p className="font-semibold text-neutral-900">{row.name}</p>
+                              <p className="text-sm text-neutral-600">{row.grade}</p>
+                            </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-neutral-600">{row.lastModule}</td>
-                        <td className="px-4 py-3 text-neutral-600">{row.lastScore}%</td>
-                        <td className="px-4 py-3 text-neutral-600">{row.lastActivity}</td>
-                        <td className="px-4 py-3">
-                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(row.status)}`}>
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
                           <Link
                             href={`/dashboard/guru/siswa/${row.id}`}
                             className="rounded-full bg-primary-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary-700"
                           >
-                            Lihat Detail
+                            Detail
                           </Link>
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="mt-4 space-y-3 text-sm text-neutral-700">
+                          <div className="flex items-center justify-between">
+                            <span>Progress</span>
+                            <span className="font-semibold">{row.progress}%</span>
+                          </div>
+                          <div className="h-2.5 rounded-full bg-neutral-200">
+                            <div className="h-full rounded-full bg-primary-500" style={{ width: `${row.progress}%` }} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-2xl bg-white p-3">
+                              <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">Modul</p>
+                              <p className="mt-1 font-semibold text-neutral-900">{row.lastModule}</p>
+                            </div>
+                            <div className="rounded-2xl bg-white p-3">
+                              <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">Nilai</p>
+                              <p className="mt-1 font-semibold text-neutral-900">{row.lastScore}%</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Aktivitas</span>
+                            <span className="font-semibold">{row.lastActivity}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Status</span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(row.status)}`}>
+                              {row.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
+            {pageCount > 1 ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-neutral-100 bg-neutral-50 p-4 text-sm text-neutral-700">
+                <div>
+                  Menampilkan {pageRows.length} dari {sortedByOption.length} siswa
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Sebelumnya
+                  </button>
+                  <span>
+                    {currentPage} / {pageCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((value) => Math.min(pageCount, value + 1))}
+                    disabled={currentPage === pageCount}
+                    className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Berikutnya
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </TeacherDashboardLayout>

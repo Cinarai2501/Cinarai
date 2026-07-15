@@ -1,4 +1,4 @@
-import type { ComicProgressDocument, UserDocument } from '@/types/firestore';
+import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
 
 export type StudentStatus = 'Aktif' | 'Sedang Belajar' | 'Belum Memulai' | 'Selesai';
 
@@ -12,11 +12,14 @@ export type StudentDirectoryRow = {
   lastModule: string;
   lastScore: number;
   lastActivity: string;
+  lastActivityAt?: Date;
   status: StudentStatus;
   isActive: boolean;
   isCompleted: boolean;
   completedModules: number;
   totalModules: number;
+  averageScore: number;
+  comicsCompleted: number;
 };
 
 function formatLastActivity(value?: string): string {
@@ -33,30 +36,45 @@ function getStudentStatus(progress: number, isActive: boolean): StudentStatus {
 
 export function buildStudentDirectoryRows(
   users: UserDocument[],
-  progressDocuments: ComicProgressDocument[]
+  progressDocuments: ComicProgressDocument[],
+  comics: ComicDocument[]
 ): StudentDirectoryRow[] {
   const progressByUser = new Map<string, ComicProgressDocument[]>();
 
   for (const document of progressDocuments) {
-    const entry = progressByUser.get(document.id ?? 'unknown') ?? [];
+    if (!document.userId) {
+      continue;
+    }
+
+    const entry = progressByUser.get(document.userId) ?? [];
     entry.push(document);
-    progressByUser.set(document.id ?? 'unknown', entry);
+    progressByUser.set(document.userId, entry);
   }
 
   return users
     .filter((user) => user.role === 'student')
     .map((user) => {
-      const studentProgress = progressDocuments.filter((document) => document.id?.startsWith(user.uid));
+      const studentProgress = progressByUser.get(user.uid) ?? [];
       const progress = studentProgress.length
         ? Math.round(
             studentProgress.reduce((sum, document) => sum + (document.percentage ?? 0), 0) /
               studentProgress.length
           )
         : 0;
-      const completedModules = studentProgress.filter((document) => document.status === 'completed').length;
-      const totalModules = Math.max(1, studentProgress.length || 1);
+      const completedModules = studentProgress.filter(
+        (document) => document.status === 'completed' || (document.percentage ?? 0) >= 100
+      ).length;
+      const totalModules = comics.length || 1;
       const lastModule = studentProgress.at(-1)?.completedStage ?? 'Belum ada modul';
       const lastScore = studentProgress.at(-1)?.percentage ?? 0;
+      const averageScore = studentProgress.length
+        ? Math.round(
+            studentProgress.reduce((sum, document) => sum + (document.percentage ?? 0), 0) /
+              studentProgress.length
+          )
+        : 0;
+      const lastActivityAt = user.lastLoginAt?.toDate?.();
+      const comicsCompleted = completedModules;
 
       return {
         id: user.uid,
@@ -67,12 +85,15 @@ export function buildStudentDirectoryRows(
         progress,
         lastModule,
         lastScore,
-        lastActivity: formatLastActivity(user.lastLoginAt?.toDate?.().toLocaleDateString('id-ID') ?? undefined),
+        lastActivity: formatLastActivity(lastActivityAt?.toLocaleDateString('id-ID')),
+        lastActivityAt,
         status: getStudentStatus(progress, user.isActive),
         isActive: user.isActive,
         isCompleted: progress >= 100,
         completedModules,
         totalModules,
+        averageScore,
+        comicsCompleted,
       };
     });
 }

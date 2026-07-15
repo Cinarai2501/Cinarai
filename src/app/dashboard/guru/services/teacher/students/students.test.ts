@@ -29,7 +29,7 @@ test('buildStudentDirectoryRows creates summaries for students', () => {
     },
   ];
 
-  const rows = buildStudentDirectoryRows(users, progressDocuments);
+  const rows = buildStudentDirectoryRows(users, progressDocuments, []);
 
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.name, 'Ayu Pratiwi');
