@@ -1,11 +1,11 @@
-export type TeacherStatCard = {
+export type GuruStatCard = {
   title: string;
   value: string;
   icon: 'people' | 'school' | 'menuBook' | 'trendingUp';
   accent: string;
 };
 
-export const guruDashboardStats: TeacherStatCard[] = [
+export const guruDashboardStats: GuruStatCard[] = [
   { title: 'Jumlah Siswa', value: '142', icon: 'people', accent: 'bg-primary-50 text-primary-700' },
   { title: 'Siswa Aktif', value: '118', icon: 'school', accent: 'bg-secondary-50 text-secondary-700' },
   { title: 'Modul Pembelajaran', value: '8', icon: 'menuBook', accent: 'bg-amber-50 text-amber-700' },

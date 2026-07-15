@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { BlueprintStageProgress } from '@/app/dashboard/guru/services/teacher/statistics/progress';
-import type { StatisticsDateRange } from '@/app/dashboard/guru/services/teacher/statistics/overview';
-import { buildBlueprintProgress } from '@/app/dashboard/guru/services/teacher/statistics/progress';
-import { getDateRange } from '@/app/dashboard/guru/services/teacher/statistics/overview';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { BlueprintStageProgress } from '@/app/dashboard/guru/services/guru/statistics/progress';
+import type { StatisticsDateRange } from '@/app/dashboard/guru/services/guru/statistics/overview';
+import { buildBlueprintProgress } from '@/app/dashboard/guru/services/guru/statistics/progress';
+import { getDateRange } from '@/app/dashboard/guru/services/guru/statistics/overview';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useProgressStatistics(moduleId: number | 'all', range: StatisticsDateRange) {
   const [progress, setProgress] = useState<BlueprintStageProgress[]>([]);

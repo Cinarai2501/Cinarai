@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 
-export function TeacherHeader() {
+export function GuruHeader() {
   const { user, logout } = useAuth();
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Guru';
 

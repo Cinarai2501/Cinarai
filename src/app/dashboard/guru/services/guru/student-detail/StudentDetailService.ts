@@ -25,8 +25,12 @@ export interface StudentDetailSubscriptions {
   identificationAnswers: Unsubscribe;
 }
 
+function getSettledValue<T>(result: PromiseSettledResult<T>, fallback: T): T {
+  return result.status === 'fulfilled' ? result.value : fallback;
+}
+
 export async function loadStudentDetailData(studentId: string): Promise<StudentDetailData> {
-  const [profile, progressDocuments, reflections, activities, applicationActivities, identificationAnswers] = await Promise.all([
+  const [profileResult, progressResult, reflectionsResult, activitiesResult, applicationActivitiesResult, identificationAnswersResult] = await Promise.allSettled([
     loadStudentProfile(studentId),
     loadStudentProgress(studentId),
     loadStudentReflections(studentId),
@@ -34,6 +38,32 @@ export async function loadStudentDetailData(studentId: string): Promise<StudentD
     loadStudentApplicationActivities(studentId),
     loadStudentIdentificationAnswers(studentId),
   ]);
+
+  const profile = getSettledValue(profileResult, null);
+  const progressDocuments = getSettledValue(progressResult, []);
+  const reflections = getSettledValue(reflectionsResult, []);
+  const activities = getSettledValue(activitiesResult, []);
+  const applicationActivities = getSettledValue(applicationActivitiesResult, []);
+  const identificationAnswers = getSettledValue(identificationAnswersResult, []);
+
+  if (profileResult.status === 'rejected') {
+    console.warn('[StudentDetail] profile failed', { errorCode: 'unknown', errorMessage: profileResult.reason instanceof Error ? profileResult.reason.message : String(profileResult.reason) });
+  }
+  if (progressResult.status === 'rejected') {
+    console.warn('[StudentDetail] progress failed', { errorCode: 'unknown', errorMessage: progressResult.reason instanceof Error ? progressResult.reason.message : String(progressResult.reason) });
+  }
+  if (reflectionsResult.status === 'rejected') {
+    console.warn('[StudentDetail] reflections failed', { errorCode: 'unknown', errorMessage: reflectionsResult.reason instanceof Error ? reflectionsResult.reason.message : String(reflectionsResult.reason) });
+  }
+  if (activitiesResult.status === 'rejected') {
+    console.warn('[StudentDetail] activities failed', { errorCode: 'unknown', errorMessage: activitiesResult.reason instanceof Error ? activitiesResult.reason.message : String(activitiesResult.reason) });
+  }
+  if (applicationActivitiesResult.status === 'rejected') {
+    console.warn('[StudentDetail] application activities failed', { errorCode: 'unknown', errorMessage: applicationActivitiesResult.reason instanceof Error ? applicationActivitiesResult.reason.message : String(applicationActivitiesResult.reason) });
+  }
+  if (identificationAnswersResult.status === 'rejected') {
+    console.warn('[StudentDetail] identification answers failed', { errorCode: 'unknown', errorMessage: identificationAnswersResult.reason instanceof Error ? identificationAnswersResult.reason.message : String(identificationAnswersResult.reason) });
+  }
 
   return {
     profile,

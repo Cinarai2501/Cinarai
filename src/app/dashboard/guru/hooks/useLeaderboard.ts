@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { AttentionRow, LeaderboardRow } from '@/app/dashboard/guru/services/teacher/statistics/leaderboard';
-import { buildAttentionLists, buildLeaderboard } from '@/app/dashboard/guru/services/teacher/statistics/leaderboard';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { AttentionRow, LeaderboardRow } from '@/app/dashboard/guru/services/guru/statistics/leaderboard';
+import { buildAttentionLists, buildLeaderboard } from '@/app/dashboard/guru/services/guru/statistics/leaderboard';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useLeaderboard(classId: string, moduleId: number | 'all') {
   const [leaderboard, setLeaderboard] = useState<{ topProgress: LeaderboardRow[]; topScore: LeaderboardRow[]; topConsistency: LeaderboardRow[] } | null>(null);

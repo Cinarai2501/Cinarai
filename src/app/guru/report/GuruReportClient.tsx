@@ -13,20 +13,20 @@ import {
   filterReportRows,
   formatReportDate,
   summarizeReportRows,
-  type TeacherReportFilters,
-  type TeacherReportRow,
+  type GuruReportFilters,
+  type GuruReportRow,
 } from './reportData';
 
-const defaultFilters: TeacherReportFilters = {
+const defaultFilters: GuruReportFilters = {
   comicId: null,
   studentId: null,
   date: null,
 };
 
-export default function TeacherReportClient() {
+export default function GuruReportClient() {
   const { user, loading } = useAuth();
-  const [rows, setRows] = useState<TeacherReportRow[]>([]);
-  const [filters, setFilters] = useState<TeacherReportFilters>(defaultFilters);
+  const [rows, setRows] = useState<GuruReportRow[]>([]);
+  const [filters, setFilters] = useState<GuruReportFilters>(defaultFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +70,7 @@ export default function TeacherReportClient() {
           students.map((student) => getDocs(collection(firestore, 'users', student.uid, 'progress')))
         );
 
-        const teacherRows: TeacherReportRow[] = students.flatMap((student, index) => {
+        const guruRows: GuruReportRow[] = students.flatMap((student, index) => {
           const progressDocuments = progressSnapshots[index]?.docs
             .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ComicProgressDocument))
             .filter((document) => typeof document.comicId === 'number');
@@ -106,7 +106,7 @@ export default function TeacherReportClient() {
           });
         });
 
-        setRows(teacherRows);
+        setRows(guruRows);
       } catch (err) {
         if (!active) return;
         setError(err instanceof Error ? err.message : 'Gagal memuat laporan guru.');

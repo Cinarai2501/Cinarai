@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ModuleProgressSummary } from '@/app/dashboard/guru/services/teacher/statistics/module';
-import { buildModuleProgressSummaries } from '@/app/dashboard/guru/services/teacher/statistics/module';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { ModuleProgressSummary } from '@/app/dashboard/guru/services/guru/statistics/module';
+import { buildModuleProgressSummaries } from '@/app/dashboard/guru/services/guru/statistics/module';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useModuleStatistics(classId: string, moduleId: number | 'all') {
   const [modules, setModules] = useState<ModuleProgressSummary[]>([]);

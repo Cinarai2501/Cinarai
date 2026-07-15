@@ -25,8 +25,18 @@ import {
   type WhereFilterOp,
   type WithFieldValue,
 } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
+import { auth, firestore } from '@/lib/firebase/client';
 import type { FirestoreCollectionMap, UserDocument } from '@/types/firestore';
+
+declare global {
+  interface Window {
+    __cinaraiAuthDebug?: {
+      uid?: string;
+      role?: string;
+      route?: string;
+    };
+  }
+}
 
 export const FIRESTORE_COLLECTIONS = {
   users: 'users',
@@ -73,6 +83,47 @@ const firestoreConverter = <TDocument extends DocumentData>(): FirestoreDataConv
   },
 });
 
+const getFirestoreDebugContext = () => {
+  if (typeof window === 'undefined') {
+    return { uid: auth.currentUser?.uid ?? 'anonymous', role: 'unknown', route: '/' };
+  }
+
+  return {
+    uid: auth.currentUser?.uid ?? window.__cinaraiAuthDebug?.uid ?? 'anonymous',
+    role: window.__cinaraiAuthDebug?.role ?? 'unknown',
+    route: window.__cinaraiAuthDebug?.route ?? window.location.pathname,
+  };
+};
+
+const normalizeFirestoreError = (error: unknown): Error => {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(typeof error === 'string' ? error : 'Firestore request failed');
+};
+
+const logFirestoreRequest = (
+  operation: string,
+  collectionName: string,
+  queryDescription: string,
+  error?: unknown
+) => {
+  const debugContext = getFirestoreDebugContext();
+  const firestoreError = error ? (error as { code?: string; message?: string }) : undefined;
+
+  console.error('[Firestore]', {
+    uid: debugContext.uid,
+    role: debugContext.role,
+    route: debugContext.route,
+    operation,
+    collection: collectionName,
+    query: queryDescription,
+    errorCode: firestoreError?.code ?? 'unknown',
+    errorMessage: firestoreError?.message ?? 'unknown',
+  });
+};
+
 const getTypedCollection = <TCollectionName extends FirestoreCollectionName>(
   collectionName: TCollectionName
 ) => {
@@ -96,8 +147,13 @@ export const getFirestoreDocument = async <
   collectionName: TCollectionName,
   docId: string
 ): Promise<FirestoreCollectionMap[TCollectionName] | null> => {
-  const snapshot = await getDoc(getTypedDoc(collectionName, docId));
-  return snapshot.exists() ? snapshot.data() : null;
+  try {
+    const snapshot = await getDoc(getTypedDoc(collectionName, docId));
+    return snapshot.exists() ? snapshot.data() : null;
+  } catch (error) {
+    logFirestoreRequest('getDocument', collectionName, `doc:${docId}`, error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 export const getFirestoreCollection = async <
@@ -105,8 +161,13 @@ export const getFirestoreCollection = async <
 >(
   collectionName: TCollectionName
 ): Promise<Array<FirestoreCollectionMap[TCollectionName]>> => {
-  const snapshot = await getDocs(getTypedCollection(collectionName));
-  return snapshot.docs.map((documentSnapshot) => documentSnapshot.data());
+  try {
+    const snapshot = await getDocs(getTypedCollection(collectionName));
+    return snapshot.docs.map((documentSnapshot) => documentSnapshot.data());
+  } catch (error) {
+    logFirestoreRequest('getCollection', collectionName, 'collection', error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 export const queryFirestoreCollection = async <
@@ -131,11 +192,16 @@ export const queryFirestoreCollection = async <
     queryConstraints.push(limit(options.limitCount));
   }
 
-  const snapshot = await getDocs(
-    query(getTypedCollection(collectionName), ...queryConstraints)
-  );
+  try {
+    const snapshot = await getDocs(
+      query(getTypedCollection(collectionName), ...queryConstraints)
+    );
 
-  return snapshot.docs.map((documentSnapshot) => documentSnapshot.data());
+    return snapshot.docs.map((documentSnapshot) => documentSnapshot.data());
+  } catch (error) {
+    logFirestoreRequest('queryCollection', collectionName, JSON.stringify(options), error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 export const setFirestoreDocument = async <
@@ -145,7 +211,12 @@ export const setFirestoreDocument = async <
   docId: string,
   data: WithFieldValue<Omit<FirestoreCollectionMap[TCollectionName], 'id'>>
 ): Promise<void> => {
-  await setDoc(getTypedDoc(collectionName, docId), data);
+  try {
+    await setDoc(getTypedDoc(collectionName, docId), data);
+  } catch (error) {
+    logFirestoreRequest('setDocument', collectionName, `doc:${docId}`, error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 /** setDoc dengan merge:true — aman untuk dokumen baru maupun yang sudah ada. */
@@ -156,7 +227,12 @@ export const mergeFirestoreDocument = async <
   docId: string,
   data: PartialWithFieldValue<FirestoreCollectionMap[TCollectionName]>
 ): Promise<void> => {
-  await setDoc(getTypedDoc(collectionName, docId), data, { merge: true });
+  try {
+    await setDoc(getTypedDoc(collectionName, docId), data, { merge: true });
+  } catch (error) {
+    logFirestoreRequest('mergeDocument', collectionName, `doc:${docId}`, error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 export const updateFirestoreDocument = async <
@@ -166,7 +242,12 @@ export const updateFirestoreDocument = async <
   docId: string,
   data: UpdateData<FirestoreCollectionMap[TCollectionName]>
 ): Promise<void> => {
-  await updateDoc(getTypedDoc(collectionName, docId), data);
+  try {
+    await updateDoc(getTypedDoc(collectionName, docId), data);
+  } catch (error) {
+    logFirestoreRequest('updateDocument', collectionName, `doc:${docId}`, error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 export const deleteFirestoreDocument = async <
@@ -175,7 +256,12 @@ export const deleteFirestoreDocument = async <
   collectionName: TCollectionName,
   docId: string
 ): Promise<void> => {
-  await deleteDoc(getTypedDoc(collectionName, docId));
+  try {
+    await deleteDoc(getTypedDoc(collectionName, docId));
+  } catch (error) {
+    logFirestoreRequest('deleteDocument', collectionName, `doc:${docId}`, error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 export const subscribeToFirestoreDocument = <
@@ -192,8 +278,9 @@ export const subscribeToFirestoreDocument = <
       callback(snapshot.exists() ? snapshot.data() : null);
     },
     (error) => {
-      console.error(`[Firestore] subscribeToFirestoreDocument error — collection: ${collectionName}, docId: ${docId}`, error);
-      onError?.(error);
+      const normalizedError = normalizeFirestoreError(error);
+      logFirestoreRequest('subscribeDocument', collectionName, `doc:${docId}`, normalizedError);
+      onError?.(normalizedError);
     }
   );
 };
@@ -202,11 +289,16 @@ export const subscribeToFirestoreDocument = <
 
 /** Create or update a user document (upsert). */
 export const upsertUser = async (user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
-  await setDoc(
-    getTypedDoc('users', user.uid),
-    { ...user, updatedAt: serverTimestamp() } as WithFieldValue<Omit<UserDocument, 'id'>>,
-    { merge: true }
-  );
+  try {
+    await setDoc(
+      getTypedDoc('users', user.uid),
+      { ...user, updatedAt: serverTimestamp() } as WithFieldValue<Omit<UserDocument, 'id'>>,
+      { merge: true }
+    );
+  } catch (error) {
+    logFirestoreRequest('upsertUser', 'users', `doc:${user.uid}`, error);
+    throw normalizeFirestoreError(error);
+  }
 };
 
 /** Subscribe to a user document in realtime. */
@@ -246,6 +338,10 @@ export const subscribeToFirestoreCollection = <
         snapshot.docs.map((documentSnapshot) => documentSnapshot.data())
       );
     },
-    onError
+    (error) => {
+      const normalizedError = normalizeFirestoreError(error);
+      logFirestoreRequest('subscribeCollection', collectionName, JSON.stringify(options), normalizedError);
+      onError?.(normalizedError);
+    }
   );
 };

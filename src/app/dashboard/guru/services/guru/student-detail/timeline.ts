@@ -1,6 +1,6 @@
 import { collection, getDocs, onSnapshot, query, where, type DocumentData, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
-import { toDateValue } from '@/app/teacher/studentDetail.utils';
+import { toDateValue } from '@/app/guru/studentDetail.utils';
 import type { ActivityDocument } from '@/types/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 

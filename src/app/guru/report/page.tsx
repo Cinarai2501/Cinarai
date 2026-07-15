@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
-import TeacherReportClient from './TeacherReportClient';
+import GuruReportClient from './GuruReportClient';
 
-export default function TeacherReportPage() {
+export default function GuruReportPage() {
   return (
     <Suspense
       fallback={
@@ -12,7 +12,7 @@ export default function TeacherReportPage() {
         </div>
       }
     >
-      <TeacherReportClient />
+      <GuruReportClient />
     </Suspense>
   );
 }

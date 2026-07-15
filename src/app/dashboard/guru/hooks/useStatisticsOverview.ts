@@ -7,13 +7,13 @@ import type {
   StatisticsModuleOption,
   StatisticsOverview,
   StatisticsTimeOption,
-} from '@/app/dashboard/guru/services/teacher/statistics/overview';
+} from '@/app/dashboard/guru/services/guru/statistics/overview';
 import {
   buildClassOptions,
   buildModuleOptions,
   buildStatisticsOverview,
   loadStatisticsOverviewData,
-} from '@/app/dashboard/guru/services/teacher/statistics/overview';
+} from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 const defaultTimeOptions: StatisticsTimeOption[] = [
   { id: 'today', label: 'Hari Ini' },

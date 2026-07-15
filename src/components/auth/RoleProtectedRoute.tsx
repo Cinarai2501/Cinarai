@@ -24,6 +24,24 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   useEffect(() => {
     if (loading) return;
 
+    const route = typeof window !== 'undefined' ? window.location.pathname : '/';
+
+    if (typeof window !== 'undefined') {
+      window.__cinaraiAuthDebug = {
+        ...(window.__cinaraiAuthDebug ?? {}),
+        route,
+        role: user?.role ?? 'unknown',
+        uid: user?.uid ?? 'anonymous',
+      };
+    }
+
+    console.info('[RoleProtectedRoute]', {
+      uid: user?.uid ?? 'anonymous',
+      role: user?.role ?? 'unknown',
+      route,
+      allowedRole,
+    });
+
     if (!user) {
       router.replace('/auth/login');
       return;

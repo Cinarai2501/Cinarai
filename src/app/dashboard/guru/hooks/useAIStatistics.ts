@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { AIUsageSummary } from '@/app/dashboard/guru/services/teacher/statistics/aiUsage';
-import { buildAIUsageSummary } from '@/app/dashboard/guru/services/teacher/statistics/aiUsage';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { AIUsageSummary } from '@/app/dashboard/guru/services/guru/statistics/aiUsage';
+import { buildAIUsageSummary } from '@/app/dashboard/guru/services/guru/statistics/aiUsage';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useAIStatistics(classId: string, moduleId: number | 'all') {
   const [summary, setSummary] = useState<AIUsageSummary | null>(null);

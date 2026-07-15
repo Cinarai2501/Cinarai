@@ -10,7 +10,7 @@ import type {
   UserDocument,
 } from '@/types/firestore';
 import { getFirestoreCollection, queryFirestoreCollection } from '@/services/firestore';
-import { loadAllProgressDocuments } from '../dashboard/teacherDashboardFirestore';
+import { loadAllProgressDocuments } from '../dashboard/guruDashboardFirestore';
 
 export type StatisticsDateRange = 'today' | '7days' | '30days' | 'semester' | 'all';
 
@@ -23,23 +23,13 @@ type DashboardQueryMeta = {
 };
 
 async function executeDashboardQuery<T>(
-  meta: DashboardQueryMeta,
+  _meta: DashboardQueryMeta,
   queryFn: () => Promise<T[]>
 ): Promise<{ documents: T[]; error: Error | null }> {
-  console.group('Teacher Dashboard Query');
-  console.log('Collection:', meta.collection);
-  console.log('Path:', meta.path);
-  console.log('Where:', meta.where ?? 'none');
-  console.log('OrderBy:', meta.orderBy ?? 'none');
-  console.log('Limit:', meta.limit ?? 'none');
-
   try {
     const documents = await queryFn();
-    console.groupEnd();
     return { documents, error: null };
   } catch (error) {
-    console.error(error);
-    console.groupEnd();
     return {
       documents: [],
       error: error instanceof Error ? error : new Error(String(error)),
@@ -188,9 +178,6 @@ export async function loadStatisticsOverviewData(
         return settled.value;
       }
 
-      console.group('Teacher Dashboard Query');
-      console.error('Unhandled query rejection:', settled.reason);
-      console.groupEnd();
       return { documents: [], error: settled.reason instanceof Error ? settled.reason : new Error(String(settled.reason)) };
     }) as Array<{ documents: unknown[]; error: Error | null }>;
 
@@ -226,9 +213,6 @@ export async function loadStatisticsOverviewData(
     cachedStatisticsSourceData = result;
   } else {
     cachedStatisticsSourceData = null;
-    errors.forEach((error) => {
-      console.warn('Teacher Dashboard Query Warning:', error);
-    });
   }
 
   cachedStatisticsSourceDataPromise = null;

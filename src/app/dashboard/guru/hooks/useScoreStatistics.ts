@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ScoreBucket } from '@/app/dashboard/guru/services/teacher/statistics/score';
-import { buildScoreDistribution } from '@/app/dashboard/guru/services/teacher/statistics/score';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { ScoreBucket } from '@/app/dashboard/guru/services/guru/statistics/score';
+import { buildScoreDistribution } from '@/app/dashboard/guru/services/guru/statistics/score';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useScoreStatistics(classId: string, moduleId: number | 'all') {
   const [distribution, setDistribution] = useState<ScoreBucket[]>([]);

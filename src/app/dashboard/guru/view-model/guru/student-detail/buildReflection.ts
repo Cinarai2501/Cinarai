@@ -1,5 +1,5 @@
 import type { ReflectionDocument } from '@/types/firestore';
-import { toDateValue } from '@/app/teacher/studentDetail.utils';
+import { toDateValue } from '@/app/guru/studentDetail.utils';
 
 export type StudentReflectionSummary = {
   text: string;

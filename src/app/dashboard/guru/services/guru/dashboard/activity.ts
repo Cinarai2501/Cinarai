@@ -1,6 +1,6 @@
 import type { ActivityDocument, UserDocument } from '@/types/firestore';
 
-export type TeacherRecentActivityItem = {
+export type GuruRecentActivityItem = {
   id: string;
   title: string;
   detail: string;
@@ -29,10 +29,10 @@ function toRelativeTimeLabel(date: Date): string {
   return `${diffDays} hari lalu`;
 }
 
-export function buildTeacherRecentActivities(
+export function buildGuruRecentActivities(
   activities: ActivityDocument[],
   students: UserDocument[]
-): TeacherRecentActivityItem[] {
+): GuruRecentActivityItem[] {
   const studentIds = new Set(students.map((student) => student.uid));
 
   return activities

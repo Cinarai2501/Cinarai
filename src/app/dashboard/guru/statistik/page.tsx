@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { TeacherDashboardLayout } from '@/app/dashboard/guru/components/TeacherDashboardLayout';
-import { TeacherHeader } from '@/app/dashboard/guru/components/TeacherHeader';
-import { TeacherSidebar } from '@/app/dashboard/guru/components/TeacherSidebar';
+import { GuruDashboardLayout } from '@/app/dashboard/guru/components/GuruDashboardLayout';
+import { GuruHeader } from '@/app/dashboard/guru/components/GuruHeader';
+import { GuruSidebar } from '@/app/dashboard/guru/components/GuruSidebar';
 import { useActivityStatistics } from '@/app/dashboard/guru/hooks/useActivityStatistics';
 import { useAIStatistics } from '@/app/dashboard/guru/hooks/useAIStatistics';
 import { useLeaderboard } from '@/app/dashboard/guru/hooks/useLeaderboard';
@@ -12,7 +12,7 @@ import { useProgressStatistics } from '@/app/dashboard/guru/hooks/useProgressSta
 import { useReflectionStatistics } from '@/app/dashboard/guru/hooks/useReflectionStatistics';
 import { useScoreStatistics } from '@/app/dashboard/guru/hooks/useScoreStatistics';
 import { useStatisticsOverview } from '@/app/dashboard/guru/hooks/useStatisticsOverview';
-import type { StatisticsFilter, StatisticsDateRange } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { StatisticsFilter, StatisticsDateRange } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 const initialFilter: StatisticsFilter = {
   classId: 'all',
@@ -56,7 +56,7 @@ function DataLoadState({ loading, error }: { loading: boolean; error: string | n
   return null;
 }
 
-export default function TeacherStatisticsPage() {
+export default function GuruStatisticsPage() {
   const [filter, setFilter] = useState<StatisticsFilter>(initialFilter);
   const { overview, classOptions, moduleOptions, timeOptions, loading: overviewLoading, error: overviewError } =
     useStatisticsOverview(filter);
@@ -92,7 +92,7 @@ export default function TeacherStatisticsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-5 sm:px-6 lg:px-8">
-      <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
+      <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
         <div className="space-y-6">
           <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -459,7 +459,7 @@ export default function TeacherStatisticsPage() {
             </section>
           </section>
         </div>
-      </TeacherDashboardLayout>
+      </GuruDashboardLayout>
     </div>
   );
 }

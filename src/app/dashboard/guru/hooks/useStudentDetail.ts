@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import { useStudentDetailSource } from './useStudentDetailSource';
-import { buildAIUsage } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildAIUsage';
-import { buildProgress } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildProgress';
-import { buildReflection } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildReflection';
-import { buildStudentSummary } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildStudentSummary';
-import { buildTimeline } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildTimeline';
+import { buildAIUsage } from '@/app/dashboard/guru/view-model/guru/student-detail/buildAIUsage';
+import { buildProgress } from '@/app/dashboard/guru/view-model/guru/student-detail/buildProgress';
+import { buildReflection } from '@/app/dashboard/guru/view-model/guru/student-detail/buildReflection';
+import { buildStudentSummary } from '@/app/dashboard/guru/view-model/guru/student-detail/buildStudentSummary';
+import { buildTimeline } from '@/app/dashboard/guru/view-model/guru/student-detail/buildTimeline';
 
 export function useStudentDetail(studentId?: string) {
   const { profile, progressDocuments, reflections, activities, applicationActivities, loading, error } = useStudentDetailSource(studentId);

@@ -84,21 +84,10 @@ function normalizeProgressDocument(documentSnapshot: QueryDocumentSnapshot): Com
 }
 
 export async function loadAllProgressDocuments(): Promise<ComicProgressDocument[]> {
-  console.group('Teacher Dashboard Query');
-  console.log('Collection: progress');
-  console.log('Path: /users/{uid}/progress (collectionGroup)');
-  console.log('Where: none');
-  console.log('OrderBy: none');
-  console.log('Limit: none');
-
   try {
     const snapshot = await getDocs(query(collectionGroup(firestore, 'progress')));
-    const documents = snapshot.docs.map(normalizeProgressDocument);
-    console.groupEnd();
-    return documents;
+    return snapshot.docs.map(normalizeProgressDocument);
   } catch (error) {
-    console.error(error);
-    console.groupEnd();
     throw error;
   }
 }

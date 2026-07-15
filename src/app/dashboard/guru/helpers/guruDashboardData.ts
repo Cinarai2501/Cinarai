@@ -3,7 +3,7 @@ import { SINTAKS } from '@/types/progress';
 
 export interface ClassroomSummary {
   totalStudents: number;
-  totalTeachers: number;
+  totalGuru: number;
   activeStudents: number;
   studentsWithAnyCompletedComic: number;
   studentsCompletedAllComics: number;
@@ -110,7 +110,7 @@ export function buildClassroomSummary(
 
   return {
     totalStudents: students.length,
-    totalTeachers: teachers.length,
+    totalGuru: teachers.length,
     activeStudents,
     studentsWithAnyCompletedComic,
     studentsCompletedAllComics,

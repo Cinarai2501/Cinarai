@@ -1,42 +1,46 @@
-import { useEffect, useState } from 'react';
-import { fetchGuruDashboardData, type GuruDashboardData } from '../services/guruDashboardService';
+import { useMemo } from 'react';
+import { useGuruDashboardSource } from './useGuruDashboardSource';
+import { buildGuruDashboardSummary } from '../services/guru/dashboard/stats';
+import { buildGuruModuleSummaries } from '../services/guru/dashboard/module';
+import { buildGuruProgressOverview } from '../services/guru/dashboard/progress';
+import { buildGuruRecentActivities } from '../services/guru/dashboard/activity';
 
 export function useGuruDashboard() {
-  const [data, setData] = useState<GuruDashboardData>({
-    summary: null,
-    comicProgress: [],
-    stageProgress: [],
-    valueDistribution: [],
-    completionStatuses: [],
-    recentActivities: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    students,
+    comics,
+    progressByStudent,
+    activities,
+    loading,
+    error,
+  } = useGuruDashboardSource();
 
-  useEffect(() => {
-    let active = true;
+  const summary = useMemo(() => {
+    if (!students.length || !comics.length) return null;
+    return buildGuruDashboardSummary(students, comics, progressByStudent);
+  }, [students, comics, progressByStudent]);
 
-    const load = async () => {
-      setLoading(true);
-      setError(null);
+  const progressItems = useMemo(() => {
+    if (!students.length || !comics.length) return [];
+    return buildGuruProgressOverview(students, progressByStudent);
+  }, [students, comics, progressByStudent]);
 
-      try {
-        const nextData = await fetchGuruDashboardData();
-        if (!active) return;
-        setData(nextData);
-      } catch (err) {
-        if (!active) return;
-        setError(err instanceof Error ? err.message : 'Gagal memuat data dashboard guru.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
+  const modules = useMemo(() => {
+    if (!comics.length) return [];
+    return buildGuruModuleSummaries(comics, progressByStudent);
+  }, [comics, progressByStudent]);
 
-    void load();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const recentActivities = useMemo(() => {
+    if (!activities.length) return [];
+    return buildGuruRecentActivities(activities, students);
+  }, [activities, students]);
 
-  return { ...data, loading, error };
+  return {
+    summary,
+    progressItems,
+    modules,
+    recentActivities,
+    loading,
+    error,
+  };
 }

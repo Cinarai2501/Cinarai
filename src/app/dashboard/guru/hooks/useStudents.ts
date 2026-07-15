@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { subscribeToUsers, subscribeToAllProgressDocuments, subscribeToComics } from '../services/teacher/dashboard/teacherDashboardFirestore';
-import { buildStudentDirectoryRows } from '../services/teacher/students/students';
+import { subscribeToUsers, subscribeToAllProgressDocuments, subscribeToComics } from '../services/guru/dashboard/guruDashboardFirestore';
+import { buildStudentDirectoryRows } from '../services/guru/students/students';
 import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
 
 export function useStudents() {

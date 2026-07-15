@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ReflectionSummary } from '@/app/dashboard/guru/services/teacher/statistics/reflection';
-import { buildReflectionSummary } from '@/app/dashboard/guru/services/teacher/statistics/reflection';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { ReflectionSummary } from '@/app/dashboard/guru/services/guru/statistics/reflection';
+import { buildReflectionSummary } from '@/app/dashboard/guru/services/guru/statistics/reflection';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useReflectionStatistics(classId: string, moduleId: number | 'all') {
   const [summary, setSummary] = useState<ReflectionSummary | null>(null);

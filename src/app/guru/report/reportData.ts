@@ -1,4 +1,4 @@
-export interface TeacherReportRow {
+export interface GuruReportRow {
   studentId: string;
   studentName: string;
   studentEmail: string;
@@ -10,13 +10,13 @@ export interface TeacherReportRow {
   updatedAt?: unknown;
 }
 
-export interface TeacherReportFilters {
+export interface GuruReportFilters {
   comicId?: number | null;
   studentId?: string | null;
   date?: string | null;
 }
 
-export interface TeacherReportSummary {
+export interface GuruReportSummary {
   totalStudents: number;
   totalComics: number;
   averageProgress: number;
@@ -47,7 +47,7 @@ function normalizeDate(value: unknown): string | null {
   return null;
 }
 
-export function filterReportRows(rows: TeacherReportRow[], filters: TeacherReportFilters): TeacherReportRow[] {
+export function filterReportRows(rows: GuruReportRow[], filters: GuruReportFilters): GuruReportRow[] {
   return rows.filter((row) => {
     const matchesComic = !filters.comicId || row.comicId === filters.comicId;
     const matchesStudent = !filters.studentId || row.studentId === filters.studentId;
@@ -56,7 +56,7 @@ export function filterReportRows(rows: TeacherReportRow[], filters: TeacherRepor
   });
 }
 
-export function summarizeReportRows(rows: TeacherReportRow[]): TeacherReportSummary {
+export function summarizeReportRows(rows: GuruReportRow[]): GuruReportSummary {
   if (!rows.length) {
     return {
       totalStudents: 0,

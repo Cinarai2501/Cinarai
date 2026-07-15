@@ -1,17 +1,17 @@
 import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
 
-export type TeacherDashboardSummary = {
+export type GuruDashboardSummary = {
   totalStudents: number;
   activeStudents: number;
   totalModules: number;
   averageProgress: number;
 };
 
-export function buildTeacherDashboardSummary(
+export function buildGuruDashboardSummary(
   students: UserDocument[],
   comics: ComicDocument[],
   progressByStudent: Map<string, ComicProgressDocument[]>
-): TeacherDashboardSummary {
+): GuruDashboardSummary {
   const totalStudents = students.length;
   const activeStudents = students.filter((student) => student.isActive).length;
   const totalModules = comics.length;

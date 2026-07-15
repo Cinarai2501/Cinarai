@@ -9,7 +9,7 @@ type ModuleItem = {
   coverLabel: string;
 };
 
-export function TeacherModuleCards({ modules }: { modules: ModuleItem[] }) {
+export function GuruModuleCards({ modules }: { modules: ModuleItem[] }) {
   return (
     <section className="rounded-[28px] border border-neutral-100 bg-white p-5 shadow-sm shadow-neutral-200/70 sm:p-6">
       <div className="flex items-center justify-between">

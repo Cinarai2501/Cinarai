@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { TeacherDashboardLayout } from '../../components/TeacherDashboardLayout';
-import { TeacherHeader } from '../../components/TeacherHeader';
-import { TeacherSidebar } from '../../components/TeacherSidebar';
+import { GuruDashboardLayout } from '../../components/GuruDashboardLayout';
+import { GuruHeader } from '../../components/GuruHeader';
+import { GuruSidebar } from '../../components/GuruSidebar';
 import { useStudentDetail } from '../../hooks/useStudentDetail';
 import { StudentDetailContent } from '../../components/StudentDetailContent';
 
@@ -15,7 +15,7 @@ export default function StudentDetailPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
-      <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
+      <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
         <div className="space-y-6">
           <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -54,7 +54,7 @@ export default function StudentDetailPage() {
             />
           )}
         </div>
-      </TeacherDashboardLayout>
+      </GuruDashboardLayout>
     </div>
   );
 }

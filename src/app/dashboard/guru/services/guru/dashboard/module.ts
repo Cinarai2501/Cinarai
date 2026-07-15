@@ -1,6 +1,6 @@
 import type { ComicDocument, ComicProgressDocument } from '@/types/firestore';
 
-export type TeacherModuleSummary = {
+export type GuruModuleSummary = {
   moduleId: number;
   title: string;
   description: string;
@@ -11,10 +11,10 @@ export type TeacherModuleSummary = {
   coverLabel: string;
 };
 
-export function buildTeacherModuleSummaries(
+export function buildGuruModuleSummaries(
   comics: ComicDocument[],
   progressByStudent: Map<string, ComicProgressDocument[]>
-): TeacherModuleSummary[] {
+): GuruModuleSummary[] {
   return comics.map((comic) => {
     const progressDocuments = Array.from(progressByStudent.values())
       .flat()

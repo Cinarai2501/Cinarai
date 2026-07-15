@@ -1,14 +1,14 @@
 import type { ComicProgressDocument, UserDocument } from '@/types/firestore';
 
-export type TeacherProgressOverviewItem = {
+export type GuruProgressOverviewItem = {
   label: string;
   value: number;
 };
 
-export function buildTeacherProgressOverview(
+export function buildGuruProgressOverview(
   students: UserDocument[],
   progressByStudent: Map<string, ComicProgressDocument[]>
-): TeacherProgressOverviewItem[] {
+): GuruProgressOverviewItem[] {
   const progressDocuments = Array.from(progressByStudent.values()).flat();
 
   const averageProgress = progressDocuments.length

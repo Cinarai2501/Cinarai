@@ -1,5 +1,5 @@
 import { SINTAKS } from '@/types/progress';
-import { toDateValue } from '@/app/teacher/studentDetail.utils';
+import { toDateValue } from '@/app/guru/studentDetail.utils';
 import type { ComicProgressDocument } from '@/types/firestore';
 
 export type StudentStageProgress = {

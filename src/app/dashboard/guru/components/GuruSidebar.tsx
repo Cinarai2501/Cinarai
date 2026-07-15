@@ -12,7 +12,7 @@ const items = [
   { label: 'Pengaturan', href: '/dashboard/guru/pengaturan', enabled: false },
 ];
 
-export function TeacherSidebar() {
+export function GuruSidebar() {
   const pathname = usePathname();
 
   return (

@@ -1,5 +1,5 @@
 import type { ApplicationActivityDocument } from '@/types/firestore';
-import { toDateValue } from '@/app/teacher/studentDetail.utils';
+import { toDateValue } from '@/app/guru/studentDetail.utils';
 
 export type StudentAIUsageSummary = {
   uses: number;

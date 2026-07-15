@@ -6,10 +6,10 @@ import { useStudents } from '../hooks/useStudents';
 import { useStudentSearch } from '../hooks/useStudentSearch';
 import { useStudentFilter } from '../hooks/useStudentFilter';
 import { useStudentSort } from '../hooks/useStudentSort';
-import { TeacherDashboardLayout } from './TeacherDashboardLayout';
-import { TeacherHeader } from './TeacherHeader';
-import { TeacherSidebar } from './TeacherSidebar';
-import type { StudentDirectoryRow } from '../services/teacher/students/students';
+import { GuruDashboardLayout } from './GuruDashboardLayout';
+import { GuruHeader } from './GuruHeader';
+import { GuruSidebar } from './GuruSidebar';
+import type { StudentDirectoryRow } from '../services/guru/students/students';
 
 const filterOptions = [
   { value: 'all', label: 'Semua' },
@@ -74,11 +74,11 @@ export function StudentDirectoryPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
-        <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
+        <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
           <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70">
             <p className="text-lg font-black text-neutral-900">Memuat data siswa…</p>
           </div>
-        </TeacherDashboardLayout>
+        </GuruDashboardLayout>
       </div>
     );
   }
@@ -86,19 +86,19 @@ export function StudentDirectoryPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
-        <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
+        <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
           <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6 shadow-sm shadow-rose-200/70">
             <p className="text-lg font-black text-rose-900">Gagal memuat data siswa</p>
             <p className="mt-2 text-sm text-rose-700">{error}</p>
           </div>
-        </TeacherDashboardLayout>
+        </GuruDashboardLayout>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-neutral-50 px-4 py-4 sm:px-6 lg:px-8">
-      <TeacherDashboardLayout header={<TeacherHeader />} sidebar={<TeacherSidebar />}>
+      <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
         <div className="space-y-6">
           <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -315,7 +315,7 @@ export function StudentDirectoryPage() {
             ) : null}
           </div>
         </div>
-      </TeacherDashboardLayout>
+      </GuruDashboardLayout>
     </div>
   );
 }

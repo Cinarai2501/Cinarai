@@ -1,12 +1,12 @@
 'use client';
 
 import type { ComicProgressDocument, UserDocument } from '@/types/firestore';
-import type { StudentSummary } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildStudentSummary';
-import type { StudentProgressSummary } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildProgress';
-import type { StudentTimelineItem } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildTimeline';
-import type { StudentReflectionSummary } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildReflection';
-import type { StudentAIUsageSummary } from '@/app/dashboard/guru/view-model/teacher/student-detail/buildAIUsage';
-import { formatFirestoreDate } from '@/app/teacher/studentDetail.utils';
+import type { StudentSummary } from '@/app/dashboard/guru/view-model/guru/student-detail/buildStudentSummary';
+import type { StudentProgressSummary } from '@/app/dashboard/guru/view-model/guru/student-detail/buildProgress';
+import type { StudentTimelineItem } from '@/app/dashboard/guru/view-model/guru/student-detail/buildTimeline';
+import type { StudentReflectionSummary } from '@/app/dashboard/guru/view-model/guru/student-detail/buildReflection';
+import type { StudentAIUsageSummary } from '@/app/dashboard/guru/view-model/guru/student-detail/buildAIUsage';
+import { formatFirestoreDate } from '@/app/guru/studentDetail.utils';
 
 const stageLabelMap: Record<string, string> = {
   Cover: 'Cover',

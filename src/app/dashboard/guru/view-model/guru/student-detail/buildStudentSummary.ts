@@ -1,6 +1,6 @@
 import type { ActivityDocument, UserDocument } from '@/types/firestore';
-import { formatFirestoreDate } from '@/app/teacher/studentDetail.utils';
-import { toDateValue } from '@/app/teacher/studentDetail.utils';
+import { formatFirestoreDate } from '@/app/guru/studentDetail.utils';
+import { toDateValue } from '@/app/guru/studentDetail.utils';
 
 export type StudentSummary = {
   displayName: string;

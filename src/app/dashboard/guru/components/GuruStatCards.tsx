@@ -1,15 +1,15 @@
 'use client';
 
-import { MenuBookIcon, PeopleIcon, SchoolIcon, TrendingUpIcon } from './TeacherIcons';
+import { MenuBookIcon, PeopleIcon, SchoolIcon, TrendingUpIcon } from './GuruIcons';
 
-type TeacherStatCardProps = {
+type GuruStatCardProps = {
   title: string;
   value: string;
   icon: 'people' | 'school' | 'menuBook' | 'trendingUp';
   accent: string;
 };
 
-function renderIcon(icon: TeacherStatCardProps['icon'], className: string) {
+function renderIcon(icon: GuruStatCardProps['icon'], className: string) {
   switch (icon) {
     case 'people':
       return <PeopleIcon className={className} />;
@@ -24,7 +24,7 @@ function renderIcon(icon: TeacherStatCardProps['icon'], className: string) {
   }
 }
 
-export function TeacherStatCards({ stats }: { stats: TeacherStatCardProps[] }) {
+export function GuruStatCards({ stats }: { stats: GuruStatCardProps[] }) {
   return (
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (

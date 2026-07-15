@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { ActivityDocument, ApplicationActivityDocument, ComicProgressDocument, IdentificationAnswerDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
-import { loadStudentDetailData, subscribeToStudentDetailData } from '../services/teacher/student-detail/StudentDetailService';
+import { loadStudentDetailData, subscribeToStudentDetailData } from '../services/guru/student-detail/StudentDetailService';
 
 export type StudentDetailSourceState = {
   profile: UserDocument | null;
@@ -38,7 +38,10 @@ export function useStudentDetailSource(studentId?: string) {
     let active = true;
     const loadError = (error: Error) => {
       if (!active) return;
-      setState((current) => ({ ...current, loading: false, error: error.message || 'Gagal memuat data siswa.' }));
+      console.warn('[StudentDetail] subscription failed', {
+        errorCode: (error as { code?: string }).code ?? 'unknown',
+        errorMessage: error.message,
+      });
     };
 
     const subscriptions = subscribeToStudentDetailData(studentId, {

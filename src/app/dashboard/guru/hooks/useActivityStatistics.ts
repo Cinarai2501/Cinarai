@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ActivityTrendPoint } from '@/app/dashboard/guru/services/teacher/statistics/activity';
-import type { StatisticsDateRange } from '@/app/dashboard/guru/services/teacher/statistics/overview';
-import { buildActivityTrend } from '@/app/dashboard/guru/services/teacher/statistics/activity';
-import { getDateRange } from '@/app/dashboard/guru/services/teacher/statistics/overview';
-import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/teacher/statistics/overview';
+import type { ActivityTrendPoint } from '@/app/dashboard/guru/services/guru/statistics/activity';
+import type { StatisticsDateRange } from '@/app/dashboard/guru/services/guru/statistics/overview';
+import { buildActivityTrend } from '@/app/dashboard/guru/services/guru/statistics/activity';
+import { getDateRange } from '@/app/dashboard/guru/services/guru/statistics/overview';
+import { loadStatisticsOverviewData } from '@/app/dashboard/guru/services/guru/statistics/overview';
 
 export function useActivityStatistics(classId: string, moduleId: number | 'all', range: StatisticsDateRange) {
   const [trend, setTrend] = useState<ActivityTrendPoint[]>([]);

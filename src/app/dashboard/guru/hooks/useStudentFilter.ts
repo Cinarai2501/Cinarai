@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { StudentDirectoryRow } from '../services/teacher/students/students';
+import type { StudentDirectoryRow } from '../services/guru/students/students';
 
 export type StudentFilterStatus = 'all' | 'active' | 'incomplete' | 'completed';
 
