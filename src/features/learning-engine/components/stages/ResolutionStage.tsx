@@ -324,6 +324,12 @@ function MissionCard({
     }
   };
 
+  useEffect(() => {
+    if (isSolved && missionIndex === totalMissions - 1) {
+      setCanAdvance(true);
+    }
+  }, [isSolved, missionIndex, totalMissions, setCanAdvance]);
+
   // Typing animation
   useEffect(() => {
     if (!tutorMessage) {
