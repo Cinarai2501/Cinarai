@@ -24,7 +24,7 @@ export default function AuthLayout({
         <div className="text-center mb-6">
           <div className="mb-3 inline-flex items-center justify-center rounded-2xl bg-white/20 p-2 shadow-lg ring-2 ring-white/30">
             <Image
-              src="/images/ai/logo/logo.png"
+              src="/images/logo/logo.png"
               alt="CINARAI Logo"
               width={110}
               height={110}
