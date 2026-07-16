@@ -19,17 +19,20 @@ export default function AuthLayout({
 
       <div className="relative w-full max-w-md animate-fade-in-up">
         {/* Brand */}
-        <div className="text-center">
+        <div className="flex flex-col items-center justify-center text-center">
           <Image
-            src="/images/logo/logo-icon.png"
-            alt="CINARAI"
-            width={120}
-            height={120}
+            src="/images/logo/logo.png"
+            alt="Logo CINARAI"
+            width={140}
+            height={140}
             priority
-            className="mx-auto object-contain"
+            sizes="(max-width: 640px) 120px, (max-width: 1024px) 140px, 150px"
+            className="mb-5 h-auto w-[120px] object-contain sm:w-[140px] lg:w-[150px]"
           />
-          <h1 className="text-4xl font-bold text-white tracking-normal mt-4">CINARAI</h1>
-          <p className="text-base font-medium text-white mt-2 mb-7" style={{ opacity: 0.85 }}>
+          <h1 className="mb-2 text-4xl font-bold leading-none tracking-normal text-white">
+            CINARAI
+          </h1>
+          <p className="mb-8 text-base font-medium leading-none text-white/85">
             Critical Numeracy with AR &amp; AI
           </p>
         </div>
