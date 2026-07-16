@@ -49,7 +49,7 @@ export const SignUpForm: React.FC = () => {
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-black text-neutral-900">Daftar</h2>
-        <p className="text-sm text-neutral-500 mt-0.5">Bergabunglah dengan CINARAI! 🎉</p>
+        <p className="text-sm text-neutral-500 mt-0.5">Bergabunglah sekarang! 🎉</p>
       </div>
 
       {(error || validationError) && (
