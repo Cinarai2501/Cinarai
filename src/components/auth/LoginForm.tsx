@@ -47,12 +47,12 @@ export const LoginForm: React.FC = () => {
   return (
     <div className="flex h-full flex-col justify-between gap-3">
       <div className="flex flex-col gap-2">
-        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#eaf6ff] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#1565C0]">
-          <span className="h-2 w-2 rounded-full bg-[#42A5F5]" />
+        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EAF6FF] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#1F5FBF]">
+          <span className="h-2 w-2 rounded-full bg-[#4FC3F7]" />
           Akses ruang belajar
         </div>
         <div>
-          <h2 className="text-[1.1rem] font-black text-slate-900">Masuk ke CINARAI</h2>
+          <h2 className="text-[1.1rem] font-black text-[#1E293B]">Masuk ke CINARAI</h2>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             Lanjutkan perjalanan numerasi Anda dengan AI yang siap membantu.
           </p>
@@ -83,7 +83,7 @@ export const LoginForm: React.FC = () => {
               placeholder="kamu@contoh.com"
               required
               disabled={isLoading}
-              className="w-full rounded-[16px] border border-slate-200 bg-[#f8fbff] py-3 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-[#1565C0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42A5F5]/20 disabled:opacity-60 transition-all"
+              className="h-[50px] w-full rounded-[16px] border border-slate-200 bg-[#F8FAFC] py-3 pl-10 pr-3 text-sm text-[#1E293B] shadow-sm placeholder:text-slate-400 focus:border-[#1F5FBF] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#4FC3F7]/20 disabled:opacity-60 transition-all"
             />
           </div>
         </div>
@@ -104,7 +104,7 @@ export const LoginForm: React.FC = () => {
               placeholder="••••••••"
               required
               disabled={isLoading}
-              className="w-full rounded-[16px] border border-slate-200 bg-[#f8fbff] py-3 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-[#1565C0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42A5F5]/20 disabled:opacity-60 transition-all"
+              className="h-[50px] w-full rounded-[16px] border border-slate-200 bg-[#F8FAFC] py-3 pl-10 pr-3 text-sm text-[#1E293B] shadow-sm placeholder:text-slate-400 focus:border-[#1F5FBF] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#4FC3F7]/20 disabled:opacity-60 transition-all"
             />
           </div>
         </div>
@@ -112,7 +112,7 @@ export const LoginForm: React.FC = () => {
         <div className="text-right">
           <Link
             href="/auth/forgot-password"
-            className="text-xs font-semibold text-[#1565C0] transition-colors hover:text-[#0d47a1]"
+            className="text-xs font-semibold text-[#1F5FBF] transition-colors hover:text-[#163d7d]"
           >
             Lupa password?
           </Link>
@@ -121,7 +121,7 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="group flex w-full items-center justify-center gap-2 rounded-[16px] bg-gradient-to-r from-[#1565C0] to-[#42A5F5] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(21,101,192,0.25)] transition-all hover:from-[#1e6fd2] hover:to-[#58b2f6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className="group flex h-[50px] w-full items-center justify-center gap-2 rounded-[16px] bg-gradient-to-r from-[#1F5FBF] to-[#4FC3F7] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(31,95,191,0.24)] transition-all hover:from-[#225fb9] hover:to-[#64d0f8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
         >
           <span>{isLoading ? 'Sedang masuk...' : 'Masuk'}</span>
           <span className="text-base transition-transform group-hover:translate-x-0.5">→</span>
@@ -147,7 +147,7 @@ export const LoginForm: React.FC = () => {
 
       <p className="text-center text-xs text-slate-500">
         Belum punya akun?{' '}
-        <Link href="/auth/signup" className="font-bold text-[#1565C0] transition-colors hover:text-[#0d47a1]">
+        <Link href="/auth/signup" className="font-bold text-[#1F5FBF] transition-colors hover:text-[#163d7d]">
           Daftar sekarang
         </Link>
       </p>
