@@ -11,7 +11,7 @@ interface LearningContentProps {
 }
 
 export default function LearningContent({ children }: LearningContentProps) {
-  const { nextStage, previousStage, canAdvance, isSaving, stageIndex, slideNav, resetProgress, isFinished } = useLearningEngine();
+  const { nextStage, previousStage, canAdvance, isSaving, stageIndex, slideNav, resetProgress, stageAdvanceAction, isFinished } = useLearningEngine();
   const mainRef = useRef<HTMLElement>(null);
   const [isResetting, setIsResetting] = useState(false);
 
@@ -64,6 +64,8 @@ export default function LearningContent({ children }: LearningContentProps) {
     if (dx < 0) {
       if (hasSlides && !onLastSlide) {
         slideNav.goNext();
+      } else if (stageAdvanceAction) {
+        void stageAdvanceAction();
       } else if (canAdvance && !isSaving) {
         void nextStage();
       }
@@ -74,7 +76,7 @@ export default function LearningContent({ children }: LearningContentProps) {
         previousStage();
       }
     }
-  }, [nextStage, previousStage, canAdvance, isSaving, stageIndex, slideNav]);
+  }, [nextStage, previousStage, canAdvance, isSaving, stageIndex, slideNav, stageAdvanceAction]);
 
   return (
     <main
