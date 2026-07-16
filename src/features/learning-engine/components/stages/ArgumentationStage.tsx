@@ -55,15 +55,17 @@ export default function ArgumentationStage() {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setFeedback(null);
+      setCanAdvance(false);
     }
-  }, [currentIndex]);
+  }, [currentIndex, setCanAdvance]);
 
   const goNextPage = useCallback(() => {
     if (currentIndex < totalPages - 1) {
       setCurrentIndex((prev) => prev + 1);
       setFeedback(null);
+      setCanAdvance(false);
     }
-  }, [currentIndex, totalPages]);
+  }, [currentIndex, setCanAdvance, totalPages]);
 
   useEffect(() => {
     setCanAdvance(Boolean(feedback) && completedIndices.includes(orderedLearningObjects.length - 1));
@@ -148,8 +150,11 @@ export default function ArgumentationStage() {
     (newFeedback: AiFeedback) => {
       setFeedback(newFeedback);
       setCompletedIndices((prev) => (prev.includes(currentIndex) ? prev : [...prev, currentIndex]));
+      if (currentIndex === orderedLearningObjects.length - 1) {
+        setCanAdvance(true);
+      }
     },
-    [currentIndex]
+    [currentIndex, orderedLearningObjects.length, setCanAdvance]
   );
 
   const handleNext = useCallback(() => {
@@ -160,11 +165,12 @@ export default function ArgumentationStage() {
     if (currentIndex < orderedLearningObjects.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setFeedback(null);
+      setCanAdvance(false);
       return;
     }
 
     void nextStage();
-  }, [currentIndex, learningObject, nextStage, orderedLearningObjects.length]);
+  }, [currentIndex, learningObject, nextStage, orderedLearningObjects.length, setCanAdvance]);
 
   if (!learningObject) {
     return (
