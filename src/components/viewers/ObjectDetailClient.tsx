@@ -1,31 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from 'next/image';
-import { packageContent } from '@/features/comics/comic-1/content/packageContent';
-import { getComic1QrAssetForObject } from '@/features/comics/comic-1/content/qrAssetRegistry';
 import { ObjectAITutor } from '@/features/learning-engine/components/stages/ObjectAITutor';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
-
-type Obj = {
-  id: string;
-  title: string;
-  page?: number;
-  navImage?: string;
-  qrImage?: string;
-  modelUrl?: string;
-  embedUrl?: string;
-  aiPrompt?: string;
-  provider?: string;
-};
+import { resolveObjectDetailContent } from '@/features/learning-engine/components/stages/navigationStageContent';
 
 export default function ObjectDetailClient({ id }: { id: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const decoded = decodeURIComponent(id);
-  const obj = packageContent.learningObjects.find((o) => o.id === decoded) as Obj | undefined;
+  const comicId = Number(searchParams.get('comicId') ?? '1');
+  const { object: obj, qrImage } = useMemo(() => resolveObjectDetailContent(comicId, decoded), [comicId, decoded]);
   const [isQrOpen, setIsQrOpen] = useState(false);
-  const qrImage = getComic1QrAssetForObject(obj?.title ?? '') ?? obj?.qrImage;
 
   if (!obj) {
     return (
@@ -77,7 +65,7 @@ export default function ObjectDetailClient({ id }: { id: string }) {
             <button onClick={() => setIsQrOpen(true)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
               Lihat QR
             </button>
-            <button onClick={() => router.push('/comic/1/learn')} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
+            <button onClick={() => router.push(`/comic/${comicId}/learn`)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
               Tutup Viewer
             </button>
           </div>

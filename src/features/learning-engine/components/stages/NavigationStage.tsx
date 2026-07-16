@@ -5,21 +5,20 @@ import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
-import { packageContent } from '@/features/comics/comic-1/content/packageContent';
-import { getComic1QrAssetForObject } from '@/features/comics/comic-1/content/qrAssetRegistry';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+import { resolveNavigationStageContent } from './navigationStageContent';
 
 export default function NavigationStage() {
   const router = useRouter();
   const { user } = useAuth();
   const { comic } = useLearningEngine();
 
-  // Use packageContent as single source of truth for object list
-  const objects = useMemo(() => packageContent.learningObjects.slice(0, 5), []);
+  const navigationContent = useMemo(() => resolveNavigationStageContent(comic.id), [comic.id]);
+  const { objects, heroModelEntry, heroQrImage } = navigationContent;
 
-  const candiEntry = packageContent.model3D.find((entry) => entry.title === 'Candi Jawi');
+  const candiEntry = heroModelEntry;
   const candiEmbed = candiEntry?.embedUrl ?? candiEntry?.arUrl ?? '';
-  const candiQrImage = getComic1QrAssetForObject('Candi Jawi');
+  const candiQrImage = heroQrImage;
   const candiFullscreenUrl = candiEntry?.arUrl ?? candiEntry?.embedUrl ?? '';
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [objectVisited, setObjectVisited] = useState<string[]>([]);
@@ -68,13 +67,13 @@ export default function NavigationStage() {
     <div className="flex min-w-0 flex-col gap-6 px-4 py-6">
       <div className="space-y-3">
         <h1 className="text-3xl font-black text-neutral-900">NAVIGASI AR & AI</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">Gunakan tampilan ini untuk menavigasi objek Candi Jawi. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.</p>
+        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">Gunakan tampilan ini untuk menavigasi objek pembelajaran yang sesuai dengan komik yang sedang dibuka. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.</p>
       </div>
 
       <section className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="space-y-3">
-          <h2 className="text-lg font-black text-neutral-900">Model 3D Candi Jawi</h2>
-          <p className="text-sm text-neutral-600">Model utama Candi Jawi tampil di atas agar siswa langsung melihat struktur utama sebelum masuk ke objek bangun ruang.</p>
+          <h2 className="text-lg font-black text-neutral-900">Model 3D Utama</h2>
+          <p className="text-sm text-neutral-600">Model utama tampil di atas agar siswa langsung melihat struktur utama sebelum masuk ke objek bangun ruang.</p>
         </div>
         {candiEmbed ? (
           <div className="mt-4 overflow-hidden rounded-[16px] border border-neutral-200">
@@ -119,14 +118,14 @@ export default function NavigationStage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600">QR Code</p>
-                <h3 className="mt-1 text-xl font-black text-neutral-900">Candi Jawi</h3>
+                <h3 className="mt-1 text-xl font-black text-neutral-900">{candiEntry?.title ?? 'Model Utama'}</h3>
               </div>
               <button type="button" onClick={() => setIsQrModalOpen(false)} className="rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">Tutup</button>
             </div>
             <div className="mt-5 flex justify-center">
               <Image
                 src={candiQrImage}
-                alt="QR Candi Jawi"
+                alt={`QR ${candiEntry?.title ?? 'Model Utama'}`}
                 width={320}
                 height={320}
                 quality={100}
@@ -169,7 +168,7 @@ export default function NavigationStage() {
                 onClick={() => {
                   setObjectVisited((prev) => Array.from(new Set([...prev, obj.id])));
                   setOpenedObjects((prev) => Array.from(new Set([...prev, obj.id])));
-                  router.push(`/viewer/object/${encodeURIComponent(obj.id)}`);
+                  router.push(`/viewer/object/${encodeURIComponent(obj.id)}?comicId=${comic.id}`);
                 }}
                 className="mt-4 inline-flex min-h-[40px] items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-sm font-bold text-white"
               >
