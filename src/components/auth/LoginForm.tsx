@@ -45,34 +45,34 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="flex h-full flex-col justify-between gap-3">
       <div className="flex flex-col gap-2">
-        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#eaf6ff] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#1565C0]">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#eaf6ff] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#1565C0]">
           <span className="h-2 w-2 rounded-full bg-[#42A5F5]" />
           Akses ruang belajar
         </div>
         <div>
-          <h2 className="text-2xl font-black text-slate-900">Masuk ke CINARAI</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <h2 className="text-[1.1rem] font-black text-slate-900">Masuk ke CINARAI</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
             Lanjutkan perjalanan numerasi Anda dengan AI yang siap membantu.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-[18px] border border-[#f5c2c7] bg-[#fff5f6] px-4 py-3 shadow-sm">
+        <div className="flex items-start gap-3 rounded-[16px] border border-[#f5c2c7] bg-[#fff5f6] px-3 py-2 shadow-sm">
           <span className="text-lg leading-none">⚠️</span>
           <p className="text-sm leading-snug text-[#b42318]">{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-sm font-semibold text-slate-700">
+      <form onSubmit={handleSubmit} className="space-y-2.5">
+        <div className="space-y-1">
+          <label htmlFor="email" className="block text-xs font-semibold text-slate-700">
             Email
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
               <EmailIcon />
             </span>
             <input
@@ -83,17 +83,17 @@ export const LoginForm: React.FC = () => {
               placeholder="kamu@contoh.com"
               required
               disabled={isLoading}
-              className="w-full rounded-[18px] border border-slate-200 bg-[#f8fbff] py-4 pl-12 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-[#1565C0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42A5F5]/20 disabled:opacity-60 transition-all"
+              className="w-full rounded-[16px] border border-slate-200 bg-[#f8fbff] py-3 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-[#1565C0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42A5F5]/20 disabled:opacity-60 transition-all"
             />
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
+        <div className="space-y-1">
+          <label htmlFor="password" className="block text-xs font-semibold text-slate-700">
             Password
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
               <PasswordIcon />
             </span>
             <input
@@ -104,7 +104,7 @@ export const LoginForm: React.FC = () => {
               placeholder="••••••••"
               required
               disabled={isLoading}
-              className="w-full rounded-[18px] border border-slate-200 bg-[#f8fbff] py-4 pl-12 pr-4 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-[#1565C0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42A5F5]/20 disabled:opacity-60 transition-all"
+              className="w-full rounded-[16px] border border-slate-200 bg-[#f8fbff] py-3 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-[#1565C0] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42A5F5]/20 disabled:opacity-60 transition-all"
             />
           </div>
         </div>
@@ -112,7 +112,7 @@ export const LoginForm: React.FC = () => {
         <div className="text-right">
           <Link
             href="/auth/forgot-password"
-            className="text-sm font-semibold text-[#1565C0] transition-colors hover:text-[#0d47a1]"
+            className="text-xs font-semibold text-[#1565C0] transition-colors hover:text-[#0d47a1]"
           >
             Lupa password?
           </Link>
@@ -121,7 +121,7 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="group flex w-full items-center justify-center gap-2 rounded-[18px] bg-gradient-to-r from-[#1565C0] to-[#42A5F5] px-4 py-4 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(21,101,192,0.25)] transition-all hover:from-[#1e6fd2] hover:to-[#58b2f6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          className="group flex w-full items-center justify-center gap-2 rounded-[16px] bg-gradient-to-r from-[#1565C0] to-[#42A5F5] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(21,101,192,0.25)] transition-all hover:from-[#1e6fd2] hover:to-[#58b2f6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
         >
           <span>{isLoading ? 'Sedang masuk...' : 'Masuk'}</span>
           <span className="text-base transition-transform group-hover:translate-x-0.5">→</span>
@@ -130,7 +130,7 @@ export const LoginForm: React.FC = () => {
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
           atau
         </span>
         <div className="h-px flex-1 bg-slate-200" />
@@ -139,13 +139,13 @@ export const LoginForm: React.FC = () => {
       <button
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="flex w-full items-center justify-center gap-2 rounded-[18px] border border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
         Masuk dengan Google
       </button>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-xs text-slate-500">
         Belum punya akun?{' '}
         <Link href="/auth/signup" className="font-bold text-[#1565C0] transition-colors hover:text-[#0d47a1]">
           Daftar sekarang

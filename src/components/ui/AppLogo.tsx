@@ -11,9 +11,9 @@ interface AppLogoProps {
 
 const variantConfig: Record<AppLogoVariant, { width: number; height: number; className: string }> = {
   login: {
-    width: 260,
-    height: 260,
-    className: 'h-auto w-[clamp(190px,68vw,260px)] max-w-[78vw] object-contain',
+    width: 180,
+    height: 180,
+    className: 'h-auto w-[clamp(140px,46vw,180px)] max-w-[58vw] object-contain',
   },
   splash: {
     width: 220,
