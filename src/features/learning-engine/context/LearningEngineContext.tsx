@@ -75,6 +75,8 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
   const [canAdvance, setCanAdvance] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [slideNav, setSlideNav] = useState<SlideNavState | null>(null);
+  const [stageAdvanceAction, setStageAdvanceAction] = useState<(() => Promise<void>) | null>(null);
+
   // True after the first Firestore snapshot has been applied — prevents subsequent
   // snapshots from overriding the user's in-session navigation.
   const initialSyncDoneRef = React.useRef(false);
@@ -310,6 +312,14 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     setSlideNav(null);
   }, []);
 
+  const registerStageAdvance = useCallback((advanceAction: () => Promise<void>) => {
+    setStageAdvanceAction(() => advanceAction);
+  }, []);
+
+  const unregisterStageAdvance = useCallback(() => {
+    setStageAdvanceAction(null);
+  }, []);
+
   const resetProgress = useCallback(async () => {
     logLearningEngine('LearningEngineContext.resetProgress', comicId, 1, 1, false);
     if (!user?.uid) {
@@ -369,6 +379,9 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       slideNav,
       registerSlideNav,
       unregisterSlideNav,
+      stageAdvanceAction,
+      registerStageAdvance,
+      unregisterStageAdvance,
     }),
     [
       comicId,
@@ -394,6 +407,9 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
       slideNav,
       registerSlideNav,
       unregisterSlideNav,
+      stageAdvanceAction,
+      registerStageAdvance,
+      unregisterStageAdvance,
     ]
   );
 

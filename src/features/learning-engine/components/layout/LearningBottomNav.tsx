@@ -13,6 +13,7 @@ export default function LearningBottomNav() {
     nextStage,
     previousStage,
     slideNav,
+    stageAdvanceAction,
   } = useLearningEngine();
 
   const isFirstStage = currentStage === Stage.Cover;
@@ -33,15 +34,21 @@ export default function LearningBottomNav() {
   const handleNext = useCallback(() => {
     if (hasSlides && !onLastSlide) {
       slideNav.goNext();
-    } else {
-      void nextStage();
+      return;
     }
-  }, [hasSlides, onLastSlide, slideNav, nextStage]);
+
+    if (stageAdvanceAction) {
+      void stageAdvanceAction();
+      return;
+    }
+
+    void nextStage();
+  }, [hasSlides, onLastSlide, slideNav, nextStage, stageAdvanceAction]);
 
   const prevDisabled =
-    ((hasSlides && !onFirstSlide) ? !slideNav!.canGoPrev : isFirstStage && onFirstSlide) || isSaving;
+    ((hasSlides && !onFirstSlide) ? !slideNav!.canGoPrev : isFirstStage && onFirstSlide);
   const nextDisabled =
-    ((hasSlides && !onLastSlide) ? !slideNav!.canGoNext : !canAdvance && onLastSlide) || isSaving;
+    (hasSlides && !onLastSlide) ? !slideNav!.canGoNext : !canAdvance && onLastSlide;
 
   const isFinishAction = isLastLearningStage && onLastSlide;
 

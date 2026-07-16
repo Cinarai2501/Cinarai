@@ -81,6 +81,11 @@ export interface LearningContextValue {
   // Save state — true while Firestore write is in-flight
   isSaving: boolean;
 
+  // Stage-specific advance action — called from nav when the stage needs custom completion logic.
+  stageAdvanceAction: (() => Promise<void>) | null;
+  registerStageAdvance: (advanceAction: () => Promise<void>) => void;
+  unregisterStageAdvance: () => void;
+
   // Slide navigation — registered by stages that have internal slides
   slideNav: SlideNavState | null;
   registerSlideNav: (nav: SlideNavState) => void;

@@ -34,14 +34,14 @@ function isComic1ArgumentationQuestion(question: unknown): question is Comic1Arg
 }
 
 export default function ArgumentationStage() {
-  const { comic, comicModule, setCanAdvance, nextStage, registerSlideNav, unregisterSlideNav } = useLearningEngine();
+  const { comic, comicModule, setCanAdvance, completeAndAdvance, registerSlideNav, unregisterSlideNav, registerStageAdvance, unregisterStageAdvance } = useLearningEngine();
   const { user } = useAuth();
   const [feedback, setFeedback] = useState<AiFeedback | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completedIndices, setCompletedIndices] = useState<number[]>([]);
   const [textAnswer, setTextAnswer] = useState('');
-  const [hasHydratedProgress, setHasHydratedProgress] = useState(false);
   const progressHydratedRef = useRef(false);
+  const saveInFlightRef = useRef<Promise<void> | null>(null);
 
   const orderedLearningObjects = useMemo(
     () => getOrderedArgumentationLearningObjects(comicModule.argumentation),
@@ -50,6 +50,8 @@ export default function ArgumentationStage() {
 
   const learningObject = orderedLearningObjects[currentIndex] ?? null;
   const totalPages = orderedLearningObjects.length || 1;
+  const lastQuestionIndex = totalPages - 1;
+  const lastPageAnswered = feedback !== null && completedIndices.includes(lastQuestionIndex);
 
   const goPrevPage = useCallback(() => {
     if (currentIndex > 0) {
@@ -68,8 +70,8 @@ export default function ArgumentationStage() {
   }, [currentIndex, setCanAdvance, totalPages]);
 
   useEffect(() => {
-    setCanAdvance(Boolean(feedback) && completedIndices.includes(orderedLearningObjects.length - 1));
-  }, [completedIndices, feedback, orderedLearningObjects.length, setCanAdvance]);
+    setCanAdvance(lastPageAnswered);
+  }, [lastPageAnswered, setCanAdvance]);
 
   useEffect(() => {
     registerSlideNav({
@@ -86,53 +88,119 @@ export default function ArgumentationStage() {
     };
   }, [currentIndex, goNextPage, goPrevPage, registerSlideNav, totalPages, unregisterSlideNav]);
 
-  const persistArgumentationProgress = useCallback(async () => {
-    if (!user?.uid || !hasHydratedProgress) return;
-    await saveComicProgress(user.uid, comic.id, {
-      stageData: {
-        argumentation: {
-          currentIndex,
-          completedArguments: completedIndices,
-          selectedAnswer: textAnswer.trim() || null,
-          textAnswer,
-          feedback,
-          score: feedback?.score ?? null,
-        },
-      },
-    });
-  }, [comic.id, completedIndices, feedback, hasHydratedProgress, currentIndex, textAnswer, user?.uid]);
+  const persistArgumentationProgress = useCallback(
+    async (override?: {
+      currentIndex?: number;
+      completedIndices?: number[];
+      textAnswer?: string;
+      feedback?: AiFeedback | null;
+    }) => {
+      if (!user?.uid) return;
+
+      const currentSaveIndex = override?.currentIndex ?? currentIndex;
+      const currentCompletedIndices = override?.completedIndices ?? completedIndices;
+      const currentTextAnswer = override?.textAnswer ?? textAnswer;
+      const currentFeedback = override?.feedback ?? feedback;
+
+      if (saveInFlightRef.current) {
+        try {
+          await saveInFlightRef.current;
+        } catch {
+          // ignore existing save failure; continue with latest state
+        }
+      }
+
+      const savePromise = (async () => {
+        try {
+          await saveComicProgress(user.uid, comic.id, {
+            stageData: {
+              argumentation: {
+                currentIndex: currentSaveIndex,
+                completedArguments: currentCompletedIndices,
+                selectedAnswer: currentTextAnswer.trim() || null,
+                textAnswer: currentTextAnswer,
+                feedback: currentFeedback,
+                score: currentFeedback?.score ?? null,
+              },
+            },
+          });
+        } catch (error) {
+          console.error(
+            '[ArgumentationStage] gagal menyimpan progress argumentasi',
+            error instanceof Error ? error.stack ?? error.message : String(error)
+          );
+          throw error;
+        }
+      })();
+
+      saveInFlightRef.current = savePromise;
+      try {
+        await savePromise;
+      } finally {
+        if (saveInFlightRef.current === savePromise) {
+          saveInFlightRef.current = null;
+        }
+      }
+    },
+    [comic.id, completedIndices, currentIndex, feedback, textAnswer, user?.uid]
+  );
 
   useEffect(() => {
     if (!user?.uid || progressHydratedRef.current) return;
     progressHydratedRef.current = true;
     let active = true;
+
+    const parseNumber = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      return null;
+    };
+
     void (async () => {
       try {
         const document = await loadComicProgress(user.uid, comic.id);
         if (!active) return;
         const stageData = document?.stageData?.argumentation;
         if (stageData) {
-          if (typeof stageData.currentIndex === 'number') {
-            setCurrentIndex(stageData.currentIndex);
+          const currentIndexValue = parseNumber(stageData.currentIndex);
+          if (currentIndexValue !== null) {
+            setCurrentIndex(Math.min(Math.max(currentIndexValue, 0), totalPages - 1));
           }
+
           if (Array.isArray(stageData.completedArguments)) {
-            setCompletedIndices(stageData.completedArguments.filter((value): value is number => typeof value === 'number'));
+            setCompletedIndices(
+              stageData.completedArguments
+                .map((value) => parseNumber(value))
+                .filter((value): value is number => value !== null)
+            );
           }
+
           if (typeof stageData.textAnswer === 'string') {
             setTextAnswer(stageData.textAnswer);
           }
+
           if (stageData.feedback && typeof stageData.feedback === 'object') {
             const feedbackValue = stageData.feedback as unknown as Partial<AiFeedback>;
+            const scoreValue = parseNumber(feedbackValue.score);
             if (
               typeof feedbackValue.level === 'string' &&
-              typeof feedbackValue.score === 'number' &&
-              typeof feedbackValue.feedback === 'string'
+              typeof feedbackValue.feedback === 'string' &&
+              scoreValue !== null
             ) {
-              setFeedback(feedbackValue as AiFeedback);
+              setFeedback({
+                level: feedbackValue.level as FeedbackLevel,
+                score: scoreValue,
+                feedback: feedbackValue.feedback,
+                strength: typeof feedbackValue.strength === 'string' ? feedbackValue.strength : undefined,
+                improvement: typeof feedbackValue.improvement === 'string' ? feedbackValue.improvement : undefined,
+                suggestion: typeof feedbackValue.suggestion === 'string' ? feedbackValue.suggestion : undefined,
+              });
             }
           }
         }
-        setHasHydratedProgress(true);
       } catch (error) {
         console.error('[ArgumentationStage] gagal memuat progress', error);
       }
@@ -140,24 +208,10 @@ export default function ArgumentationStage() {
     return () => {
       active = false;
     };
-  }, [comic.id, user?.uid]);
+  }, [comic.id, totalPages, user?.uid]);
 
-  useEffect(() => {
-    void persistArgumentationProgress();
-  }, [persistArgumentationProgress]);
 
-  const handleFeedback = useCallback(
-    (newFeedback: AiFeedback) => {
-      setFeedback(newFeedback);
-      setCompletedIndices((prev) => (prev.includes(currentIndex) ? prev : [...prev, currentIndex]));
-      if (currentIndex === orderedLearningObjects.length - 1) {
-        setCanAdvance(true);
-      }
-    },
-    [currentIndex, orderedLearningObjects.length, setCanAdvance]
-  );
-
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (!learningObject) {
       return;
     }
@@ -169,8 +223,56 @@ export default function ArgumentationStage() {
       return;
     }
 
-    void nextStage();
-  }, [currentIndex, learningObject, nextStage, orderedLearningObjects.length, setCanAdvance]);
+    try {
+      await persistArgumentationProgress();
+      await completeAndAdvance('Argumentation');
+    } catch (error) {
+      console.error(
+        '[ArgumentationStage] gagal melanjutkan setelah argumentasi selesai',
+        error instanceof Error ? error.stack ?? error.message : String(error)
+      );
+    }
+  }, [completeAndAdvance, currentIndex, learningObject, orderedLearningObjects.length, persistArgumentationProgress, setCanAdvance]);
+
+  useEffect(() => {
+    if (lastPageAnswered) {
+      registerStageAdvance(handleNext);
+      return () => {
+        unregisterStageAdvance();
+      };
+    }
+
+    unregisterStageAdvance();
+    return undefined;
+  }, [handleNext, lastPageAnswered, registerStageAdvance, unregisterStageAdvance]);
+
+  const handleFeedback = useCallback(
+    async (newFeedback: AiFeedback) => {
+      const nextCompletedIndices = completedIndices.includes(currentIndex)
+        ? completedIndices
+        : [...completedIndices, currentIndex];
+
+      setFeedback(newFeedback);
+      setCompletedIndices(nextCompletedIndices);
+
+      if (currentIndex === orderedLearningObjects.length - 1) {
+        setCanAdvance(true);
+      }
+
+      try {
+        await persistArgumentationProgress({
+          completedIndices: nextCompletedIndices,
+          feedback: newFeedback,
+        });
+      } catch (error) {
+        console.error(
+          '[ArgumentationStage] gagal menyimpan progress setelah menerima feedback',
+          error instanceof Error ? error.stack ?? error.message : String(error)
+        );
+      }
+    },
+    [completedIndices, currentIndex, orderedLearningObjects.length, persistArgumentationProgress, setCanAdvance]
+  );
 
   if (!learningObject) {
     return (

@@ -11,11 +11,13 @@ const REQUIRED_SERVER = [
   'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
   'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
   'NEXT_PUBLIC_FIREBASE_APP_ID',
+  'FIREBASE_PROJECT_ID',
+  'FIREBASE_CLIENT_EMAIL',
+  'FIREBASE_PRIVATE_KEY',
 ] as const;
 
 const OPTIONAL_SERVER: Record<string, string> = {
   NEXT_PUBLIC_FIREBASE_DATABASE_URL: 'Required only if using Firebase Realtime Database.',
-  FIREBASE_ADMIN_SDK_KEY: 'Required for server-side auth and admin Firestore. Value must be the service account JSON as a single-line string.',
   GEMINI_API_KEY: 'Required for Gemini AI provider.',
   GROQ_API_KEY: 'Required for Groq AI provider.',
   OPENROUTER_API_KEY: 'Required for OpenRouter AI provider.',
