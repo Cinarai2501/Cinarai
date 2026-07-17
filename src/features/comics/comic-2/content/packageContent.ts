@@ -1,4 +1,16 @@
 import type { ComicContentPackageLike } from '../../types';
+import coverImg from '@/features/comics/comic-2/assets/cover/cover.png';
+import thumbnailImg from '@/features/comics/comic-2/assets/cover/thumbnail.png';
+import navUmpang from '@/features/comics/comic-2/assets/navigation/umpang.png';
+import navBaleAgung from '@/features/comics/comic-2/assets/navigation/bale-agung.png';
+import navMensir from '@/features/comics/comic-2/assets/navigation/mensir.png';
+import navReliefLingkaran from '@/features/comics/comic-2/assets/navigation/relief-lingkaran.png';
+import navTangga from '@/features/comics/comic-2/assets/navigation/tangga.png';
+import navGapura from '@/features/comics/comic-2/assets/navigation/gapura.png';
+import qr13 from '@/features/comics/comic-2/assets/qr/13-objek-1.jpeg';
+import qr15 from '@/features/comics/comic-2/assets/qr/15-objek-2.jpeg';
+import qr17 from '@/features/comics/comic-2/assets/qr/17-objek-3.jpeg';
+import qr18 from '@/features/comics/comic-2/assets/qr/18-objek-4.jpeg';
 
 export const packageContent: ComicContentPackageLike = {
   metadata: {
@@ -7,8 +19,8 @@ export const packageContent: ComicContentPackageLike = {
     subtitle: 'Etnomatematika Bangun Datar',
     location: 'Candi Penataran, Blitar',
     classLevel: 'V',
-    cover: '/assets/images/komik-2/cover.png',
-    thumbnail: '/assets/images/komik-2/thumbnail.png',
+    cover: coverImg.src,
+    thumbnail: thumbnailImg.src,
     learningTargets: [
       'Mengamati objek yang muncul di Candi Penataran.',
       'Menghubungkan bangun datar dengan bentuk nyata pada candi.',
@@ -22,9 +34,9 @@ export const packageContent: ComicContentPackageLike = {
       title: 'Umpang',
       description: 'Bagian rumah adat yang terlihat panjang dan seimbang pada Candi Penataran.',
       page: 1,
-      qrImage: '/assets/qr/komik-2/15-objek-2.jpeg',
-      navImage: '/assets/images/komik-2/umpang.png',
-      objectImage: '/assets/images/komik-2/umpang.png',
+      qrImage: qr15.src,
+      navImage: navUmpang.src,
+      objectImage: navUmpang.src,
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -42,9 +54,9 @@ export const packageContent: ComicContentPackageLike = {
       title: 'Bale Agung',
       description: 'Bagian bangunan yang tampak luas dan rapi pada Candi Penataran.',
       page: 2,
-      qrImage: '/assets/qr/komik-2/13-objek-1.jpeg',
-      navImage: '/assets/images/komik-2/bale-agung.png',
-      objectImage: '/assets/images/komik-2/bale-agung.png',
+      qrImage: qr13.src,
+      navImage: navBaleAgung.src,
+      objectImage: navBaleAgung.src,
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -62,9 +74,9 @@ export const packageContent: ComicContentPackageLike = {
       title: 'Candi Angka',
       description: 'Bagian candi yang menampilkan bentuk runcing dan simetris pada Candi Penataran.',
       page: 3,
-      qrImage: '/assets/qr/komik-2/17-objek-3.jpeg',
-      navImage: '/assets/images/komik-2/gapura.png',
-      objectImage: '/assets/images/komik-2/gapura.png',
+      qrImage: qr17.src,
+      navImage: navGapura.src,
+      objectImage: navGapura.src,
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -82,9 +94,9 @@ export const packageContent: ComicContentPackageLike = {
       title: 'Mensir',
       description: 'Bagian ornamen yang tampak seperti persegi dan berhubungan dengan simetri pada Candi Penataran.',
       page: 4,
-      qrImage: '/assets/qr/komik-2/13-objek-1.jpeg',
-      navImage: '/assets/images/komik-2/mensir.png',
-      objectImage: '/assets/images/komik-2/mensir.png',
+      qrImage: qr13.src,
+      navImage: navMensir.src,
+      objectImage: navMensir.src,
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -102,9 +114,9 @@ export const packageContent: ComicContentPackageLike = {
       title: 'Relief Lingkaran',
       description: 'Relief bundar yang terlihat pada ukiran Candi Penataran dan mudah dipelajari sebagai bangun datar.',
       page: 5,
-      qrImage: '/assets/qr/komik-2/18-objek-4.jpeg',
-      navImage: '/assets/images/komik-2/relief-lingkaran.png',
-      objectImage: '/assets/images/komik-2/relief-lingkaran.png',
+      qrImage: qr18.src,
+      navImage: navReliefLingkaran.src,
+      objectImage: navReliefLingkaran.src,
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -122,9 +134,9 @@ export const packageContent: ComicContentPackageLike = {
       title: 'Ornamen Belah Ketupat',
       description: 'Ornamen yang menyerupai bentuk wajik pada ukiran Candi Penataran dan berkaitan dengan simetri.',
       page: 6,
-      qrImage: '/assets/qr/komik-2/17-objek-3.jpeg',
-      navImage: '/assets/images/komik-2/tangga.png',
-      objectImage: '/assets/images/komik-2/tangga.png',
+      qrImage: qr17.src,
+      navImage: navTangga.src,
+      objectImage: navTangga.src,
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -139,12 +151,12 @@ export const packageContent: ComicContentPackageLike = {
     },
   ],
   qrCode: [
-    { id: 'komik2-qr-1', imageSrc: '/assets/qr/komik-2/15-objek-2.jpeg', alt: 'QR Umpang', label: 'Umpang', description: 'Lihat bentuk panjang dan seimbang pada Umpang.' },
-    { id: 'komik2-qr-2', imageSrc: '/assets/qr/komik-2/13-objek-1.jpeg', alt: 'QR Bale Agung', label: 'Bale Agung', description: 'Amati bidang panjang yang tampak pada Bale Agung.' },
-    { id: 'komik2-qr-3', imageSrc: '/assets/qr/komik-2/17-objek-3.jpeg', alt: 'QR Candi Angka', label: 'Candi Angka', description: 'Perhatikan bentuk runcing dan simetris pada Candi Angka.' },
-    { id: 'komik2-qr-4', imageSrc: '/assets/qr/komik-2/13-objek-1.jpeg', alt: 'QR Mensir', label: 'Mensir', description: 'Bandingkan pola persegi yang berulang pada Mensir.' },
-    { id: 'komik2-qr-5', imageSrc: '/assets/qr/komik-2/18-objek-4.jpeg', alt: 'QR Relief Lingkaran', label: 'Relief Lingkaran', description: 'Lihat bentuk bundar pada relief lingkaran.' },
-    { id: 'komik2-qr-6', imageSrc: '/assets/qr/komik-2/17-objek-3.jpeg', alt: 'QR Ornamen Belah Ketupat', label: 'Ornamen Belah Ketupat', description: 'Amati bentuk wajik pada ornamen belah ketupat.' },
+    { id: 'komik2-qr-1', imageSrc: qr15.src, alt: 'QR Umpang', label: 'Umpang', description: 'Lihat bentuk panjang dan seimbang pada Umpang.' },
+    { id: 'komik2-qr-2', imageSrc: qr13.src, alt: 'QR Bale Agung', label: 'Bale Agung', description: 'Amati bidang panjang yang tampak pada Bale Agung.' },
+    { id: 'komik2-qr-3', imageSrc: qr17.src, alt: 'QR Candi Angka', label: 'Candi Angka', description: 'Perhatikan bentuk runcing dan simetris pada Candi Angka.' },
+    { id: 'komik2-qr-4', imageSrc: qr13.src, alt: 'QR Mensir', label: 'Mensir', description: 'Bandingkan pola persegi yang berulang pada Mensir.' },
+    { id: 'komik2-qr-5', imageSrc: qr18.src, alt: 'QR Relief Lingkaran', label: 'Relief Lingkaran', description: 'Lihat bentuk bundar pada relief lingkaran.' },
+    { id: 'komik2-qr-6', imageSrc: qr17.src, alt: 'QR Ornamen Belah Ketupat', label: 'Ornamen Belah Ketupat', description: 'Amati bentuk wajik pada ornamen belah ketupat.' },
   ],
   model3D: [
     { id: 'komik2-model-1', title: 'Umpang', arUrl: '', page: 1, description: 'Lihat bentuk Umpang sebagai contoh persegi panjang.' },
@@ -167,7 +179,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-1',
         question: 'Perhatikan motif relief persegi pada dinding Candi Penataran. Bangun datar apa yang paling sesuai dengan bentuk motif ini?',
-        image: '/assets/qr/komik-2/13-objek-1.jpeg',
+        image: qr13.src,
         imageAlt: 'Motif relief persegi pada dinding Candi Penataran.',
         options: [
           { text: 'Persegi', correct: true },
@@ -182,7 +194,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-2',
         question: 'Perhatikan batu candi yang tampak panjang pada bagian sisi bangunan. Bangun datar apa yang paling sesuai dengan bentuknya?',
-        image: '/assets/images/komik-2/umpang.png',
+        image: navUmpang.src,
         imageAlt: 'Batu candi berbentuk persegi panjang pada Candi Penataran.',
         options: [
           { text: 'Persegi', correct: false },
@@ -197,7 +209,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-3',
         question: 'Perhatikan hiasan atap candi yang terlihat runcing dan sama di semua sisinya. Bangun datar apa yang paling sesuai?',
-        image: '/assets/qr/komik-2/17-objek-3.jpeg',
+        image: qr17.src,
         imageAlt: 'Hiasan atap candi berbentuk segitiga sama sisi.',
         options: [
           { text: 'Persegi', correct: false },
@@ -212,7 +224,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-4',
         question: 'Perhatikan ornamen candi yang mirip segitiga dengan dua sisi sama panjang. Bangun datar apa yang paling sesuai?',
-        image: '/assets/qr/komik-2/17-objek-3.jpeg',
+        image: qr17.src,
         imageAlt: 'Ornamen candi berbentuk segitiga sama kaki.',
         options: [
           { text: 'Persegi', correct: false },
@@ -227,7 +239,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-5',
         question: 'Perhatikan relief lingkaran pada ukiran Candi Penataran. Bangun datar apa yang paling sesuai dengan bentuk ini?',
-        image: '/assets/qr/komik-2/13-objek-1.jpeg',
+        image: qr13.src,
         imageAlt: 'Relief lingkaran pada ukiran Candi Penataran.',
         options: [
           { text: 'Persegi', correct: false },
@@ -242,7 +254,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-6',
         question: 'Perhatikan hiasan berbentuk belah ketupat pada ukiran Candi Penataran. Bangun datar apa yang paling sesuai?',
-        image: '/assets/images/komik-2/relief-lingkaran.png',
+        image: navReliefLingkaran.src,
         imageAlt: 'Hiasan berbentuk belah ketupat pada Candi Penataran.',
         options: [
           { text: 'Persegi', correct: false },
@@ -267,9 +279,9 @@ export const packageContent: ComicContentPackageLike = {
     prompt: 'Relief Candi Penataran menampilkan pola yang simetris dan berulang. Pilih bangun datar yang paling cocok untuk menjelaskan pola tersebut dan jelaskan alasanmu.',
     context: 'Pola simetri dan bentuk bangun datar pada relief Candi Penataran.',
     images: [
-      { src: '/assets/images/komik-2/mensir.png', alt: 'Relief persegi', label: 'Relief Simetris', description: 'Amati pola berulang yang seimbang.' },
-      { src: '/assets/images/komik-2/umpang.png', alt: 'Bidang panjang', label: 'Bidang Panjang', description: 'Perhatikan sisi panjang dan pendek.' },
-      { src: '/assets/images/komik-2/gapura.png', alt: 'Ornamen tajam', label: 'Ornamen Tajam', description: 'Lihat sudut dan sisi yang membentuk bangun tajam.' },
+      { src: navMensir.src, alt: 'Relief persegi', label: 'Relief Simetris', description: 'Amati pola berulang yang seimbang.' },
+      { src: navUmpang.src, alt: 'Bidang panjang', label: 'Bidang Panjang', description: 'Perhatikan sisi panjang dan pendek.' },
+      { src: navGapura.src, alt: 'Ornamen tajam', label: 'Ornamen Tajam', description: 'Lihat sudut dan sisi yang membentuk bangun tajam.' },
     ],
     options: [
       { value: 'Persegi', label: 'Persegi' },
@@ -284,7 +296,7 @@ export const packageContent: ComicContentPackageLike = {
         id: 'komik2-arg-1',
         templePart: 'relief persegi',
         question: 'Mengapa pola persegi pada relief Candi Penataran dapat dikatakan memiliki simetri yang kuat?',
-        photoSrc: '/assets/images/komik-2/mensir.png',
+        photoSrc: navMensir.src,
         photoAlt: 'Relief Candi Penataran tampak berulang dalam pola persegi',
         shapeName: 'Persegi',
         shapeKey: 'persegi',
@@ -295,7 +307,7 @@ export const packageContent: ComicContentPackageLike = {
         id: 'komik2-arg-2',
         templePart: 'bidang panjang',
         question: 'Mengapa bidang panjang pada arsitektur Candi Penataran cocok disebut persegi panjang?',
-        photoSrc: '/assets/images/komik-2/umpang.png',
+        photoSrc: navUmpang.src,
         photoAlt: 'Bidang panjang pada Candi Penataran',
         shapeName: 'Persegi Panjang',
         shapeKey: 'persegi-panjang',

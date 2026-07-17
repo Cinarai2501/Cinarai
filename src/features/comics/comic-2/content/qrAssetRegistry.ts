@@ -1,14 +1,19 @@
+import qr13 from '@/features/comics/comic-2/assets/qr/13-objek-1.jpeg';
+import qr15 from '@/features/comics/comic-2/assets/qr/15-objek-2.jpeg';
+import qr17 from '@/features/comics/comic-2/assets/qr/17-objek-3.jpeg';
+import qr18 from '@/features/comics/comic-2/assets/qr/18-objek-4.jpeg';
+
 const qrAssets: Record<string, string> = {
-  Umpang: '/assets/qr/komik-2/15-objek-2.jpeg',
-  'Bale Agung': '/assets/qr/komik-2/13-objek-1.jpeg',
-  'Candi Angka': '/assets/qr/komik-2/17-objek-3.jpeg',
-  Mensir: '/assets/qr/komik-2/13-objek-1.jpeg',
-  'Relief Lingkaran': '/assets/qr/komik-2/18-objek-4.jpeg',
-  'Ornamen Belah Ketupat': '/assets/qr/komik-2/17-objek-3.jpeg',
-  Persegi: '/assets/qr/komik-2/13-objek-1.jpeg',
-  'Persegi Panjang': '/assets/qr/komik-2/15-objek-2.jpeg',
-  Segitiga: '/assets/qr/komik-2/17-objek-3.jpeg',
-  'Belah Ketupat': '/assets/qr/komik-2/18-objek-4.jpeg',
+  Umpang: qr15.src,
+  'Bale Agung': qr13.src,
+  'Candi Angka': qr17.src,
+  Mensir: qr13.src,
+  'Relief Lingkaran': qr18.src,
+  'Ornamen Belah Ketupat': qr17.src,
+  Persegi: qr13.src,
+  'Persegi Panjang': qr15.src,
+  Segitiga: qr17.src,
+  'Belah Ketupat': qr18.src,
 };
 
 function normalizeObjectTitle(value: string): string {

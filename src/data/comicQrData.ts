@@ -10,6 +10,10 @@ import appBalok from '@/features/comics/comic-1/assets/identification/Balok.png'
 import appPrisma from '@/features/comics/comic-1/assets/identification/Prismasegiempat.png';
 import appLimas from '@/features/comics/comic-1/assets/identification/Limassegiempat.png';
 import appKerucut from '@/features/comics/comic-1/assets/identification/Kerucut.png';
+import comic2Qr13 from '@/features/comics/comic-2/assets/qr/13-objek-1.jpeg';
+import comic2Qr15 from '@/features/comics/comic-2/assets/qr/15-objek-2.jpeg';
+import comic2Qr17 from '@/features/comics/comic-2/assets/qr/17-objek-3.jpeg';
+import comic2Qr18 from '@/features/comics/comic-2/assets/qr/18-objek-4.jpeg';
 
 /**
  * Hasil QR Classifier per komik.
@@ -113,10 +117,10 @@ export const COMIC_QR_DATA: Record<number, { pageCount: number; qrList: Classifi
   2: {
     pageCount: 32,
     qrList: [
-      { page: 13, category: 'MODEL_3D', value: 'https://asblr.com/yvcuaW', image: '', qrUrl: 'https://asblr.com/yvcuaW', qrImage: '/assets/qr/komik-2/13-objek-1.jpeg' },
-      { page: 15, category: 'MODEL_3D', value: 'https://asblr.com/MmAMdg', image: '', qrUrl: 'https://asblr.com/MmAMdg', qrImage: '/assets/qr/komik-2/15-objek-2.jpeg' },
-      { page: 17, category: 'MODEL_3D', value: 'https://asblr.com/ljcPsy', image: '', qrUrl: 'https://asblr.com/ljcPsy', qrImage: '/assets/qr/komik-2/17-objek-3.jpeg' },
-      { page: 18, category: 'MODEL_3D', value: 'https://asblr.com/cW7Lsm', image: '', qrUrl: 'https://asblr.com/cW7Lsm', qrImage: '/assets/qr/komik-2/18-objek-4.jpeg' },
+      { page: 13, category: 'MODEL_3D', value: 'https://asblr.com/yvcuaW', image: '', qrUrl: 'https://asblr.com/yvcuaW', qrImage: comic2Qr13.src },
+      { page: 15, category: 'MODEL_3D', value: 'https://asblr.com/MmAMdg', image: '', qrUrl: 'https://asblr.com/MmAMdg', qrImage: comic2Qr15.src },
+      { page: 17, category: 'MODEL_3D', value: 'https://asblr.com/ljcPsy', image: '', qrUrl: 'https://asblr.com/ljcPsy', qrImage: comic2Qr17.src },
+      { page: 18, category: 'MODEL_3D', value: 'https://asblr.com/cW7Lsm', image: '', qrUrl: 'https://asblr.com/cW7Lsm', qrImage: comic2Qr18.src },
     ],
   },
   3: {
