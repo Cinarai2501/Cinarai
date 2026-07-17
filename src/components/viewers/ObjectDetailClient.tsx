@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from 'next/image';
 import { ObjectAITutor } from '@/features/learning-engine/components/stages/ObjectAITutor';
+import { QrModal } from '@/features/learning-engine/components/stages/QrModal';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { resolveObjectDetailContent } from '@/features/learning-engine/components/stages/navigationStageContent';
 
@@ -139,23 +140,13 @@ export default function ObjectDetailClient({ id }: { id: string }) {
         />
       </div>
 
-      {isQrOpen && qrImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-3xl border border-neutral-200 bg-white p-6 shadow-xl">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600">QR Code</p>
-                <h2 className="mt-1 text-xl font-black text-neutral-900">{obj.title}</h2>
-              </div>
-              <button onClick={() => setIsQrOpen(false)} className="rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">Tutup</button>
-            </div>
-
-            <div className="mt-5 flex flex-col items-center gap-4">
-              <Image src={qrImage} alt={`QR ${obj.title}`} width={360} height={360} className="rounded-2xl bg-white p-3 object-contain" />
-            </div>
-          </div>
-        </div>
-      )}
+      <QrModal
+        isOpen={isQrOpen && Boolean(qrImage)}
+        qrSrc={qrImage ?? ''}
+        onClose={() => setIsQrOpen(false)}
+        title={obj.title}
+        description={`Scan QR Code berikut untuk membuka ${obj.title} menggunakan perangkat lain.`}
+      />
     </div>
   );
 }

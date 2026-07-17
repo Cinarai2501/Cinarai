@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { resolveNavigationStageContent } from './navigationStageContent';
+import { QrModal } from './QrModal';
 
 export default function NavigationStage() {
   const router = useRouter();
@@ -153,33 +154,13 @@ export default function NavigationStage() {
             </div>
           </section>
 
-          {isQrModalOpen && candiQrImage ? (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/25 px-3 py-4 sm:px-4" role="dialog" aria-modal="true" aria-labelledby="comic-1-qr-title">
-              <div className="w-full max-w-[420px] rounded-[24px] border border-neutral-200 bg-white/95 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.24)] backdrop-blur-sm sm:p-5" style={{ maxHeight: 'min(80vh, 620px)' }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-600">QR Code</p>
-                    <h3 id="comic-1-qr-title" className="mt-1 text-lg font-black text-neutral-900">Model 3D Candi Jawi</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-neutral-600">Scan QR Code berikut untuk membuka Model 3D Candi Jawi menggunakan perangkat lain.</p>
-                  </div>
-                  <button type="button" onClick={() => setIsQrModalOpen(false)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" aria-label="Tutup dialog QR">✕</button>
-                </div>
-                <div className="mt-4 flex justify-center overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-3 sm:p-4">
-                  <Image
-                    src={candiQrImage}
-                    alt={`QR ${heroTitle}`}
-                    width={320}
-                    height={320}
-                    quality={100}
-                    priority
-                    unoptimized
-                    className="h-auto w-full max-w-[280px] rounded-[16px] border border-neutral-200 bg-white object-contain p-2 sm:max-w-[300px]"
-                    style={{ width: '100%', maxHeight: 'min(56vh, 320px)' }}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
+          <QrModal
+            isOpen={isQrModalOpen && Boolean(candiQrImage)}
+            qrSrc={candiQrImage ?? ''}
+            onClose={() => setIsQrModalOpen(false)}
+            title="Model 3D Candi Jawi"
+            description="Scan QR Code berikut untuk membuka Model 3D Candi Jawi menggunakan perangkat lain."
+          />
 
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -291,33 +272,13 @@ export default function NavigationStage() {
             </div>
           </section>
 
-          {isQrModalOpen && candiQrImage ? (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/25 px-3 py-4 sm:px-4" role="dialog" aria-modal="true" aria-labelledby="comic-1-qr-title-alt">
-              <div className="w-full max-w-[420px] rounded-[24px] border border-neutral-200 bg-white/95 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.24)] backdrop-blur-sm sm:p-5" style={{ maxHeight: 'min(80vh, 620px)' }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-600">QR Code</p>
-                    <h3 id="comic-1-qr-title-alt" className="mt-1 text-lg font-black text-neutral-900">Model 3D Candi Jawi</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-neutral-600">Scan QR Code berikut untuk membuka Model 3D Candi Jawi menggunakan perangkat lain.</p>
-                  </div>
-                  <button type="button" onClick={() => setIsQrModalOpen(false)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" aria-label="Tutup dialog QR">✕</button>
-                </div>
-                <div className="mt-4 flex justify-center overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-3 sm:p-4">
-                  <Image
-                    src={candiQrImage}
-                    alt="QR Model 3D Candi Jawi"
-                    width={320}
-                    height={320}
-                    quality={100}
-                    priority
-                    unoptimized
-                    className="h-auto w-full max-w-[280px] rounded-[16px] border border-neutral-200 bg-white object-contain p-2 sm:max-w-[300px]"
-                    style={{ width: '100%', maxHeight: 'min(56vh, 320px)' }}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
+          <QrModal
+            isOpen={isQrModalOpen && Boolean(candiQrImage)}
+            qrSrc={candiQrImage ?? ''}
+            onClose={() => setIsQrModalOpen(false)}
+            title="Model 3D Candi Jawi"
+            description="Scan QR Code berikut untuk membuka Model 3D Candi Jawi menggunakan perangkat lain."
+          />
 
           <section className="space-y-4">
             <h2 className="text-lg font-bold">Daftar Objek</h2>
