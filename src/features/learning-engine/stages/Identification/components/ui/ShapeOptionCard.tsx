@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import { useMemo } from 'react';
+import { getComic1IdentificationAssetForObject } from '@/features/comics/comic-1/content/identificationAssetRegistry';
 import persegiIcon from '@/features/comics/comic-2/assets/identification/icons/persegi.svg';
 import persegiPanjangIcon from '@/features/comics/comic-2/assets/identification/icons/persegi-panjang.svg';
 import segitigaSisiIcon from '@/features/comics/comic-2/assets/identification/icons/segitiga-sama-sisi.svg';
@@ -16,16 +18,23 @@ interface ShapeOptionCardProps {
 }
 
 export default function ShapeOptionCard({ label, selected, disabled = false, onToggle }: ShapeOptionCardProps) {
-  const iconMap: Record<string, string> = {
-    Persegi: persegiIcon,
-    'Persegi Panjang': persegiPanjangIcon,
-    'Segitiga Sama Sisi': segitigaSisiIcon,
-    'Segitiga Sama Kaki': segitigaKakiIcon,
-    Lingkaran: lingkaranIcon,
-    'Belah Ketupat': belahKetupatIcon,
-  };
+  const iconSrc = useMemo(() => {
+    const comic1Asset = getComic1IdentificationAssetForObject(label);
+    if (comic1Asset) {
+      return comic1Asset;
+    }
 
-  const iconSrc = iconMap[label] ?? persegiIcon;
+    const iconMap: Record<string, string> = {
+      Persegi: persegiIcon.src,
+      'Persegi Panjang': persegiPanjangIcon.src,
+      'Segitiga Sama Sisi': segitigaSisiIcon.src,
+      'Segitiga Sama Kaki': segitigaKakiIcon.src,
+      Lingkaran: lingkaranIcon.src,
+      'Belah Ketupat': belahKetupatIcon.src,
+    };
+
+    return iconMap[label] ?? persegiIcon.src;
+  }, [label]);
 
   return (
     <button
