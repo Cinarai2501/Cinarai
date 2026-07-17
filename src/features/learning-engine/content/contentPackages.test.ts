@@ -44,6 +44,23 @@ test('identification state can be built from the content package content', () =>
   assert.equal(state.items[0]?.image, packageContent.identification.questions[0]?.image);
 });
 
+test('comic 2 identification questions reference actual comic 2 objects and use Candi Penataran language', () => {
+  const packageContent = getLearningContentPackage(2);
+  const question1 = packageContent.identification.questions[0];
+  const question2 = packageContent.identification.questions[1];
+  const question3 = packageContent.identification.questions[2];
+  const question4 = packageContent.identification.questions[3];
+  const question5 = packageContent.identification.questions[4];
+  const question6 = packageContent.identification.questions[5];
+
+  assert.match(question1.question.toLowerCase(), /motif|relief|candi penataran/);
+  assert.match(question2.question.toLowerCase(), /umpang/);
+  assert.match(question3.question.toLowerCase(), /candi angka|atap|runcing/);
+  assert.match(question4.question.toLowerCase(), /mensir|ornamen|pola/);
+  assert.match(question5.question.toLowerCase(), /relief lingkaran|lingkaran/);
+  assert.match(question6.question.toLowerCase(), /belah ketupat|ornamen|wajik/);
+});
+
 test('comic 2 identification questions do not include Komik 1 specific distractors and use simetri bangun datar options', () => {
   const packageContent = getLearningContentPackage(2);
   const question1 = packageContent.identification.questions[0];
