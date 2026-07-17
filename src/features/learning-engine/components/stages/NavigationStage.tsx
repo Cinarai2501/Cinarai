@@ -292,25 +292,22 @@ export default function NavigationStage() {
 
           {isQrModalOpen && candiQrImage ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-              <div className="w-full max-w-md rounded-[24px] border border-neutral-200 bg-white p-6 shadow-xl">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600">QR Code</p>
-                    <h3 className="mt-1 text-xl font-black text-neutral-900">{candiEntry?.title ?? 'Model Utama'}</h3>
-                  </div>
+              <div className="w-full max-w-md rounded-[24px] border border-neutral-200 bg-white p-4 shadow-xl max-h-[calc(100vh-2rem)] overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-neutral-200 pb-3">
+                  <h3 className="text-lg font-black text-neutral-900">Model 3D Candi Jawi</h3>
                   <button type="button" onClick={() => setIsQrModalOpen(false)} className="rounded-full border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">Tutup</button>
                 </div>
-                <div className="mt-5 flex justify-center">
+                <div className="mt-4 flex flex-col items-center justify-center gap-4 overflow-auto py-2">
                   <Image
                     src={candiQrImage}
-                    alt={`QR ${candiEntry?.title ?? 'Model Utama'}`}
-                    width={320}
-                    height={320}
+                    alt="QR Model 3D Candi Jawi"
+                    width={360}
+                    height={360}
                     quality={100}
                     priority
                     unoptimized
-                    className="rounded-2xl border border-neutral-200 bg-white p-3 object-cover"
-                    style={{ width: '100%', height: 'auto' }}
+                    className="h-auto w-full max-w-[360px] rounded-[24px] border border-neutral-200 bg-white p-4 object-contain"
+                    style={{ filter: 'grayscale(100%) contrast(1.45)', maxHeight: 'min(calc(100vh - 16rem), 360px)' }}
                   />
                 </div>
               </div>
