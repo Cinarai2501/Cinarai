@@ -4,15 +4,18 @@ import kerucutIcon from '@/features/comics/comic-1/assets/identification/Kerucut
 import prismaIcon from '@/features/comics/comic-1/assets/identification/Prismasegiempat.png';
 import limasIcon from '@/features/comics/comic-1/assets/identification/Limassegiempat.png';
 
+function normalizeObjectTitle(objectTitle: string): string {
+  return objectTitle.trim().toLowerCase();
+}
+
 const COMIC1_IDENTIFICATION_ASSET_MAP: Record<string, string> = {
-  Balok: balokIcon.src,
-  Kubus: kubusIcon.src,
-  Kerucut: kerucutIcon.src,
-  'Prisma Segi Empat': prismaIcon.src,
-  'Limas Segi Empat': limasIcon.src,
+  balok: balokIcon.src,
+  kubus: kubusIcon.src,
+  kerucut: kerucutIcon.src,
+  'prisma segi empat': prismaIcon.src,
+  'limas segi empat': limasIcon.src,
 };
 
 export function getComic1IdentificationAssetForObject(objectTitle: string): string | undefined {
-  const normalized = objectTitle.trim();
-  return COMIC1_IDENTIFICATION_ASSET_MAP[normalized];
+  return COMIC1_IDENTIFICATION_ASSET_MAP[normalizeObjectTitle(objectTitle)];
 }

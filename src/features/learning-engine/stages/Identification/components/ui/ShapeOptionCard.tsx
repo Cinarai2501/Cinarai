@@ -19,21 +19,22 @@ interface ShapeOptionCardProps {
 
 export default function ShapeOptionCard({ label, selected, disabled = false, onToggle }: ShapeOptionCardProps) {
   const iconSrc = useMemo(() => {
-    const comic1Asset = getComic1IdentificationAssetForObject(label);
+    const normalizedLabel = label.trim().toLowerCase();
+    const comic1Asset = getComic1IdentificationAssetForObject(normalizedLabel);
     if (comic1Asset) {
       return comic1Asset;
     }
 
     const iconMap: Record<string, string> = {
-      Persegi: persegiIcon.src,
-      'Persegi Panjang': persegiPanjangIcon.src,
-      'Segitiga Sama Sisi': segitigaSisiIcon.src,
-      'Segitiga Sama Kaki': segitigaKakiIcon.src,
-      Lingkaran: lingkaranIcon.src,
-      'Belah Ketupat': belahKetupatIcon.src,
+      persegi: persegiIcon.src,
+      'persegi panjang': persegiPanjangIcon.src,
+      'segitiga sama sisi': segitigaSisiIcon.src,
+      'segitiga sama kaki': segitigaKakiIcon.src,
+      lingkaran: lingkaranIcon.src,
+      'belah ketupat': belahKetupatIcon.src,
     };
 
-    return iconMap[label] ?? persegiIcon.src;
+    return iconMap[normalizedLabel] ?? persegiIcon.src;
   }, [label]);
 
   return (
