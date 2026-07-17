@@ -46,14 +46,15 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
       {/* Toast container — fixed bottom, mobile-safe */}
       <div
         aria-live="polite"
-        className="fixed bottom-0 left-0 right-0 z-50 flex flex-col gap-2 px-4 pb-safe-bottom"
-        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        className="fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4"
+        style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
       >
         {items.map((item) => (
           <div
             key={item.id}
             role="alert"
-            className={`w-full max-w-lg mx-auto rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg animate-fade-in-up ${COLORS[item.severity]}`}
+            className={`w-full max-w-lg rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg animate-fade-in-up ${COLORS[item.severity]}`}
+            style={{ marginBottom: '0.25rem' }}
           >
             {item.message}
           </div>
