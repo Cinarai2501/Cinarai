@@ -33,18 +33,21 @@ export default function ShapeOptionCard({ label, selected, disabled = false, onT
       onClick={onToggle}
       disabled={disabled}
       className={[
-        'flex w-full min-h-[84px] items-center gap-3 rounded-2xl border-2 px-3 py-3 text-left transition-all duration-200 active:scale-[0.98] sm:gap-4 sm:px-4',
+        'flex w-full min-h-[72px] items-center gap-3 rounded-[20px] border px-3 py-2.5 text-left shadow-sm transition-all duration-200 active:scale-[0.98] sm:gap-4 sm:px-4',
         selected
-          ? 'border-primary-500 bg-primary-50 shadow-md shadow-primary-200'
+          ? 'border-primary-500 bg-primary-50 shadow-primary-100'
           : 'border-neutral-200 bg-white hover:border-primary-300 hover:bg-primary-50',
         disabled ? 'cursor-default opacity-85' : 'cursor-pointer',
       ].join(' ')}
     >
-      <div className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-50/70 p-1">
-        <Image src={iconSrc} alt={label} width={56} height={56} className="h-[56px] w-[56px] object-contain" />
+      <div className={[
+        'flex h-[48px] w-[48px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[16px] p-1 sm:h-[56px] sm:w-[56px]',
+        selected ? 'bg-white' : 'bg-primary-50/80',
+      ].join(' ')}>
+        <Image src={iconSrc} alt={label} width={56} height={56} className="h-[44px] w-[44px] object-contain sm:h-[52px] sm:w-[52px]" />
       </div>
 
-      <span className="flex-1 text-sm font-black uppercase tracking-[0.16em] text-neutral-800 sm:text-base">
+      <span className="flex-1 text-[15px] font-black uppercase tracking-[0.14em] text-neutral-800 sm:text-base">
         {label}
       </span>
 
