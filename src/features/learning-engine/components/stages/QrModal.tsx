@@ -1,106 +1,122 @@
 'use client';
 
+import { useLayoutEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
 interface QrModalProps {
   isOpen: boolean;
   qrSrc: string;
   onClose: () => void;
+  title?: string;
+  description?: string;
+  loading?: boolean;
 }
 
-export function QrModal({ isOpen, qrSrc, onClose }: QrModalProps) {
-  if (!isOpen) return null;
+export function QrModal({ isOpen, qrSrc, onClose, title = 'Model 3D Candi Jawi', description = 'Scan QR Code berikut untuk membuka model 3D menggunakan perangkat lain.', loading = false }: QrModalProps) {
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const titleId = useId();
+
+  useLayoutEffect(() => {
+    if (!isOpen || typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const previousOverflowX = document.body.style.overflowX;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.style.overflowX = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      document.body.style.overflowX = previousOverflowX;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || typeof document === 'undefined') {
+    return null;
+  }
 
   const isImage = qrSrc.startsWith('data:') || /\.(png|jpe?g|webp|svg)$/i.test(qrSrc);
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm"
+      ref={overlayRef}
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/35 p-5 backdrop-blur-[4px]"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="qr-modal-title"
+      aria-labelledby={titleId}
       onClick={onClose}
-      tabIndex={-1}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose();
-      }}
+      style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', zIndex: 99999, backgroundColor: 'rgba(0, 0, 0, 0.35)', backdropFilter: 'blur(4px)' }}
     >
       <div
-        className="w-full max-w-[420px] rounded-[24px] bg-white p-5 shadow-[0_30px_90px_rgba(15,23,42,0.18)]"
+        className="w-[380px] max-w-[92vw] max-h-[85vh] overflow-auto rounded-[24px] border border-neutral-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.24)]"
         onClick={(event) => event.stopPropagation()}
+        style={{ width: '380px', maxWidth: '92vw', maxHeight: '85vh', overflow: 'auto', borderRadius: '24px', backgroundColor: '#ffffff', boxShadow: '0 24px 70px rgba(15, 23, 42, 0.24)', border: '1px solid #e5e7eb' }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2 text-left">
-            <h2 id="qr-modal-title" className="text-2xl font-black text-neutral-900">Scan QR untuk Membuka Model AR</h2>
-            <p className="text-sm leading-relaxed text-neutral-600">
-              Gunakan kamera pada HP orang tua atau perangkat lain untuk memindai QR dan membuka model AR.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup QR"
-            className="rounded-full border border-neutral-200 bg-white p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
-            ref={(el) => {
-              if (el && typeof (el as HTMLButtonElement).focus === 'function') {
-                // Move focus to close button when modal opens
-                setTimeout(() => (el as HTMLButtonElement).focus(), 0);
-              }
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="mt-5 flex min-h-[280px] items-center justify-center rounded-[24px] bg-neutral-50 p-4">
-          {qrSrc ? (
-            isImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={qrSrc}
-                alt="QR Code"
-                className="h-[280px] w-[280px] max-w-full object-contain"
-              />
-            ) : (
-              <a
-                href={qrSrc}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold text-primary-600 underline hover:text-primary-700"
-              >
-                Buka Link
-              </a>
-            )
-          ) : (
-            <p className="text-center text-sm text-neutral-500">QR Code tidak tersedia</p>
-          )}
-        </div>
-
-        {qrSrc ? (
-          <div className="mt-4 flex flex-col gap-3">
-            <a
-              href={qrSrc}
-              download
-              className="inline-flex min-h-[48px] items-center justify-center rounded-[20px] border border-neutral-200 bg-white px-4 py-4 text-sm font-bold text-neutral-900 transition hover:bg-neutral-100"
-            >
-              Download QR
-            </a>
+        <div className="p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-600">QR Code</p>
+              <h3 id={titleId} className="mt-1 text-lg font-black text-neutral-900">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">{description}</p>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex min-h-[48px] items-center justify-center rounded-[20px] bg-primary-600 px-4 py-4 text-sm font-bold text-white transition hover:bg-primary-700 active:scale-95"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+              aria-label="Tutup dialog QR"
             >
-              Kembali
+              ✕
             </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onClose}
-            className="mt-4 w-full rounded-[20px] bg-primary-600 px-4 py-4 text-sm font-bold text-white transition hover:bg-primary-700 active:scale-95 min-h-[48px]"
-          >
-            Kembali
-          </button>
-        )}
+
+          <div className="mt-4 flex justify-center overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-3 sm:p-4">
+            {loading ? (
+              <div className="flex h-[280px] w-[280px] max-w-full items-center justify-center rounded-[16px] border border-neutral-200 bg-neutral-50 p-4">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+              </div>
+            ) : qrSrc ? (
+              isImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qrSrc}
+                  alt={`QR ${title}`}
+                  className="h-auto w-full max-w-[280px] rounded-[16px] border border-neutral-200 bg-white object-contain p-2 sm:max-w-[300px]"
+                  style={{ maxHeight: 'min(56vh, 320px)' }}
+                />
+              ) : (
+                <a
+                  href={qrSrc}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-primary-600 underline hover:text-primary-700"
+                >
+                  Buka Link
+                </a>
+              )
+            ) : (
+              <div className="flex h-[280px] w-[280px] max-w-full items-center justify-center rounded-[16px] border border-neutral-200 bg-neutral-50 p-4 text-center text-sm text-neutral-500">
+                QR Code tidak tersedia
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
