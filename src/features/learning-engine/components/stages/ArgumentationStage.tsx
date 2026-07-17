@@ -6,7 +6,9 @@ import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { getOrderedArgumentationLearningObjects } from '../../stages/Argumentation/data/argumentationQuestions';
 import Comic1ArgumentationStage from './Comic1ArgumentationStage';
+import Comic2ArgumentationStage from './Comic2ArgumentationStage';
 import type { Comic1ArgumentationQuestion } from '@/features/comics/comic-1/content/types';
+import type { ArgumentationQuestion } from '@/features/learning-engine/stages/Argumentation/data/argumentationQuestions';
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -30,6 +32,18 @@ function isComic1ArgumentationQuestion(question: unknown): question is Comic1Arg
     'argumentationPrompt' in question &&
     'argumentationQuestion' in question &&
     'argumentationTitle' in question
+  );
+}
+
+function isArgumentationQuestion(question: unknown): question is ArgumentationQuestion {
+  return (
+    typeof question === 'object' &&
+    question !== null &&
+    'question' in question &&
+    'templePart' in question &&
+    'photoSrc' in question &&
+    'shapeName' in question &&
+    'shapeKey' in question
   );
 }
 
@@ -301,6 +315,32 @@ export default function ArgumentationStage() {
         comicTitle={comic.title}
         comicLocation={comic.lokasi ?? 'Lokasi'}
         classLevel={comic.kelas ?? 'Kelas VI'}
+        currentIndex={currentIndex}
+        totalItems={orderedLearningObjects.length}
+        initialAnswer={textAnswer}
+      />
+    );
+  }
+
+  // Comic 2: Simetri Candi Penataran
+  if (comic.id === 2) {
+    const argQuestions = comicModule.argumentation?.questions ?? [];
+    const argQuestion = argQuestions[currentIndex] ?? null;
+
+    if (!argQuestion || !isArgumentationQuestion(argQuestion)) {
+      return <div className="rounded-[20px] bg-white p-5 text-sm text-neutral-600 shadow-sm">Data pertanyaan tidak tersedia.</div>;
+    }
+
+    return (
+      <Comic2ArgumentationStage
+        question={argQuestion}
+        onSubmitFeedback={handleFeedback}
+        onAnswerChange={setTextAnswer}
+        onNext={handleNext}
+        feedback={feedback}
+        comicTitle={comic.title}
+        comicLocation={comic.lokasi ?? 'Lokasi'}
+        classLevel={comic.kelas ?? 'Kelas V'}
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}
