@@ -23,10 +23,22 @@ export function useSnackbar(): SnackbarContextValue {
   return ctx;
 }
 
-const COLORS: Record<SnackbarSeverity, string> = {
-  error:   'bg-error-600 text-white',
-  success: 'bg-accent-600 text-white',
-  info:    'bg-neutral-800 text-white',
+const SEVERITY_STYLES: Record<SnackbarSeverity, { border: string; iconBg: string; iconText: string }> = {
+  error: {
+    border: 'border-red-300',
+    iconBg: 'bg-red-100',
+    iconText: 'text-red-700',
+  },
+  success: {
+    border: 'border-[#22C55E]',
+    iconBg: 'bg-emerald-100',
+    iconText: 'text-emerald-700',
+  },
+  info: {
+    border: 'border-sky-300',
+    iconBg: 'bg-sky-100',
+    iconText: 'text-sky-700',
+  },
 };
 
 export function SnackbarProvider({ children }: { children: React.ReactNode }) {
@@ -49,27 +61,29 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
   return (
     <SnackbarContext.Provider value={{ showSnackbar }}>
       {children}
-      {/* Toast container — fixed bottom, mobile-safe */}
       <div
+        aria-atomic="true"
         aria-live="polite"
         role="status"
-        className="fixed top-4 left-4 right-4 z-40 flex flex-col items-center gap-3 sm:left-auto sm:right-6"
-        style={{ top: 'max(1.5rem, env(safe-area-inset-top) + 12px)' }}
+        className="pointer-events-none fixed left-4 right-4 z-40 flex flex-col items-start gap-3 sm:left-auto sm:right-6 sm:top-6 sm:items-end"
+        style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
       >
-        {items.map((item) => (
-          <div
-            key={item.id}
-            role="alert"
-            className={
-              `w-fit max-w-[320px] sm:max-w-[380px] rounded-[16px] border border-[#22C55E] bg-white px-4 py-3 text-sm font-semibold text-neutral-900 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition duration-200 ease-in-out animate-toast-in flex items-center gap-3 ${item.closing ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'}`
-            }
-          >
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              ✓
-            </span>
-            <span>{item.message}</span>
-          </div>
-        ))}
+        {items.map((item) => {
+          const styles = SEVERITY_STYLES[item.severity];
+
+          return (
+            <div
+              key={item.id}
+              role="status"
+              className={`inline-flex min-h-[48px] w-fit max-w-[calc(100vw-32px)] items-center gap-3 rounded-[16px] border bg-white/95 px-4 py-3 text-sm font-semibold leading-5 text-neutral-900 shadow-[0_12px_40px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-all duration-200 ease-out sm:min-h-[56px] sm:max-w-[380px] animate-toast-in ${styles.border} ${item.closing ? 'translate-y-[-6px] opacity-0' : 'translate-y-0 opacity-100'}`}
+            >
+              <span className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-base ${styles.iconBg} ${styles.iconText}`}>
+                {item.severity === 'error' ? '!' : '✓'}
+              </span>
+              <span className="min-w-0 whitespace-nowrap sm:whitespace-normal">{item.message}</span>
+            </div>
+          );
+        })}
       </div>
     </SnackbarContext.Provider>
   );
