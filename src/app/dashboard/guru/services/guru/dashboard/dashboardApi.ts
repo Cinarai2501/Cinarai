@@ -1,43 +1,7 @@
 import { getUserToken } from '@/lib/firebase/auth';
-import type { ActivityDocument, ComicDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
+import { normalizeDashboardPayload } from './dashboardApiUtils';
 
-export type GuruDashboardApiResponse = {
-  success?: boolean;
-  message?: string;
-  error?: string;
-  students: UserDocument[];
-  comics: ComicDocument[];
-  progressDocuments: ComicProgressDocument[];
-  activities: ActivityDocument[];
-  reflections: ReflectionDocument[];
-  analytics?: Array<Record<string, unknown>>;
-  stats?: {
-    totalStudents: number;
-    activeStudents: number;
-    totalModules: number;
-    averageProgress: number;
-    completedModules: number;
-    reflectionCount: number;
-    recentActivityCount: number;
-  };
-  generatedAt?: string;
-};
-
-function normalizeDashboardPayload(payload: Partial<GuruDashboardApiResponse> | null | undefined): GuruDashboardApiResponse {
-  return {
-    success: payload?.success ?? true,
-    message: payload?.message,
-    error: payload?.error,
-    students: Array.isArray(payload?.students) ? payload.students : [],
-    comics: Array.isArray(payload?.comics) ? payload.comics : [],
-    progressDocuments: Array.isArray(payload?.progressDocuments) ? payload.progressDocuments : [],
-    activities: Array.isArray(payload?.activities) ? payload.activities : [],
-    reflections: Array.isArray(payload?.reflections) ? payload.reflections : [],
-    analytics: Array.isArray(payload?.analytics) ? payload.analytics : [],
-    stats: payload?.stats ?? undefined,
-    generatedAt: typeof payload?.generatedAt === 'string' ? payload.generatedAt : undefined,
-  };
-}
+export type GuruDashboardApiResponse = ReturnType<typeof normalizeDashboardPayload>;
 
 export async function fetchGuruDashboardFromApi(): Promise<GuruDashboardApiResponse> {
   const token = await getUserToken();
@@ -59,15 +23,15 @@ export async function fetchGuruDashboardFromApi(): Promise<GuruDashboardApiRespo
     payload = null;
   }
 
-  if (!response.ok) {
-    const errorMessage = payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string'
-      ? payload.error
-      : `HTTP ${response.status}: Gagal memuat dashboard guru`;
-    throw new Error(errorMessage);
+  // If response is not ok, do not throw — normalize and return payload so UI can render partial data per-widget.
+  if (!payload || typeof payload !== 'object') {
+    // return an empty safe payload
+    return normalizeDashboardPayload(null);
   }
 
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Respons API dashboard guru tidak valid');
+  // Attach http-level error into payload.error when present
+  if (!response.ok && !payload.error) {
+    payload.error = `HTTP ${response.status}: Gagal memuat dashboard guru`;
   }
 
   return normalizeDashboardPayload(payload);

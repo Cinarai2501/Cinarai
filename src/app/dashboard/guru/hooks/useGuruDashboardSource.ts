@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { buildGuruDashboardSnapshot } from '@/app/dashboard/guru/services/guru/dashboard/dashboardModel';
-import { fetchGuruDashboardFromApi } from '@/app/dashboard/guru/services/guru/dashboard/dashboardApi';
+import { fetchGuruDashboardFromApi, type GuruDashboardApiResponse } from '@/app/dashboard/guru/services/guru/dashboard/dashboardApi';
 import type {
   ActivityDocument,
   ComicDocument,
@@ -98,8 +98,17 @@ export function useGuruDashboardSource() {
       }
 
       try {
-        const data = await fetchGuruDashboardFromApi();
+        const data: GuruDashboardApiResponse = await fetchGuruDashboardFromApi();
         if (!active) return;
+        const apiErrors = data.errors ?? {};
+        const usersError: string | null = apiErrors.users ?? null;
+        const comicsError: string | null = apiErrors.comics ?? null;
+        const progressError: string | null = apiErrors.progress ?? null;
+        const activitiesError: string | null = apiErrors.activity ?? null;
+        const reflectionsError: string | null = apiErrors.reflection ?? null;
+
+        const hasPartialErrors = Boolean(usersError || comicsError || progressError || activitiesError || reflectionsError || data.error);
+
         setState((current) => ({
           ...current,
           students: data.students ?? [],
@@ -108,26 +117,25 @@ export function useGuruDashboardSource() {
           activities: data.activities ?? [],
           reflections: data.reflections ?? [],
           loading: false,
-          error: null,
+          error: data.error ?? (hasPartialErrors ? 'Sebagian data tidak tersedia' : null),
           usersLoading: false,
-          usersError: null,
-          usersSuccess: true,
+          usersError: usersError,
+          usersSuccess: !usersError,
           comicsLoading: false,
-          comicsError: null,
-          comicsSuccess: true,
+          comicsError: comicsError,
+          comicsSuccess: !comicsError,
           progressLoading: false,
-          progressError: null,
-          progressSuccess: true,
+          progressError: progressError,
+          progressSuccess: !progressError,
           activitiesLoading: false,
-          activitiesError: null,
-          activitiesSuccess: true,
+          activitiesError: activitiesError,
+          activitiesSuccess: !activitiesError,
           reflectionsLoading: false,
-          reflectionsError: null,
-          reflectionsSuccess: true,
+          reflectionsError: reflectionsError,
+          reflectionsSuccess: !reflectionsError,
         }));
       } catch (error) {
         if (!active) return;
-
         const errorMessage = error instanceof Error ? error.message : 'Dashboard guru gagal dimuat';
         setState((current) => ({
           ...current,

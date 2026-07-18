@@ -13,6 +13,13 @@ type DashboardRoutePayload = {
   activities: ActivityDocument[];
   reflections: ReflectionDocument[];
   analytics: Array<Record<string, unknown>>;
+  errors?: {
+    users?: string;
+    comics?: string;
+    progress?: string;
+    activity?: string;
+    reflection?: string;
+  };
   stats: {
     totalStudents: number;
     activeStudents: number;
@@ -136,6 +143,7 @@ function buildEmptyPayload(message?: string, error?: string, status: 'success' |
     activities: [],
     reflections: [],
     analytics: [],
+    errors: {},
     stats: {
       totalStudents: 0,
       activeStudents: 0,
@@ -155,7 +163,7 @@ function buildPayloadFromCollections(payload: {
   progressDocuments: ComicProgressDocument[];
   activities: ActivityDocument[];
   reflections: ReflectionDocument[];
-}): DashboardRoutePayload {
+}, errors?: { [key: string]: string | undefined }): DashboardRoutePayload {
   const students = payload.students ?? [];
   const comics = payload.comics ?? [];
   const progressDocuments = payload.progressDocuments ?? [];
@@ -174,6 +182,7 @@ function buildPayloadFromCollections(payload: {
     activities,
     reflections,
     analytics: [],
+    errors: errors ?? {},
     stats: {
       totalStudents: students.length,
       activeStudents: students.filter((student) => student.isActive).length,
@@ -189,16 +198,23 @@ function buildPayloadFromCollections(payload: {
 
 async function safeGetCollection<T>(label: string, operation: () => Promise<T>): Promise<{ ok: boolean; data: T | null; error?: string }> {
   try {
+    console.log(`[dashboard/guru] starting query for collection: ${label}`);
     const data = await operation();
+    console.log(`[dashboard/guru] finished query for collection: ${label}`);
     return { ok: true, data };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[dashboard/guru] Firestore query failed for ${label}`, { error: message });
-    return { ok: false, data: null, error: message };
+    if (error instanceof Error) {
+      console.error(error.stack);
+    }
+    // Rethrow so the outer route can capture full stack and respond accordingly
+    throw error;
   }
 }
 
 export async function GET(request: NextRequest) {
+  console.log('[dashboard/guru] request received');
   try {
     const envIssues = [
       ['FIREBASE_PROJECT_ID', process.env.FIREBASE_PROJECT_ID],
@@ -215,6 +231,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(buildEmptyPayload(message, 'Firebase Admin unavailable'), { status: 200 });
     }
 
+    console.log('[dashboard/guru] adminAuth present?', Boolean(adminAuth));
     if (!adminAuth) {
       const msg = adminInitializationError
         ? adminInitializationError
@@ -223,6 +240,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(buildEmptyPayload(msg, 'Admin Auth unavailable'), { status: 200 });
     }
 
+    console.log('[dashboard/guru] adminFirestore present?', Boolean(adminFirestore));
     if (!adminFirestore) {
       const msg = adminInitializationError
         ? adminInitializationError
@@ -268,19 +286,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(buildEmptyPayload('Firestore client unavailable', 'Firestore unavailable'), { status: 200 });
     }
 
-    const [studentsResult, comicsResult, progressResult, activityResult, reflectionsResult] = await Promise.all([
-      safeGetCollection('users', async () => firestore.collection('users').where('role', '==', 'student').get()),
-      safeGetCollection('comics', async () => firestore.collection('comics').get()),
-      safeGetCollection('progress', async () => firestore.collectionGroup('progress').get()),
-      safeGetCollection('activity', async () => firestore.collection('activity').orderBy('occurredAt', 'desc').limit(20).get()),
-      safeGetCollection('reflection', async () => firestore.collection('reflection').orderBy('createdAt', 'desc').limit(200).get()),
-    ]);
+    // Run queries sequentially with logging so we can capture the exact failing step and stack
+    console.log('[dashboard/guru] starting collection queries');
+    const studentsSnapshot = (await safeGetCollection('users', async () => firestore.collection('users').where('role', '==', 'student').get())).data;
+    const progressSnapshot = (await safeGetCollection('progress', async () => firestore.collectionGroup('progress').get())).data;
+    const reflectionsSnapshot = (await safeGetCollection('reflection', async () => firestore.collection('reflection').orderBy('createdAt', 'desc').limit(200).get())).data;
+    const activitySnapshot = (await safeGetCollection('activity', async () => firestore.collection('activity').orderBy('occurredAt', 'desc').limit(20).get())).data;
+    const comicsSnapshot = (await safeGetCollection('comics', async () => firestore.collection('comics').get())).data;
 
-    const studentsSnapshot = studentsResult.ok && studentsResult.data ? studentsResult.data : null;
-    const comicsSnapshot = comicsResult.ok && comicsResult.data ? comicsResult.data : null;
-    const progressSnapshot = progressResult.ok && progressResult.data ? progressResult.data : null;
-    const activitySnapshot = activityResult.ok && activityResult.data ? activityResult.data : null;
-    const reflectionsSnapshot = reflectionsResult.ok && reflectionsResult.data ? reflectionsResult.data : null;
+    console.log('[dashboard/guru] collection queries completed, mapping documents');
 
     const students = studentsSnapshot ? studentsSnapshot.docs.map(serializeUser) : [];
     const comics = comicsSnapshot ? comicsSnapshot.docs.map(serializeComic) : [];
@@ -288,10 +302,16 @@ export async function GET(request: NextRequest) {
     const activities = activitySnapshot ? activitySnapshot.docs.map(serializeActivity) : [];
     const reflections = reflectionsSnapshot ? reflectionsSnapshot.docs.map(serializeReflection) : [];
 
-    return NextResponse.json(buildPayloadFromCollections({ students, comics, progressDocuments, activities, reflections }), { status: 200 });
+    console.log('[dashboard/guru] building payload snapshot');
+    const payload = buildPayloadFromCollections({ students, comics, progressDocuments, activities, reflections });
+    console.log('[dashboard/guru] payload built, sending response');
+
+    return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[dashboard/guru] Unhandled route error', { error: message });
-    return NextResponse.json(buildEmptyPayload('Dashboard guru gagal memuat data', message), { status: 200 });
+    if (error instanceof Error) console.error(error.stack);
+    // If we have context about collection failure, it should have been logged in safeGetCollection
+    return NextResponse.json(buildEmptyPayload('Dashboard guru gagal memuat data', message), { status: 500 });
   }
 }
