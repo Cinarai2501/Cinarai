@@ -1,4 +1,5 @@
 import type { ActivityDocument, ComicDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
+import { SINTAKS } from '@/types/progress';
 
 export type GuruDashboardSnapshot = {
   summary: {
@@ -57,6 +58,56 @@ function coerceDate(value: unknown): Date | null {
   return null;
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function getEffectiveProgressPercentage(document: ComicProgressDocument): number {
+  if (typeof document.percentage === 'number' && Number.isFinite(document.percentage)) {
+    return Math.min(100, Math.max(0, document.percentage));
+  }
+
+  const completedStages = isStringArray(
+    (document as unknown as { completedStages?: unknown }).completedStages
+  )
+    ? (document as unknown as { completedStages: string[] }).completedStages
+    : undefined;
+  if (Array.isArray(completedStages)) {
+    return Math.round((completedStages.length / SINTAKS.length) * 100);
+  }
+
+  if (Array.isArray(document.sintaksList)) {
+    const completedCount = document.sintaksList.filter((item) => item.status === 'COMPLETED').length;
+    return Math.round((completedCount / SINTAKS.length) * 100);
+  }
+
+  return 0;
+}
+
+function isCompletedModuleProgress(document: ComicProgressDocument): boolean {
+  if (document.status === 'completed') return true;
+  if (typeof document.percentage === 'number' && document.percentage >= 100) return true;
+
+  const completedStages = isStringArray(
+    (document as unknown as { completedStages?: unknown }).completedStages
+  )
+    ? (document as unknown as { completedStages: string[] }).completedStages
+    : undefined;
+  if (Array.isArray(completedStages) && completedStages.length >= SINTAKS.length) return true;
+
+  if (Array.isArray(document.sintaksList) && document.sintaksList.length >= SINTAKS.length && document.sintaksList.every((item) => item.status === 'COMPLETED')) {
+    return true;
+  }
+
+  return false;
+}
+
+function isInProgressModuleProgress(document: ComicProgressDocument): boolean {
+  if (document.status === 'in_progress') return true;
+  const percentage = getEffectiveProgressPercentage(document);
+  return percentage > 0 && percentage < 100;
+}
+
 export function buildGuruDashboardSnapshot(input: {
   students?: UserDocument[];
   comics?: ComicDocument[];
@@ -71,7 +122,18 @@ export function buildGuruDashboardSnapshot(input: {
   const reflections = input.reflections ?? [];
 
   const totalStudents = students.length;
-  const activeStudents = students.filter((student) => student.isActive).length;
+  const progressStudentIds = new Set<string>(
+    progressDocuments
+      .map((document) => document.userId)
+      .filter((userId): userId is string => typeof userId === 'string' && userId.length > 0)
+  );
+  const activityStudentIds = new Set<string>(
+    activities
+      .map((activity) => activity.userId)
+      .filter((userId): userId is string => typeof userId === 'string' && userId.length > 0)
+  );
+  const activeStudents = students.filter((student) => progressStudentIds.has(student.uid) || activityStudentIds.has(student.uid)).length;
+
   const moduleComicIds = new Set<number>(comics.map((comic) => comic.comicId));
   progressDocuments.forEach((document) => {
     if (typeof document.comicId === 'number') {
@@ -80,12 +142,32 @@ export function buildGuruDashboardSnapshot(input: {
   });
   const totalModules = moduleComicIds.size;
   const averageProgress = progressDocuments.length
-    ? Math.round(progressDocuments.reduce((sum, document) => sum + (document.percentage ?? 0), 0) / progressDocuments.length)
+    ? Math.round(progressDocuments.reduce((sum, document) => sum + getEffectiveProgressPercentage(document), 0) / progressDocuments.length)
     : 0;
 
-  const completedModules = progressDocuments.filter((document) => document.status === 'completed' || (document.percentage ?? 0) >= 100).length;
+  const completedModules = progressDocuments.filter(isCompletedModuleProgress).length;
   const completedModulesRate = progressDocuments.length ? Math.round((completedModules / progressDocuments.length) * 100) : 0;
   const activeStudentRate = totalStudents ? Math.round((activeStudents / totalStudents) * 100) : 0;
+
+  if (process.env.NODE_ENV === 'development') {
+    /* eslint-disable no-console */
+    console.group('[GuruDashboardSnapshot]');
+    console.log('students:', students.length);
+    console.log('progress docs:', progressDocuments.length);
+    console.log('completed modules:', completedModules);
+    console.log('average progress:', averageProgress);
+    console.log('summary:', {
+      totalStudents,
+      activeStudents,
+      totalModules,
+      averageProgress,
+      completedModules,
+      completedModulesRate,
+      activeStudentRate,
+    });
+    console.groupEnd();
+    /* eslint-enable no-console */
+  }
 
   const fallbackModules = Array.from(moduleComicIds)
     .filter((comicId) => !comics.some((comic) => comic.comicId === comicId))
@@ -109,10 +191,10 @@ export function buildGuruDashboardSnapshot(input: {
 
   const modules = [...comics, ...fallbackModules].map((comic) => {
     const moduleProgressDocuments = progressDocuments.filter((document) => document.comicId === comic.comicId);
-    const completedCount = moduleProgressDocuments.filter((document) => document.status === 'completed' || (document.percentage ?? 0) >= 100).length;
-    const inProgressCount = moduleProgressDocuments.filter((document) => document.status === 'in_progress' || ((document.percentage ?? 0) > 0 && (document.percentage ?? 0) < 100)).length;
+    const completedCount = moduleProgressDocuments.filter(isCompletedModuleProgress).length;
+    const inProgressCount = moduleProgressDocuments.filter(isInProgressModuleProgress).length;
     const progress = moduleProgressDocuments.length
-      ? Math.round(moduleProgressDocuments.reduce((sum, document) => sum + (document.percentage ?? 0), 0) / moduleProgressDocuments.length)
+      ? Math.round(moduleProgressDocuments.reduce((sum, document) => sum + getEffectiveProgressPercentage(document), 0) / moduleProgressDocuments.length)
       : 0;
 
     const badge = completedCount >= 5 ? 'Populer' : inProgressCount > 0 ? 'Sedang' : 'Baru';
