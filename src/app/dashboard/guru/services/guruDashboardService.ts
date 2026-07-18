@@ -1,4 +1,4 @@
-import { collection, getDocs, collectionGroup, query, where } from 'firebase/firestore';
+import { collection, getDocs, collectionGroup, query, where, type QueryDocumentSnapshot, type DocumentData } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import { getAllComics } from '@/lib/comicRepository';
 import type { ActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
@@ -27,18 +27,19 @@ export interface GuruDashboardData {
 }
 
 export async function fetchGuruDashboardData(): Promise<GuruDashboardData> {
-  const { safeGetDocs } = await import('./guru/firestoreAudit').catch(() => ({}));
+  const mod = await import('./guru/firestoreAudit').catch(() => ({} as Partial<typeof import('./guru/firestoreAudit')>));
+  const { safeGetDocs } = mod;
 
   const usersSnapshot = await safeGetDocs?.('users', 'users', () => collection(firestore, 'users')) ?? (await getDocs(collection(firestore, 'users')));
   const reflectionsSnapshot = await safeGetDocs?.('reflection', 'reflection', () => collection(firestore, 'reflection')) ?? (await getDocs(collection(firestore, 'reflection')));
   const activitySnapshot = await safeGetDocs?.('activity', 'activity', () => collection(firestore, 'activity')) ?? (await getDocs(collection(firestore, 'activity')));
 
-  const users = usersSnapshot.docs.map((documentSnapshot) => ({
+  const users = usersSnapshot.docs.map((documentSnapshot: QueryDocumentSnapshot<DocumentData>) => ({
     id: documentSnapshot.id,
     ...documentSnapshot.data(),
   } as UserDocument));
 
-  const studentUsers = users.filter((entry) => entry.role === 'student').sort((left, right) => {
+  const studentUsers = users.filter((entry: UserDocument) => entry.role === 'student').sort((left: UserDocument, right: UserDocument) => {
     const leftName = left.displayName?.trim() || left.email || '';
     const rightName = right.displayName?.trim() || right.email || '';
     return leftName.localeCompare(rightName);
@@ -46,7 +47,7 @@ export async function fetchGuruDashboardData(): Promise<GuruDashboardData> {
 
   const progressByStudent = new Map<string, ComicProgressDocument[]>();
   const reflectionsByStudent = new Map<string, ReflectionDocument[]>();
-  const usersById = new Map(users.map((entry) => [entry.uid, entry]));
+  const usersById = new Map<string, UserDocument>(users.map((entry: UserDocument) => [entry.uid, entry]));
 
   for (const student of studentUsers) {
     const studentProgressSnapshot = await safeGetDocs?.(
@@ -57,14 +58,14 @@ export async function fetchGuruDashboardData(): Promise<GuruDashboardData> {
 
     progressByStudent.set(
       student.uid,
-      studentProgressSnapshot.docs.map((documentSnapshot) => ({
+      studentProgressSnapshot.docs.map((documentSnapshot: QueryDocumentSnapshot<DocumentData>) => ({
         id: documentSnapshot.id,
         ...documentSnapshot.data(),
       } as ComicProgressDocument))
     );
   }
 
-  const reflections = reflectionsSnapshot.docs.map((documentSnapshot) => ({
+  const reflections = reflectionsSnapshot.docs.map((documentSnapshot: QueryDocumentSnapshot<DocumentData>) => ({
     id: documentSnapshot.id,
     ...documentSnapshot.data(),
   } as ReflectionDocument));
@@ -77,7 +78,7 @@ export async function fetchGuruDashboardData(): Promise<GuruDashboardData> {
     reflectionsByStudent.set(studentId, existing);
   }
 
-  const activityDocuments = activitySnapshot.docs.map((documentSnapshot) => ({
+  const activityDocuments = activitySnapshot.docs.map((documentSnapshot: QueryDocumentSnapshot<DocumentData>) => ({
     id: documentSnapshot.id,
     ...documentSnapshot.data(),
   } as ActivityDocument));

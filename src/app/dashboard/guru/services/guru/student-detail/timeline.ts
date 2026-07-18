@@ -24,7 +24,7 @@ function normalizeActivity(documentSnapshot: QueryDocumentSnapshot<DocumentData>
 
 export async function loadStudentTimeline(studentId: string): Promise<ActivityDocument[]> {
   const snapshot = await safeGetDocs('activity', `activity?userId=${studentId}`, () => query(collection(firestore, 'activity'), where('userId', '==', studentId)));
-  return snapshot.docs.map(normalizeActivity).sort((left, right) => {
+  return snapshot.docs.map(normalizeActivity).sort((left: ActivityDocument, right: ActivityDocument) => {
     const leftTime = toDateValue(left.occurredAt)?.getTime() ?? 0;
     const rightTime = toDateValue(right.occurredAt)?.getTime() ?? 0;
     return rightTime - leftTime;
@@ -39,7 +39,7 @@ export function subscribeToStudentTimeline(
   return safeOnSnapshot(
     query(collection(firestore, 'activity'), where('userId', '==', studentId)),
     (snapshot) => {
-      const activities = snapshot.docs.map(normalizeActivity).sort((left, right) => {
+      const activities = snapshot.docs.map(normalizeActivity).sort((left: ActivityDocument, right: ActivityDocument) => {
         const leftTime = toDateValue(left.occurredAt)?.getTime() ?? 0;
         const rightTime = toDateValue(right.occurredAt)?.getTime() ?? 0;
         return rightTime - leftTime;
