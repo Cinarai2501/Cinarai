@@ -72,7 +72,13 @@ export function buildGuruDashboardSnapshot(input: {
 
   const totalStudents = students.length;
   const activeStudents = students.filter((student) => student.isActive).length;
-  const totalModules = comics.length;
+  const moduleComicIds = new Set<number>(comics.map((comic) => comic.comicId));
+  progressDocuments.forEach((document) => {
+    if (typeof document.comicId === 'number') {
+      moduleComicIds.add(document.comicId);
+    }
+  });
+  const totalModules = moduleComicIds.size;
   const averageProgress = progressDocuments.length
     ? Math.round(progressDocuments.reduce((sum, document) => sum + (document.percentage ?? 0), 0) / progressDocuments.length)
     : 0;
@@ -81,7 +87,27 @@ export function buildGuruDashboardSnapshot(input: {
   const completedModulesRate = progressDocuments.length ? Math.round((completedModules / progressDocuments.length) * 100) : 0;
   const activeStudentRate = totalStudents ? Math.round((activeStudents / totalStudents) * 100) : 0;
 
-  const modules = comics.map((comic) => {
+  const fallbackModules = Array.from(moduleComicIds)
+    .filter((comicId) => !comics.some((comic) => comic.comicId === comicId))
+    .map((comicId) => ({
+      comicId,
+      slug: `module-${comicId}`,
+      title: `Modul #${comicId}`,
+      subtitle: '',
+      kelas: '',
+      lokasi: '',
+      synopsis: 'Modul ini belum memiliki metadata di koleksi comics.',
+      characters: [],
+      learningTargets: [],
+      estimatedMinutes: 0,
+      pdfUrl: null,
+      coverUrl: '',
+      thumbnailUrl: '',
+      order: 0,
+      availability: 'ACTIVE' as const,
+    }));
+
+  const modules = [...comics, ...fallbackModules].map((comic) => {
     const moduleProgressDocuments = progressDocuments.filter((document) => document.comicId === comic.comicId);
     const completedCount = moduleProgressDocuments.filter((document) => document.status === 'completed' || (document.percentage ?? 0) >= 100).length;
     const inProgressCount = moduleProgressDocuments.filter((document) => document.status === 'in_progress' || ((document.percentage ?? 0) > 0 && (document.percentage ?? 0) < 100)).length;
@@ -103,11 +129,13 @@ export function buildGuruDashboardSnapshot(input: {
     };
   });
 
-  const progressItems = [
-    { label: 'Progress Kelas', value: averageProgress },
-    { label: 'Modul Selesai', value: completedModulesRate },
-    { label: 'Siswa Aktif', value: activeStudentRate },
-  ];
+  const progressItems = progressDocuments.length
+    ? [
+        { label: 'Progress Kelas', value: averageProgress },
+        { label: 'Modul Selesai', value: completedModulesRate },
+        { label: 'Siswa Aktif', value: activeStudentRate },
+      ]
+    : [];
 
   const studentIds = new Set(students.map((student) => student.uid));
   const recentActivities = activities

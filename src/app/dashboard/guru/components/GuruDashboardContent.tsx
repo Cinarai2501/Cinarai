@@ -59,6 +59,12 @@ export default function GuruDashboardContent() {
     progressError,
     activitiesLoading,
     activitiesError,
+    totalUsers,
+    allUserRoles,
+    comicsCount,
+    progressCount,
+    activityCount,
+    reflectionCount,
   } = useGuruDashboard();
 
   const statCards = useMemo(() => {
@@ -83,6 +89,12 @@ export default function GuruDashboardContent() {
   const progressWidgetError = progressError;
   const activityWidgetLoading = activitiesLoading;
   const activityWidgetError = activitiesError;
+  const hasDashboardData = Boolean(
+    summary?.totalStudents ||
+    guruModules.length ||
+    guruActivities.length ||
+    guruProgressItems.length
+  );
 
   if (loading) {
     return (
@@ -155,14 +167,65 @@ export default function GuruDashboardContent() {
 
               <GuruQuickActions />
 
-              <DashboardWidget
-                loading={summaryLoading}
-                error={summaryError}
-                loadingLabel="Memuat ringkasan kelas…"
-                errorLabel="Gagal memuat beberapa data ringkasan"
-              >
-                <GuruStatCards stats={statCards} />
-              </DashboardWidget>
+              {process.env.NODE_ENV === 'development' ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Debug Firestore Realtime</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Total pengguna</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{totalUsers}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Siswa (role filter)</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{summary?.totalStudents ?? 0}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Modul</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{comicsCount}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Progress docs</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{progressCount}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Aktivitas</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{activityCount}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-3 shadow-sm shadow-slate-100">
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500">Refleksi</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{reflectionCount}</p>
+                    </div>
+                  </div>
+                  {Object.keys(allUserRoles).length ? (
+                    <div className="mt-3 rounded-2xl bg-white p-3 text-xs text-slate-600 shadow-sm shadow-slate-100">
+                      <p className="font-semibold text-slate-800">Role breakdown</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {Object.entries(allUserRoles).map(([role, count]) => (
+                          <span key={role} className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-700">
+                            {role}: {count}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {hasDashboardData ? (
+                <DashboardWidget
+                  loading={summaryLoading}
+                  error={summaryError}
+                  loadingLabel="Memuat ringkasan kelas…"
+                  errorLabel="Gagal memuat beberapa data ringkasan"
+                >
+                  <GuruStatCards stats={statCards} />
+                </DashboardWidget>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-6 text-center text-sm text-neutral-600">
+                  <p className="font-semibold text-neutral-900">Dashboard belum menampilkan data kelas.</p>
+                  <p className="mt-2">Tambahkan siswa atau mulai progress dan aktivitas untuk melihat statistik kelas secara realtime.</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">

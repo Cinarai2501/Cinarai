@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { buildGuruDashboardSnapshot } from '@/app/dashboard/guru/services/guru/dashboard/dashboardModel';
-import { fetchGuruDashboardFromApi, type GuruDashboardApiResponse } from '@/app/dashboard/guru/services/guru/dashboard/dashboardApi';
+import {
+  subscribeToAllProgressDocuments,
+  subscribeToAllUsers,
+  subscribeToComics,
+  subscribeToRecentActivities,
+  subscribeToReflections,
+  subscribeToUsers,
+} from '@/app/dashboard/guru/services/guru/dashboard/guruDashboardFirestore';
 import type {
   ActivityDocument,
   ComicDocument,
@@ -17,6 +24,12 @@ export type GuruDashboardSourceState = {
   progressByStudent: Map<string, ComicProgressDocument[]>;
   activities: ActivityDocument[];
   reflections: ReflectionDocument[];
+  totalUsers: number;
+  allUserRoles: Record<string, number>;
+  comicsCount: number;
+  progressCount: number;
+  activityCount: number;
+  reflectionCount: number;
   loading: boolean;
   error: string | null;
   usersLoading: boolean;
@@ -43,6 +56,12 @@ const initialSourceState: GuruDashboardSourceState = {
   progressByStudent: new Map(),
   activities: [],
   reflections: [],
+  totalUsers: 0,
+  allUserRoles: {},
+  comicsCount: 0,
+  progressCount: 0,
+  activityCount: 0,
+  reflectionCount: 0,
   loading: true,
   error: null,
   usersLoading: true,
@@ -68,111 +87,238 @@ export function useGuruDashboardSource() {
 
   useEffect(() => {
     let active = true;
+    let usersLoaded = false;
+    let comicsLoaded = false;
+    let progressLoaded = false;
+    let activitiesLoaded = false;
+    let reflectionsLoaded = false;
 
-    const loadDashboard = async () => {
-      if (!active) return;
-
-      if (!user || user.role !== 'teacher') {
-        if (!active) return;
-        setState((current) => ({
-          ...current,
-          loading: false,
-          usersLoading: false,
-          comicsLoading: false,
-          progressLoading: false,
-          activitiesLoading: false,
-          reflectionsLoading: false,
-          usersSuccess: false,
-          comicsSuccess: false,
-          progressSuccess: false,
-          activitiesSuccess: false,
-          reflectionsSuccess: false,
-          error: user ? 'Akun ini bukan akun guru.' : 'Sesi tidak tersedia',
-          students: [],
-          comics: [],
-          progressDocuments: [],
-          activities: [],
-          reflections: [],
-        }));
-        return;
-      }
-
-      try {
-        const data: GuruDashboardApiResponse = await fetchGuruDashboardFromApi();
-        if (!active) return;
-        const apiErrors = data.errors ?? {};
-        const usersError: string | null = apiErrors.users ?? null;
-        const comicsError: string | null = apiErrors.comics ?? null;
-        const progressError: string | null = apiErrors.progress ?? null;
-        const activitiesError: string | null = apiErrors.activity ?? null;
-        const reflectionsError: string | null = apiErrors.reflection ?? null;
-
-        const hasPartialErrors = Boolean(usersError || comicsError || progressError || activitiesError || reflectionsError || data.error);
-
-        setState((current) => ({
-          ...current,
-          students: data.students ?? [],
-          comics: data.comics ?? [],
-          progressDocuments: data.progressDocuments ?? [],
-          activities: data.activities ?? [],
-          reflections: data.reflections ?? [],
-          loading: false,
-          error: data.error ?? (hasPartialErrors ? 'Sebagian data tidak tersedia' : null),
-          usersLoading: false,
-          usersError: usersError,
-          usersSuccess: !usersError,
-          comicsLoading: false,
-          comicsError: comicsError,
-          comicsSuccess: !comicsError,
-          progressLoading: false,
-          progressError: progressError,
-          progressSuccess: !progressError,
-          activitiesLoading: false,
-          activitiesError: activitiesError,
-          activitiesSuccess: !activitiesError,
-          reflectionsLoading: false,
-          reflectionsError: reflectionsError,
-          reflectionsSuccess: !reflectionsError,
-        }));
-      } catch (error) {
-        if (!active) return;
-        const errorMessage = error instanceof Error ? error.message : 'Dashboard guru gagal dimuat';
-        setState((current) => ({
-          ...current,
-          loading: false,
-          error: errorMessage,
-          usersLoading: false,
-          usersError: errorMessage,
-          usersSuccess: false,
-          comicsLoading: false,
-          comicsError: errorMessage,
-          comicsSuccess: false,
-          progressLoading: false,
-          progressError: errorMessage,
-          progressSuccess: false,
-          activitiesLoading: false,
-          activitiesError: errorMessage,
-          activitiesSuccess: false,
-          reflectionsLoading: false,
-          reflectionsError: errorMessage,
-          reflectionsSuccess: false,
-          students: [],
-          comics: [],
-          progressDocuments: [],
-          activities: [],
-          reflections: [],
-        }));
-      }
+    const debugState = {
+      totalUsers: 0,
+      students: 0,
+      comics: 0,
+      progress: 0,
+      activities: 0,
+      reflections: 0,
+      roles: new Map<string, number>(),
     };
 
-    void loadDashboard();
-    const intervalId = window.setInterval(() => {
-      void loadDashboard();
-    }, 10000);
+    const logDebug = () => {
+      if (process.env.NODE_ENV !== 'development') return;
+      /* eslint-disable no-console */
+      console.group('[GuruDashboard]');
+      console.log('users:', debugState.totalUsers);
+      console.log('students:', debugState.students);
+      console.log('progress docs:', debugState.progress);
+      console.log('activity docs:', debugState.activities);
+      console.log('modules:', debugState.comics);
+      if (debugState.totalUsers > 0 && debugState.students === 0) {
+        console.log('role counts:');
+        debugState.roles.forEach((count, role) => console.log(`${role}: ${count}`));
+      }
+      if (debugState.progress === 0) {
+        console.warn('progress listener path: collectionGroup(progress)');
+      }
+      console.groupEnd();
+      /* eslint-enable no-console */
+    };
+
+    const updateLoading = () => {
+      if (!active) return;
+      setState((current) => ({
+        ...current,
+        loading: !(usersLoaded && comicsLoaded && progressLoaded && activitiesLoaded && reflectionsLoaded),
+      }));
+    };
+
+    if (!user || user.role !== 'teacher') {
+      setState({
+        ...initialSourceState,
+        loading: false,
+        usersLoading: false,
+        comicsLoading: false,
+        progressLoading: false,
+        activitiesLoading: false,
+        reflectionsLoading: false,
+        usersSuccess: false,
+        comicsSuccess: false,
+        progressSuccess: false,
+        activitiesSuccess: false,
+        reflectionsSuccess: false,
+        error: user ? 'Akun ini bukan akun guru.' : 'Sesi tidak tersedia',
+      });
+      return;
+    }
+
+    const setErrorState = (errorMessage: string) => {
+      if (!active) return;
+      setState((current) => ({
+        ...current,
+        loading: false,
+        error: errorMessage,
+        usersLoading: false,
+        comicsLoading: false,
+        progressLoading: false,
+        activitiesLoading: false,
+        reflectionsLoading: false,
+        usersError: errorMessage,
+        comicsError: errorMessage,
+        progressError: errorMessage,
+        activitiesError: errorMessage,
+        reflectionsError: errorMessage,
+        usersSuccess: false,
+        comicsSuccess: false,
+        progressSuccess: false,
+        activitiesSuccess: false,
+        reflectionsSuccess: false,
+      }));
+    };
+
+    const usersUnsubscribe = subscribeToUsers(
+      (nextStudents) => {
+        if (!active) return;
+        usersLoaded = true;
+        debugState.students = nextStudents.length;
+        setState((current) => ({
+          ...current,
+          students: nextStudents,
+          usersLoading: false,
+          usersError: null,
+          usersSuccess: true,
+        }));
+        logDebug();
+        updateLoading();
+      },
+      (nextError) => {
+        if (!active) return;
+        setErrorState(nextError.message);
+      }
+    );
+
+    let allUsersUnsubscribe = () => {};
+    if (process.env.NODE_ENV === 'development') {
+      allUsersUnsubscribe = subscribeToAllUsers(
+        (nextUsers) => {
+          if (!active) return;
+          const roleCounts: Record<string, number> = {};
+          nextUsers.forEach((userDoc) => {
+            const role = typeof userDoc.role === 'string' ? userDoc.role : 'undefined';
+            roleCounts[role] = (roleCounts[role] ?? 0) + 1;
+          });
+          usersLoaded = true;
+          debugState.totalUsers = nextUsers.length;
+          debugState.roles = new Map(Object.entries(roleCounts));
+          setState((current) => ({
+            ...current,
+            totalUsers: nextUsers.length,
+            allUserRoles: roleCounts,
+          }));
+          logDebug();
+          updateLoading();
+        },
+        (nextError) => {
+          if (!active) return;
+          setErrorState(nextError.message);
+        }
+      );
+    }
+
+    const comicsUnsubscribe = subscribeToComics(
+      (nextComics) => {
+        if (!active) return;
+        comicsLoaded = true;
+        debugState.comics = nextComics.length;
+        setState((current) => ({
+          ...current,
+          comics: nextComics,
+          comicsLoading: false,
+          comicsError: null,
+          comicsSuccess: true,
+          comicsCount: nextComics.length,
+        }));
+        logDebug();
+        updateLoading();
+      },
+      (nextError) => {
+        if (!active) return;
+        setErrorState(nextError.message);
+      }
+    );
+
+    const progressUnsubscribe = subscribeToAllProgressDocuments(
+      (nextProgressDocuments) => {
+        if (!active) return;
+        progressLoaded = true;
+        debugState.progress = nextProgressDocuments.length;
+        setState((current) => ({
+          ...current,
+          progressDocuments: nextProgressDocuments,
+          progressLoading: false,
+          progressError: null,
+          progressSuccess: true,
+          progressCount: nextProgressDocuments.length,
+        }));
+        logDebug();
+        updateLoading();
+      },
+      (nextError) => {
+        if (!active) return;
+        setErrorState(nextError.message);
+      }
+    );
+
+    const activitiesUnsubscribe = subscribeToRecentActivities(
+      (nextActivities) => {
+        if (!active) return;
+        activitiesLoaded = true;
+        debugState.activities = nextActivities.length;
+        setState((current) => ({
+          ...current,
+          activities: nextActivities,
+          activitiesLoading: false,
+          activitiesError: null,
+          activitiesSuccess: true,
+          activityCount: nextActivities.length,
+        }));
+        logDebug();
+        updateLoading();
+      },
+      (nextError) => {
+        if (!active) return;
+        setErrorState(nextError.message);
+      }
+    );
+
+    const reflectionsUnsubscribe = subscribeToReflections(
+      (nextReflections) => {
+        if (!active) return;
+        reflectionsLoaded = true;
+        debugState.reflections = nextReflections.length;
+        setState((current) => ({
+          ...current,
+          reflections: nextReflections,
+          reflectionsLoading: false,
+          reflectionsError: null,
+          reflectionsSuccess: true,
+          reflectionCount: nextReflections.length,
+        }));
+        logDebug();
+        updateLoading();
+      },
+      (nextError) => {
+        if (!active) return;
+        setErrorState(nextError.message);
+      }
+    );
 
     return () => {
       active = false;
-      window.clearInterval(intervalId);
+      usersUnsubscribe();
+      allUsersUnsubscribe();
+      comicsUnsubscribe();
+      progressUnsubscribe();
+      activitiesUnsubscribe();
+      reflectionsUnsubscribe();
     };
   }, [user]);
 

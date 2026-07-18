@@ -1,3 +1,6 @@
+import { collectionGroup, onSnapshot, query } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/client';
+import { subscribeToFirestoreCollection } from '@/services/firestore';
 import type {
   ActivityDocument,
   ComicDocument,
@@ -6,163 +9,116 @@ import type {
   UserDocument,
 } from '@/types/firestore';
 
-async function fetchDashboardData() {
-  const token = await (await import('@/lib/firebase/auth')).getUserToken();
-  if (!token) {
-    throw new Error('Sesi guru tidak tersedia.');
-  }
-
-  const response = await fetch('/api/dashboard/guru', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error ?? 'Dashboard guru gagal dimuat');
-  }
-
-  return response.json();
-}
-
 export async function loadAllUsers(): Promise<UserDocument[]> {
-  const payload = await fetchDashboardData();
-  return payload.students ?? [];
+  throw new Error('This method is not supported for realtime dashboard data.');
 }
 
 export function subscribeToUsers(
   callback: (users: UserDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  const refresh = async () => {
-    try {
-      const payload = await fetchDashboardData();
-      callback(payload.students ?? []);
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error('Failed to load users'));
-    }
-  };
+  return subscribeToFirestoreCollection(
+    'users',
+    callback,
+    {
+      filters: [{ field: 'role', operator: '==', value: 'student' }],
+      orderByField: 'displayName',
+      orderDirection: 'asc',
+    },
+    onError
+  );
+}
 
-  void refresh();
-  const timer = setInterval(() => {
-    void refresh();
-  }, 10000);
-
-  return () => {
-    clearInterval(timer);
-  };
+export function subscribeToAllUsers(
+  callback: (users: UserDocument[]) => void,
+  onError?: (error: Error) => void
+) {
+  return subscribeToFirestoreCollection(
+    'users',
+    callback,
+    {
+      orderByField: 'displayName',
+      orderDirection: 'asc',
+    },
+    onError
+  );
 }
 
 export async function loadAllComics(): Promise<ComicDocument[]> {
-  const payload = await fetchDashboardData();
-  return payload.comics ?? [];
+  throw new Error('This method is not supported for realtime dashboard data.');
 }
 
 export function subscribeToComics(
   callback: (comics: ComicDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  const refresh = async () => {
-    try {
-      const payload = await fetchDashboardData();
-      callback(payload.comics ?? []);
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error('Failed to load comics'));
-    }
-  };
-
-  void refresh();
-  const timer = setInterval(() => {
-    void refresh();
-  }, 10000);
-
-  return () => {
-    clearInterval(timer);
-  };
+  return subscribeToFirestoreCollection(
+    'comics',
+    callback,
+    {
+      orderByField: 'order',
+      orderDirection: 'asc',
+    },
+    onError
+  );
 }
 
-export async function loadRecentActivities(limitCount = 20): Promise<ActivityDocument[]> {
-  const payload = await fetchDashboardData();
-  return (payload.activities ?? []).slice(0, limitCount);
+export async function loadRecentActivities(): Promise<ActivityDocument[]> {
+  throw new Error('This method is not supported for realtime dashboard data.');
 }
 
 export function subscribeToRecentActivities(
   callback: (activities: ActivityDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  const refresh = async () => {
-    try {
-      const payload = await fetchDashboardData();
-      callback((payload.activities ?? []).slice(0, 20));
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error('Failed to load activities'));
-    }
-  };
-
-  void refresh();
-  const timer = setInterval(() => {
-    void refresh();
-  }, 10000);
-
-  return () => {
-    clearInterval(timer);
-  };
+  return subscribeToFirestoreCollection(
+    'activity',
+    callback,
+    {
+      orderByField: 'occurredAt',
+      orderDirection: 'desc',
+      limitCount: 20,
+    },
+    onError
+  );
 }
 
 export async function loadAllReflections(): Promise<ReflectionDocument[]> {
-  const payload = await fetchDashboardData();
-  return (payload.reflections ?? []).slice(0, 200);
+  throw new Error('This method is not supported for realtime dashboard data.');
 }
 
 export function subscribeToReflections(
   callback: (reflections: ReflectionDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  const refresh = async () => {
-    try {
-      const payload = await fetchDashboardData();
-      callback((payload.reflections ?? []).slice(0, 200));
-    } catch (error) {
-      onError?.(error instanceof Error ? error : new Error('Failed to load reflections'));
-    }
-  };
-
-  void refresh();
-  const timer = setInterval(() => {
-    void refresh();
-  }, 10000);
-
-  return () => {
-    clearInterval(timer);
-  };
+  return subscribeToFirestoreCollection(
+    'reflection',
+    callback,
+    {
+      orderByField: 'createdAt',
+      orderDirection: 'desc',
+      limitCount: 200,
+    },
+    onError
+  );
 }
 
 export async function loadAllProgressDocuments(): Promise<ComicProgressDocument[]> {
-  const payload = await fetchDashboardData();
-  return payload.progressDocuments ?? [];
+  throw new Error('This method is not supported for realtime dashboard data.');
 }
 
 export function subscribeToAllProgressDocuments(
   callback: (progressDocuments: ComicProgressDocument[]) => void,
   onError?: (error: Error) => void
 ) {
-  const refresh = async () => {
-    try {
-      const payload = await fetchDashboardData();
-      callback(payload.progressDocuments ?? []);
-    } catch (error) {
+  const progressQuery = query(collectionGroup(firestore, 'progress'));
+  return onSnapshot(
+    progressQuery,
+    (snapshot) => {
+      callback(snapshot.docs.map((documentSnapshot) => documentSnapshot.data() as ComicProgressDocument));
+    },
+    (error) => {
       onError?.(error instanceof Error ? error : new Error('Failed to load progress'));
     }
-  };
-
-  void refresh();
-  const timer = setInterval(() => {
-    void refresh();
-  }, 10000);
-
-  return () => {
-    clearInterval(timer);
-  };
+  );
 }

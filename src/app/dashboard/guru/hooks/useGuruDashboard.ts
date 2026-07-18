@@ -15,6 +15,12 @@ export function useGuruDashboard() {
     activitiesError,
     reflectionsLoading,
     reflectionsError,
+    totalUsers,
+    allUserRoles,
+    comicsCount,
+    progressCount,
+    activityCount,
+    reflectionCount,
     dashboardSnapshot,
   } = useGuruDashboardSource();
 
@@ -40,5 +46,11 @@ export function useGuruDashboard() {
     activitiesError,
     reflectionsLoading,
     reflectionsError,
+    totalUsers,
+    allUserRoles,
+    comicsCount,
+    progressCount,
+    activityCount,
+    reflectionCount,
   };
 }
