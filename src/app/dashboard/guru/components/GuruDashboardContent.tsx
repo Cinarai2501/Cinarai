@@ -99,7 +99,9 @@ export default function GuruDashboardContent() {
     );
   }
 
-  if (error) {
+  const hasCriticalError = Boolean(error && (error.includes('bukan akun guru') || error.includes('Sesi') || error.includes('Unauthorized')));
+
+  if (error && hasCriticalError) {
     const isRoleError = error.includes('bukan akun guru');
     const isSesiError = error.includes('Sesi');
 
@@ -134,6 +136,11 @@ export default function GuruDashboardContent() {
     <div className="min-h-screen bg-neutral-50 px-4 py-6 sm:px-6 lg:px-8">
       <GuruDashboardLayout header={<GuruHeader />} sidebar={<GuruSidebar />}>
         <div className="space-y-6 pb-10">
+          {error ? (
+            <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Sebagian data dashboard tidak dapat dimuat. Widget lain tetap ditampilkan dengan state kosong.
+            </div>
+          ) : null}
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-6">
               <div className="rounded-[28px] border border-neutral-100 bg-white p-6 shadow-sm shadow-neutral-200/70">

@@ -58,25 +58,21 @@ function coerceDate(value: unknown): Date | null {
 }
 
 export function buildGuruDashboardSnapshot(input: {
-  students: UserDocument[];
-  comics: ComicDocument[];
-  progressDocuments: ComicProgressDocument[];
-  activities: ActivityDocument[];
-  reflections: ReflectionDocument[];
+  students?: UserDocument[];
+  comics?: ComicDocument[];
+  progressDocuments?: ComicProgressDocument[];
+  activities?: ActivityDocument[];
+  reflections?: ReflectionDocument[];
 }): GuruDashboardSnapshot {
+  const students = input.students ?? [];
+  const comics = input.comics ?? [];
   const progressDocuments = input.progressDocuments ?? [];
-  const progressByStudent = new Map<string, ComicProgressDocument[]>();
-  progressDocuments.forEach((document) => {
-    const userId = document.userId ?? '';
-    if (!userId) return;
-    const existing = progressByStudent.get(userId) ?? [];
-    existing.push(document);
-    progressByStudent.set(userId, existing);
-  });
+  const activities = input.activities ?? [];
+  const reflections = input.reflections ?? [];
 
-  const totalStudents = input.students.length;
-  const activeStudents = input.students.filter((student) => student.isActive).length;
-  const totalModules = input.comics.length;
+  const totalStudents = students.length;
+  const activeStudents = students.filter((student) => student.isActive).length;
+  const totalModules = comics.length;
   const averageProgress = progressDocuments.length
     ? Math.round(progressDocuments.reduce((sum, document) => sum + (document.percentage ?? 0), 0) / progressDocuments.length)
     : 0;
@@ -85,7 +81,7 @@ export function buildGuruDashboardSnapshot(input: {
   const completedModulesRate = progressDocuments.length ? Math.round((completedModules / progressDocuments.length) * 100) : 0;
   const activeStudentRate = totalStudents ? Math.round((activeStudents / totalStudents) * 100) : 0;
 
-  const modules = input.comics.map((comic) => {
+  const modules = comics.map((comic) => {
     const moduleProgressDocuments = progressDocuments.filter((document) => document.comicId === comic.comicId);
     const completedCount = moduleProgressDocuments.filter((document) => document.status === 'completed' || (document.percentage ?? 0) >= 100).length;
     const inProgressCount = moduleProgressDocuments.filter((document) => document.status === 'in_progress' || ((document.percentage ?? 0) > 0 && (document.percentage ?? 0) < 100)).length;
@@ -113,8 +109,8 @@ export function buildGuruDashboardSnapshot(input: {
     { label: 'Siswa Aktif', value: activeStudentRate },
   ];
 
-  const studentIds = new Set(input.students.map((student) => student.uid));
-  const recentActivities = input.activities
+  const studentIds = new Set(students.map((student) => student.uid));
+  const recentActivities = activities
     .filter((activity) => studentIds.has(activity.userId))
     .slice()
     .sort((left, right) => {
@@ -132,6 +128,8 @@ export function buildGuruDashboardSnapshot(input: {
         time: toRelativeTimeLabel(occurredAt),
       };
     });
+
+  void reflections;
 
   return {
     summary: {
