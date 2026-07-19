@@ -199,56 +199,36 @@ function buildPayloadFromCollections(payload: {
 
 async function safeGetCollection<T>(label: string, operation: () => Promise<T>): Promise<{ ok: boolean; data: T | null; error?: string }> {
   const queryDescription = operation.toString();
-  console.log('========================');
-  console.log('Collection:');
-  console.log(label);
-  console.log('Path:');
-  console.log(`/dashboard/guru/${label}`);
-  console.log('Query:');
-  console.log(queryDescription);
-  console.log('Status:');
-  console.log('running');
-  console.log('Error:');
-  console.log('none');
-  console.log('========================');
+  debug(`[dashboard/guru] starting query for collection: ${label}`, {
+    path: `/dashboard/guru/${label}`,
+    query: queryDescription,
+    status: 'running',
+  });
+
   try {
-    debug(`[dashboard/guru] starting query for collection: ${label}`);
     const data = await operation();
-    debug(`[dashboard/guru] finished query for collection: ${label}`);
-    console.log('========================');
-    console.log('Collection:');
-    console.log(label);
-    console.log('Path:');
-    console.log(`/dashboard/guru/${label}`);
-    console.log('Query:');
-    console.log(queryDescription);
-    console.log('Status:');
-    console.log('success');
-    console.log('Error:');
-    console.log('none');
-    console.log('========================');
+    debug(`[dashboard/guru] finished query for collection: ${label}`, {
+      path: `/dashboard/guru/${label}`,
+      query: queryDescription,
+      status: 'success',
+    });
     return { ok: true, data };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code) : 'n/a';
-    console.error(`[dashboard/guru] Firestore query failed for ${label}`, { error: message, code });
-    console.log('========================');
-    console.log('Collection:');
-    console.log(label);
-    console.log('Path:');
-    console.log(`/dashboard/guru/${label}`);
-    console.log('Query:');
-    console.log(queryDescription);
-    console.log('Status:');
-    console.log('failed');
-    console.log('Error:');
-    console.log(`FirebaseError.code: ${code}`);
-    console.log(`FirebaseError.message: ${message}`);
-    console.log(`Collection causing permission denied: ${label}`);
-    console.log('========================');
+
+    debug(`[dashboard/guru] Firestore query failed for ${label}`, {
+      path: `/dashboard/guru/${label}`,
+      query: queryDescription,
+      status: 'failed',
+      error: message,
+      code,
+    });
+
     if (error instanceof Error) {
-      console.error(error.stack);
+      debug(error.stack);
     }
+
     throw error;
   }
 }
@@ -267,7 +247,7 @@ export async function GET(request: NextRequest) {
       const message = adminInitializationError
         ? adminInitializationError
         : `Firebase Admin environment variables missing: ${missingEnv.join(', ')}`;
-      console.error('[dashboard/guru] Firebase Admin env validation failed', { missingEnv, message });
+      debug('[dashboard/guru] Firebase Admin env validation failed', { missingEnv, message });
       return NextResponse.json(buildEmptyPayload(message, 'Firebase Admin unavailable'), { status: 200 });
     }
 
@@ -276,7 +256,7 @@ export async function GET(request: NextRequest) {
       const msg = adminInitializationError
         ? adminInitializationError
         : 'Admin Auth not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment.';
-      console.error('[dashboard/guru] Admin Auth unavailable', { message: msg });
+      debug('[dashboard/guru] Admin Auth unavailable', { message: msg });
       return NextResponse.json(buildEmptyPayload(msg, 'Admin Auth unavailable'), { status: 200 });
     }
 
@@ -285,7 +265,7 @@ export async function GET(request: NextRequest) {
       const msg = adminInitializationError
         ? adminInitializationError
         : 'Admin Firestore not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment.';
-      console.error('[dashboard/guru] Admin Firestore unavailable', { message: msg });
+      debug('[dashboard/guru] Admin Firestore unavailable', { message: msg });
       return NextResponse.json(buildEmptyPayload(msg, 'Admin Firestore unavailable'), { status: 200 });
     }
 
@@ -312,7 +292,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('[dashboard/guru] Failed to fetch user profile', { error: message, uid });
+      debug('[dashboard/guru] Failed to fetch user profile', { error: message, uid });
       return NextResponse.json(buildEmptyPayload('Failed to fetch user profile', message), { status: 200 });
     }
 
@@ -322,7 +302,7 @@ export async function GET(request: NextRequest) {
 
     const firestore = adminFirestore;
     if (!firestore) {
-      console.error('[dashboard/guru] Firestore client unavailable before querying collections');
+      debug('[dashboard/guru] Firestore client unavailable before querying collections');
       return NextResponse.json(buildEmptyPayload('Firestore client unavailable', 'Firestore unavailable'), { status: 200 });
     }
 
@@ -349,8 +329,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[dashboard/guru] Unhandled route error', { error: message });
-    if (error instanceof Error) console.error(error.stack);
+    debug('[dashboard/guru] Unhandled route error', { error: message });
+    if (error instanceof Error) debug(error.stack);
     // If we have context about collection failure, it should have been logged in safeGetCollection
     return NextResponse.json(buildEmptyPayload('Dashboard guru gagal memuat data', message), { status: 500 });
   }
