@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminFirestore, adminInitializationError, verifyIdToken } from '@/lib/firebase/admin';
 import { debug } from '@/lib/debug';
+import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
 import type { ActivityDocument, ComicDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import type { DocumentSnapshot } from 'firebase-admin/firestore';
 
@@ -316,11 +317,27 @@ export async function GET(request: NextRequest) {
 
     debug('[dashboard/guru] collection queries completed, mapping documents');
 
-    const students = studentsSnapshot ? studentsSnapshot.docs.map(serializeUser) : [];
+    const rawStudents = studentsSnapshot ? studentsSnapshot.docs.map(serializeUser) : [];
+    const students = normalizeStudentDocuments(rawStudents);
+    const studentUids = new Set(students.map((student) => student.uid));
     const comics = comicsSnapshot ? comicsSnapshot.docs.map(serializeComic) : [];
-    const progressDocuments = progressSnapshot ? progressSnapshot.docs.map(serializeProgress) : [];
-    const activities = activitySnapshot ? activitySnapshot.docs.map(serializeActivity) : [];
-    const reflections = reflectionsSnapshot ? reflectionsSnapshot.docs.map(serializeReflection) : [];
+    const progressDocuments = progressSnapshot
+      ? progressSnapshot.docs
+          .map(serializeProgress)
+          .filter((document) => studentUids.has(document.userId ?? ''))
+      : [];
+    const activities = activitySnapshot
+      ? activitySnapshot.docs.map(serializeActivity).filter((activity) => studentUids.has(activity.userId))
+      : [];
+    const reflections = reflectionsSnapshot
+      ? reflectionsSnapshot.docs
+          .map(serializeReflection)
+          .filter(
+            (reflection) =>
+              (reflection.userId && studentUids.has(reflection.userId)) ||
+              (reflection.studentId && studentUids.has(reflection.studentId))
+          )
+      : [];
 
     debug('[dashboard/guru] building payload snapshot');
     const payload = buildPayloadFromCollections({ students, comics, progressDocuments, activities, reflections });

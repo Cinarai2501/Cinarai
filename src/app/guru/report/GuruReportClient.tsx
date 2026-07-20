@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getAllComics } from '@/lib/comicRepository';
 import { collection, getDocs } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
+import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
 import type { ActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import {
   escapeCsvValue,
@@ -56,9 +57,11 @@ export default function GuruReportClient() {
 
         if (!active) return;
 
-        const students = studentsSnapshot.docs
-          .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as UserDocument))
-          .filter((student) => student.role === 'student');
+        const students = normalizeStudentDocuments(
+          studentsSnapshot.docs
+            .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as UserDocument))
+            .filter((student) => student.role === 'student')
+        );
 
         const reflections = reflectionSnapshot.docs
           .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ReflectionDocument));

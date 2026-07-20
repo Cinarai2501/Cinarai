@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { subscribeStudents, subscribeComics, fetchAllStudentProgress } from '../services/firestoreService';
+import { normalizeStudentDocuments } from '../services/studentNormalization';
 import { buildStudentRow, buildDashboardSummary } from '../services/studentUtils';
 import type { ComicDocument, UserDocument } from '@/types/firestore';
 import type { DashboardSummary, StudentRow } from '../types';
@@ -76,9 +77,10 @@ export function useGuruDashboard() {
     const unsubStudents = subscribeStudents(
       (students) => {
         if (!active) return;
-        studentsRef.current = students;
+        const normalized = normalizeStudentDocuments(students);
+        studentsRef.current = normalized;
         studentsReady = true;
-        setState((prev) => ({ ...prev, students }));
+        setState((prev) => ({ ...prev, students: normalized }));
         progressFetchedRef.current = false;
         void tryFetchProgress();
       },
