@@ -29,6 +29,7 @@ export interface UserDocument extends FirestoreBaseDocument {
   schoolName?: string;
   gradeLevel?: number;
   isActive: boolean;
+  duplicate?: boolean;
   lastLoginAt?: FirestoreTimestamp;
 }
 

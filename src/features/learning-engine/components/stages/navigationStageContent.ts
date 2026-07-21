@@ -6,8 +6,9 @@ export function resolveModelActionUrl(model?: {
   model3DUrl?: string;
   modelUrl?: string;
   embedUrl?: string;
+  arUrl?: string;
 }) {
-  return model?.model3DUrl || model?.modelUrl || model?.embedUrl || '';
+  return model?.model3DUrl || model?.modelUrl || model?.arUrl || model?.embedUrl || '';
 }
 
 function resolveComic2AssetBundle(objectId: string) {
@@ -26,6 +27,14 @@ function resolveComic2AssetBundle(objectId: string) {
         selectedObjectId: selectedObject?.id ?? null,
         qrId: qrEntry?.id ?? null,
         modelId: modelEntry?.id ?? null,
+      });
+    }
+
+    if (selectedObject && modelEntry && selectedObject.model3DUrl && modelEntry.arUrl && selectedObject.model3DUrl !== modelEntry.arUrl) {
+      console.error('[Comic2Navigation] selectedObject.model3DUrl !== modelEntry.arUrl', {
+        objectId,
+        selectedObjectModelUrl: selectedObject.model3DUrl,
+        modelEntryUrl: modelEntry.arUrl,
       });
     }
   }
@@ -86,16 +95,20 @@ export function resolveObjectDetailContent(comicId: number, objectId: string) {
   const object = learningObjects.find((item) => item.id === objectId);
 
   let qrImage = '';
+  let modelUrl = '';
+  let selectedObject = object;
 
   if (comicId === 2) {
-    const { selectedObject, qrEntry, modelEntry } = resolveComic2AssetBundle(objectId);
-    qrImage = selectedObject?.qrImage ?? qrEntry?.imageSrc ?? '';
+    const bundle = resolveComic2AssetBundle(objectId);
+    selectedObject = bundle.selectedObject ?? object;
+    qrImage = bundle.selectedObject?.qrImage ?? bundle.qrEntry?.imageSrc ?? '';
+    modelUrl = resolveModelActionUrl(bundle.modelEntry ?? bundle.selectedObject);
 
-    if (process.env.NODE_ENV !== 'production' && selectedObject?.id !== qrEntry?.id) {
+    if (process.env.NODE_ENV !== 'production' && bundle.selectedObject?.id !== bundle.qrEntry?.id) {
       console.error('[Comic2Navigation] QR asset does not match selected object', {
-        selectedObjectId: selectedObject?.id ?? null,
-        qrId: qrEntry?.id ?? null,
-        modelId: modelEntry?.id ?? null,
+        selectedObjectId: bundle.selectedObject?.id ?? null,
+        qrId: bundle.qrEntry?.id ?? null,
+        modelId: bundle.modelEntry?.id ?? null,
       });
     }
   } else {
@@ -104,7 +117,8 @@ export function resolveObjectDetailContent(comicId: number, objectId: string) {
 
   return {
     comicModule,
-    object,
+    object: selectedObject,
     qrImage,
+    modelUrl,
   };
 }

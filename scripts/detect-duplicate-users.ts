@@ -47,8 +47,24 @@ async function main() {
   const missingUid: UserDocument[] = [];
   const missingRole: UserDocument[] = [];
 
+  const normalizeEmail = (value: unknown): string =>
+    typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+  const getTimestampMillis = (value: unknown): number => {
+    if (!value) return 0;
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === 'object' && value !== null && 'toDate' in value) {
+      const candidate = value as { toDate?: () => Date };
+      if (typeof candidate.toDate === 'function') {
+        const date = candidate.toDate();
+        return date instanceof Date ? date.getTime() : 0;
+      }
+    }
+    return 0;
+  };
+
   for (const user of users) {
-    const email = typeof user.email === 'string' ? user.email.trim().toLowerCase() : '';
+    const email = normalizeEmail(user.email);
     if (email) {
       const existing = byEmail.get(email) ?? [];
       existing.push(user);
@@ -110,6 +126,28 @@ async function main() {
       console.log(`  docId=${entry.id} uid=${entry.uid ?? 'missing'} email=${entry.email ?? 'missing'} updatedAt=${String(entry.updatedAt)}`);
     });
   }
+
+  const duplicateDocIds = new Set<string>();
+
+  const markDuplicateGroup = (entries: UserDocument[]) => {
+    const sorted = entries.slice().sort((left, right) => getTimestampMillis(right.updatedAt) - getTimestampMillis(left.updatedAt));
+    sorted.slice(1).forEach((entry) => duplicateDocIds.add(entry.id));
+  };
+
+  emailDups.forEach(([, entries]) => markDuplicateGroup(entries));
+  uidDups.forEach(([, entries]) => markDuplicateGroup(entries));
+
+  if (duplicateDocIds.size > 0) {
+    console.log(`\nMarking ${duplicateDocIds.size} duplicate user documents as duplicate=true`);
+  }
+
+  const updatePromises = users.map((user) => {
+    const isDuplicate = duplicateDocIds.has(user.id);
+    return firestore.collection('users').doc(user.id).set({ duplicate: isDuplicate }, { merge: true });
+  });
+
+  await Promise.all(updatePromises);
+  console.log('Duplicate flag update complete.');
 }
 
 main().catch((error) => {

@@ -15,7 +15,7 @@ export default function Comic2ObjectDetailClient({ id }: { id: string }) {
   const decoded = decodeURIComponent(id);
   const comicId = Number(searchParams.get("comicId") ?? "2");
 
-  const { object: obj, qrImage } = useMemo(
+  const { object: obj, qrImage, modelUrl } = useMemo(
     () => resolveObjectDetailContent(comicId, decoded),
     [comicId, decoded]
   );
@@ -41,7 +41,7 @@ export default function Comic2ObjectDetailClient({ id }: { id: string }) {
   }
 
   const handleOpenModel = () => {
-    const url = resolveModelActionUrl(obj);
+    const url = modelUrl || resolveModelActionUrl(obj);
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");
     }

@@ -1,18 +1,5 @@
 import type { UserDocument } from '@/types/firestore';
-import { logUserAuditFindings, normalizeEmail } from '@/lib/userAudit';
-
-function getTimestampMillis(value: unknown): number {
-  if (!value) return 0;
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === 'object' && value !== null && 'toDate' in value) {
-    const candidate = value as { toDate?: () => Date };
-    if (typeof candidate.toDate === 'function') {
-      const date = candidate.toDate();
-      return date instanceof Date ? date.getTime() : 0;
-    }
-  }
-  return 0;
-}
+import { getTimestampMillis, logUserAuditFindings, normalizeEmail } from '@/lib/userAudit';
 
 function logDuplicateUsers(duplicateMap: Map<string, UserDocument[]>, type: string): void {
   if (duplicateMap.size === 0) return;
@@ -30,7 +17,7 @@ function logDuplicateUsers(duplicateMap: Map<string, UserDocument[]>, type: stri
 export function normalizeStudentDocuments(users: UserDocument[]): UserDocument[] {
   logUserAuditFindings(users, 'dashboard/guru user audit');
 
-  const studentDocs = users.filter((user) => user.role === 'student');
+  const studentDocs = users.filter((user) => user.role === 'student' && user.duplicate !== true);
 
   const byUid = new Map<string, UserDocument[]>();
   const byEmail = new Map<string, UserDocument[]>();

@@ -17,6 +17,7 @@ export function subscribeStudents(
   const q = query(
     collection(firestore, 'users'),
     where('role', '==', 'student'),
+    where('duplicate', '==', false),
     orderBy('displayName', 'asc')
   );
   return onSnapshot(
