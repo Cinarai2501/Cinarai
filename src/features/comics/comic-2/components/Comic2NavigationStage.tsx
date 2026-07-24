@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { loadComicProgress, saveComicProgress } from "@/services/comicProgress";
 import { useLearningEngine } from "@/features/learning-engine/hooks/useLearningEngine";
 import { packageContent } from "../content/packageContent";
+import { Comic2QrScannerModal } from "./Comic2QrScannerModal";
 
 const COMIC_ID = 2;
 
@@ -20,6 +21,7 @@ export default function Comic2NavigationStage() {
   const [objectVisited, setObjectVisited] = useState<string[]>([]);
   const [openedObjects, setOpenedObjects] = useState<string[]>([]);
   const [hasHydratedProgress, setHasHydratedProgress] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Hydrate progress from Firestore
   useEffect(() => {
@@ -56,6 +58,14 @@ export default function Comic2NavigationStage() {
     router.push(`/viewer/object/${encodeURIComponent(objectId)}?comicId=${comic.id}`);
   };
 
+  const handleObjectResolved = (object: (typeof packageContent.learningObjects)[number]) => {
+    const objectId = object.id;
+    setObjectVisited((prev) => Array.from(new Set([...prev, objectId])));
+    setOpenedObjects((prev) => Array.from(new Set([...prev, objectId])));
+    setIsScannerOpen(false);
+    router.push(`/viewer/object/${encodeURIComponent(objectId)}?comicId=${comic.id}`);
+  };
+
   return (
     <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-6">
       {/* Header */}
@@ -63,14 +73,31 @@ export default function Comic2NavigationStage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-primary-600">
           CINARAI Navigation
         </p>
-        <h1 className="text-2xl font-black text-neutral-900 sm:text-3xl">
-          Jelajahi objek Candi Penataran
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">
-          Pilih objek yang muncul pada komik. Setiap kartu menghubungkan bangun datar,
-          penjelasan sederhana, dan AI Tutor yang fokus pada Candi Penataran.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-neutral-900 sm:text-3xl">
+              Jelajahi objek Candi Penataran
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-neutral-600">
+              Pilih objek yang muncul pada komik. Setiap kartu menghubungkan bangun datar,
+              penjelasan sederhana, dan AI Tutor yang fokus pada Candi Penataran.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-primary-700"
+          >
+            Pindai QR
+          </button>
+        </div>
       </div>
+
+      <Comic2QrScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onObjectResolved={handleObjectResolved}
+      />
 
       {/* Object list */}
       <section className="space-y-3">

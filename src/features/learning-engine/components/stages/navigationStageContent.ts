@@ -12,9 +12,10 @@ export function resolveModelActionUrl(model?: {
 }
 
 function resolveComic2AssetBundle(objectId: string) {
-  const selectedObject = comic2PackageContent.learningObjects.find((item) => item.id === objectId);
-  const qrEntry = comic2PackageContent.qrCode.find((item) => item.id === objectId);
-  const modelEntry = comic2PackageContent.model3D.find((item) => item.id === objectId);
+  const normalizedObjectId = objectId.trim().toLowerCase();
+  const selectedObject = comic2PackageContent.learningObjects.find((item) => item.id === objectId || item.slug === normalizedObjectId || item.objectName === normalizedObjectId || item.target === normalizedObjectId || item.displayName?.toLowerCase() === normalizedObjectId);
+  const qrEntry = comic2PackageContent.qrCode.find((item) => item.id === objectId || item.id.toLowerCase().includes(normalizedObjectId));
+  const modelEntry = comic2PackageContent.model3D.find((item) => item.id === objectId || item.id.toLowerCase().includes(normalizedObjectId));
 
   if (process.env.NODE_ENV !== 'production') {
     if (!selectedObject || !qrEntry || !modelEntry) {
@@ -92,7 +93,8 @@ export function resolveObjectDetailContent(comicId: number, objectId: string) {
   const learningObjects = Array.isArray(comicModule.navigation.learningObjects)
     ? comicModule.navigation.learningObjects
     : [];
-  const object = learningObjects.find((item) => item.id === objectId);
+  const normalizedObjectId = objectId.trim().toLowerCase();
+  const object = learningObjects.find((item) => item.id === objectId || item.slug === normalizedObjectId || item.objectName === normalizedObjectId || item.target === normalizedObjectId || item.displayName?.toLowerCase() === normalizedObjectId);
 
   let qrImage = '';
   let modelUrl = '';

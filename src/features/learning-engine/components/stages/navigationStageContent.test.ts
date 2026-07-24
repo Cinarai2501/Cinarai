@@ -1,26 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { packageContent } from '@/features/comics/comic-2/content/packageContent';
-import qr15 from '@/features/comics/comic-2/assets/qr/15-objek-2.jpeg';
+import qrUmpang from '@/features/comics/comic-2/assets/qr/umpang.png';
 import navUmpang from '@/features/comics/comic-2/assets/navigation/umpang.png';
 import { resolveNavigationStageContent, resolveModelActionUrl, resolveObjectDetailContent } from './navigationStageContent';
+import { resolveComic2ObjectByScanValue } from '@/features/comics/comic-2/content/qrAssetRegistry';
 
 test('comic 2 navigation content uses story objects and bangun datar language', () => {
   const titles = packageContent.learningObjects.map((object) => object.title);
 
   assert.ok(titles.includes('Umpang'));
-  assert.ok(titles.includes('Bale Agung'));
+  assert.ok(titles.includes('Balai Agung'));
   assert.ok(titles.includes('Candi Angka'));
-  assert.ok(titles.includes('Mensir'));
-  assert.ok(titles.includes('Relief Lingkaran'));
-  assert.ok(titles.includes('Ornamen Belah Ketupat'));
+  assert.ok(titles.includes('Candi Induk'));
+  assert.ok(titles.includes('Pendopo'));
+  assert.ok(titles.includes('Relief Candi'));
   assert.ok(packageContent.learningObjects.every((object) => object.description.toLowerCase().includes('candi') || object.description.toLowerCase().includes('simetri') || object.description.toLowerCase().includes('bangun datar')));
 });
 
 test('comic 2 navigation content uses only bangun datar terminology', () => {
   const objectNames = packageContent.learningObjects.map((object) => object.shapeName).filter(Boolean);
 
-  assert.deepEqual(objectNames, ['Persegi Panjang', 'Persegi Panjang', 'Segitiga Sama Kaki', 'Persegi', 'Lingkaran', 'Belah Ketupat']);
+  assert.deepEqual(objectNames, ['Persegi Panjang', 'Persegi Panjang', 'Segitiga', 'Persegi Panjang', 'Persegi Panjang', 'Persegi Panjang']);
   assert.ok(packageContent.aiPrompt.navigation.includes('bangun datar'));
 });
 
@@ -37,14 +38,14 @@ test('comic 2 navigation stage resolves hero content from the comic 2 dataset on
 
   assert.deepEqual(objectTitles, [
     'Umpang',
-    'Bale Agung',
+    'Balai Agung',
     'Candi Angka',
-    'Mensir',
-    'Relief Lingkaran',
-    'Ornamen Belah Ketupat',
+    'Candi Induk',
+    'Pendopo',
+    'Relief Candi',
   ]);
   assert.equal(content.heroModelEntry?.title, 'Umpang');
-  assert.equal(content.heroQrImage, qr15.src);
+  assert.equal(content.heroQrImage, qrUmpang.src);
   assert.equal(content.heroIllustration, navUmpang.src);
   assert.ok(content.objects.every((object) => object.id.startsWith('komik2-')));
 });
@@ -69,12 +70,23 @@ test('comic 2 object bundle ids stay aligned across learning object, qr, and mod
   assert.ok(objectIds.every((id) => typeof id === 'string' && id.startsWith('komik2-')));
 });
 
+test('comic 2 scan resolver maps QR values to the correct object', () => {
+  const balaiAgungObject = resolveComic2ObjectByScanValue('balaiagung');
+  const candiAngkaObject = resolveComic2ObjectByScanValue('candiangka');
+  const pendopoObject = resolveComic2ObjectByScanValue('pendopo');
+
+  assert.equal(balaiAgungObject?.title, 'Balai Agung');
+  assert.equal(candiAngkaObject?.title, 'Candi Angka');
+  assert.equal(pendopoObject?.title, 'Pendopo');
+  assert.equal(resolveComic2ObjectByScanValue('unknown')?.id, undefined);
+});
+
 test('comic 2 object detail resolves correct model and qr for reported objects', () => {
   const snapshot = [
     { id: 'komik2-umpang', expectedModel: 'https://asblr.com/MmAMdg', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-umpang')?.qrImage },
-    { id: 'komik2-bale-agung', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-bale-agung')?.qrImage },
-    { id: 'komik2-mensir', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-mensir')?.qrImage },
-    { id: 'komik2-candi-angka', expectedModel: 'https://asblr.com/ljcPsy', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candi-angka')?.qrImage },
+    { id: 'komik2-balaiagung', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-balaiagung')?.qrImage },
+    { id: 'komik2-candiinduk', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candiinduk')?.qrImage },
+    { id: 'komik2-candiangka', expectedModel: 'https://asblr.com/ljcPsy', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candiangka')?.qrImage },
   ];
 
   for (const entry of snapshot) {

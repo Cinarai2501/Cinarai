@@ -12,6 +12,10 @@ export interface ComicContentPackageLike {
   };
   learningObjects: Array<{
     id: string;
+    slug?: string;
+    objectName?: string;
+    target?: string;
+    displayName?: string;
     title: string;
     description: string;
     page: number;
@@ -137,6 +141,10 @@ export interface ComicModuleLike {
   navigation: {
     learningObjects: Array<{
       id: string;
+      slug?: string;
+      objectName?: string;
+      target?: string;
+      displayName?: string;
       title: string;
       description: string;
       page: number;

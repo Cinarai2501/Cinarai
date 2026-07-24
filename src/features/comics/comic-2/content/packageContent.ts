@@ -7,10 +7,12 @@ import navCandiInduk from '@/features/comics/comic-2/assets/navigation/candiindu
 import navPendopo from '@/features/comics/comic-2/assets/navigation/pendopo.png';
 import navReliefCandi from '@/features/comics/comic-2/assets/navigation/reliefcandi.png';
 import navAtapCandi from '@/features/comics/comic-2/assets/navigation/candiangka.png';
-import qr13 from '@/features/comics/comic-2/assets/qr/13-objek-1.jpeg';
-import qr15 from '@/features/comics/comic-2/assets/qr/15-objek-2.jpeg';
-import qr17 from '@/features/comics/comic-2/assets/qr/17-objek-3.jpeg';
-import qr18 from '@/features/comics/comic-2/assets/qr/18-objek-4.jpeg';
+import qrBalaiAgung from '@/features/comics/comic-2/assets/qr/balaiagung.png';
+import qrCandiAngka from '@/features/comics/comic-2/assets/qr/candiangka.png';
+import qrCandiInduk from '@/features/comics/comic-2/assets/qr/candiinduk.png';
+import qrPendopo from '@/features/comics/comic-2/assets/qr/pendopo.png';
+import qrReliefCandi from '@/features/comics/comic-2/assets/qr/reliefcandi.png';
+import qrUmpang from '@/features/comics/comic-2/assets/qr/umpang.png';
 
 export const packageContent: ComicContentPackageLike = {
   metadata: {
@@ -31,10 +33,14 @@ export const packageContent: ComicContentPackageLike = {
   learningObjects: [
     {
       id: 'komik2-umpang',
+      slug: 'umpang',
+      objectName: 'umpang',
+      target: 'umpang',
+      displayName: 'Umpang',
       title: 'Umpang',
       description: 'Umpang memperlihatkan bentuk persegi panjang yang rapi pada Candi Penataran. Bentuknya membantu kita melihat sisi yang seimbang dan simetris.',
       page: 1,
-      qrImage: qr15.src,
+      qrImage: qrUmpang.src,
       qrTitle: 'Umpang',
       qrDescription: 'Amati bentuk persegi panjang yang rapi pada Umpang.',
       navImage: navUmpang.src,
@@ -57,11 +63,15 @@ export const packageContent: ComicContentPackageLike = {
       symmetryRelation: 'Sisi kiri dan kanan Umpang membantu kita melihat keseimbangan bentuk pada Candi Penataran.',
     },
     {
-      id: 'komik2-bale-agung',
+      id: 'komik2-balaiagung',
+      slug: 'balaiagung',
+      objectName: 'balaiagung',
+      target: 'balaiagung',
+      displayName: 'Balai Agung',
       title: 'Balai Agung',
       description: 'Balai Agung menampilkan bidang panjang yang mirip persegi panjang. Bentuknya membantu kita melihat keteraturan dan simetri pada bangunan candi.',
       page: 2,
-      qrImage: qr13.src,
+      qrImage: qrBalaiAgung.src,
       qrTitle: 'Balai Agung',
       qrDescription: 'Amati bidang panjang yang rapi pada Balai Agung.',
       navImage: navBalaiAgung.src,
@@ -84,12 +94,16 @@ export const packageContent: ComicContentPackageLike = {
       symmetryRelation: 'Balai Agung membantu kita melihat bahwa bentuk yang seimbang sering muncul pada bangunan candi.',
     },
     {
-      id: 'komik2-candi-angka',
-      title: 'Atap Candi (Candi Angka Tahun)',
+      id: 'komik2-candiangka',
+      slug: 'candiangka',
+      objectName: 'candiangka',
+      target: 'candiangka',
+      displayName: 'Candi Angka',
+      title: 'Candi Angka',
       description: 'Atap Candi Angka Tahun membentuk segitiga yang rapi dan simetris. Kita bisa mengamati garis lurus yang sama di kedua sisi.',
       page: 3,
-      qrImage: qr17.src,
-      qrTitle: 'Atap Candi (Candi Angka Tahun)',
+      qrImage: qrCandiAngka.src,
+      qrTitle: 'Candi Angka',
       qrDescription: 'Perhatikan bentuk segitiga yang simetris pada atap Candi Angka Tahun.',
       navImage: navAtapCandi.src,
       objectImage: navAtapCandi.src,
@@ -111,11 +125,15 @@ export const packageContent: ComicContentPackageLike = {
       symmetryRelation: 'Garis simetri pada atap membantu kita melihat keseimbangan bentuknya.',
     },
     {
-      id: 'komik2-mensir',
+      id: 'komik2-candiinduk',
+      slug: 'candiinduk',
+      objectName: 'candiinduk',
+      target: 'candiinduk',
+      displayName: 'Candi Induk',
       title: 'Candi Induk',
       description: 'Candi Induk menunjukkan bentuk persegi panjang yang tegak dan rapi. Kita bisa mengamati keteraturan garis dan simetri pada bagian utamanya.',
       page: 4,
-      qrImage: qr13.src,
+      qrImage: qrCandiInduk.src,
       qrTitle: 'Candi Induk',
       qrDescription: 'Amati bentuk persegi panjang yang tegak pada Candi Induk.',
       navImage: navCandiInduk.src,
@@ -138,11 +156,15 @@ export const packageContent: ComicContentPackageLike = {
       symmetryRelation: 'Pola bagian utama Candi Induk menunjukkan susunan yang sama di kiri dan kanan.',
     },
     {
-      id: 'komik2-relief-lingkaran',
-      title: 'Pendopo Teras',
+      id: 'komik2-pendopo',
+      slug: 'pendopo',
+      objectName: 'pendopo',
+      target: 'pendopo',
+      displayName: 'Pendopo',
+      title: 'Pendopo',
       description: 'Pendopo Teras memperlihatkan bidang persegi panjang yang tersusun dengan rapi. Bentuknya membantu kita mengamati keteraturan dan simetri pada bagian candi.',
       page: 5,
-      qrImage: qr18.src,
+      qrImage: qrPendopo.src,
       qrTitle: 'Pendopo Teras',
       qrDescription: 'Amati bentuk persegi panjang yang teratur pada Pendopo Teras.',
       navImage: navPendopo.src,
@@ -165,11 +187,15 @@ export const packageContent: ComicContentPackageLike = {
       symmetryRelation: 'Bentuk Pendopo Teras memperlihatkan keseimbangan yang tampak jelas pada bagian candi.',
     },
     {
-      id: 'komik2-ornamen-belah-ketupat',
+      id: 'komik2-reliefcandi',
+      slug: 'reliefcandi',
+      objectName: 'reliefcandi',
+      target: 'reliefcandi',
+      displayName: 'Relief Candi',
       title: 'Relief Candi',
       description: 'Relief Candi memperlihatkan pola berulang yang membantu kita mengenali bangun datar dan simetri pada ukiran candi.',
       page: 6,
-      qrImage: qr17.src,
+      qrImage: qrReliefCandi.src,
       qrTitle: 'Relief Candi',
       qrDescription: 'Amati pola berulang yang membantu memahami simetri pada Relief Candi.',
       navImage: navReliefCandi.src,
@@ -193,20 +219,20 @@ export const packageContent: ComicContentPackageLike = {
     },
   ],
   qrCode: [
-    { id: 'komik2-umpang', imageSrc: qr15.src, alt: 'QR Umpang', label: 'Umpang', description: 'Amati bentuk persegi panjang yang rapi pada Umpang.' },
-    { id: 'komik2-bale-agung', imageSrc: qr13.src, alt: 'QR Balai Agung', label: 'Balai Agung', description: 'Amati bidang panjang yang rapi pada Balai Agung.' },
-    { id: 'komik2-candi-angka', imageSrc: qr17.src, alt: 'QR Atap Candi', label: 'Atap Candi (Candi Angka Tahun)', description: 'Perhatikan bentuk segitiga yang simetris pada atap candi.' },
-    { id: 'komik2-mensir', imageSrc: qr13.src, alt: 'QR Candi Induk', label: 'Candi Induk', description: 'Amati bentuk persegi panjang yang tegak pada Candi Induk.' },
-    { id: 'komik2-relief-lingkaran', imageSrc: qr18.src, alt: 'QR Pendopo Teras', label: 'Pendopo Teras', description: 'Amati bentuk persegi panjang yang teratur pada Pendopo Teras.' },
-    { id: 'komik2-ornamen-belah-ketupat', imageSrc: qr17.src, alt: 'QR Relief Candi', label: 'Relief Candi', description: 'Amati pola berulang yang membantu memahami simetri pada Relief Candi.' },
+    { id: 'komik2-umpang', imageSrc: qrUmpang.src, alt: 'QR Umpang', label: 'Umpang', description: 'Amati bentuk persegi panjang yang rapi pada Umpang.' },
+    { id: 'komik2-balaiagung', imageSrc: qrBalaiAgung.src, alt: 'QR Balai Agung', label: 'Balai Agung', description: 'Amati bidang panjang yang rapi pada Balai Agung.' },
+    { id: 'komik2-candiangka', imageSrc: qrCandiAngka.src, alt: 'QR Candi Angka', label: 'Candi Angka', description: 'Perhatikan bentuk segitiga yang simetris pada Candi Angka.' },
+    { id: 'komik2-candiinduk', imageSrc: qrCandiInduk.src, alt: 'QR Candi Induk', label: 'Candi Induk', description: 'Amati bentuk persegi panjang yang tegak pada Candi Induk.' },
+    { id: 'komik2-pendopo', imageSrc: qrPendopo.src, alt: 'QR Pendopo', label: 'Pendopo', description: 'Amati bentuk persegi panjang yang teratur pada Pendopo.' },
+    { id: 'komik2-reliefcandi', imageSrc: qrReliefCandi.src, alt: 'QR Relief Candi', label: 'Relief Candi', description: 'Amati pola berulang yang membantu memahami simetri pada Relief Candi.' },
   ],
   model3D: [
     { id: 'komik2-umpang', title: 'Umpang', arUrl: 'https://asblr.com/MmAMdg', page: 1, description: 'Lihat Umpang sebagai contoh persegi panjang yang seimbang.' },
-    { id: 'komik2-bale-agung', title: 'Balai Agung', arUrl: 'https://asblr.com/yvcuaW', page: 2, description: 'Amati Balai Agung sebagai bidang persegi panjang yang rapi.' },
-    { id: 'komik2-candi-angka', title: 'Atap Candi (Candi Angka Tahun)', arUrl: 'https://asblr.com/ljcPsy', page: 3, description: 'Perhatikan bentuk segitiga yang simetris pada atap candi.' },
-    { id: 'komik2-mensir', title: 'Candi Induk', arUrl: 'https://asblr.com/yvcuaW', page: 4, description: 'Bandingkan bentuk persegi panjang pada bagian utama Candi Induk.' },
-    { id: 'komik2-relief-lingkaran', title: 'Pendopo Teras', arUrl: 'https://asblr.com/cW7Lsm', page: 5, description: 'Amati bentuk persegi panjang yang teratur pada Pendopo Teras.' },
-    { id: 'komik2-ornamen-belah-ketupat', title: 'Relief Candi', arUrl: 'https://asblr.com/ljcPsy', page: 6, description: 'Perhatikan pola berulang yang menegaskan simetri pada Relief Candi.' },
+    { id: 'komik2-balaiagung', title: 'Balai Agung', arUrl: 'https://asblr.com/yvcuaW', page: 2, description: 'Amati Balai Agung sebagai bidang persegi panjang yang rapi.' },
+    { id: 'komik2-candiangka', title: 'Candi Angka', arUrl: 'https://asblr.com/ljcPsy', page: 3, description: 'Perhatikan bentuk segitiga yang simetris pada Candi Angka.' },
+    { id: 'komik2-candiinduk', title: 'Candi Induk', arUrl: 'https://asblr.com/yvcuaW', page: 4, description: 'Bandingkan bentuk persegi panjang pada bagian utama Candi Induk.' },
+    { id: 'komik2-pendopo', title: 'Pendopo', arUrl: 'https://asblr.com/cW7Lsm', page: 5, description: 'Amati bentuk persegi panjang yang teratur pada Pendopo.' },
+    { id: 'komik2-reliefcandi', title: 'Relief Candi', arUrl: 'https://asblr.com/ljcPsy', page: 6, description: 'Perhatikan pola berulang yang menegaskan simetri pada Relief Candi.' },
   ],
   aiPrompt: {
     navigation: 'Gunakan bahasa sederhana untuk menjelaskan objek pada Candi Penataran dengan fokus pada bangun datar dan simetri.',
@@ -221,7 +247,7 @@ export const packageContent: ComicContentPackageLike = {
       {
         id: 'komik2-ident-1',
         question: 'Apa saja bentuk dasar yang kamu temukan saat membaca Comic Candi Penataran?',
-        image: qr13.src,
+        image: qrReliefCandi.src,
         imageAlt: 'Motif relief persegi panjang pada dinding Candi Penataran.',
         options: [
           { text: 'Persegi', correct: true },

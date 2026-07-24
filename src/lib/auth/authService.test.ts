@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { signUpUser, signInUser } from './authService';
 import type { UserDocument } from '@/types/firestore';
+import type { User } from 'firebase/auth';
 
 const makeMockEmailUser = (email: string, uid = 'user-123') => ({
   uid,
@@ -16,8 +17,8 @@ const createSignUpDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
   return {
     getSignInMethods: overrides.getSignInMethods as ((email: string) => Promise<string[]>) ?? (async () => []),
     queryUserDocumentsByEmail: overrides.queryUserDocumentsByEmail as ((email: string) => Promise<UserDocument[]>) ?? (async () => []),
-    firebaseSignUp: overrides.firebaseSignUp as ((email: string, password: string) => Promise<any>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) })),
-    updateUserProfile: overrides.updateUserProfile as ((user: any, displayName: string) => Promise<void>) ?? (async () => undefined),
+    firebaseSignUp: overrides.firebaseSignUp as ((email: string, password: string) => Promise<{ user: User }>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User })),
+    updateUserProfile: overrides.updateUserProfile as ((user: User, displayName: string) => Promise<void>) ?? (async () => undefined),
     getFirestoreDocument: overrides.getFirestoreDocument as ((collection: 'users', docId: string) => Promise<UserDocument | null>) ?? (async () => null),
     upsertUser: overrides.upsertUser as ((user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>) ?? (async () => undefined),
   } as const;
@@ -25,7 +26,7 @@ const createSignUpDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
 
 const createSignInDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
   return {
-    firebaseSignIn: overrides.firebaseSignIn as ((email: string, password: string) => Promise<any>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) })),
+    firebaseSignIn: overrides.firebaseSignIn as ((email: string, password: string) => Promise<{ user: User }>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User })),
   } as const;
 };
 
@@ -34,7 +35,7 @@ test('signUpUser registers a new email and preserves profile update', async () =
   let upsertedUser: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> | null = null;
 
   const deps = createSignUpDeps({
-    updateUserProfile: async (user: any, displayName: string) => {
+    updateUserProfile: async (user: User, displayName: string) => {
       assert.equal(user.email, 'new@example.com');
       assert.equal(displayName, 'Nama Baru');
       userProfileUpdated = true;
