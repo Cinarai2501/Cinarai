@@ -45,3 +45,6 @@ public/pdf.worker.min.mjs
 tsconfig.tsbuildinfo
 
 .env.local
+
+public/comics/komik-4/comic.pdf
+public/comics/komik-5/comic.pdf
