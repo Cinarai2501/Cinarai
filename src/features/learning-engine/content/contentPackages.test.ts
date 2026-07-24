@@ -108,19 +108,15 @@ test('comic 2 resolution uses six missions aligned to Candi Penataran objects an
   assert.match(missions[5].context.toLowerCase(), /pendopo|candi penataran/);
 });
 
-test('comic 2 application exposes per-card options and correct answers for each object', () => {
+test('comic 2 application uses the same structure as comic 1 and does not expose cards', () => {
   const packageContent = getLearningContentPackage(2);
   const application = packageContent.application;
 
-  assert.ok(Array.isArray(application.cards));
-  assert.equal(application.cards.length, 6);
-  assert.ok(application.cards.every((card) => Array.isArray(card.options)));
-  assert.ok(application.cards.every((card) => typeof card.correctAnswer === 'string'));
-  assert.equal(application.cards[0].correctAnswer, 'Lingkaran');
-  assert.equal(application.cards[1].correctAnswer, 'Persegi Panjang');
-  assert.equal(application.cards[2].correctAnswer, 'Segitiga Sama Kaki');
-  assert.equal(application.cards[3].correctAnswer, 'Segitiga Sama Sisi');
-  assert.equal(application.cards[4].correctAnswer, 'Persegi');
-  assert.equal(application.cards[5].correctAnswer, 'Belah Ketupat');
-  assert.ok(application.cards[0].options.includes('Lingkaran'));
+  assert.equal(application.title, 'Terapkan Ilmu di Konteks Baru');
+  assert.equal(application.images.length, 3);
+  assert.ok(Array.isArray(application.options));
+  assert.equal(application.options.length, 6);
+  assert.ok(application.options.every((option) => typeof option.value === 'string'));
+  assert.ok(application.options.every((option) => typeof option.label === 'string'));
+  assert.equal('cards' in application, false);
 });
