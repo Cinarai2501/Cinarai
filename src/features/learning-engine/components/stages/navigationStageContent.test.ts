@@ -83,10 +83,10 @@ test('comic 2 scan resolver maps QR values to the correct object', () => {
 
 test('comic 2 object detail resolves correct model and qr for reported objects', () => {
   const snapshot = [
-    { id: 'komik2-umpang', expectedModel: 'https://asblr.com/MmAMdg', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-umpang')?.qrImage },
+    { id: 'komik2-umpang', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-umpang')?.qrImage },
     { id: 'komik2-balaiagung', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-balaiagung')?.qrImage },
-    { id: 'komik2-candiinduk', expectedModel: 'https://asblr.com/yvcuaW', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candiinduk')?.qrImage },
-    { id: 'komik2-candiangka', expectedModel: 'https://asblr.com/ljcPsy', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candiangka')?.qrImage },
+    { id: 'komik2-candiinduk', expectedModel: 'https://asblr.com/MmAMdg', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candiinduk')?.qrImage },
+    { id: 'komik2-candiangka', expectedModel: 'https://asblr.com/MmAMdg', expectedQr: packageContent.learningObjects.find((o) => o.id === 'komik2-candiangka')?.qrImage },
   ];
 
   for (const entry of snapshot) {
