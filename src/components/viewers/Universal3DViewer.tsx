@@ -81,13 +81,20 @@ type ChatMessage = {
 };
 
 const OBJECT_HELP: Record<string, string> = {
-  Kubus: 'Kubus adalah bangun ruang dengan 6 sisi persegi yang sama panjang. Di dalam model 3D, kamu bisa melihat bahwa semua rusuknya sama dan bentuknya terlihat seperti kotak.',
-  Balok: 'Balok adalah bangun ruang dengan 6 sisi persegi panjang. Pada model 3D, bagian ini memiliki panjang, lebar, dan tinggi berbeda sehingga terlihat seperti peti.',
-  Limas: 'Limas adalah bangun ruang dengan alas segi empat dan sisi tegak berbentuk segitiga yang bertemu di satu titik puncak. Di model 3D, bentuknya terlihat runcing di atas.',
-  Prisma: 'Prisma adalah bangun ruang dengan dua alas sejajar dan sisi tegak yang sama bentuk. Model 3D prisma biasanya terlihat seperti jembatan dengan ujung sama di kedua sisi.',
-  Tabung: 'Tabung adalah bangun ruang dengan dua lingkaran sejajar dan permukaan melengkung di sekelilingnya. Di model 3D, kamu bisa melihat bagian atas dan bawah yang melingkar.',
-  Kerucut: 'Kerucut adalah bangun ruang dengan alas lingkaran dan puncak di atas. Model 3D kerucut terlihat seperti es krim tanpa sendok.',
-  Bola: 'Bola adalah bangun ruang yang semua titik di permukaannya jaraknya sama dari pusat. Di model 3D, bentuknya bulat sempurna seperti bola ping-pong.',
+  Kubus: 'Amati bangunan ini dengan teliti. Bentuknya adalah kubus — sebuah bangun ruang yang memiliki 6 sisi berbentuk persegi, 12 rusuk yang sama panjang, dan 8 titik sudut. Pada model 3D kamu bisa melihat tiap sisi dan rusuknya seperti kotak yang sama ukurannya. Coba hitung sisi, rusuk, dan titik sudut yang kamu lihat, lalu bandingkan dengan benda di sekitarmu, misalnya kotak mainan, dadu, atau kotak susu. Menurutmu, bagian Candi Jawi mana yang paling menyerupai bangun ruang ini? Jelaskan alasanmu.',
+
+  Balok: 'Perhatikan bagian bangunan yang menyerupai balok. Balok adalah bangun ruang yang memiliki 6 sisi berbentuk persegi panjang, 12 rusuk, dan 8 titik sudut. Pada Candi Jawi bagian ini tampak memanjang karena panjang, lebar, dan tinggi berbeda. Amati sisi panjang dan pendeknya, lalu bandingkan dengan benda seperti kotak sepatu atau balok mainan. Menurutmu, bagian mana pada candi yang paling mirip balok ini? Mengapa?',
+
+  Prisma: 'Amati bagian yang menyerupai prisma segi empat. Prisma segi empat memiliki 6 sisi (2 alas sejajar dan 4 sisi tegak), 12 rusuk, dan 8 titik sudut. Pada Candi Jawi bentuk ini sering muncul pada ornamen atau struktur yang memiliki dua permukaan sejajar. Perhatikan alas dan atap yang sejajar, lalu coba cari pola yang sama di ornamen sekitar. Menurutmu, di bagian mana pola prisma ini membantu membentuk ornamen candi?',
+
+  Limas: 'Perhatikan bagian yang menyerupai limas segi empat. Limas segi empat memiliki 5 sisi (1 alas persegi dan 4 sisi segitiga), 8 rusuk, dan 5 titik sudut; sisi-sisi segitiga bertemu pada satu puncak. Bentuk atap candi sering mirip limas karena menjulang ke atas. Coba lihat bagaimana sisi-sisi itu bertemu, lalu bandingkan dengan atap mainan atau piramida kecil. Menurutmu, mengapa atap candi dibuat seperti limas?',
+
+  // Tabung dan Bola disiapkan untuk modul lain jika diperlukan.
+  Tabung: 'Perhatikan bagian bangunan yang menyerupai tabung. Tabung adalah bangun ruang dengan dua lingkaran sejajar dan sebuah permukaan melengkung di antara keduanya; tabung tidak memiliki rusuk atau titik sudut seperti bangun bersegi. Pada Candi Jawi bentuk melingkar ini dapat terlihat pada pilar atau ornamen bundar yang menonjol. Amati bagian melingkar tersebut dan bandingkan dengan benda seperti gelas atau drum kecil. Menurutmu, bagian mana pada candi yang paling mirip tabung tersebut?',
+
+  Kerucut: 'Amati bagian bangunan yang menyerupai kerucut. Kerucut adalah bangun ruang dengan satu alas berbentuk lingkaran dan satu titik puncak, serta permukaan melengkung; tidak memiliki rusuk atau titik sudut seperti bangun bersegi. Bagian atap atau ornamen yang runcing di Candi Jawi bisa menyerupai kerucut. Perhatikan lengkungan dan puncaknya, lalu bandingkan dengan topi kerucut atau es krim tanpa sendok. Menurutmu, bagian Candi Jawi mana yang paling menyerupai kerucut dan mengapa?',
+
+  Bola: 'Amati bagian yang menyerupai bola. Bola adalah bangun ruang bulat yang semua titik di permukaannya sama jaraknya dari pusat; bola tidak memiliki rusuk atau titik sudut. Pada Candi Jawi bentuk bulat dapat muncul pada ornamen atau hiasan bundar yang menonjol. Coba perhatikan ornamen bundar tersebut dan bandingkan dengan bola mainan atau buah bulat. Menurutmu, apakah ornamen itu dibuat untuk hiasan atau punya fungsi lain?',
 };
 
 function detectObjectName(resolvedTitle: string, resolvedUrl: string) {

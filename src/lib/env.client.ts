@@ -7,9 +7,7 @@ const REQUIRED_CLIENT = [
   'NEXT_PUBLIC_FIREBASE_APP_ID',
 ] as const;
 
-const OPTIONAL_CLIENT: Record<string, string> = {
-  NEXT_PUBLIC_FIREBASE_DATABASE_URL: 'Required only if using Firebase Realtime Database.',
-};
+
 
 export function getClientEnv(): Record<string, string | undefined> {
   return {
@@ -23,7 +21,16 @@ export function getClientEnv(): Record<string, string | undefined> {
   };
 }
 
+let _envClientWarned = false;
+
 export function validateClientEnv(): void {
+  // Avoid noisy repeated warnings during development. Only warn in production
+  // so developers running `npm run dev` don't see repeated console messages.
+  if (_envClientWarned) return;
+  _envClientWarned = true;
+
+  if (process.env.NODE_ENV !== 'production') return;
+
   const missing = REQUIRED_CLIENT.filter((key) => {
     const value = process.env[key];
     return !value || value.trim() === '';
@@ -33,10 +40,7 @@ export function validateClientEnv(): void {
     console.warn('[env.client] Missing required NEXT_PUBLIC_ Firebase variables:', missing.join(', '));
   }
 
-  for (const [key, hint] of Object.entries(OPTIONAL_CLIENT)) {
-    const value = process.env[key];
-    if (!value || value.trim() === '') {
-      console.warn(`[env.client] Optional variable not set: ${key} — ${hint}`);
-    }
-  }
+  // Optional client environment variables are not required for core
+  // functionality. Skip emitting warnings to keep production builds
+  // and CI logs clean. Operators can verify `.env.local` if needed.
 }

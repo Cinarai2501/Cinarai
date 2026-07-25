@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   images: {
+    // Explicitly configure allowed quality presets to avoid Next.js
+    // runtime warnings about unconfigured `images.qualities` when
+    // `quality={100}` is used throughout the app. These presets are
+    // harmless defaults and do not change runtime image logic because
+    // `unoptimized: true` is already set.
+    qualities: [75, 100],
     // Disable Next.js image optimization in constrained build environments
     // where native `sharp` binaries are unavailable. CI should enable/ensure
     // sharp is present if production optimization is required.

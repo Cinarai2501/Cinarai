@@ -16,14 +16,6 @@ const REQUIRED_SERVER = [
   'FIREBASE_PRIVATE_KEY',
 ] as const;
 
-const OPTIONAL_SERVER: Record<string, string> = {
-  NEXT_PUBLIC_FIREBASE_DATABASE_URL: 'Required only if using Firebase Realtime Database.',
-  GEMINI_API_KEY: 'Required for Gemini AI provider.',
-  GROQ_API_KEY: 'Required for Groq AI provider.',
-  OPENROUTER_API_KEY: 'Required for OpenRouter AI provider.',
-  OPENAI_API_KEY: 'Required for OpenAI provider.',
-};
-
 let validated = false;
 
 export function validateEnv(): void {
@@ -60,10 +52,8 @@ export function validateEnv(): void {
     }
   }
 
-  for (const [key, hint] of Object.entries(OPTIONAL_SERVER)) {
-    const value = process.env[key];
-    if (!value || value.trim() === '') {
-      console.warn(`[env.server] Optional variable not set: ${key} — ${hint}`);
-    }
-  }
+  // Optional environment variables are truly optional. Do not emit
+  // warnings during build or runtime to avoid noisy logs in CI and
+  // local development. If a deployment requires specific optional
+  // integrations, operators should verify `.env.local` explicitly.
 }
