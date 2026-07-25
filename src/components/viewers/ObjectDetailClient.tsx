@@ -35,6 +35,11 @@ export default function ObjectDetailClient({ id }: { id: string }) {
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  console.log("comicId =", comicId);
+  console.log("object =", obj);
+  console.log("description =", obj?.description);
+  console.log("aiPrompt =", obj?.aiPrompt);
+
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 p-6">
       <div className="mx-auto w-full max-w-3xl">
