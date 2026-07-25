@@ -16,6 +16,7 @@ import { getCurrentUser } from '@/lib/firebase/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+import { getUnlockStatus } from '@/lib/unlockEngine';
 import RobotMascot from '@/components/ai/RobotMascot';
 
 function getChecklistItems(checklist: readonly string[]) {
@@ -460,12 +461,21 @@ ${data.suggestion}`;
       return;
     }
 
-    if (nextComic?.availability === 'ACTIVE') {
+    if (!nextComic) {
+      showSnackbar(`Komik ${comic.id} berhasil diselesaikan 🎉 Lanjutkan ke tahap berikutnya.`, 'success');
+      return;
+    }
+
+    const nextComicUnlockStatus = getUnlockStatus(nextComic.id, [progress]);
+    if (nextComicUnlockStatus === 'UNLOCKED') {
       router.push(`/comic/${nextComic.id}/cover`);
       return;
     }
 
-    showSnackbar(`Komik ${comic.id} berhasil diselesaikan 🎉 Lanjutkan ke tahap berikutnya.`, 'success');
+    showSnackbar(
+      'Komik berikutnya belum terbuka. Selesaikan komik saat ini atau tunggu hingga komik berikutnya tersedia.',
+      'info'
+    );
   };
 
   return (

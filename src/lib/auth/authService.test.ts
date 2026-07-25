@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { signUpUser, signInUser } from './authService';
 import type { UserDocument } from '@/types/firestore';
-import type { User } from 'firebase/auth';
+import type { User, UserCredential } from 'firebase/auth';
 
 const makeMockEmailUser = (email: string, uid = 'user-123') => ({
   uid,
@@ -17,7 +17,7 @@ const createSignUpDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
   return {
     getSignInMethods: overrides.getSignInMethods as ((email: string) => Promise<string[]>) ?? (async () => []),
     queryUserDocumentsByEmail: overrides.queryUserDocumentsByEmail as ((email: string) => Promise<UserDocument[]>) ?? (async () => []),
-    firebaseSignUp: overrides.firebaseSignUp as ((email: string, password: string) => Promise<{ user: User }>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User })),
+    firebaseSignUp: overrides.firebaseSignUp as ((email: string, password: string) => Promise<UserCredential>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User, providerId: 'password', operationType: 'signIn' } as unknown as UserCredential)),
     updateUserProfile: overrides.updateUserProfile as ((user: User, displayName: string) => Promise<void>) ?? (async () => undefined),
     getFirestoreDocument: overrides.getFirestoreDocument as ((collection: 'users', docId: string) => Promise<UserDocument | null>) ?? (async () => null),
     upsertUser: overrides.upsertUser as ((user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>) ?? (async () => undefined),
@@ -26,7 +26,7 @@ const createSignUpDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
 
 const createSignInDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
   return {
-    firebaseSignIn: overrides.firebaseSignIn as ((email: string, password: string) => Promise<{ user: User }>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User })),
+    firebaseSignIn: overrides.firebaseSignIn as ((email: string, password: string) => Promise<UserCredential>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User, providerId: 'password', operationType: 'signIn' } as unknown as UserCredential)),
   } as const;
 };
 

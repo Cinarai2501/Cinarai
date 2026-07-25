@@ -105,7 +105,7 @@ function StudentDashboardContent() {
       }
     }
 
-    const totalPossible = comics.filter(c => c.availability === 'ACTIVE').length * SINTAKS.length;
+    const totalPossible = comics.filter((comic) => unlockStatuses.get(comic.id) !== 'COMING_SOON').length * SINTAKS.length;
     const overallPct = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
     const totalXp = totalCompleted * 15;
 
@@ -201,7 +201,7 @@ function StudentDashboardContent() {
               />
             </div>
             <p className="mt-1.5 text-[11px] text-neutral-400">
-              {totalCompleted} dari {comics.filter(c => c.availability === 'ACTIVE').length * SINTAKS.length} tahap selesai
+              {totalCompleted} dari {comics.length * SINTAKS.length} tahap selesai
             </p>
           </div>
 
