@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QrModal } from "@/features/learning-engine/components/stages/QrModal";
 import { ObjectAITutor } from "@/features/learning-engine/components/stages/ObjectAITutor";
+import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import {
   resolveModelActionUrl,
   resolveObjectDetailContent,
@@ -158,7 +159,7 @@ export default function Comic2ObjectDetailClient({ id }: { id: string }) {
         objectName={obj.title}
         provider={obj.provider}
         comicPage={obj.page}
-        entry={obj as any}
+        entry={obj as unknown as ComicAssetEntry}
         initialPrompt={obj.aiPrompt}
         comicId={comicId}
       />

@@ -26,6 +26,7 @@ interface Comic2ArgumentationStageProps {
   comicTitle: string;
   comicLocation: string;
   classLevel: string;
+  comicId: number;
   currentIndex: number;
   totalItems: number;
   initialAnswer?: string;

@@ -33,6 +33,36 @@ const SHAPE_VALIDATION_RULES: Record<
     explanation: string;
   }
 > = {
+  persegi: {
+    names: ['persegi'],
+    keywords: ['empat sisi sama panjang', 'empat sudut siku-siku', 'dua diagonal sama panjang', 'empat simetri lipat'],
+    explanation: 'Bagian Umpang atau pola candi lainnya memiliki sisi sama panjang dan sudut siku-siku seperti persegi.',
+  },
+  'persegi panjang': {
+    names: ['persegi panjang'],
+    keywords: ['dua sisi panjang', 'dua sisi pendek', 'empat sudut siku-siku', 'dua simetri lipat'],
+    explanation: 'Bagian Balai Agung atau Pendopo tampak panjang dan lebar seperti persegi panjang.',
+  },
+  'segitiga sama kaki': {
+    names: ['segitiga sama kaki'],
+    keywords: ['dua sisi sama panjang', 'satu dasar berbeda', 'satu garis simetri', 'dua sudut sama besar'],
+    explanation: 'Atap Candi Angka Tahun menunjukkan dua sisi sama panjang dan satu garis simetri seperti segitiga sama kaki.',
+  },
+  'segitiga sama sisi': {
+    names: ['segitiga sama sisi'],
+    keywords: ['tiga sisi sama panjang', 'tiga sudut sama besar', 'tiga garis simetri', 'simetri putar tingkat tiga'],
+    explanation: 'Candi Induk memiliki bentuk atap yang simetris dengan tiga sisi sama panjang seperti segitiga sama sisi.',
+  },
+  'belah ketupat': {
+    names: ['belah ketupat'],
+    keywords: ['empat sisi sama panjang', 'dua diagonal saling berpotongan', 'dua garis simetri', 'sisi-sisi miring'],
+    explanation: 'Pola Pendopo menyerupai belah ketupat dengan sisi sama panjang dan pola yang bergabung di tengah.',
+  },
+  lingkaran: {
+    names: ['lingkaran'],
+    keywords: ['satu sisi lengkung', 'titik pusat', 'jarak sama dari pusat', 'simetri putar'],
+    explanation: 'Relief Candi memiliki bingkai melengkung yang rapi seperti lingkaran.',
+  },
   balok: {
     names: ['balok'],
     keywords: ['sisi datar', 'rusuk', 'segi empat', 'permukaan datar'],
@@ -129,7 +159,65 @@ function buildFallbackFeedback(body: ArgumentationRequestBody): ArgumentationRes
   };
 }
 
-function buildArgumentationPrompt(body: ArgumentationRequestBody): string {
+function isComic2Argumentation(body: ArgumentationRequestBody): boolean {
+  const title = body.comicTitle?.toLowerCase() ?? '';
+  const lokasi = body.lokasi?.toLowerCase() ?? '';
+  return title.includes('simetri candi penataran') || lokasi.includes('candi penataran');
+}
+
+function buildComic2ArgumentationPrompt(body: ArgumentationRequestBody): string {
+  return [
+    'Kamu adalah AI Tutor CINARAI untuk siswa SD yang belajar Komik 2: Petualangan Simetri Candi Penataran.',
+    '',
+    'TUGAS',
+    'Evaluasi jawaban siswa dan berikan umpan balik pembelajaran, bukan jawaban lengkap.',
+    '',
+    'ATURAN WAJIB',
+    '1. Analisis isi jawaban siswa dan sebutkan bagian yang benar.',
+    '2. Jelaskan konsep yang tepat terkait bangun datar yang dimaksud.',
+    '3. Sebutkan bagian yang kurang dan berikan alasan sederhana.',
+    '4. Berikan contoh ringkas yang membantu siswa memahami.',
+    '5. Akhiri dengan kesimpulan yang memotivasi.',
+    '6. Gunakan bahasa ramah, sabar, dan mudah dipahami untuk anak SD.',
+    '7. Jangan menggunakan istilah matematika rumit dalam satu kalimat.',
+    '8. Feedback harus 120–200 kata.',
+    '9. Berikan skor hanya sebagai tambahan, bukan jawaban utama.',
+    '',
+    'FORMAT RESPONS (JSON ketat, tidak ada teks di luar JSON)',
+    '{',
+    '  "level": "SANGAT_BAIK" | "HAMPIR_BENAR" | "PERLU_PERBAIKAN",',
+    '  "score": 1 | 2 | 3 | 4 | 5,',
+    '  "feedback": "teks umpan balik panjang minimal 120 kata",',
+    '  "strength": "poin kuat dari jawaban siswa",',
+    '  "improvement": "saran peningkatan singkat",',
+    '  "suggestion": "contoh jawaban yang lebih lengkap atau cara memperbaiki"',
+    '}',
+    '',
+    'GUNAKAN STRUKTUR INI:',
+    '# 🌟 Hasil Jawabanmu',
+    '## ✅ Yang sudah benar',
+    '## 📖 Penjelasan',
+    '## ✨ Yang perlu diperbaiki',
+    '## 💡 Contoh jawaban yang lebih baik',
+    '## 🎯 Kesimpulan',
+    '',
+    'KONTEKS',
+    `- Komik: ${body.comicTitle}`,
+    `- Lokasi: ${body.lokasi}`,
+    `- Bagian bangunan: ${body.templePart}`,
+    `- Bangun datar: ${body.shapeName}`,
+    `- Pertanyaan: ${body.question}`,
+    `- Jawaban siswa: ${body.studentAnswer}`,
+    '',
+    'JIKA KOSONG: berikan dorongan lembut dan minta siswa menghitung sisi dan sudut lalu coba lagi.',
+    'JIKA SANGAT PENDEK: sebutkan bagian yang benar dan minta menambahkan alasan mengapa.',
+    'JIKA BENAR: tambahkan penjelasan tentang sifat bangun datar dan hubungkan dengan Candi Penataran.',
+    'JIKA PERLU PERBAIKAN: jelaskan bagian yang kurang lengkap dan berikan contoh jawaban yang lebih baik.',
+    'JANGAN hanya berikan skor. Skor hanya pelengkap.',
+  ].join('\n');
+}
+
+function buildGenericArgumentationPrompt(body: ArgumentationRequestBody): string {
   return [
     'Kamu adalah AI Evaluator CINARAI untuk siswa Sekolah Dasar Indonesia.',
     '',
@@ -142,30 +230,35 @@ function buildArgumentationPrompt(body: ArgumentationRequestBody): string {
     '2. Jika jawaban tepat dan lengkap, beri level SANGAT_BAIK.',
     '3. Jika jawaban benar tetapi kurang rinci, beri level HAMPIR_BENAR.',
     '4. Jika jawaban tidak sesuai bangun ruang yang dimaksud, beri level PERLU_PERBAIKAN.',
-    '5. Jelaskan konsep bangun ruang yang relevan secara singkat.',
-    '6. Gunakan bahasa sederhana, hangat, dan mudah dipahami anak SD.',
-    '7. Maksimal 100 kata.',
-    '8. Berikan skor 1–5 berdasarkan: ketepatan konsep, penggunaan istilah matematika, alasan logis.',
+    '5. Jelaskan konsep bangun datar yang relevan dengan bahasa sederhana.',
+    '6. Gunakan bahasa ramah, sabar, dan mudah dipahami anak SD.',
+    '7. Jawaban harus minimal 120 kata dan maksimal 200 kata.',
+    '8. Berikan skor 1–5 berdasarkan: ketepatan konsep, kejelasan alasan, dan hubungan dengan objek yang dibahas.',
     '',
     'FORMAT RESPONS (JSON ketat, tidak ada teks di luar JSON)',
     '{',
     '  "level": "SANGAT_BAIK" | "HAMPIR_BENAR" | "PERLU_PERBAIKAN",',
     '  "score": 1 | 2 | 3 | 4 | 5,',
-    '  "feedback": "teks umpan balik untuk siswa",',
+    '  "feedback": "teks umpan balik panjang minimal 120 kata",',
     '  "strength": "poin kuat dari jawaban siswa",',
     '  "improvement": "saran peningkatan singkat",',
-    '  "suggestion": "saran berikutnya untuk memperbaiki jawaban"',
+    '  "suggestion": "contoh jawaban yang lebih lengkap atau cara memperbaiki"',
     '}',
     '',
     'KONTEKS',
     `- Komik: ${body.comicTitle}`,
     `- Lokasi: ${body.lokasi}`,
-    `- Kelas: ${body.classLevel}`,
     `- Bagian bangunan: ${body.templePart}`,
     `- Bangun ruang: ${body.shapeName}`,
     `- Pertanyaan: ${body.question}`,
     `- Jawaban siswa: ${body.studentAnswer}`,
+    '',
+    'JANGAN hanya berikan skor. Skor hanya pelengkap.',
   ].join('\n');
+}
+
+function buildArgumentationPrompt(body: ArgumentationRequestBody): string {
+  return isComic2Argumentation(body) ? buildComic2ArgumentationPrompt(body) : buildGenericArgumentationPrompt(body);
 }
 
 function parseArgumentationResponse(raw: string): ArgumentationResponse | null {

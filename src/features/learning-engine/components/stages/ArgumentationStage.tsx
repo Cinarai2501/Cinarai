@@ -341,6 +341,7 @@ export default function ArgumentationStage() {
         comicTitle={comic.title}
         comicLocation={comic.lokasi ?? 'Lokasi'}
         classLevel={comic.kelas ?? 'Kelas V'}
+        comicId={comic.id}
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}
