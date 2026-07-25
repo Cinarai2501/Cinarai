@@ -40,6 +40,7 @@ const MISSION_LABELS: Record<string, string> = {
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
 const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
+const MOTIVATION_SESSION_KEY = 'cinarai:motivation-popup-shown';
 
 const comics = getAllComics();
 
@@ -74,6 +75,10 @@ function StudentDashboardContent() {
   const seedRef = useRef(Math.floor(Math.random() * 1000));
 
   const handleLogout = async () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(MOTIVATION_SESSION_KEY);
+    }
+
     try { await logout(); } catch (e) { console.error('Logout error:', e); }
   };
 
@@ -82,7 +87,6 @@ function StudentDashboardContent() {
   const motivation = stablePick(MOTIVATIONS, seedRef.current);
   const [isMotivationOpen, setIsMotivationOpen] = useState(false);
   const [motivationMessage, setMotivationMessage] = useState(() => getRandomMotivation());
-  const [hasShownMotivation, setHasShownMotivation] = useState(false);
 
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
 
@@ -122,11 +126,16 @@ function StudentDashboardContent() {
   const missionsDone = todayMissions.filter(m => m.done).length;
 
   useEffect(() => {
-    if (user && !isLoading && !hasShownMotivation) {
+    if (typeof window === 'undefined') return;
+
+    const alreadyShown = sessionStorage.getItem(MOTIVATION_SESSION_KEY) === 'true';
+
+    if (user && !isLoading && !alreadyShown) {
+      sessionStorage.setItem(MOTIVATION_SESSION_KEY, 'true');
+      setMotivationMessage(getRandomMotivation());
       setIsMotivationOpen(true);
-      setHasShownMotivation(true);
     }
-  }, [user, isLoading, hasShownMotivation]);
+  }, [user, isLoading]);
 
   return (
     <div className="min-h-screen bg-[#f0f7ff] overflow-x-hidden">
