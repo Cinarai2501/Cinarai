@@ -15,3 +15,14 @@ test('loadComicModule returns the same module instance for comic 2', () => {
   assert.equal(second.metadata.comicId, 2);
   assert.equal(first.identification.questions.length, second.identification.questions.length);
 });
+
+test('comic 3 identification uses one multi-select question with all six expected shapes', () => {
+  const comicModule = getComicModule(3);
+  const question = comicModule.identification.questions[0];
+  const expectedLabels = ['Persegi', 'Persegi Panjang', 'Segitiga', 'Trapesium', 'Belah Ketupat', 'Lingkaran'];
+
+  assert.equal(comicModule.identification.questions.length, 1);
+  assert.equal(question?.question, 'Apa saja bentuk bangun datar yang kamu temukan pada Rumah Gajah Mungkur?');
+  assert.deepEqual(question?.options.map((option) => option.text), expectedLabels);
+  assert.equal(question?.options.every((option) => option.correct), true);
+});
