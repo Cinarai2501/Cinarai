@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QrModal } from "@/features/learning-engine/components/stages/QrModal";
+import { ObjectAITutor } from "@/features/learning-engine/components/stages/ObjectAITutor";
 import {
   resolveModelActionUrl,
   resolveObjectDetailContent,
@@ -52,7 +53,7 @@ export default function Comic2ObjectDetailClient({ id }: { id: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="relative min-h-screen bg-neutral-50">
       <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
         {/* Judul */}
         <h1 className="text-2xl font-black text-neutral-900 sm:text-3xl">
@@ -151,6 +152,16 @@ export default function Comic2ObjectDetailClient({ id }: { id: string }) {
           </button>
         </div>
       </div>
+
+      <ObjectAITutor
+        objectId={obj.id}
+        objectName={obj.title}
+        provider={obj.provider}
+        comicPage={obj.page}
+        entry={obj as any}
+        initialPrompt={obj.aiPrompt}
+        comicId={comicId}
+      />
 
       <QrModal
         isOpen={isQrOpen && Boolean(qrImage)}
