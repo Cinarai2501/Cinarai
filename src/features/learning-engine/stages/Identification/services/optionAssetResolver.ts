@@ -15,11 +15,20 @@ const COMIC2_ICON_MAP: Record<string, string> = {
   'belah ketupat': belahKetupatIcon.src,
 };
 
+import persegiComic3Icon from '@/features/comics/comic-3/assets/identification/persegi.svg';
+import persegiPanjangComic3Icon from '@/features/comics/comic-3/assets/identification/persegi-panjang.svg';
+import segitigaComic3Icon from '@/features/comics/comic-3/assets/identification/segitiga.svg';
+import trapesiumComic3Icon from '@/features/comics/comic-3/assets/identification/trapesium.svg';
+import belahKetupatComic3Icon from '@/features/comics/comic-3/assets/identification/belah-ketupat.svg';
+import lingkaranComic3Icon from '@/features/comics/comic-3/assets/identification/lingkaran.svg';
+
 const COMIC3_ICON_MAP: Record<string, string> = {
-  persegi: '/images/identification/comic-3/persegi.svg',
-  segitiga: '/images/identification/comic-3/segitiga.svg',
-  lingkaran: '/images/identification/comic-3/lingkaran.svg',
-  'belah ketupat': '/images/identification/comic-3/belah-ketupat.svg',
+  persegi: persegiComic3Icon.src,
+  'persegi panjang': persegiPanjangComic3Icon.src,
+  segitiga: segitigaComic3Icon.src,
+  trapesium: trapesiumComic3Icon.src,
+  'belah ketupat': belahKetupatComic3Icon.src,
+  lingkaran: lingkaranComic3Icon.src,
 };
 
 const COMIC4_ICON_MAP: Record<string, string> = {

@@ -1,4 +1,10 @@
 import type { ComicContentPackageLike } from '../../types';
+import persegiIllustration from '@/features/comics/comic-3/assets/identification/persegi.svg';
+import persegiPanjangIllustration from '@/features/comics/comic-3/assets/identification/persegi-panjang.svg';
+import segitigaIllustration from '@/features/comics/comic-3/assets/identification/segitiga.svg';
+import trapesiumIllustration from '@/features/comics/comic-3/assets/identification/trapesium.svg';
+import belahKetupatIllustration from '@/features/comics/comic-3/assets/identification/belah-ketupat.svg';
+import lingkaranIllustration from '@/features/comics/comic-3/assets/identification/lingkaran.svg';
 
 export const packageContent: ComicContentPackageLike = {
   metadata: {
@@ -10,9 +16,9 @@ export const packageContent: ComicContentPackageLike = {
     cover: '/comics/komik-3/cover.png',
     thumbnail: '/comics/komik-3/thumbnail.png',
     learningTargets: [
-      'Mengenali bangun datar sederhana di sekitar rumah dan bangunan bersejarah.',
-      'Membandingkan bentuk persegi, segitiga, lingkaran, dan jajargenjang.',
-      'Menyusun dan mengurai bentuk bangun datar.',
+      'Mengamati bangun datar yang muncul pada Rumah Gajah Mungkur.',
+      'Menghubungkan bentuk persegi, persegi panjang, segitiga, trapesium, belah ketupat, dan lingkaran dengan objek nyata.',
+      'Menggunakan bahasa sederhana untuk menjelaskan ciri setiap bangun datar.',
     ],
     synopsis: 'Pembelajaran untuk bangun datar di Rumah Gajah Mungkur.',
   },
@@ -69,36 +75,70 @@ export const packageContent: ComicContentPackageLike = {
   identification: {
     questions: [
       {
-        id: 'komik2-ident-6',
-        question: 'Amati bangunan runtuh pendopo yang tampak seperti berlian. Bangun datar apakah yang paling sesuai?',
-        image: '/images/navigation/default.svg',
-        imageAlt: 'Bangunan runtuh pendopo pada Candi Penataran yang tampak seperti berlian.',
+        id: 'komik3-ident-1',
+        question: 'Persegi',
+        image: persegiIllustration.src,
+        imageAlt: 'Ilustrasi jendela kecil rumah yang menyerupai persegi.',
         options: [
-          { text: 'Belah Ketupat', correct: true },
-          { text: 'Lingkaran', correct: false },
-          { text: 'Persegi', correct: false },
-          { text: 'Sisi Kanan', correct: false },
+          { text: 'Persegi', correct: true },
         ],
-        explanation: 'Bangunan runtuh pendopo pada komik menggambarkan belah ketupat, bentuk yang memiliki dua garis simetri.',
+        explanation: 'Jendela kecil pada Rumah Gajah Mungkur bisa kita lihat sebagai persegi. Persegi punya sisi yang sama panjang dan bentuknya rapi.',
       },
       {
         id: 'komik3-ident-2',
-        question: 'Bagian atap rumah ini paling cocok disebut bangun datar apa?',
-        image: '/images/navigation/default.svg',
-        imageAlt: 'Atap rumah terlihat berbentuk segitiga.',
+        question: 'Persegi Panjang',
+        image: persegiPanjangIllustration.src,
+        imageAlt: 'Ilustrasi pintu rumah yang menyerupai persegi panjang.',
+        options: [
+          { text: 'Persegi Panjang', correct: true },
+        ],
+        explanation: 'Pintu dan jendela besar pada Rumah Gajah Mungkur bisa kita lihat sebagai persegi panjang. Bentuknya lebih panjang daripada lebar.',
+      },
+      {
+        id: 'komik3-ident-3',
+        question: 'Segitiga',
+        image: segitigaIllustration.src,
+        imageAlt: 'Ilustrasi atap rumah yang menyerupai segitiga.',
         options: [
           { text: 'Segitiga', correct: true },
-          { text: 'Persegi', correct: false },
-          { text: 'Bujur Sangkar', correct: false },
-          { text: 'Lingkaran', correct: false },
         ],
-        explanation: 'Atap rumah dapat dilihat sebagai segitiga karena memiliki tiga sisi.',
+        explanation: 'Atap rumah pada Rumah Gajah Mungkur membentuk segitiga. Bentuknya tajam dan punya tiga sisi.',
+      },
+      {
+        id: 'komik3-ident-4',
+        question: 'Trapesium',
+        image: trapesiumIllustration.src,
+        imageAlt: 'Ilustrasi genteng atau kanopi yang menyerupai trapesium.',
+        options: [
+          { text: 'Trapesium', correct: true },
+        ],
+        explanation: 'Genteng atau kanopi pada Rumah Gajah Mungkur bisa kita lihat sebagai trapesium. Bentuknya mirip seperti atap yang agak miring.',
+      },
+      {
+        id: 'komik3-ident-5',
+        question: 'Belah Ketupat',
+        image: belahKetupatIllustration.src,
+        imageAlt: 'Ilustrasi ornamen pagar yang menyerupai belah ketupat.',
+        options: [
+          { text: 'Belah Ketupat', correct: true },
+        ],
+        explanation: 'Ornamen pagar pada Rumah Gajah Mungkur bisa kita lihat sebagai belah ketupat. Bentuknya mirip seperti berlian.',
+      },
+      {
+        id: 'komik3-ident-6',
+        question: 'Lingkaran',
+        image: lingkaranIllustration.src,
+        imageAlt: 'Ilustrasi ornamen bulat pagar yang menyerupai lingkaran.',
+        options: [
+          { text: 'Lingkaran', correct: true },
+        ],
+        explanation: 'Ornamen bulat pada pagar Rumah Gajah Mungkur menunjukkan bentuk lingkaran. Bentuknya bundar dan tidak punya sudut.',
       },
     ],
     feedback: {
-      complete: 'Sangat bagus! Kamu mengenali bangun datar dengan baik.',
-      partial: 'Masih ada beberapa bentuk yang perlu diperiksa ulang.',
-      incomplete: 'Lihat kembali bentuk-bentuk yang ada pada bangunan.',
+      complete: 'Sangat bagus! Kamu berhasil mengenali bangun datar yang ada pada Rumah Gajah Mungkur.',
+      partial: 'Masih ada beberapa bentuk yang perlu diperiksa lagi.',
+      incomplete: 'Coba lihat kembali bagian rumah yang kamu amati dan cari bentuk yang paling cocok.',
     },
   },
   application: {

@@ -14,7 +14,8 @@ test('comic 2 uses its own identification asset mapping and does not fall back t
   assert.match(asset ?? '', /persegi\.svg$/);
 });
 
-test('comic 3 to 5 use the per-comic question image as fallback instead of global generic icons', () => {
+test('comic 3 uses local identification icons for its shapes', () => {
   const asset = resolveIdentificationOptionAsset(3, 'Segitiga', '/comics/komik-3/question.png');
-  assert.equal(asset, '/comics/komik-3/question.png');
+  assert.ok(asset);
+  assert.match(asset ?? '', /segitiga\.svg$/);
 });
