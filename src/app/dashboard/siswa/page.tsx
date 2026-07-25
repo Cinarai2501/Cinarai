@@ -2,12 +2,13 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRef, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
+import MotivationPopup, { getRandomMotivation } from '@/components/dashboard/MotivationPopup';
 import { SINTAKS } from '@/types/progress';
 
 const LearningJourney = dynamic(() => import('@/components/dashboard/LearningJourney'), {
@@ -25,13 +26,6 @@ const MOTIVATIONS = [
   'Semakin banyak membaca, semakin banyak pengetahuan! 🧠',
 ];
 
-const DAILY_QUOTES = [
-  'Hari ini adalah kesempatan untuk belajar hal baru.',
-  'Semakin banyak membaca, semakin banyak pengetahuan.',
-  'Setiap langkah kecil membawamu lebih dekat ke tujuan.',
-  'Belajar itu seperti petualangan — selalu ada hal baru!',
-  'Kamu hebat karena mau terus belajar setiap hari.',
-];
 
 const MISSION_LABELS: Record<string, string> = {
   Cover:             '📖 Baca halaman cover',
@@ -86,7 +80,9 @@ function StudentDashboardContent() {
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Petualang';
   const greeting = getGreeting();
   const motivation = stablePick(MOTIVATIONS, seedRef.current);
-  const dailyQuote = stablePick(DAILY_QUOTES, seedRef.current + 3);
+  const [isMotivationOpen, setIsMotivationOpen] = useState(false);
+  const [motivationMessage, setMotivationMessage] = useState(() => getRandomMotivation());
+  const [hasShownMotivation, setHasShownMotivation] = useState(false);
 
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
 
@@ -125,8 +121,21 @@ function StudentDashboardContent() {
 
   const missionsDone = todayMissions.filter(m => m.done).length;
 
+  useEffect(() => {
+    if (user && !isLoading && !hasShownMotivation) {
+      setIsMotivationOpen(true);
+      setHasShownMotivation(true);
+    }
+  }, [user, isLoading, hasShownMotivation]);
+
   return (
     <div className="min-h-screen bg-[#f0f7ff] overflow-x-hidden">
+      <MotivationPopup
+        open={isMotivationOpen}
+        motivation={motivationMessage}
+        onClose={() => setIsMotivationOpen(false)}
+        onShuffle={() => setMotivationMessage(getRandomMotivation())}
+      />
       <div className="relative bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 pb-20 pt-safe overflow-hidden">
         <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -left-8 bottom-4 h-40 w-40 rounded-full bg-secondary-400/20" />
@@ -273,15 +282,6 @@ function StudentDashboardContent() {
           </div>
         </div>
 
-        {/* Motivation Quote */}
-        <div className="rounded-3xl bg-gradient-to-br from-primary-500 to-primary-700 px-5 py-5 shadow-md animate-fade-in-up">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary-200 mb-2">
-            💬 Kata Motivasi Hari Ini
-          </p>
-          <p className="text-base font-bold text-white leading-relaxed">
-            &ldquo;{dailyQuote}&rdquo;
-          </p>
-        </div>
       </div>
     </div>
   );
