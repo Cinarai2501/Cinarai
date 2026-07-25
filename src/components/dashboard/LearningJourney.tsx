@@ -3,13 +3,12 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { fetchAllComics } from '@/services/comicFirestoreService';
-import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { useSnackbar } from '@/context/SnackbarContext';
 import { SINTAKS } from '@/types/progress';
 import type { Comic } from '@/types/comic';
-import type { UnlockStatus } from '@/lib/unlockEngine';
 
 // Per-comic visual identity — no external assets needed
 const COMIC_THEME: Record<number, {
@@ -29,13 +28,12 @@ const COMIC_THEME: Record<number, {
 const DEFAULT_THEME = COMIC_THEME[1];
 
 export default function LearningJourney() {
-  const { states, getProgress, resetProgressForComic, isLoading } = useAllComicProgress();
+  const { getProgress, resetProgressForComic, isLoading } = useAllComicProgress();
   const { showSnackbar } = useSnackbar();
   const [comics, setComics] = useState<Comic[]>([]);
   const [comicsLoading, setComicsLoading] = useState(true);
   const [pendingResetComicId, setPendingResetComicId] = useState<number | null>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
   const pendingComic = useMemo(() => comics.find((comic) => comic.id === pendingResetComicId) ?? null, [comics, pendingResetComicId]);
 
   const handleRequestReset = useCallback((id: number) => {
@@ -70,9 +68,6 @@ export default function LearningJourney() {
           const percentage = progress?.percentage ?? 0;
           const isCompleted = progress?.isCompleted ?? false;
           const completedCount = progress?.completedCount ?? 0;
-          const unlockStatus = unlockStatuses.get(comic.id) ?? 'LOCKED';
-          const isLocked = unlockStatus === 'LOCKED';
-          const isComingSoon = unlockStatus === 'COMING_SOON';
           const theme = COMIC_THEME[comic.id] ?? DEFAULT_THEME;
 
           return (
@@ -83,10 +78,7 @@ export default function LearningJourney() {
               percentage={percentage}
               completedCount={completedCount}
               isCompleted={isCompleted}
-              isLocked={isLocked}
-              isComingSoon={isComingSoon}
               theme={theme}
-              unlockStatus={unlockStatus}
               onRequestReset={handleRequestReset}
               isResetting={isResetting && pendingResetComicId === comic.id}
               canReset={percentage > 0 || isCompleted}
@@ -153,10 +145,7 @@ interface ComicCardProps {
   percentage: number;
   completedCount: number;
   isCompleted: boolean;
-  isLocked: boolean;
-  isComingSoon: boolean;
   theme: typeof DEFAULT_THEME;
-  unlockStatus: UnlockStatus;
   onRequestReset: (id: number) => void;
   isResetting: boolean;
   canReset: boolean;
@@ -167,17 +156,35 @@ const ComicCard = React.memo(function ComicCard({
   percentage,
   completedCount,
   isCompleted,
-  isLocked,
-  isComingSoon,
   theme,
   onRequestReset,
   isResetting,
   canReset,
 }: ComicCardProps) {
-  const disabled = isLocked || isComingSoon;
+  const router = useRouter();
+  const cardHref = `/comic/${comic.id}/learn`;
+  const handleCardClick = useCallback(() => {
+    router.push(cardHref);
+  }, [cardHref, router]);
+
+  const handleCardKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        router.push(cardHref);
+      }
+    },
+    [cardHref, router]
+  );
 
   return (
-    <div className={`p-4 transition-opacity ${disabled ? 'opacity-55' : 'opacity-100'}`}>
+    <div
+      className="p-4 transition-all hover:shadow-lg rounded-3xl bg-white cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+    >
       <div className="flex gap-3">
 
         {/* ── Illustration panel ── */}
@@ -197,13 +204,6 @@ const ComicCard = React.memo(function ComicCard({
             {/* Emoji always rendered behind image as fallback */}
             <span className="absolute text-4xl select-none">{theme.emoji}</span>
 
-            {/* Lock overlay */}
-            {disabled && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
-                <span className="text-2xl">{isComingSoon ? '🚧' : '🔒'}</span>
-              </div>
-            )}
-
             {/* Completed checkmark */}
             {isCompleted && (
               <div className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent-500 shadow">
@@ -222,13 +222,11 @@ const ComicCard = React.memo(function ComicCard({
         <div className="flex-1 min-w-0">
           {/* Title row */}
           <div className="flex items-start justify-between gap-2">
-            <h3 className={`text-sm font-black leading-snug ${disabled ? 'text-neutral-400' : 'text-neutral-900'}`}>
+            <h3 className="text-sm font-black leading-snug text-neutral-900">
               {comic.title}
             </h3>
             <StatusBadge
               isCompleted={isCompleted}
-              isComingSoon={isComingSoon}
-              isLocked={isLocked}
               percentage={percentage}
             />
           </div>
@@ -247,10 +245,9 @@ const ComicCard = React.memo(function ComicCard({
           </div>
 
           {/* Progress bar + stage dots */}
-          {!disabled && (
-            <div className="mt-2.5">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex gap-0.5">
+          <div className="mt-2.5">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex gap-0.5">
                   {SINTAKS.map((s) => {
                     const idx = SINTAKS.indexOf(s);
                     const done = idx < completedCount;
@@ -278,22 +275,22 @@ const ComicCard = React.memo(function ComicCard({
                 />
               </div>
             </div>
-          )}
 
           {/* CTA */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <CtaButton
               comicId={comic.id}
               isCompleted={isCompleted}
-              isLocked={isLocked}
-              isComingSoon={isComingSoon}
               percentage={percentage}
               accentClass={theme.accent}
             />
-            {canReset && !isLocked && !isComingSoon && (
+            {canReset && (
               <button
                 type="button"
-                onClick={() => onRequestReset(comic.id)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRequestReset(comic.id);
+                }}
                 disabled={isResetting}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-[11px] font-black text-neutral-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 disabled:opacity-60"
               >
@@ -310,12 +307,10 @@ const ComicCard = React.memo(function ComicCard({
 // ─── CTA Button ───────────────────────────────────────────────────────────────
 
 const CtaButton = React.memo(function CtaButton({
-  comicId, isCompleted, isLocked, isComingSoon, percentage, accentClass,
+  comicId, isCompleted, percentage, accentClass,
 }: {
   comicId: number;
   isCompleted: boolean;
-  isLocked: boolean;
-  isComingSoon: boolean;
   percentage: number;
   accentClass: string;
 }) {
@@ -323,16 +318,6 @@ const CtaButton = React.memo(function CtaButton({
   // LearningEngine membaca stage dari Firestore dan menampilkan stage yang tepat.
   const continueHref = `/comic/${comicId}/learn`;
 
-  if (isComingSoon) {
-    return null;
-  }
-  if (isLocked) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-100 px-4 py-2 text-xs font-bold text-neutral-400 cursor-not-allowed">
-        🔒 Selesaikan komik sebelumnya
-      </span>
-    );
-  }
   if (isCompleted) {
     return (
       <Link
@@ -366,13 +351,11 @@ const CtaButton = React.memo(function CtaButton({
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 const StatusBadge = React.memo(function StatusBadge({
-  isCompleted, isComingSoon, isLocked, percentage,
+  isCompleted, percentage,
 }: {
-  isCompleted: boolean; isComingSoon: boolean; isLocked: boolean; percentage: number;
+  isCompleted: boolean; percentage: number;
 }) {
   if (isCompleted)   return <span className="flex-shrink-0 rounded-full bg-accent-100 px-2 py-0.5 text-[10px] font-black text-accent-700">Selesai ✓</span>;
-  if (isComingSoon)  return <span className="flex-shrink-0 rounded-full bg-warning-100 px-2 py-0.5 text-[10px] font-black text-warning-700">Segera</span>;
-  if (isLocked)      return <span className="flex-shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-black text-neutral-500">Terkunci</span>;
   if (percentage > 0) return <span className="flex-shrink-0 rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-black text-primary-700">Berlangsung</span>;
   return               <span className="flex-shrink-0 rounded-full bg-secondary-100 px-2 py-0.5 text-[10px] font-black text-secondary-700">Baru</span>;
 });
