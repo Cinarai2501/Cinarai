@@ -43,7 +43,7 @@ export const packageContent: Comic1PackageContent = {
     {
       id: 'komik1-kubus',
       title: 'Kubus',
-      description: 'Objek ini menunjukkan bentuk kubus yang memiliki 6 sisi berbentuk persegi, 12 rusuk yang sama panjang, dan 8 titik sudut. Amati setiap bagian pada model 3D untuk mengenali ciri-ciri kubus.',
+      description: 'Bangun ruang yang menyerupai bagian utama bangunan yang tampak kuat dan beraturan.',
       page: 1,
       qrImage: qrKubus.src,
       navImage: navKubus.src,
@@ -60,7 +60,7 @@ export const packageContent: Comic1PackageContent = {
     {
       id: 'komik1-balok',
       title: 'Balok',
-      description: 'Objek ini menunjukkan bentuk balok yang memiliki 6 sisi berbentuk persegi panjang, 12 rusuk, dan 8 titik sudut. Perhatikan perbedaan panjang, lebar, dan tingginya saat mengamati model 3D.',
+      description: 'Bangun ruang yang terlihat pada bagian struktur yang memanjang dan kokoh.',
       page: 2,
       qrImage: qrBalok.src,
       navImage: navBalok.src,
@@ -77,7 +77,7 @@ export const packageContent: Comic1PackageContent = {
     {
       id: 'komik1-prisma',
       title: 'Prisma Segi Empat',
-      description: 'Objek ini menunjukkan prisma segi empat yang memiliki dua bidang sejajar sebagai alas dan tutup serta empat sisi tegak berbentuk persegi panjang. Amati bentuk dan susunan sisinya pada model 3D.',
+      description: 'Bangun ruang yang terlihat pada bagian ornamen dan sisi tegak yang tersusun berlapis.',
       page: 3,
       qrImage: qrPrisma.src,
       navImage: navPrismaPreview.src,
@@ -94,7 +94,7 @@ export const packageContent: Comic1PackageContent = {
     {
       id: 'komik1-limas',
       title: 'Limas Segi Empat',
-      description: 'Objek ini menunjukkan limas segi empat yang memiliki satu alas berbentuk persegi dan empat sisi tegak berbentuk segitiga yang bertemu di satu titik puncak. Amati bentuk keseluruhan model 3D.',
+      description: 'Bangun ruang yang sesuai untuk bagian puncak yang menonjol dan meruncing.',
       page: 4,
       qrImage: qrLimas.src,
       navImage: navKerucut.src,
@@ -111,7 +111,7 @@ export const packageContent: Comic1PackageContent = {
     {
       id: 'komik1-kerucut',
       title: 'Kerucut',
-      description: 'Objek ini menunjukkan bentuk kerucut yang memiliki satu alas berbentuk lingkaran, satu titik puncak, dan satu sisi lengkung. Putar model 3D untuk mengamati seluruh bagiannya.',
+      description: 'Bangun ruang yang menyerupai bagian puncak yang membentuk titik tajam.',
       page: 5,
       qrImage: qrKerucut.src,
       navImage: navLimas.src,
