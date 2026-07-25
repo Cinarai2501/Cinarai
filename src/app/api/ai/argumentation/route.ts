@@ -23,6 +23,13 @@ type ArgumentationResponse = {
   strength?: string;
   improvement?: string;
   suggestion?: string;
+  // Komik 2 teacher-friendly format
+  appreciation?: string;
+  appreciationDetail?: string;
+  explanation?: string;
+  example?: string;
+  motivation?: string;
+  isTeacherFriendly?: boolean;
 };
 
 const SHAPE_VALIDATION_RULES: Record<
@@ -167,53 +174,46 @@ function isComic2Argumentation(body: ArgumentationRequestBody): boolean {
 
 function buildComic2ArgumentationPrompt(body: ArgumentationRequestBody): string {
   return [
-    'Kamu adalah AI Tutor CINARAI untuk siswa SD yang belajar Komik 2: Petualangan Simetri Candi Penataran.',
+    'Kamu adalah GURU SD yang ramah dan menyemangati untuk siswa kelas 4-6 di CINARAI.',
+    'Siswa ini sedang belajar Komik 2: Petualangan Simetri Candi Penataran.',
     '',
     'TUGAS',
-    'Evaluasi jawaban siswa dan berikan umpan balik pembelajaran, bukan jawaban lengkap.',
+    'JANGAN memberikan jawaban lengkap. HANYA berikan umpan balik untuk membantu siswa belajar sendiri.',
+    'Sifat feedback: hangat, sabar, menyemangati, bahasa guru SD.',
     '',
     'ATURAN WAJIB',
-    '1. Analisis isi jawaban siswa dan sebutkan bagian yang benar.',
-    '2. Jelaskan konsep yang tepat terkait bangun datar yang dimaksud.',
-    '3. Sebutkan bagian yang kurang dan berikan alasan sederhana.',
-    '4. Berikan contoh ringkas yang membantu siswa memahami.',
-    '5. Akhiri dengan kesimpulan yang memotivasi.',
-    '6. Gunakan bahasa ramah, sabar, dan mudah dipahami untuk anak SD.',
-    '7. Jangan menggunakan istilah matematika rumit dalam satu kalimat.',
-    '8. Feedback harus 120–200 kata.',
-    '9. Berikan skor hanya sebagai tambahan, bukan jawaban utama.',
+    '1. Sebutkan apa yang BENAR dari jawaban siswa terlebih dahulu (apresiasi).',
+    '2. Jelaskan konsep dengan bahasa sederhana, seperti dijelaskan ibu/bapak guru.',
+    '3. Berikan contoh NYATA yang bisa dibayangkan anak SD.',
+    '4. Jangan gunakan istilah rumit. Kalimat pendek.',
+    '5. Akhiri dengan dorongan dan motivasi positif.',
+    '6. JANGAN terdengar seperti robot atau dosen.',
     '',
     'FORMAT RESPONS (JSON ketat, tidak ada teks di luar JSON)',
     '{',
     '  "level": "SANGAT_BAIK" | "HAMPIR_BENAR" | "PERLU_PERBAIKAN",',
     '  "score": 1 | 2 | 3 | 4 | 5,',
-    '  "feedback": "teks umpan balik panjang minimal 120 kata",',
-    '  "strength": "poin kuat dari jawaban siswa",',
-    '  "improvement": "saran peningkatan singkat",',
-    '  "suggestion": "contoh jawaban yang lebih lengkap atau cara memperbaiki"',
+    '  "appreciation": "Emoji + judul singkat seperti \\"😊 Hebat!\\" atau \\"🙂 Hampir Benar\\"",',
+    '  "appreciationDetail": "Kalimat singkat apa yang siswa dapatkan dengan benar",',
+    '  "explanation": "Penjelasan singkat dan mudah (2-3 kalimat) tentang konsep bangun datar",',
+    '  "example": "Contoh jawaban yang benar dalam bentuk kalimat / poin, cukup konkret",',
+    '  "motivation": "Kalimat motivasi singkat seperti \\"Ayo lanjut belajar\\" atau \\"Kamu pasti bisa\\""',
     '}',
     '',
-    'GUNAKAN STRUKTUR INI:',
-    '# 🌟 Hasil Jawabanmu',
-    '## ✅ Yang sudah benar',
-    '## 📖 Penjelasan',
-    '## ✨ Yang perlu diperbaiki',
-    '## 💡 Contoh jawaban yang lebih baik',
-    '## 🎯 Kesimpulan',
-    '',
-    'KONTEKS',
+    'KONTEKS SISWA',
     `- Komik: ${body.comicTitle}`,
-    `- Lokasi: ${body.lokasi}`,
-    `- Bagian bangunan: ${body.templePart}`,
-    `- Bangun datar: ${body.shapeName}`,
+    `- Lokasi/Bangunan: ${body.lokasi}`,
+    `- Bagian yang diamati: ${body.templePart}`,
+    `- Bentuk yang diminta: ${body.shapeName}`,
     `- Pertanyaan: ${body.question}`,
     `- Jawaban siswa: ${body.studentAnswer}`,
     '',
-    'JIKA KOSONG: berikan dorongan lembut dan minta siswa menghitung sisi dan sudut lalu coba lagi.',
-    'JIKA SANGAT PENDEK: sebutkan bagian yang benar dan minta menambahkan alasan mengapa.',
-    'JIKA BENAR: tambahkan penjelasan tentang sifat bangun datar dan hubungkan dengan Candi Penataran.',
-    'JIKA PERLU PERBAIKAN: jelaskan bagian yang kurang lengkap dan berikan contoh jawaban yang lebih baik.',
-    'JANGAN hanya berikan skor. Skor hanya pelengkap.',
+    'PENTING:',
+    '- Jika jawaban kosong: berikan dorongan lembut dan minta siswa perhatikan gambar lagi.',
+    '- Jika jawaban sangat pendek: apresiasi apa yang benar, lalu minta tambahkan alasan mengapa.',
+    '- Jika benar: perkuat dengan penjelasan tentang sifat bangun datar.',
+    '- Jika kurang tepat: tunjukkan bagian yang benar, lalu minta pikirkan kembali.',
+    '- SELALU ada apresiasi, penjelasan, contoh, dan motivasi.',
   ].join('\n');
 }
 
@@ -273,16 +273,29 @@ function parseArgumentationResponse(raw: string): ArgumentationResponse | null {
       ['SANGAT_BAIK', 'HAMPIR_BENAR', 'PERLU_PERBAIKAN'].includes(parsed.level) &&
       typeof parsed.score === 'number' &&
       parsed.score >= 1 &&
-      parsed.score <= 5 &&
-      typeof parsed.feedback === 'string'
+      parsed.score <= 5
     ) {
+      // Check if it's the new teacher-friendly format
+      const isTeacherFriendly =
+        typeof parsed.appreciation === 'string' &&
+        typeof parsed.appreciationDetail === 'string' &&
+        typeof parsed.explanation === 'string' &&
+        typeof parsed.example === 'string' &&
+        typeof parsed.motivation === 'string';
+
       return {
         level: parsed.level as FeedbackLevel,
         score: Math.min(5, Math.max(1, parsed.score)),
-        feedback: parsed.feedback,
+        feedback: parsed.feedback ?? '',
         strength: typeof parsed.strength === 'string' ? parsed.strength : undefined,
         improvement: typeof parsed.improvement === 'string' ? parsed.improvement : undefined,
         suggestion: typeof parsed.suggestion === 'string' ? parsed.suggestion : undefined,
+        appreciation: typeof parsed.appreciation === 'string' ? parsed.appreciation : undefined,
+        appreciationDetail: typeof parsed.appreciationDetail === 'string' ? parsed.appreciationDetail : undefined,
+        explanation: typeof parsed.explanation === 'string' ? parsed.explanation : undefined,
+        example: typeof parsed.example === 'string' ? parsed.example : undefined,
+        motivation: typeof parsed.motivation === 'string' ? parsed.motivation : undefined,
+        isTeacherFriendly,
       };
     }
   } catch {
@@ -320,6 +333,12 @@ export async function POST(request: NextRequest) {
       strength: feedback.strength,
       improvement: feedback.improvement,
       suggestion: feedback.suggestion,
+      appreciation: feedback.appreciation,
+      appreciationDetail: feedback.appreciationDetail,
+      explanation: feedback.explanation,
+      example: feedback.example,
+      motivation: feedback.motivation,
+      isTeacherFriendly: feedback.isTeacherFriendly,
       provider: response?.provider,
     });
   } catch (error) {

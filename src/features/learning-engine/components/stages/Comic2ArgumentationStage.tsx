@@ -15,6 +15,13 @@ interface AiFeedback {
   strength?: string;
   improvement?: string;
   suggestion?: string;
+  // Teacher-friendly format (Komik 2)
+  appreciation?: string;
+  appreciationDetail?: string;
+  explanation?: string;
+  example?: string;
+  motivation?: string;
+  isTeacherFriendly?: boolean;
 }
 
 interface Comic2ArgumentationStageProps {
@@ -32,7 +39,69 @@ interface Comic2ArgumentationStageProps {
   initialAnswer?: string;
 }
 
+// Helper function to convert score to stars
+function renderStars(score: number): string {
+  const filled = Math.round(score);
+  const empty = 5 - filled;
+  return '⭐'.repeat(filled) + '☆'.repeat(empty);
+}
+
 function FeedbackCard({ feedback }: { feedback: AiFeedback }) {
+  // If it's the new teacher-friendly format, render that way
+  if (feedback.isTeacherFriendly) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-sm"
+      >
+        <div className="space-y-5 p-6 sm:p-8">
+          {/* Appreciation section */}
+          <div className="space-y-2">
+            <p className="text-2xl font-black text-neutral-900">{feedback.appreciation}</p>
+            <p className="text-base leading-relaxed text-neutral-700">{feedback.appreciationDetail}</p>
+          </div>
+
+          {/* Score with stars */}
+          <div className="rounded-[16px] border border-primary-100 bg-primary-50/50 px-4 py-3">
+            <p className="text-sm font-semibold text-primary-700">⭐ Skor Belajarmu</p>
+            <p className="mt-2 text-2xl font-black text-primary-600">{renderStars(feedback.score)}</p>
+            <p className="mt-1 text-xs font-semibold text-primary-600">{feedback.score} dari 5 bintang</p>
+          </div>
+
+          {/* Learning section */}
+          <div className="space-y-3">
+            <p className="text-lg font-black text-neutral-900">📖 Yuk Belajar Lagi</p>
+            <div className="space-y-2">
+              {feedback.explanation && (
+                <p className="text-sm leading-relaxed text-neutral-700">{feedback.explanation}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Example section */}
+          {feedback.example && (
+            <div className="space-y-2">
+              <p className="text-sm font-black text-neutral-900">✏ Contoh Jawaban</p>
+              <div className="rounded-[12px] border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <p className="text-sm italic leading-relaxed text-neutral-700">&quot;{feedback.example}&quot;</p>
+              </div>
+            </div>
+          )}
+
+          {/* Motivation section */}
+          {feedback.motivation && (
+            <div className="rounded-[16px] border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+              <p className="text-sm leading-relaxed font-semibold text-emerald-800">{feedback.motivation}</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Fallback to old format if not teacher-friendly
   const levelBadge = {
     SANGAT_BAIK: { emoji: '⭐', label: 'Sangat Baik', color: 'bg-emerald-100 text-emerald-700' },
     HAMPIR_BENAR: { emoji: '📊', label: 'Hampir Benar', color: 'bg-amber-100 text-amber-700' },
@@ -149,6 +218,12 @@ export default function Comic2ArgumentationStage({
         suggestion?: string;
         level?: FeedbackLevel;
         score?: number;
+        appreciation?: string;
+        appreciationDetail?: string;
+        explanation?: string;
+        example?: string;
+        motivation?: string;
+        isTeacherFriendly?: boolean;
       };
 
       onSubmitFeedback({
@@ -158,6 +233,12 @@ export default function Comic2ArgumentationStage({
         strength: data.strength,
         improvement: data.improvement,
         suggestion: data.suggestion,
+        appreciation: data.appreciation,
+        appreciationDetail: data.appreciationDetail,
+        explanation: data.explanation,
+        example: data.example,
+        motivation: data.motivation,
+        isTeacherFriendly: data.isTeacherFriendly,
       });
     } catch (error) {
       console.error('Error submitting argumentation:', error);
