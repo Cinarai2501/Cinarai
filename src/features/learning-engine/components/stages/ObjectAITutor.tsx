@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
 import RobotMascot from '@/components/ai/RobotMascot';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
@@ -25,23 +25,6 @@ interface ObjectAITutorProps {
   comicId?: number;
 }
 
-const COMIC2_QUICK_QUESTIONS = [
-  'Apa cirinya?',
-  'Bagaimana bentuknya?',
-  'Bagaimana simetrinya?',
-  'Di mana letaknya?',
-  'Kenapa penting?',
-  'Apa kaitannya dengan Candi Penataran?',
-];
-
-const DEFAULT_QUICK_QUESTIONS = [
-  'Apa cirinya?',
-  'Apa rumusnya?',
-  'Ada dimana?',
-  'Berapa sisi?',
-  'Berapa rusuk?',
-  'Berapa titik sudut?',
-];
 
 const COMIC2_OUT_OF_SCOPE_PATTERN = /rumus|luas|keliling|kubus|balok|prisma|limas|kerucut|tabung|bangun ruang|rusuk|titik sudut/i;
 
@@ -108,10 +91,10 @@ export function ObjectAITutor({
   }, [isSymmetryContext]);
 
   useEffect(() => {
-    setMessages([createInitialMessage(objectName)]);
+    setMessages(isComic3 ? [] : [createInitialMessage(objectName)]);
     setDraft('');
     setAiError(null);
-  }, [objectId, objectName]);
+  }, [objectId, objectName, isComic3]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -210,9 +193,15 @@ export function ObjectAITutor({
     }
   };
 
-  const renderChatCard = isComic3;
-  const showFloatingButton = !isComic3 && !isOpen;
-  const showSheet = !isComic3 && isOpen;
+  const compactCard = isComic3;
+  const showFloatingButton = !isOpen && !compactCard;
+  const showSheet = isOpen;
+
+  const handleSheetDragEnd = (_event: unknown, info: PanInfo) => {
+    if (info.offset.y > 120 || info.velocity.y > 800) {
+      setIsOpen(false);
+    }
+  };
 
   return (
     <>
@@ -226,10 +215,10 @@ export function ObjectAITutor({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-5 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_20px_40px_rgba(15,23,42,0.18)] outline-none"
+            className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_20px_40px_rgba(15,23,42,0.18)] outline-none"
             aria-label="Buka AI Tutor"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-600 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-600 shadow-sm">
               <RobotMascot variant="fab" />
             </div>
           </motion.button>
@@ -237,99 +226,35 @@ export function ObjectAITutor({
       </AnimatePresence>
 
       <AnimatePresence>
-        {renderChatCard && (
+        {compactCard && !isOpen && (
           <motion.div
-            key="comic3-chatcard"
-            className="mx-auto w-full max-w-2xl rounded-[32px] border border-neutral-200 bg-white shadow-[0_20px_40px_rgba(15,23,42,0.08)]"
-            initial={{ opacity: 0, y: 24 }}
+            key="compact-card"
+            className="mx-auto mt-6 w-full max-w-2xl rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_24px_48px_rgba(15,23,42,0.08)]"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
-            transition={{ type: 'tween', ease: 'easeOut', duration: 0.24 }}
+            exit={{ opacity: 0, y: 16 }}
           >
-            <div className="flex flex-col h-[360px] overflow-hidden rounded-[32px]">
-              <div className="flex items-center gap-3 border-b border-neutral-200 bg-white px-5 py-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary-50 shadow-sm">
-                  <RobotMascot variant="desktop" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-lg font-black text-neutral-900">AI Tutor</p>
-                  <p className="mt-1 text-sm text-neutral-500">Halo 👋 Aku akan membantu kamu mengamati {objectName}.</p>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary-50">
+                <RobotMascot variant="desktop" />
               </div>
-
-              <div className="flex flex-col flex-1 overflow-hidden px-5 py-4">
-                <div className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">Area Percakapan</div>
-                <div ref={messagesRef} className="flex-1 overflow-y-auto pr-1">
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.18 }}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className="max-w-[80%]">
-                          <div className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.28em] ${message.role === 'assistant' ? 'text-neutral-500' : 'text-primary-100'}`}>
-                            {message.role === 'assistant' ? 'AI' : 'Siswa'}
-                          </div>
-                          <div className={`rounded-[20px] px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                            message.role === 'assistant'
-                              ? 'bg-[#F4F7FB] text-neutral-900'
-                              : 'bg-primary-600 text-white'
-                          }`} style={{ whiteSpace: 'pre-wrap' }}>
-                            {message.content}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                {isResponding && (
-                  <div className="mt-3 flex items-center gap-2 px-3 py-2">
-                    <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    <span className="text-sm text-neutral-500">AI Tutor sedang berpikir...</span>
-                  </div>
-                )}
-
-                <div className="mt-4 border-t border-neutral-200 pt-4">
-                  <div className="flex items-end gap-3">
-                    <textarea
-                      ref={textareaRef}
-                      value={draft}
-                      onChange={(event) => handleDraftChange(event.target.value)}
-                      onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault();
-                          void handleSend();
-                        }
-                      }}
-                      placeholder="Ketik jawabanmu di sini..."
-                      rows={1}
-                      className="min-h-[48px] max-h-[112px] w-full resize-none overflow-hidden rounded-3xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-300 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void handleSend()}
-                      disabled={isResponding || !draft.trim()}
-                      className="inline-flex h-12 min-w-[84px] items-center justify-center rounded-full bg-primary-600 px-4 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="Kirim pesan AI Tutor"
-                    >
-                      Kirim
-                    </button>
-                  </div>
-                  {aiError ? (
-                    <p className="mt-3 rounded-2xl bg-error-50 px-3 py-2 text-xs text-error-700">{aiError}</p>
-                  ) : null}
-                </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-black text-neutral-900">AI Tutor</p>
+                <p className="mt-1 text-sm text-neutral-600">Halo 👋 Aku siap membantu mengamati bangun datar ini.</p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsOpen(true)}
+              className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
+            >
+              Mulai Belajar
+            </button>
           </motion.div>
         )}
+      </AnimatePresence>
 
+      <AnimatePresence>
         {showSheet && (
           <>
             <motion.div
@@ -342,22 +267,27 @@ export function ObjectAITutor({
             />
             <motion.div
               key="chatsheet"
-              className="fixed left-0 right-0 bottom-0 z-50 mx-auto w-full max-w-2xl rounded-t-[24px] bg-white shadow-[0_-24px_60px_rgba(15,23,42,0.20)]"
-              style={{ height: '70vh' }}
+              className="fixed left-0 right-0 bottom-0 z-50 mx-auto w-full max-w-2xl rounded-t-[32px] bg-white shadow-[0_-24px_60px_rgba(15,23,42,0.18)]"
+              style={{ height: '68vh' }}
               initial={{ y: 300, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'tween', ease: 'easeOut', duration: 0.28 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragEnd={handleSheetDragEnd}
             >
-              <div className="flex h-full flex-col overflow-hidden rounded-t-[24px]">
+              <div className="flex h-full flex-col overflow-hidden rounded-t-[32px]">
+                <div className="mx-auto mt-3 h-1.5 w-16 rounded-full bg-neutral-200" />
                 <div className="border-b border-neutral-200 bg-white px-5 py-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary-50 shadow-sm">
                       <RobotMascot variant="desktop" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-lg font-black text-neutral-900">RobotAI</p>
-                      <p className="mt-1 text-sm text-neutral-500">Tanyakan apa saja tentang {objectName}</p>
+                      <p className="text-lg font-black text-neutral-900">AI Tutor</p>
+                      <p className="mt-1 text-sm text-neutral-500">Area Percakapan</p>
                     </div>
                     <button
                       type="button"
@@ -370,8 +300,8 @@ export function ObjectAITutor({
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden">
-                  <div ref={messagesRef} className="h-full overflow-y-auto px-4 py-4 sm:px-5">
+                <div className="flex flex-1 flex-col overflow-hidden px-5 py-4">
+                  <div ref={messagesRef} className="flex-1 overflow-y-auto pr-1">
                     <div className="space-y-4">
                       {messages.map((message) => (
                         <motion.div
@@ -381,68 +311,58 @@ export function ObjectAITutor({
                           transition={{ duration: 0.18 }}
                           className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                          {message.role === 'assistant' ? (
-                            <div className="flex items-start gap-3">
-                              <div className="mt-1">
-                                <RobotMascot variant="mobile" />
-                              </div>
-                              <div className="max-w-[80%] rounded-[20px] bg-[#F4F7FB] px-4 py-3 text-sm leading-relaxed text-neutral-900 shadow-sm">
-                                {message.content}
-                              </div>
+                          <div className="max-w-[80%]">
+                            <div className={`mb-1 text-[10px] font-semibold uppercase tracking-[0.32em] ${message.role === 'assistant' ? 'text-neutral-500' : 'text-primary-100'}`}>
+                              {message.role === 'assistant' ? 'AI' : 'Siswa'}
                             </div>
-                          ) : (
-                            <div className="max-w-[80%] rounded-[20px] bg-primary-600 px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
+                            <div className={`rounded-[24px] px-4 py-3 text-base leading-relaxed shadow-sm ${
+                              message.role === 'assistant'
+                                ? 'bg-sky-100 text-slate-900'
+                                : 'bg-white text-slate-900 border border-neutral-200'
+                            }`} style={{ whiteSpace: 'pre-wrap' }}>
                               {message.content}
                             </div>
-                          )}
+                          </div>
                         </motion.div>
                       ))}
-
-                      {isResponding && (
-                        <div className="flex items-center gap-2 px-1">
-                          <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" />
-                          <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0.1s' }} />
-                          <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0.2s' }} />
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200 bg-white px-4 py-4 sm:px-5">
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {(isComic2 ? COMIC2_QUICK_QUESTIONS : DEFAULT_QUICK_QUESTIONS).map((question) => (
-                        <button
-                          key={question}
-                          type="button"
-                          onClick={() => void handleSend(question)}
-                          disabled={isResponding}
-                          className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50 active:scale-95"
-                        >
-                          {question}
-                        </button>
-                      ))}
+                  {isResponding && (
+                    <div className="mt-3 flex items-center gap-2 px-3 py-2">
+                      <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="h-2.5 w-2.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <span className="text-sm text-neutral-500">AI Tutor sedang berpikir...</span>
                     </div>
+                  )}
 
+                  <div className="mt-4 border-t border-neutral-200 pt-4">
                     <div className="flex items-end gap-3">
                       <textarea
                         ref={textareaRef}
                         value={draft}
                         onChange={(event) => handleDraftChange(event.target.value)}
-                        placeholder={`Tanyakan tentang ${objectName}...`}
+                        onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            void handleSend();
+                          }
+                        }}
+                        placeholder="Tulis pertanyaanmu..."
                         rows={1}
-                        className="min-h-[44px] max-h-[112px] w-full resize-none overflow-hidden rounded-full border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-500 focus:border-primary-300 focus:outline-none"
+                        className="min-h-[48px] max-h-[112px] w-full resize-none overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-300 focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => void handleSend()}
                         disabled={isResponding || !draft.trim()}
-                        className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white transition hover:bg-primary-700 disabled:opacity-50 active:scale-95"
+                        className="inline-flex h-12 min-w-[84px] items-center justify-center rounded-full bg-primary-600 px-4 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="Kirim pesan AI Tutor"
                       >
-                        ➤
+                        Kirim
                       </button>
                     </div>
-
                     {aiError ? (
                       <p className="mt-3 rounded-2xl bg-error-50 px-3 py-2 text-xs text-error-700">{aiError}</p>
                     ) : null}

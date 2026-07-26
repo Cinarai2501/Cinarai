@@ -92,41 +92,36 @@ export default function Comic3ObjectDetailClient({ id }: { id: string }) {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Pertanyaan Pemantik</p>
               <p className="mt-2 text-base leading-relaxed text-neutral-700">{observationQuestion}</p>
             </div>
+          </div>
 
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">AI Tutor</p>
-              <div className="mt-2 text-base leading-relaxed text-neutral-700">
-                <p>Halo 👋</p>
-                <p>Aku siap membantu kamu mengamati gambar ini. Coba tekan tombol Highlight lalu ceritakan apa yang kamu lihat.</p>
-              </div>
-            </div>
+          <div className="mt-6">
+            <ObjectAITutor
+              objectId={obj.id}
+              objectName={obj.title}
+              provider={obj.provider}
+              comicPage={obj.page}
+              modelUrl={obj.modelUrl}
+              entry={obj as unknown as ComicAssetEntry}
+              initialPrompt={obj.aiPrompt}
+              comicId={comicId}
+            />
+          </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button
-                onClick={() => router.push(`/comic/${comicId}/learn`)}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-700"
-              >
-                Lanjut
-              </button>
-              <button
-                onClick={() => router.back()}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50"
-              >
-                Kembali
-              </button>
-            </div>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              onClick={() => router.push(`/comic/${comicId}/learn`)}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-700"
+            >
+              Lanjut
+            </button>
+            <button
+              onClick={() => router.back()}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50"
+            >
+              Kembali
+            </button>
           </div>
         </div>
-
-        <ObjectAITutor
-          objectId={obj.id}
-          objectName={obj.title}
-          provider={obj.provider}
-          comicPage={obj.page}
-          entry={obj as unknown as ComicAssetEntry}
-          initialPrompt={obj.aiPrompt}
-          comicId={comicId}
-        />
       </div>
     </div>
   );
