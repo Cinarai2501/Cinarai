@@ -61,7 +61,7 @@ export function ObjectAITutor({
   knowledge,
   modelUrl,
   entry,
-  initialPrompt,
+  initialPrompt: _initialPrompt,
   comicId,
 }: ObjectAITutorProps) {
   // Guard khusus comic-2: batasi tutor AI ke cakupan Candi Penataran dan hindari topik yang tidak relevan.

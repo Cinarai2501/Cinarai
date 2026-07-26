@@ -317,7 +317,7 @@ export async function generateTutorResponse(
         context.cultureConcept ? `konsep budaya: ${context.cultureConcept}` : '',
         context.knowledgeContext ? `pengetahuan objek: ${context.knowledgeContext}` : '',
       ].filter(Boolean).join('; ') || '- Tidak ada konteks objek AR.',
-    })}
+    })}`,
     temperature: 0.7,
     maxTokens: 220,
   };
