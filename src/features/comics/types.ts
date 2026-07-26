@@ -13,6 +13,8 @@ export interface ComicNavigationObjectLike {
   navImage?: string;
   objectImage?: string;
   image?: string;
+  highlightImage?: string;
+  observationQuestion?: string;
   characteristics?: string[];
   modelUrl?: string;
   model3DUrl?: string;

@@ -1,11 +1,17 @@
 import type { ComicContentPackageLike } from '../../types';
 import persegiIllustration from '@/features/comics/comic-3/assets/identification/persegi.svg';
 import persegiPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi.svg';
+import persegiHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi-highlight.svg';
 import persegiPanjangPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi-panjang.svg';
+import persegiPanjangHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi-panjang-highlight.svg';
 import segitigaPlaceholder from '@/features/comics/comic-3/assets/placeholders/segitiga.svg';
+import segitigaHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/segitiga-highlight.svg';
 import trapesiumPlaceholder from '@/features/comics/comic-3/assets/placeholders/trapesium.svg';
+import trapesiumHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/trapesium-highlight.svg';
 import lingkaranPlaceholder from '@/features/comics/comic-3/assets/placeholders/lingkaran.svg';
+import lingkaranHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/lingkaran-highlight.svg';
 import jajarGenjangPlaceholder from '@/features/comics/comic-3/assets/placeholders/jajar-genjang.svg';
+import jajarGenjangHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/jajar-genjang-highlight.svg';
 
 export const packageContent: ComicContentPackageLike = {
   metadata: {
@@ -33,6 +39,8 @@ export const packageContent: ComicContentPackageLike = {
       navImage: persegiPlaceholder.src,
       objectImage: persegiPlaceholder.src,
       image: persegiPlaceholder.src,
+      highlightImage: persegiHighlightPlaceholder.src,
+      observationQuestion: 'Apa yang kamu perhatikan ketika bangun persegi ini berganti menjadi highlight?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -52,6 +60,8 @@ export const packageContent: ComicContentPackageLike = {
       navImage: persegiPanjangPlaceholder.src,
       objectImage: persegiPanjangPlaceholder.src,
       image: persegiPanjangPlaceholder.src,
+      highlightImage: persegiPanjangHighlightPlaceholder.src,
+      observationQuestion: 'Bagian mana pada gambar ini yang menonjol sebagai persegi panjang?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -71,6 +81,8 @@ export const packageContent: ComicContentPackageLike = {
       navImage: segitigaPlaceholder.src,
       objectImage: segitigaPlaceholder.src,
       image: segitigaPlaceholder.src,
+      highlightImage: segitigaHighlightPlaceholder.src,
+      observationQuestion: 'Bagaimana highlight membantu kamu melihat sisi dan sudut segitiga ini?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -90,6 +102,8 @@ export const packageContent: ComicContentPackageLike = {
       navImage: trapesiumPlaceholder.src,
       objectImage: trapesiumPlaceholder.src,
       image: trapesiumPlaceholder.src,
+      highlightImage: trapesiumHighlightPlaceholder.src,
+      observationQuestion: 'Apa yang berubah ketika highlight ditampilkan pada bentuk trapesium ini?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -109,6 +123,8 @@ export const packageContent: ComicContentPackageLike = {
       navImage: lingkaranPlaceholder.src,
       objectImage: lingkaranPlaceholder.src,
       image: lingkaranPlaceholder.src,
+      highlightImage: lingkaranHighlightPlaceholder.src,
+      observationQuestion: 'Bagaimana highlight memudahkan kamu melihat lingkaran ini?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
@@ -128,6 +144,8 @@ export const packageContent: ComicContentPackageLike = {
       navImage: jajarGenjangPlaceholder.src,
       objectImage: jajarGenjangPlaceholder.src,
       image: jajarGenjangPlaceholder.src,
+      highlightImage: jajarGenjangHighlightPlaceholder.src,
+      observationQuestion: 'Perhatikan pola garis pada jajar genjang ini; apa yang membuatnya berbeda dari trapezium?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
