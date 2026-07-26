@@ -98,11 +98,13 @@ export default function Comic3ArgumentationStage({
 }: Comic3ArgumentationStageProps) {
   const [answer, setAnswer] = useState(initialAnswer);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [tutorMessage, setTutorMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const charCount = answer.trim().length;
-  const canSubmit = charCount >= 20 && !isSubmitting && !feedback;
+  const canSubmit = charCount >= 20 && !isSubmitting;
 
   const adjustTextareaHeight = useCallback(() => {
     if (!textareaRef.current) return;
@@ -116,6 +118,8 @@ export default function Comic3ArgumentationStage({
 
   useEffect(() => {
     setAnswer(initialAnswer);
+    setSubmitted(false);
+    setErrorMessage(null);
     setTutorMessage(
       question.question
         ? `Coba jelaskan alasanmu. ${question.question}`
@@ -126,7 +130,10 @@ export default function Comic3ArgumentationStage({
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return;
+
+    setSubmitted(true);
     setIsSubmitting(true);
+    setErrorMessage(null);
 
     try {
       const response = await fetch('/api/ai/argumentation', {
@@ -144,6 +151,7 @@ export default function Comic3ArgumentationStage({
       });
 
       const data = (await response.json()) as {
+        error?: string;
         feedback?: string;
         strength?: string;
         improvement?: string;
@@ -152,24 +160,26 @@ export default function Comic3ArgumentationStage({
         score?: number;
       };
 
+      if (!response.ok) {
+        throw new Error(data.error ?? 'AI tidak memberikan respons yang valid.');
+      }
+
+      if (!data.feedback || !data.level || typeof data.score !== 'number') {
+        throw new Error('AI tidak mengirimkan evaluasi lengkap.');
+      }
+
       onSubmitFeedback({
-        level: data.level ?? 'HAMPIR_BENAR',
-        score: Math.min(5, Math.max(1, Number(data.score) || 4)),
-        feedback: data.feedback ?? 'AI tidak memberikan umpan balik yang sesuai.',
+        level: data.level,
+        score: Math.min(5, Math.max(1, Number(data.score))),
+        feedback: data.feedback,
         strength: data.strength,
         improvement: data.improvement,
         suggestion: data.suggestion,
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Tidak dapat menerima evaluasi AI saat ini.';
       console.error('Error submitting comic 3 argumentation:', error);
-      onSubmitFeedback({
-        level: 'PERLU_PERBAIKAN',
-        score: 2,
-        feedback: 'Terjadi kesalahan saat menganalisis jawaban. Coba lagi nanti.',
-        strength: 'Jawaban sudah disampaikan.',
-        improvement: 'Pastikan koneksi stabil dan kirim ulang jawaban.',
-        suggestion: 'Coba tekan tombol Kirim kembali setelah beberapa saat.',
-      });
+      setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -232,6 +242,7 @@ export default function Comic3ArgumentationStage({
               onChange={(event) => {
                 const nextValue = event.target.value;
                 setAnswer(nextValue);
+                setErrorMessage(null);
                 onAnswerChange(nextValue);
                 requestAnimationFrame(adjustTextareaHeight);
               }}
@@ -253,6 +264,18 @@ export default function Comic3ArgumentationStage({
                 {isSubmitting ? 'Sedang menganalisis...' : 'Kirim'}
               </button>
             </div>
+
+            {submitted && isSubmitting ? (
+              <div className="rounded-[20px] border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
+                AI sedang menilai jawabanmu. Mohon tunggu sebentar.
+              </div>
+            ) : null}
+
+            {errorMessage ? (
+              <div className="rounded-[20px] border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+                {errorMessage}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
