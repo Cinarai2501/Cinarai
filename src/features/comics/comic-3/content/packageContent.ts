@@ -1,17 +1,17 @@
 import type { ComicContentPackageLike } from '../../types';
 import persegiIllustration from '@/features/comics/comic-3/assets/identification/persegi.svg';
-import persegiPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi.svg';
-import persegiHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi-highlight.svg';
-import persegiPanjangPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi-panjang.svg';
-import persegiPanjangHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi-panjang-highlight.svg';
-import segitigaPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/segitiga.svg';
-import segitigaHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/segitiga-highlight.svg';
-import trapesiumPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/trapesium.svg';
-import trapesiumHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/trapesium-highlight.svg';
-import lingkaranPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/lingkaran.svg';
-import lingkaranHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/lingkaran-highlight.svg';
-import jajarGenjangPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/jajar-genjang.svg';
-import jajarGenjangHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/jajar-genjang-highlight.svg';
+import persegiNav from '@/features/comics/comic-3/assets/navigation/persegi.svg';
+import persegiHighlightNav from '@/features/comics/comic-3/assets/navigation/persegi-highlight.svg';
+import persegiPanjangNav from '@/features/comics/comic-3/assets/navigation/persegi-panjang.svg';
+import persegiPanjangHighlightNav from '@/features/comics/comic-3/assets/navigation/persegi-panjang-highlight.svg';
+import segitigaNav from '@/features/comics/comic-3/assets/navigation/segitiga.svg';
+import segitigaHighlightNav from '@/features/comics/comic-3/assets/navigation/segitiga-highlight.svg';
+import trapesiumNav from '@/features/comics/comic-3/assets/navigation/trapesium.svg';
+import trapesiumHighlightNav from '@/features/comics/comic-3/assets/navigation/trapesium-highlight.svg';
+import lingkaranNav from '@/features/comics/comic-3/assets/navigation/lingkaran.svg';
+import lingkaranHighlightNav from '@/features/comics/comic-3/assets/navigation/lingkaran-highlight.svg';
+import belahKetupatNav from '@/features/comics/comic-3/assets/navigation/belah-ketupat.svg';
+import belahKetupatHighlightNav from '@/features/comics/comic-3/assets/navigation/belah-ketupat-highlight.svg';
 
 export const packageContent: ComicContentPackageLike = {
   metadata: {
@@ -36,10 +36,10 @@ export const packageContent: ComicContentPackageLike = {
       description: 'Bentuk persegi pada bagian halaman bangunan.',
       page: 1,
       qrImage: '/images/navigation/default.svg',
-      navImage: persegiPlaceholder.src,
-      objectImage: persegiPlaceholder.src,
-      image: persegiPlaceholder.src,
-      highlightImage: persegiHighlightPlaceholder.src,
+      navImage: persegiNav.src,
+      objectImage: persegiNav.src,
+      image: persegiNav.src,
+      highlightImage: persegiHighlightNav.src,
       observationQuestion: 'Apa yang kamu perhatikan ketika bangun persegi ini berganti menjadi highlight?',
       modelUrl: '',
       embedUrl: '',
@@ -57,10 +57,10 @@ export const packageContent: ComicContentPackageLike = {
       description: 'Bentuk persegi panjang pada dinding dan lantai.',
       page: 2,
       qrImage: '/images/navigation/default.svg',
-      navImage: persegiPanjangPlaceholder.src,
-      objectImage: persegiPanjangPlaceholder.src,
-      image: persegiPanjangPlaceholder.src,
-      highlightImage: persegiPanjangHighlightPlaceholder.src,
+      navImage: persegiPanjangNav.src,
+      objectImage: persegiPanjangNav.src,
+      image: persegiPanjangNav.src,
+      highlightImage: persegiPanjangHighlightNav.src,
       observationQuestion: 'Bagian mana pada gambar ini yang menonjol sebagai persegi panjang?',
       modelUrl: '',
       embedUrl: '',
@@ -78,10 +78,10 @@ export const packageContent: ComicContentPackageLike = {
       description: 'Bentuk atap rumah yang tajam.',
       page: 3,
       qrImage: '/images/navigation/default.svg',
-      navImage: segitigaPlaceholder.src,
-      objectImage: segitigaPlaceholder.src,
-      image: segitigaPlaceholder.src,
-      highlightImage: segitigaHighlightPlaceholder.src,
+      navImage: segitigaNav.src,
+      objectImage: segitigaNav.src,
+      image: segitigaNav.src,
+      highlightImage: segitigaHighlightNav.src,
       observationQuestion: 'Bagaimana highlight membantu kamu melihat sisi dan sudut segitiga ini?',
       modelUrl: '',
       embedUrl: '',
@@ -99,10 +99,10 @@ export const packageContent: ComicContentPackageLike = {
       description: 'Bentuk trapesium pada ornamen bangunan.',
       page: 4,
       qrImage: '/images/navigation/default.svg',
-      navImage: trapesiumPlaceholder.src,
-      objectImage: trapesiumPlaceholder.src,
-      image: trapesiumPlaceholder.src,
-      highlightImage: trapesiumHighlightPlaceholder.src,
+      navImage: trapesiumNav.src,
+      objectImage: trapesiumNav.src,
+      image: trapesiumNav.src,
+      highlightImage: trapesiumHighlightNav.src,
       observationQuestion: 'Apa yang berubah ketika highlight ditampilkan pada bentuk trapesium ini?',
       modelUrl: '',
       embedUrl: '',
@@ -120,10 +120,10 @@ export const packageContent: ComicContentPackageLike = {
       description: 'Bentuk lingkaran pada hiasan bundar.',
       page: 5,
       qrImage: '/images/navigation/default.svg',
-      navImage: lingkaranPlaceholder.src,
-      objectImage: lingkaranPlaceholder.src,
-      image: lingkaranPlaceholder.src,
-      highlightImage: lingkaranHighlightPlaceholder.src,
+      navImage: lingkaranNav.src,
+      objectImage: lingkaranNav.src,
+      image: lingkaranNav.src,
+      highlightImage: lingkaranHighlightNav.src,
       observationQuestion: 'Bagaimana highlight memudahkan kamu melihat lingkaran ini?',
       modelUrl: '',
       embedUrl: '',
@@ -136,25 +136,25 @@ export const packageContent: ComicContentPackageLike = {
       characteristics: ['Satu garis lengkung tertutup', 'Tidak memiliki sudut', 'Semua titik sama jauh dari pusat', 'Bentuknya seperti roda'],
     },
     {
-      id: 'komik3-jajar-genjang',
-      title: 'Jajar Genjang',
-      description: 'Bentuk jajar genjang pada pola lantai.',
+      id: 'komik3-belah-ketupat',
+      title: 'Belah Ketupat',
+      description: 'Bentuk belah ketupat pada pola lantai.',
       page: 6,
       qrImage: '/images/navigation/default.svg',
-      navImage: jajarGenjangPlaceholder.src,
-      objectImage: jajarGenjangPlaceholder.src,
-      image: jajarGenjangPlaceholder.src,
-      highlightImage: jajarGenjangHighlightPlaceholder.src,
-      observationQuestion: 'Perhatikan pola garis pada jajar genjang ini; apa yang membuatnya berbeda dari trapezium?',
+      navImage: belahKetupatNav.src,
+      objectImage: belahKetupatNav.src,
+      image: belahKetupatNav.src,
+      highlightImage: belahKetupatHighlightNav.src,
+      observationQuestion: 'Perhatikan bentuk belah ketupat ini; apa yang membuat semua sisinya istimewa?',
       modelUrl: '',
       embedUrl: '',
       viewerType: 'embed',
       provider: '',
-      aiPrompt: `TutorComic3: Bimbing siswa SD, jangan berikan jawaban langsung. Gunakan bahasa sederhana maksimal 3 kalimat. Jika jawaban benar: berikan pujian singkat, jelaskan alasan singkat, lalu ajukan satu pertanyaan lanjutan. Jika kurang tepat: jangan katakan "salah", berikan satu petunjuk observasi dan ajak menghitung sisi atau mengamati sudut. Jika siswa mengatakan "Saya tidak tahu": bimbing langkah demi langkah. Selalu hubungkan dengan gambar objek ini. -- Jelaskan ciri jajar genjang yang kamu lihat pada pola lantai.`,
-      question: 'Apa ciri jajar genjang?',
-      answer: 'Jajar genjang memiliki dua pasang sisi sejajar yang sama panjang.',
-      feedback: 'Bagus, kamu bisa mengenali jajar genjang dari sisi-sisinya yang sejajar.',
-      characteristics: ['Dua pasang sisi sejajar', 'Sisi-sisi sama panjang', 'Empat sudut', 'Bentuknya miring ke samping'],
+      aiPrompt: `TutorComic3: Bimbing siswa SD, jangan berikan jawaban langsung. Gunakan bahasa sederhana maksimal 3 kalimat. Jika jawaban benar: berikan pujian singkat, jelaskan alasan singkat, lalu ajukan satu pertanyaan lanjutan. Jika kurang tepat: jangan katakan "salah", berikan satu petunjuk observasi dan ajak menghitung sisi atau mengamati sudut. Jika siswa mengatakan "Saya tidak tahu": bimbing langkah demi langkah. Selalu hubungkan dengan gambar objek ini. -- Jelaskan ciri belah ketupat yang kamu lihat pada pola lantai.`,
+      question: 'Apa ciri belah ketupat?',
+      answer: 'Belah ketupat memiliki empat sisi sama panjang dan dua pasang sisi sejajar.',
+      feedback: 'Bagus, kamu bisa mengenali belah ketupat dari sisi-sisinya yang sama panjang.',
+      characteristics: ['Empat sisi sama panjang', 'Dua pasang sisi sejajar', 'Empat sudut', 'Bentuknya seperti wajik atau berlian'],
     },
   ],
   qrCode: [
@@ -203,12 +203,12 @@ export const packageContent: ComicContentPackageLike = {
     prompt: 'Pilih salah satu bangun datar dari daftar dan jelaskan mengapa bangun tersebut cocok untuk bagian yang kamu amati.',
     context: 'Benda-benda di sekitar Rumah Gajah Mungkur dan bagian-bagian bangunan yang terlihat di komik.',
     images: [
-      { src: persegiPlaceholder.src, alt: 'Persegi', label: 'Persegi', description: 'Perhatikan sisi sama panjang dan sudut siku-siku.' },
-      { src: persegiPanjangPlaceholder.src, alt: 'Persegi Panjang', label: 'Persegi Panjang', description: 'Perhatikan pasangan sisi panjang dan pendek.' },
-      { src: segitigaPlaceholder.src, alt: 'Segitiga', label: 'Segitiga', description: 'Perhatikan jumlah sisi dan sudut.' },
-      { src: trapesiumPlaceholder.src, alt: 'Trapesium', label: 'Trapesium', description: 'Perhatikan satu pasang sisi yang sejajar.' },
-      { src: lingkaranPlaceholder.src, alt: 'Lingkaran', label: 'Lingkaran', description: 'Perhatikan bentuk melengkung dan pusatnya.' },
-      { src: jajarGenjangPlaceholder.src, alt: 'Jajar Genjang', label: 'Jajar Genjang', description: 'Perhatikan pasangan sisi sejajar yang miring.' },
+      { src: persegiNav.src, alt: 'Persegi', label: 'Persegi', description: 'Perhatikan sisi sama panjang dan sudut siku-siku.' },
+      { src: persegiPanjangNav.src, alt: 'Persegi Panjang', label: 'Persegi Panjang', description: 'Perhatikan pasangan sisi panjang dan pendek.' },
+      { src: segitigaNav.src, alt: 'Segitiga', label: 'Segitiga', description: 'Perhatikan jumlah sisi dan sudut.' },
+      { src: trapesiumNav.src, alt: 'Trapesium', label: 'Trapesium', description: 'Perhatikan satu pasang sisi yang sejajar.' },
+      { src: lingkaranNav.src, alt: 'Lingkaran', label: 'Lingkaran', description: 'Perhatikan bentuk melengkung dan pusatnya.' },
+      { src: belahKetupatNav.src, alt: 'Belah Ketupat', label: 'Belah Ketupat', description: 'Perhatikan sisi sama panjang dan bentuk wajik.' },
     ],
     options: [
       { value: 'Persegi', label: 'Persegi' },
@@ -216,7 +216,7 @@ export const packageContent: ComicContentPackageLike = {
       { value: 'Segitiga', label: 'Segitiga' },
       { value: 'Trapesium', label: 'Trapesium' },
       { value: 'Lingkaran', label: 'Lingkaran' },
-      { value: 'Jajar Genjang', label: 'Jajar Genjang' },
+      { value: 'Belah Ketupat', label: 'Belah Ketupat' },
     ],
   },
   argumentation: {
