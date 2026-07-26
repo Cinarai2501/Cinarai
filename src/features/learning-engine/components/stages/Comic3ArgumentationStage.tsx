@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ObjectAITutor } from '@/features/learning-engine/components/stages/ObjectAITutor';
+import { motion } from 'framer-motion';
+import RobotMascot from '@/components/ai/RobotMascot';
 import type { ArgumentationLearningObject } from '@/features/learning-engine/stages/Argumentation/data/argumentationQuestions';
-import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
 
 type FeedbackLevel = 'SANGAT_BAIK' | 'HAMPIR_BENAR' | 'PERLU_PERBAIKAN';
 
@@ -12,6 +12,9 @@ interface AiFeedback {
   level: FeedbackLevel;
   score: number;
   feedback: string;
+  strength?: string;
+  improvement?: string;
+  suggestion?: string;
 }
 
 interface Comic3ArgumentationStageProps {
@@ -21,9 +24,63 @@ interface Comic3ArgumentationStageProps {
   onNext: () => void;
   feedback: AiFeedback | null;
   comicTitle: string;
+  comicLocation: string;
   classLevel: string;
   currentIndex: number;
   totalItems: number;
+  initialAnswer?: string;
+}
+
+function FeedbackCard({ feedback }: { feedback: AiFeedback }) {
+  const levelBadge = {
+    SANGAT_BAIK: { emoji: '⭐', label: 'Sangat Baik', color: 'bg-emerald-100 text-emerald-700' },
+    HAMPIR_BENAR: { emoji: '📊', label: 'Hampir Benar', color: 'bg-amber-100 text-amber-700' },
+    PERLU_PERBAIKAN: { emoji: '✏', label: 'Perlu Perbaikan', color: 'bg-sky-100 text-sky-700' },
+  };
+
+  const badge = levelBadge[feedback.level];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-sm"
+    >
+      <div className="space-y-5 p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className={`flex h-11 w-11 items-center justify-center rounded-full ${badge.color} text-lg font-black`}>
+            {badge.emoji}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">Level</p>
+            <p className="mt-1 text-sm font-black text-neutral-900">{badge.label}</p>
+          </div>
+          <div className="ml-auto text-right">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">Skor</p>
+            <p className="mt-1 text-2xl font-black text-accent-600">{feedback.score}/5</p>
+          </div>
+        </div>
+
+        <div className="space-y-4 border-t border-neutral-100 pt-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">✅ Kelebihan</p>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-700">{feedback.strength || 'Ulasan ini menyoroti bagian yang baik dari jawabanmu.'}</p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">✏ Hal yang perlu diperbaiki</p>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-700">{feedback.improvement || 'Perkuat jawaban dengan alasan yang lebih jelas.'}</p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">💡 Saran</p>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-700">{feedback.suggestion || feedback.feedback || 'Coba jelaskan hubungan antara objek dan bangun datar dengan lebih rinci.'}</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 export default function Comic3ArgumentationStage({
@@ -32,146 +89,188 @@ export default function Comic3ArgumentationStage({
   onAnswerChange,
   onNext,
   feedback,
+  comicTitle,
+  comicLocation,
+  classLevel,
   currentIndex,
   totalItems,
+  initialAnswer = '',
 }: Comic3ArgumentationStageProps) {
-  const [step, setStep] = useState<'select-shape' | 'select-reasons' | 'feedback'>(
-    'select-shape',
-  );
-  const [selectedShape, setSelectedShape] = useState<string>('');
-  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [answer, setAnswer] = useState(initialAnswer);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tutorMessage, setTutorMessage] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const charCount = answer.trim().length;
+  const canSubmit = charCount >= 20 && !isSubmitting && !feedback;
+
+  const adjustTextareaHeight = useCallback(() => {
+    if (!textareaRef.current) return;
+    textareaRef.current.style.height = 'auto';
+    textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 150)}px`;
+  }, []);
 
   useEffect(() => {
-    // reset when question changes
-    setStep('select-shape');
-    setSelectedShape('');
-    setSelectedReasons([]);
-  }, [question]);
+    adjustTextareaHeight();
+  }, [adjustTextareaHeight]);
 
-  const shapeOptions = useMemo(() => {
-    // derive shape options from Comic 3 learningObjects titles
-    return (comic3Package.learningObjects ?? []).map((item) => item.title);
-  }, []);
+  useEffect(() => {
+    setAnswer(initialAnswer);
+    setTutorMessage(
+      question.question
+        ? `Coba jelaskan alasanmu. ${question.question}`
+        : 'Coba jelaskan alasanmu dengan menghubungkan objek dengan bangun datar yang sesuai.'
+    );
+    setIsSubmitting(false);
+  }, [initialAnswer, question.question]);
 
-  const reasonOptions = useMemo(() => {
-    // find matching learningObject by title or id or image to get characteristics
-    const title = question.objectName ?? '';
-    const byTitle = (comic3Package.learningObjects ?? []).find((item) => item.title === title || item.id === question.id || item.image === question.image);
-    if (byTitle?.characteristics && Array.isArray(byTitle.characteristics)) return byTitle.characteristics;
-    // fallback: try match by shape name
-    const byShape = (comic3Package.learningObjects ?? []).find((item) => item.title === question.solid || item.shapeName === question.solid || item.id === question.id);
-    if (byShape?.characteristics && Array.isArray(byShape.characteristics)) return byShape.characteristics;
-    return [] as string[];
-  }, [question]);
+  const handleSubmit = useCallback(async () => {
+    if (!canSubmit) return;
+    setIsSubmitting(true);
 
-  const handleToggleReason = useCallback((reason: string) => {
-    setSelectedReasons((prev) => (prev.includes(reason) ? prev.filter((r) => r !== reason) : [...prev, reason]));
-  }, []);
+    try {
+      const response = await fetch('/api/ai/argumentation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: question.question,
+          studentAnswer: answer,
+          shapeName: question.solid,
+          templePart: question.objectName,
+          comicTitle,
+          lokasi: comicLocation,
+          classLevel,
+        }),
+      });
 
-  const handleSubmit = useCallback(() => {
-    // Produce simple feedback from configuration
-    const expected = question.solid ?? question.objectName ?? '';
-    const chosen = selectedShape;
-    let level: FeedbackLevel = 'PERLU_PERBAIKAN';
-    let score = 2;
-    let fb = `Kamu memilih ${chosen}. `;
+      const data = (await response.json()) as {
+        feedback?: string;
+        strength?: string;
+        improvement?: string;
+        suggestion?: string;
+        level?: FeedbackLevel;
+        score?: number;
+      };
 
-    if (chosen && chosen.toLowerCase().trim() === expected?.toLowerCase().trim()) {
-      level = 'SANGAT_BAIK';
-      score = 5;
-      fb += question.aiFeedback ?? question.explanation ?? 'Alasanmu sesuai dengan data.';
-    } else {
-      level = 'PERLU_PERBAIKAN';
-      score = 2;
-      fb += question.explanation ?? 'Periksa kembali ciri-ciri bangun datar yang tepat.';
+      onSubmitFeedback({
+        level: data.level ?? 'HAMPIR_BENAR',
+        score: Math.min(5, Math.max(1, Number(data.score) || 4)),
+        feedback: data.feedback ?? 'AI tidak memberikan umpan balik yang sesuai.',
+        strength: data.strength,
+        improvement: data.improvement,
+        suggestion: data.suggestion,
+      });
+    } catch (error) {
+      console.error('Error submitting comic 3 argumentation:', error);
+      onSubmitFeedback({
+        level: 'PERLU_PERBAIKAN',
+        score: 2,
+        feedback: 'Terjadi kesalahan saat menganalisis jawaban. Coba lagi nanti.',
+        strength: 'Jawaban sudah disampaikan.',
+        improvement: 'Pastikan koneksi stabil dan kirim ulang jawaban.',
+        suggestion: 'Coba tekan tombol Kirim kembali setelah beberapa saat.',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (selectedReasons.length > 0) {
-      fb += ` Pilihan alasanmu: ${selectedReasons.join(', ')}.`;
-    }
-
-    const payload: AiFeedback = { level, score, feedback: fb };
-    onSubmitFeedback(payload);
-    setStep('feedback');
-  }, [question, selectedReasons, selectedShape, onSubmitFeedback]);
+  }, [answer, canSubmit, classLevel, comicLocation, comicTitle, onSubmitFeedback, question.objectName, question.question, question.solid]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="rounded-[20px] bg-gradient-to-br from-secondary-400 to-secondary-600 px-4 py-5 shadow-sm">
-        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/80">Argumentation</p>
-        <h2 className="mt-1 text-lg font-black text-white">Jelaskan alasanmu</h2>
-        <p className="mt-2 text-sm text-white/90">Objek {currentIndex + 1} dari {totalItems}</p>
-      </header>
-
-      <div className="rounded-[20px] bg-white p-5 shadow-sm">
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Pertanyaan</p>
-            <p className="mt-2 text-base leading-relaxed text-neutral-900">Bentuk apakah gambar ini?</p>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="flex flex-col gap-5"
+    >
+      <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_16px_60px_-30px_rgba(15,23,42,0.25)]">
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">Judul Stage</p>
+            <h2 className="text-3xl font-black uppercase tracking-[0.08em] text-neutral-900">ARGUMENTATION</h2>
+            <p className="text-sm font-semibold text-accent-700">
+              Argumentasi {currentIndex + 1} dari {totalItems}
+            </p>
           </div>
 
-          <div className="overflow-hidden rounded-[12px] border border-neutral-200 bg-neutral-50 p-3 text-center">
-            <Image src={question.image} alt={question.objectName} width={800} height={480} className="mx-auto h-auto w-full max-w-[440px] object-contain" />
+          <div className="rounded-[24px] bg-neutral-50 p-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.35em] text-neutral-500">Pertanyaan</p>
+            <p className="mt-3 text-base leading-relaxed text-neutral-900 font-semibold">{question.question}</p>
           </div>
 
-          {step === 'select-shape' && (
-            <div className="space-y-3">
-              {shapeOptions.map((shape) => (
-                <label key={shape} className={`flex items-center gap-3 rounded-lg border p-3 ${selectedShape === shape ? 'border-primary-600 bg-primary-50' : 'border-neutral-200 bg-white'}`}>
-                  <input type="radio" name="comic3-shape" checked={selectedShape === shape} onChange={() => { setSelectedShape(shape); onAnswerChange(shape); }} />
-                  <span className="font-semibold">{shape}</span>
-                </label>
-              ))}
-
-              <div className="flex gap-3">
-                <button type="button" onClick={() => { /* go back handled by parent slide nav */ }} className="inline-flex items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900">Kembali</button>
-                <button type="button" onClick={() => { if (selectedShape) setStep('select-reasons'); }} disabled={!selectedShape} className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white">Jawab</button>
-              </div>
+          <div className="overflow-hidden rounded-[24px] border border-neutral-200 bg-white p-4">
+            <div className="overflow-hidden rounded-[24px] bg-neutral-100">
+              <Image
+                src={question.image}
+                alt={question.objectName ?? 'Argumentation asset'}
+                width={1200}
+                height={800}
+                className="h-full w-full object-cover"
+              />
             </div>
-          )}
+          </div>
 
-          {step === 'select-reasons' && (
-            <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Mengapa kamu memilih jawaban tersebut?</p>
-              {reasonOptions.length > 0 ? (
-                <div className="space-y-2">
-                  {reasonOptions.map((r: string) => (
-                    <label key={r} className="flex items-center gap-3 rounded-lg border p-3">
-                      <input type="checkbox" checked={selectedReasons.includes(r)} onChange={() => handleToggleReason(r)} />
-                      <span className="text-sm">{r}</span>
-                    </label>
-                  ))}
+          <div className="space-y-3">
+            <div className="rounded-[20px] border border-primary-100 bg-primary-50/70 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white">
+                  <RobotMascot variant="inline" />
                 </div>
-              ) : (
-                <p className="text-sm text-neutral-700">Tidak ada pilihan alasan tersedia untuk objek ini.</p>
-              )}
-
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setStep('select-shape')} className="inline-flex items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900">Kembali</button>
-                <button type="button" onClick={handleSubmit} disabled={selectedReasons.length === 0} className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white">Kirim</button>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-primary-700">AI Tutor</p>
+                  <p className="mt-1 text-sm leading-relaxed text-neutral-800">{tutorMessage}</p>
+                </div>
               </div>
             </div>
-          )}
 
-          {step === 'feedback' && feedback && (
-            <div className="space-y-4">
-              <div className="rounded-[16px] border border-neutral-200 bg-neutral-50 p-4">
-                <p className="text-sm font-semibold">Umpan balik</p>
-                <p className="mt-2 text-base leading-relaxed text-neutral-900">{feedback.feedback}</p>
-              </div>
-
-              <div className="flex gap-3">
-                <button type="button" onClick={() => { setStep('select-shape'); }} className="inline-flex items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900">Kembali</button>
-                <button type="button" onClick={() => { onNext(); }} className="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white">Lanjut Objek Berikutnya</button>
-              </div>
+            <label htmlFor="comic3-arg-answer" className="block text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500">
+              Jawabanmu
+            </label>
+            <textarea
+              id="comic3-arg-answer"
+              ref={textareaRef}
+              value={answer}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setAnswer(nextValue);
+                onAnswerChange(nextValue);
+                requestAnimationFrame(adjustTextareaHeight);
+              }}
+              placeholder="Tuliskan alasanmu di sini..."
+              className="min-h-[150px] w-full resize-none rounded-[24px] border border-neutral-200 bg-white px-4 py-4 text-sm leading-relaxed text-neutral-900 outline-none transition focus:border-secondary-400 focus:ring-2 focus:ring-secondary-100"
+            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className={`text-xs font-semibold ${charCount < 20 ? 'text-warning-600' : 'text-accent-600'}`}>
+                {charCount < 20 ? `Minimal 20 karakter (${charCount}/20)` : `${charCount} karakter`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSubmit();
+                }}
+                disabled={!canSubmit}
+                className="inline-flex items-center justify-center rounded-[20px] bg-accent-600 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-accent-700 disabled:bg-neutral-300 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Sedang menganalisis...' : 'Kirim'}
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      <div>
-        <ObjectAITutor objectId={question.id} objectName={question.objectName} provider="" comicPage={0} entry={null} initialPrompt={undefined} comicId={3} />
-      </div>
-    </div>
+      {feedback ? (
+        <div className="space-y-4">
+          <FeedbackCard feedback={feedback} />
+          <button
+            type="button"
+            onClick={() => {
+              void onNext();
+            }}
+            className="relative z-10 w-full rounded-[24px] bg-accent-600 px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-accent-700"
+          >
+            Lanjut
+          </button>
+        </div>
+      ) : null}
+    </motion.div>
   );
 }

@@ -367,9 +367,11 @@ export default function ArgumentationStage() {
         onNext={handleNext}
         feedback={feedback}
         comicTitle={comic.title}
+        comicLocation={comic.lokasi ?? 'Lokasi'}
         classLevel={comic.kelas ?? 'Kelas II'}
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
+        initialAnswer={textAnswer}
       />
     );
   }
