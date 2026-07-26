@@ -12,15 +12,22 @@ import { QrModal } from './QrModal';
 export default function NavigationStage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { comic } = useLearningEngine();
+  const { comic, comicModule } = useLearningEngine();
 
   const navigationContent = useMemo(() => resolveNavigationStageContent(comic.id), [comic.id]);
   const { objects, heroModelEntry, heroQrImage } = navigationContent;
 
+  const navigationAssets = comicModule.navigationAssets ?? {
+    has3DModel: true,
+    hasQRCode: true,
+    hasExplore: true,
+    hasAITutor: true,
+  };
+
   const candiEntry = heroModelEntry;
-  const candiEmbed = candiEntry && 'embedUrl' in candiEntry ? candiEntry.embedUrl ?? '' : '';
-  const candiQrImage = heroQrImage;
-  const candiFullscreenUrl = candiEntry && 'arUrl' in candiEntry
+  const candiEmbed = navigationAssets.has3DModel && candiEntry && 'embedUrl' in candiEntry ? candiEntry.embedUrl ?? '' : '';
+  const candiQrImage = navigationAssets.hasQRCode ? heroQrImage : '';
+  const candiFullscreenUrl = navigationAssets.has3DModel && candiEntry && 'arUrl' in candiEntry
     ? candiEntry.arUrl ?? candiEntry.embedUrl ?? ''
     : candiEntry && 'embedUrl' in candiEntry
       ? candiEntry.embedUrl ?? ''
@@ -69,6 +76,8 @@ export default function NavigationStage() {
     };
   }, [comic.id, user?.uid]);
 
+  const isComic3FallbackNavigation = comicModule.navigationAssets?.has3DModel === false && comicModule.navigationAssets?.hasQRCode === false;
+
   return (
     <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-6">
       <div className="space-y-3">
@@ -76,47 +85,56 @@ export default function NavigationStage() {
         <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">Gunakan tampilan ini untuk menavigasi objek pembelajaran yang sesuai dengan komik yang sedang dibuka. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.</p>
       </div>
 
-      <section className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
-        <div className="space-y-3">
-          <h2 className="text-lg font-black text-neutral-900">Model 3D Candi Jawi</h2>
-          <p className="text-sm text-neutral-600">Scan QR Code berikut untuk membuka Model 3D Candi Jawi menggunakan perangkat lain.</p>
-        </div>
-        {candiEmbed ? (
-          <div className="mt-4 overflow-hidden rounded-[16px] border border-neutral-200">
-            <div className="relative aspect-[16/9] w-full">
-              <iframe
-                src={candiEmbed}
-                title="Candi Jawi"
-                className="absolute inset-0 h-full w-full border-0"
-                allow="fullscreen"
-              />
-            </div>
+      {isComic3FallbackNavigation ? (
+        <section className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-neutral-900">Informasi Pembelajaran</h2>
+            <p className="text-sm text-neutral-600">Komik ini menggunakan AI Tutor dan fitur Explore sebagai media pembelajaran. Model 3D dan QR Code tidak tersedia pada materi ini.</p>
           </div>
-        ) : null}
+        </section>
+      ) : (
+        <section className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-neutral-900">Model 3D Candi Jawi</h2>
+            <p className="text-sm text-neutral-600">Scan QR Code berikut untuk membuka Model 3D Candi Jawi menggunakan perangkat lain.</p>
+          </div>
+          {candiEmbed ? (
+            <div className="mt-4 overflow-hidden rounded-[16px] border border-neutral-200">
+              <div className="relative aspect-[16/9] w-full">
+                <iframe
+                  src={candiEmbed}
+                  title="Candi Jawi"
+                  className="absolute inset-0 h-full w-full border-0"
+                  allow="fullscreen"
+                />
+              </div>
+            </div>
+          ) : null}
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => {
-              if (candiFullscreenUrl) {
-                window.open(candiFullscreenUrl, '_blank', 'noopener,noreferrer');
-              }
-            }}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white"
-          >
-            Buka Fullscreen
-          </button>
-          {candiQrImage ? (
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={() => setIsQrModalOpen(true)}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-900"
+              onClick={() => {
+                if (candiFullscreenUrl) {
+                  window.open(candiFullscreenUrl, '_blank', 'noopener,noreferrer');
+                }
+              }}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white"
             >
-              Lihat QR
+              Buka Fullscreen
             </button>
-          ) : null}
-        </div>
-      </section>
+            {candiQrImage ? (
+              <button
+                type="button"
+                onClick={() => setIsQrModalOpen(true)}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-900"
+              >
+                Lihat QR
+              </button>
+            ) : null}
+          </div>
+        </section>
+      )}
 
       <QrModal
         isOpen={isQrModalOpen && Boolean(candiQrImage)}

@@ -14,6 +14,13 @@ const assets = {
   model3D: navigation?.model3D ?? [],
 };
 
+export const navigationAssets = {
+  has3DModel: false,
+  hasQRCode: false,
+  hasExplore: true,
+  hasAITutor: true,
+};
+
 export const Comic3Module = {
   metadata,
   navigation,
@@ -26,6 +33,7 @@ export const Comic3Module = {
   ai,
   assets,
   objects,
+  navigationAssets,
 };
 
 export default Comic3Module;
