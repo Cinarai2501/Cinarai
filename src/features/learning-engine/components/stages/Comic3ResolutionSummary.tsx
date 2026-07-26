@@ -1,8 +1,9 @@
 'use client';
 import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
+import type { ComicNavigationObjectLike } from '@/features/comics/types';
 
 export default function Comic3ResolutionSummary({ comic, onContinue }: { comic: { lokasi?: string; id?: number }; onContinue: () => void }) {
-  const shapes = comic3Package.learningObjects ?? [];
+  const shapes: ComicNavigationObjectLike[] = comic3Package.learningObjects ?? [];
 
   const eduSummary = (comic3Package.metadata?.learningTargets ?? []).slice(0, 3).join(' ');
 
@@ -17,7 +18,7 @@ export default function Comic3ResolutionSummary({ comic, onContinue }: { comic: 
 
       <ul className="mt-4 space-y-3">
         {shapes.map((s) => {
-          const chars = Array.isArray((s as any).characteristics) ? (s as any).characteristics as string[] : [];
+          const chars = Array.isArray(s.characteristics) ? s.characteristics : [];
           const summary = chars.length === 0 ? s.description ?? '' : chars.slice(0, 2).join(' dan ');
           return (
             <li key={s.id} className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">

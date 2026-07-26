@@ -54,13 +54,13 @@ export default function Comic3ArgumentationStage({
   }, []);
 
   const reasonOptions = useMemo(() => {
-    // find matching learningObject by title or shapeName/shapeKey to get characteristics
+    // find matching learningObject by title or id or image to get characteristics
     const title = question.objectName ?? '';
-    const byTitle = (comic3Package.learningObjects ?? []).find((item) => item.title === title || item.id === question.id || item.image === question.image || item.page === (question as any).page);
-    if (byTitle && Array.isArray((byTitle as any).characteristics)) return (byTitle as any).characteristics as string[];
+    const byTitle = (comic3Package.learningObjects ?? []).find((item) => item.title === title || item.id === question.id || item.image === question.image);
+    if (byTitle?.characteristics && Array.isArray(byTitle.characteristics)) return byTitle.characteristics;
     // fallback: try match by shape name
     const byShape = (comic3Package.learningObjects ?? []).find((item) => item.title === question.solid || item.shapeName === question.solid || item.id === question.id);
-    if (byShape && Array.isArray((byShape as any).characteristics)) return (byShape as any).characteristics as string[];
+    if (byShape?.characteristics && Array.isArray(byShape.characteristics)) return byShape.characteristics;
     return [] as string[];
   }, [question]);
 
@@ -170,7 +170,7 @@ export default function Comic3ArgumentationStage({
       </div>
 
       <div>
-        <ObjectAITutor objectId={question.id} objectName={question.objectName} provider="" comicPage={0} entry={{} as any} initialPrompt={undefined} comicId={3} />
+        <ObjectAITutor objectId={question.id} objectName={question.objectName} provider="" comicPage={0} entry={null} initialPrompt={undefined} comicId={3} />
       </div>
     </div>
   );
