@@ -1,17 +1,17 @@
 import type { ComicContentPackageLike } from '../../types';
 import persegiIllustration from '@/features/comics/comic-3/assets/identification/persegi.svg';
-import persegiPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi.svg';
-import persegiHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi-highlight.svg';
-import persegiPanjangPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi-panjang.svg';
-import persegiPanjangHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/persegi-panjang-highlight.svg';
-import segitigaPlaceholder from '@/features/comics/comic-3/assets/placeholders/segitiga.svg';
-import segitigaHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/segitiga-highlight.svg';
-import trapesiumPlaceholder from '@/features/comics/comic-3/assets/placeholders/trapesium.svg';
-import trapesiumHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/trapesium-highlight.svg';
-import lingkaranPlaceholder from '@/features/comics/comic-3/assets/placeholders/lingkaran.svg';
-import lingkaranHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/lingkaran-highlight.svg';
-import jajarGenjangPlaceholder from '@/features/comics/comic-3/assets/placeholders/jajar-genjang.svg';
-import jajarGenjangHighlightPlaceholder from '@/features/comics/comic-3/assets/placeholders/jajar-genjang-highlight.svg';
+import persegiPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi.svg';
+import persegiHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi-highlight.svg';
+import persegiPanjangPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi-panjang.svg';
+import persegiPanjangHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/persegi-panjang-highlight.svg';
+import segitigaPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/segitiga.svg';
+import segitigaHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/segitiga-highlight.svg';
+import trapesiumPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/trapesium.svg';
+import trapesiumHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/trapesium-highlight.svg';
+import lingkaranPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/lingkaran.svg';
+import lingkaranHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/lingkaran-highlight.svg';
+import jajarGenjangPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/jajar-genjang.svg';
+import jajarGenjangHighlightPlaceholder from '@/features/comics/comic-3/assets/navigation/placeholder/jajar-genjang-highlight.svg';
 
 export const packageContent: ComicContentPackageLike = {
   metadata: {
