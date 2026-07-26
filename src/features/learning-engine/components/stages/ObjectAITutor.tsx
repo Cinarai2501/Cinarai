@@ -163,6 +163,8 @@ export function ObjectAITutor({
         body: JSON.stringify({
           question: trimmed,
           context: {
+            // inject comic-3 specific initial prompt if provided via initialPrompt
+            // initialPrompt is already used in createInitialMessage; here we keep existing context
             moduleName: 'CINARAI Navigation',
             identification: [],
             objectInfo: {

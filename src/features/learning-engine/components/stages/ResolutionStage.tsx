@@ -7,6 +7,7 @@ import { useLearningEngine } from '../../hooks/useLearningEngine';
 import type { ResolutionMission } from './resolutionStage.helpers';
 import RobotMascot from '@/components/ai/RobotMascot';
 import { stopGlobalTts, useGlobalTts } from '@/lib/tts/globalTts';
+import Comic3ResolutionSummary from './Comic3ResolutionSummary';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (isCorrect) {
@@ -159,6 +160,11 @@ export default function ResolutionStage() {
   }
 
   if (isFinished) {
+    // Jika Comic 3: tampilkan ringkasan pembelajaran khusus dari Comic3
+    if (comic?.id === 3) {
+      return <Comic3ResolutionSummary comic={comic} onContinue={() => void nextStage()} />;
+    }
+
     return <CompletionPage comic={comic} onContinue={() => void nextStage()} />;
   }
 
