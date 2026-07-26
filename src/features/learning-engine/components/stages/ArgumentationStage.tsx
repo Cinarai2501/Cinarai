@@ -7,6 +7,7 @@ import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { getOrderedArgumentationLearningObjects } from '../../stages/Argumentation/data/argumentationQuestions';
 import Comic1ArgumentationStage from './Comic1ArgumentationStage';
 import Comic2ArgumentationStage from './Comic2ArgumentationStage';
+import Comic3ArgumentationStage from './Comic3ArgumentationStage';
 import type { Comic1ArgumentationQuestion } from '@/features/comics/comic-1/content/types';
 import type { ArgumentationQuestion } from '@/features/learning-engine/stages/Argumentation/data/argumentationQuestions';
 
@@ -345,6 +346,30 @@ export default function ArgumentationStage() {
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}
+      />
+    );
+  }
+
+  // Comic 3: Visual Exploration / Mode Observasi
+  if (comic.id === 3) {
+    const argObjs = orderedLearningObjects;
+    const argObj = argObjs[currentIndex] ?? null;
+
+    if (!argObj) {
+      return <div className="rounded-[20px] bg-white p-5 text-sm text-neutral-600 shadow-sm">Data pertanyaan tidak tersedia.</div>;
+    }
+
+    return (
+      <Comic3ArgumentationStage
+        question={argObj}
+        onSubmitFeedback={handleFeedback}
+        onAnswerChange={setTextAnswer}
+        onNext={handleNext}
+        feedback={feedback}
+        comicTitle={comic.title}
+        classLevel={comic.kelas ?? 'Kelas II'}
+        currentIndex={currentIndex}
+        totalItems={orderedLearningObjects.length}
       />
     );
   }
