@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ObjectAITutor } from '@/features/learning-engine/components/stages/ObjectAITutor';
+import Comic3AITutor from './Comic3AITutor';
 import { resolveObjectDetailContent } from '@/features/learning-engine/components/stages/navigationStageContent';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 
@@ -95,15 +95,10 @@ export default function Comic3ObjectDetailClient({ id }: { id: string }) {
           </div>
 
           <div className="mt-6">
-            <ObjectAITutor
+            <Comic3AITutor
               objectId={obj.id}
               objectName={obj.title}
-              provider={obj.provider}
-              comicPage={obj.page}
-              modelUrl={obj.modelUrl}
               entry={obj as unknown as ComicAssetEntry}
-              initialPrompt={obj.aiPrompt}
-              comicId={comicId}
             />
           </div>
 
