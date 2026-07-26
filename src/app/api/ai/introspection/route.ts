@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AiRouter } from '@/lib/ai/router';
+import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
 import type { AiRequestPayload } from '@/lib/ai/provider';
 
 export const runtime = 'nodejs';
@@ -63,6 +64,10 @@ function formatActivities(items?: IntrospectionRequestBody['applicationActivitie
 }
 
 function buildIntrospectionPrompt(body: IntrospectionRequestBody): string {
+  // If the request is for Comic 3, prefer its specific introspection prompt
+  const comic3Title = comic3Package?.metadata?.title;
+  const useComic3Prompt = comic3Title && body.comicTitle && body.comicTitle.trim() === comic3Title;
+  const comic3Instruction = useComic3Prompt ? (comic3Package.aiPrompt?.introspection ?? '') : '';
   const checklistItems = body.checklist ?? [];
   const checklist = checklistItems.length > 0
     ? checklistItems.map((item) => `- ${item}`).join('\n')
@@ -73,6 +78,8 @@ function buildIntrospectionPrompt(body: IntrospectionRequestBody): string {
     : '- Tidak ada data performa tahap.';
 
   return [
+    // prepend comic-specific introspection instruction if available
+    ...(comic3Instruction ? [comic3Instruction, ''] : []),
     'Kamu adalah AI Tutor CINARAI.',
     '',
     'Analisis seluruh aktivitas siswa pada komik ini dengan cermat menggunakan data yang tersedia.',
