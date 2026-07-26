@@ -1,3 +1,3 @@
-import { packageContent } from './packageContent';
+import { resolutionContent } from './resolutionContent';
 
-export const resolution = packageContent.resolution;
+export const resolution = resolutionContent;
