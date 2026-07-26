@@ -11,14 +11,15 @@ interface Comic3AITutorProps {
   entry?: ComicAssetEntry | null;
 }
 
-export default function Comic3AITutor({ objectId, objectName, entry }: Comic3AITutorProps) {
+export default function Comic3AITutor(props: Comic3AITutorProps) {
+  const { objectName, entry } = props;
   const [open, setOpen] = useState(false);
 
   const description = entry?.description
     ? `${entry.description} Pada gambar ini, perhatikan bagian yang diberi highlight.`
     : `Kita sedang mengamati ${objectName}. Perhatikan bagian yang diberi highlight.`;
 
-  const characteristics = (entry?.characteristics ?? []) as string[];
+  const characteristics = (((entry as unknown) as { characteristics?: string[] })?.characteristics) ?? [];
 
   return (
     <>
