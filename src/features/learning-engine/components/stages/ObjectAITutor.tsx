@@ -5,6 +5,7 @@ import RobotMascot from '@/components/ai/RobotMascot';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { getShapeKnowledgeEntry, buildShapeKnowledgeContext } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
+import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
 
 interface ChatMessage {
   id: number;
@@ -44,13 +45,11 @@ const DEFAULT_QUICK_QUESTIONS = [
 
 const COMIC2_OUT_OF_SCOPE_PATTERN = /rumus|luas|keliling|kubus|balok|prisma|limas|kerucut|tabung|bangun ruang|rusuk|titik sudut/i;
 
-function createInitialMessage(objectName: string, initialPrompt?: string): ChatMessage {
+function createInitialMessage(objectName: string): ChatMessage {
   return {
     id: 1,
     role: 'assistant',
-    content:
-      initialPrompt ||
-      `Halo! Aku adalah AI Tutor CINARAI. Aku akan membantu menjelaskan ${objectName} dengan bahasa sederhana dan sesuai dengan isi komik saat ini.`,
+    content: `Halo 👋\nAku siap membantu kamu mengamati ${objectName}.\nCoba tekan tombol Highlight lalu ceritakan apa yang kamu lihat.`,
   };
 }
 
@@ -79,22 +78,21 @@ export function ObjectAITutor({
   const shapeKnowledge = useMemo(() => getShapeKnowledgeEntry(objectName), [objectName]);
   const knowledgeText = useMemo(() => knowledge ?? buildShapeKnowledgeContext(shapeKnowledge), [knowledge, shapeKnowledge]);
   const isSymmetryContext = useMemo(() => {
-    const text = `${initialPrompt ?? ''} ${knowledgeText}`.toLowerCase();
+    const text = `${knowledgeText}`.toLowerCase();
     return text.includes('simetri') || text.includes('pencerminan') || text.includes('seimbang') || text.includes('garis');
-  }, [initialPrompt, knowledgeText]);
+  }, [knowledgeText]);
   const locationLabel = useMemo(() => {
-    const text = `${initialPrompt ?? ''} ${knowledgeText}`.toLowerCase();
+    const text = `${knowledgeText}`.toLowerCase();
     if (text.includes('candi penataran')) return 'Candi Penataran';
     if (text.includes('candi')) return 'Candi';
     return 'komik saat ini';
-  }, [initialPrompt, knowledgeText]);
+  }, [knowledgeText]);
   const contextSynopsis = useMemo(() => {
-    if (initialPrompt) return initialPrompt;
     if (isSymmetryContext) {
       return 'Mengamati simetri, garis simetri, dan keseimbangan bentuk pada bangunan.';
     }
     return 'Mengamati bentuk dan pola pada komik ini.';
-  }, [initialPrompt, isSymmetryContext]);
+  }, [isSymmetryContext]);
   const learningGoal = useMemo(() => {
     if (isSymmetryContext) {
       return 'Memahami simetri, garis simetri, dan keseimbangan bentuk pada Candi Penataran';
@@ -109,10 +107,10 @@ export function ObjectAITutor({
   }, [isSymmetryContext]);
 
   useEffect(() => {
-    setMessages([createInitialMessage(objectName, initialPrompt)]);
+    setMessages([createInitialMessage(objectName)]);
     setDraft('');
     setAiError(null);
-  }, [objectId, objectName, initialPrompt]);
+  }, [objectId, objectName]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -177,7 +175,7 @@ export function ObjectAITutor({
             },
             observationAnswers: {},
             sessionHistory: [],
-            comicTitle: 'CINARAI',
+            comicTitle: comicId === 3 ? (comic3Package?.metadata?.title ?? 'CINARAI') : 'CINARAI',
             pageLabel: comicPage ? `Halaman ${comicPage}` : undefined,
             objectName,
             learningStage: 'Navigation',

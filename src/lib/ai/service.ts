@@ -1,4 +1,5 @@
 import { AiRouter } from './router';
+import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
 import type { AiProvider, AiRequestPayload, AiResponse } from './provider';
 import { buildTutorSystemPrompt } from './prompts/tutor';
 
@@ -251,6 +252,10 @@ export function buildTutorPrompt(context: TutorContext): string {
     context.knowledgeContext ? `- pengetahuan objek:\n${context.knowledgeContext}` : '',
   ].filter(Boolean).join('\n');
 
+  const comic3Title = comic3Package?.metadata?.title;
+  const useComic3Prompt = comic3Title && context.comicTitle && context.comicTitle.trim() === comic3Title;
+  const comic3Instruction = useComic3Prompt ? (comic3Package.aiPrompt?.objectTutor ?? '') : '';
+
   const systemPrompt = buildTutorSystemPrompt({
     modul: context.moduleName,
     identifikasi: identificationText || '- Tidak ada data identifikasi.',
@@ -265,6 +270,7 @@ export function buildTutorPrompt(context: TutorContext): string {
   });
 
   return [
+    ...(comic3Instruction ? [comic3Instruction, ''] : []),
     systemPrompt,
     '',
     'Konteks tambahan:',
@@ -284,9 +290,13 @@ export async function generateTutorResponse(
   });
 
   const router = AiRouter.createDefault();
+  const comic3Title = comic3Package?.metadata?.title;
+  const useComic3Prompt = comic3Title && context.comicTitle && context.comicTitle.trim() === comic3Title;
+  const comic3Instruction = useComic3Prompt ? (comic3Package.aiPrompt?.objectTutor ?? '') : '';
+
   const payload: AiRequestPayload = {
     prompt: buildTutorPrompt(context),
-    systemPrompt: buildTutorSystemPrompt({
+    systemPrompt: `${comic3Instruction ? comic3Instruction + '\n\n' : ''}${buildTutorSystemPrompt({
       modul: context.moduleName,
       identifikasi: context.identification
         .map((entry) => `Langkah ${entry.step}: ${entry.selectedAnswer ?? '—'}`)
@@ -307,7 +317,7 @@ export async function generateTutorResponse(
         context.cultureConcept ? `konsep budaya: ${context.cultureConcept}` : '',
         context.knowledgeContext ? `pengetahuan objek: ${context.knowledgeContext}` : '',
       ].filter(Boolean).join('; ') || '- Tidak ada konteks objek AR.',
-    }),
+    })}
     temperature: 0.7,
     maxTokens: 220,
   };

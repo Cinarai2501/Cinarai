@@ -95,7 +95,10 @@ export default function Comic3ObjectDetailClient({ id }: { id: string }) {
 
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">AI Tutor</p>
-              <p className="mt-2 text-base leading-relaxed text-neutral-700">{obj.aiPrompt ?? 'AI Tutor akan membantu kamu memahami objek ini dengan lebih jelas.'}</p>
+              <div className="mt-2 text-base leading-relaxed text-neutral-700">
+                <p>Halo 👋</p>
+                <p>Aku siap membantu kamu mengamati gambar ini. Coba tekan tombol Highlight lalu ceritakan apa yang kamu lihat.</p>
+              </div>
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
