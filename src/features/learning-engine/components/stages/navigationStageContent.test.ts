@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { packageContent } from '@/features/comics/comic-2/content/packageContent';
+import { packageContent as comic3PackageContent } from '@/features/comics/comic-3/content/packageContent';
 import qrUmpang from '@/features/comics/comic-2/assets/qr/umpang.png';
 import navUmpang from '@/features/comics/comic-2/assets/navigation/umpang.png';
 import { resolveNavigationStageContent, resolveModelActionUrl, resolveObjectDetailContent } from './navigationStageContent';
@@ -96,4 +97,12 @@ test('comic 2 object detail resolves correct model and qr for reported objects',
     assert.equal(modelUrl, entry.expectedModel, `expected modelUrl for ${entry.id}`);
     assert.equal(qrImage, entry.expectedQr, `expected qrImage for ${entry.id}`);
   }
+});
+
+test('comic 3 navigation stage resolves fallback navigation without QR or 3D model', () => {
+  const content = resolveNavigationStageContent(3);
+
+  assert.equal(content.objects.length, comic3PackageContent.learningObjects.length);
+  assert.equal(content.heroModelEntry?.title, comic3PackageContent.model3D[0]?.title ?? comic3PackageContent.learningObjects[0]?.title);
+  assert.equal(content.heroQrImage, '');
 });

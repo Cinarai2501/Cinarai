@@ -30,6 +30,10 @@ export default function ObjectDetailClient({ id }: { id: string }) {
     );
   }
 
+  const isComic3 = comicId === 3;
+  const hasModelAction = !isComic3 && Boolean(obj.modelUrl || obj.embedUrl);
+  const hasQrAction = !isComic3 && Boolean(qrImage);
+
   const handleOpenModel = () => {
     const url = obj.modelUrl || obj.embedUrl || '';
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
@@ -115,12 +119,16 @@ export default function ObjectDetailClient({ id }: { id: string }) {
             </div>
 
             <div className="mt-6 flex flex-col gap-3">
-              <button onClick={handleOpenModel} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700">
-                Lihat Model 3D
-              </button>
-              <button onClick={() => setIsQrOpen(true)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
-                Lihat QR
-              </button>
+              {hasModelAction ? (
+                <button onClick={handleOpenModel} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700">
+                  Lihat Model 3D
+                </button>
+              ) : null}
+              {hasQrAction ? (
+                <button onClick={() => setIsQrOpen(true)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
+                  Lihat QR
+                </button>
+              ) : null}
               <button onClick={() => router.push(`/comic/${comicId}/learn`)} className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50">
                 Tutup Viewer
               </button>

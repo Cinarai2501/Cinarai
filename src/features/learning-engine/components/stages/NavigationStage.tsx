@@ -24,6 +24,11 @@ export default function NavigationStage() {
     hasAITutor: true,
   };
 
+  const isComic3FallbackNavigation = comicModule.navigationAssets?.has3DModel === false && comicModule.navigationAssets?.hasQRCode === false;
+  const navigationDescription = isComic3FallbackNavigation
+    ? 'Pelajari setiap bangun datar melalui menu Explore. Gunakan AI Tutor untuk memahami ciri-ciri setiap bentuk sebelum melanjutkan ke tahap Argumentasi.'
+    : 'Gunakan tampilan ini untuk menavigasi objek pembelajaran yang sesuai dengan komik yang sedang dibuka. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.';
+
   const candiEntry = heroModelEntry;
   const candiEmbed = navigationAssets.has3DModel && candiEntry && 'embedUrl' in candiEntry ? candiEntry.embedUrl ?? '' : '';
   const candiQrImage = navigationAssets.hasQRCode ? heroQrImage : '';
@@ -76,20 +81,25 @@ export default function NavigationStage() {
     };
   }, [comic.id, user?.uid]);
 
-  const isComic3FallbackNavigation = comicModule.navigationAssets?.has3DModel === false && comicModule.navigationAssets?.hasQRCode === false;
-
   return (
     <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-6">
       <div className="space-y-3">
         <h1 className="text-3xl font-black text-neutral-900">NAVIGASI AR & AI</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">Gunakan tampilan ini untuk menavigasi objek pembelajaran yang sesuai dengan komik yang sedang dibuka. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.</p>
+        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">{navigationDescription}</p>
       </div>
 
       {isComic3FallbackNavigation ? (
         <section className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
-          <div className="space-y-3">
-            <h2 className="text-lg font-black text-neutral-900">Informasi Pembelajaran</h2>
-            <p className="text-sm text-neutral-600">Komik ini menggunakan AI Tutor dan fitur Explore sebagai media pembelajaran. Model 3D dan QR Code tidak tersedia pada materi ini.</p>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <h2 className="text-lg font-black text-neutral-900">Informasi Pembelajaran</h2>
+              <p className="text-sm text-neutral-600">Komik ini menggunakan AI Tutor dan menu Explore sebagai media eksplorasi.</p>
+              <p className="text-sm text-neutral-600">Pelajari seluruh objek sebelum melanjutkan ke tahap Argumentasi.</p>
+            </div>
+            <div className="rounded-[16px] border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Jumlah Objek Pembelajaran</p>
+              <p className="mt-2 text-xl font-black text-neutral-900">{objects.length} Objek</p>
+            </div>
           </div>
         </section>
       ) : (

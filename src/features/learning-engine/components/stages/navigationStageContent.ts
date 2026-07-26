@@ -113,6 +113,9 @@ export function resolveObjectDetailContent(comicId: number, objectId: string) {
         modelId: bundle.modelEntry?.id ?? null,
       });
     }
+  } else if (comicId === 3) {
+    qrImage = '';
+    modelUrl = '';
   } else {
     qrImage = getComic1QrAssetForObject(object?.title ?? '') ?? '';
   }
