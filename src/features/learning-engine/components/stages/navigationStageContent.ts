@@ -1,4 +1,5 @@
 import { getComicModule } from '@/features/comics';
+import type { ComicModuleLike, ComicNavigationObjectLike } from '@/features/comics/types';
 import { getComic1QrAssetForObject } from '@/features/comics/comic-1/content/qrAssetRegistry';
 import { packageContent as comic2PackageContent } from '@/features/comics/comic-2/content/packageContent';
 
@@ -50,14 +51,14 @@ function resolveComic2AssetBundle(objectId: string) {
 export function resolveNavigationStageContent(comicId: number) {
   // Guard khusus comic-2: gunakan paket konten dan asset yang disesuaikan dengan isi cerita Candi Penataran.
   // Comic-1 tetap memakai jalur resolver lama agar perilaku dan UI default tidak berubah.
-  const comicModule = getComicModule(comicId);
+  const comicModule: ComicModuleLike = getComicModule(comicId);
   const learningObjects = Array.isArray(comicModule.navigation.learningObjects)
     ? comicModule.navigation.learningObjects
     : [];
   const modelEntries = Array.isArray(comicModule.navigation.model3D)
     ? comicModule.navigation.model3D
     : [];
-  const objects = comicId === 2 ? learningObjects : learningObjects.slice(0, 5);
+  const objects = comicId === 2 || comicId === 3 ? learningObjects : learningObjects.slice(0, 5);
 
   if (comicId === 2) {
     const heroObject = learningObjects[0];
@@ -88,8 +89,13 @@ export function resolveNavigationStageContent(comicId: number) {
   };
 }
 
-export function resolveObjectDetailContent(comicId: number, objectId: string) {
-  const comicModule = getComicModule(comicId);
+export function resolveObjectDetailContent(comicId: number, objectId: string): {
+  comicModule: ComicModuleLike;
+  object?: ComicNavigationObjectLike;
+  qrImage: string;
+  modelUrl: string;
+} {
+  const comicModule: ComicModuleLike = getComicModule(comicId);
   const learningObjects = Array.isArray(comicModule.navigation.learningObjects)
     ? comicModule.navigation.learningObjects
     : [];

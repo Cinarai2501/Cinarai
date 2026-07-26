@@ -3,6 +3,7 @@ import { Comic2Module } from './comic-2';
 import { Comic3Module } from './comic-3';
 import { Comic4Module } from './comic-4';
 import { Comic5Module } from './comic-5';
+import type { ComicModuleLike } from './types';
 
 export type { ComicModule, ComicModuleLike } from './types';
 
@@ -14,7 +15,7 @@ export const comicModules = {
   5: Comic5Module,
 } as const;
 
-export function getComicModule(comicId: number) {
+export function getComicModule(comicId: number): ComicModuleLike {
   const comicModule = comicModules[comicId as keyof typeof comicModules];
   if (comicModule) {
     return comicModule;

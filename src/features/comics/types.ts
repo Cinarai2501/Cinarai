@@ -1,3 +1,36 @@
+export interface ComicNavigationObjectLike {
+  id: string;
+  slug?: string;
+  objectName?: string;
+  target?: string;
+  displayName?: string;
+  title: string;
+  description: string;
+  page: number;
+  qrImage?: string;
+  qrTitle?: string;
+  qrDescription?: string;
+  navImage?: string;
+  objectImage?: string;
+  image?: string;
+  characteristics?: string[];
+  modelUrl?: string;
+  model3DUrl?: string;
+  embedUrl?: string;
+  viewerType?: 'embed' | 'url';
+  provider?: string;
+  aiPrompt?: string;
+  question?: string;
+  answer?: string;
+  simpleExplanation?: string;
+  feedback?: string;
+  shapeKey?: string;
+  shapeName?: string;
+  shape?: string;
+  symmetryConnection?: string;
+  symmetryRelation?: string;
+}
+
 export interface ComicContentPackageLike {
   metadata: {
     comicId: number;
@@ -10,37 +43,7 @@ export interface ComicContentPackageLike {
     learningTargets: string[];
     synopsis: string;
   };
-  learningObjects: Array<{
-    id: string;
-    slug?: string;
-    objectName?: string;
-    target?: string;
-    displayName?: string;
-    title: string;
-    description: string;
-    page: number;
-    qrImage?: string;
-    qrTitle?: string;
-    qrDescription?: string;
-    navImage?: string;
-    objectImage?: string;
-    image?: string;
-    modelUrl?: string;
-    model3DUrl?: string;
-    embedUrl?: string;
-    viewerType?: 'embed' | 'url';
-    provider?: string;
-    aiPrompt?: string;
-    question?: string;
-    answer?: string;
-    simpleExplanation?: string;
-    feedback?: string;
-    shapeKey?: string;
-    shapeName?: string;
-    shape?: string;
-    symmetryConnection?: string;
-    symmetryRelation?: string;
-  }>;
+  learningObjects: ComicNavigationObjectLike[];
   qrCode: Array<{ id: string; imageSrc: string; alt: string; label: string; description: string }>;
   model3D: Array<{ id: string; title: string; arUrl: string; embedUrl?: string; viewerType?: 'embed' | 'url'; page: number; description: string; provider?: string }>;
   aiPrompt: {
@@ -147,37 +150,7 @@ export interface ComicModuleLike {
     synopsis: string;
   };
   navigation: {
-    learningObjects: Array<{
-      id: string;
-      slug?: string;
-      objectName?: string;
-      target?: string;
-      displayName?: string;
-      title: string;
-      description: string;
-      page: number;
-      qrImage?: string;
-      qrTitle?: string;
-      qrDescription?: string;
-      navImage?: string;
-      objectImage?: string;
-      image?: string;
-      modelUrl?: string;
-      model3DUrl?: string;
-      embedUrl?: string;
-      viewerType?: 'embed' | 'url';
-      provider?: string;
-      aiPrompt?: string;
-      question?: string;
-      answer?: string;
-      simpleExplanation?: string;
-      feedback?: string;
-      shapeKey?: string;
-      shapeName?: string;
-      shape?: string;
-      symmetryConnection?: string;
-      symmetryRelation?: string;
-    }>;
+    learningObjects: ComicNavigationObjectLike[];
     qrCode: Array<{ id: string; imageSrc: string; alt: string; label: string; description: string }>;
     model3D: Array<{ id: string; title: string; arUrl: string; embedUrl?: string; viewerType?: 'embed' | 'url'; page: number; description: string; provider?: string }>;
   };

@@ -16,8 +16,11 @@ export default function ObjectDetailClient({ id }: { id: string }) {
   // Guard khusus comic-2: tampilkan detail objek yang lebih kaya informasi untuk Candi Penataran,
   // tetapi biarkan comic-1 tetap memakai layout detail lama yang sudah ada.
   const isComic2 = comicId === 2;
+  const isComic3 = comicId === 3;
   const { object: obj, qrImage } = useMemo(() => resolveObjectDetailContent(comicId, decoded), [comicId, decoded]);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const imageSrc = obj?.image ?? obj?.navImage ?? obj?.objectImage ?? '/images/navigation/default.svg';
+  const characteristics = (obj?.characteristics ?? []) as string[];
 
   if (!obj) {
     return (
@@ -30,7 +33,6 @@ export default function ObjectDetailClient({ id }: { id: string }) {
     );
   }
 
-  const isComic3 = comicId === 3;
   const hasModelAction = !isComic3 && Boolean(obj.modelUrl || obj.embedUrl);
   const hasQrAction = !isComic3 && Boolean(qrImage);
 
@@ -38,6 +40,96 @@ export default function ObjectDetailClient({ id }: { id: string }) {
     const url = obj.modelUrl || obj.embedUrl || '';
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  if (isComic3) {
+    return (
+      <div className="flex min-h-screen flex-col bg-neutral-50 p-6">
+        <div className="mx-auto w-full max-w-3xl">
+          <h1 className="text-2xl font-black text-neutral-900">{obj.title}</h1>
+
+          <div className="mt-6 rounded-[24px] border border-neutral-200 bg-white p-6 shadow-sm">
+            {/* TODO: Placeholder sementara. Akan diganti menggunakan hasil crop panel komik setelah seluruh aset Comic 3 selesai. */}
+            <div className="overflow-hidden rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
+              <Image
+                src={imageSrc}
+                alt={obj.title}
+                width={900}
+                height={540}
+                quality={100}
+                priority
+                unoptimized
+                className="mx-auto h-auto w-full max-w-[680px] object-contain"
+              />
+            </div>
+
+            <div className="mt-6 space-y-6">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Nama Bangun Datar</p>
+                <h2 className="mt-3 text-2xl font-black text-neutral-900">{obj.title}</h2>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Deskripsi singkat</p>
+                <p className="mt-2 text-base leading-relaxed text-neutral-700">{obj.description}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">Ciri-ciri</p>
+                {characteristics.length > 0 ? (
+                  <ul className="mt-3 list-inside list-disc space-y-2 text-sm leading-relaxed text-neutral-700">
+                    {characteristics.map((item: string) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm leading-relaxed text-neutral-700">Coba amati objek ini dan temukan ciri-ciri bangun datar tersebut.</p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-700">AI Tutor</p>
+                <p className="mt-2 text-base leading-relaxed text-neutral-700">{obj.aiPrompt ?? 'AI Tutor akan membantu kamu memahami objek ini dengan lebih jelas.'}</p>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => router.push(`/comic/${comicId}/learn`)}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-700"
+                >
+                  Lanjut
+                </button>
+                <button
+                  onClick={() => router.back()}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50"
+                >
+                  Kembali
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <ObjectAITutor
+            objectId={obj.id}
+            objectName={obj.title}
+            provider={obj.provider}
+            comicPage={obj.page}
+            modelUrl={obj.modelUrl}
+            entry={obj as unknown as ComicAssetEntry}
+            initialPrompt={obj.aiPrompt}
+            comicId={comicId}
+          />
+        </div>
+
+        <QrModal
+          isOpen={false}
+          qrSrc=""
+          onClose={() => setIsQrOpen(false)}
+          title={obj.title}
+          description={`Scan QR Code berikut untuk membuka ${obj.title} menggunakan perangkat lain.`}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 p-6">

@@ -5,6 +5,8 @@ export interface LearningObjectContent {
   page: number;
   qrImage?: string;
   objectImage?: string;
+  image?: string;
+  characteristics?: string[];
   modelUrl?: string;
   embedUrl?: string;
   viewerType?: 'embed' | 'url';

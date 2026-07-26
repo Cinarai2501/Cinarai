@@ -18,6 +18,20 @@ test('getLearningContentPackage returns different content for different comic id
   assert.equal(comic3.learningObjects.length > 0, true);
 });
 
+test('comic 3 learning objects use placeholder image assets while other comics do not', () => {
+  const comic1 = getLearningContentPackage(1);
+  const comic2 = getLearningContentPackage(2);
+  const comic3 = getLearningContentPackage(3);
+  const comic4 = getLearningContentPackage(4);
+  const comic5 = getLearningContentPackage(5);
+
+  assert.ok(comic3.learningObjects.every((object) => typeof object.image === 'string' && object.image.length > 0));
+  assert.ok(comic1.learningObjects.every((object) => object.image === undefined));
+  assert.ok(comic2.learningObjects.every((object) => object.image === undefined));
+  assert.ok(comic4.learningObjects.every((object) => object.image === undefined));
+  assert.ok(comic5.learningObjects.every((object) => object.image === undefined));
+});
+
 test('getLearningContentPackage falls back to a reusable generic package for unknown comic ids', () => {
   const fallback = getLearningContentPackage(99);
 
