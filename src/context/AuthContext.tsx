@@ -10,7 +10,8 @@ import {
   logout as firebaseLogout,
   resetPassword as firebaseResetPassword,
   subscribeToAuthChanges,
-  updateUserProfile,
+  updateUserProfile as firebaseUpdateUserProfile,
+  getCurrentUser,
   getSignInMethods,
 } from '@/lib/firebase/auth';
 import { initializeUserProgress } from '@/services/comicProgress';
@@ -145,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               filters: [{ field: 'email', operator: '==', value: normalizedEmail }],
             }),
           firebaseSignUp,
-          updateUserProfile,
+          updateUserProfile: firebaseUpdateUserProfile,
           getFirestoreDocument,
           upsertUser,
         });
@@ -202,6 +203,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [syncUserFromFirestore]);
 
+  const updateUserProfile = useCallback(async (displayName: string, photoURL?: string) => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      throw new Error('unauthenticated');
+    }
+
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      await firebaseUpdateUserProfile(currentUser, displayName, photoURL);
+      const updatedUser = {
+        ...(state.user as any),
+        displayName,
+        photoURL: photoURL ?? state.user?.photoURL,
+      };
+      setState({ user: updatedUser, loading: false, error: null });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update profile';
+      setState((prev) => ({ ...prev, loading: false, error: errorMessage }));
+      throw error;
+    }
+  }, [state.user]);
+
   const logout = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
@@ -256,6 +280,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signInWithGoogle,
     logout,
     resetPassword,
+    updateUserProfile,
     clearError,
   };
 
