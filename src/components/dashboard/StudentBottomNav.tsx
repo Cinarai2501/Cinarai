@@ -13,7 +13,6 @@ const tabs = [
 
 function TabIcon({ type, active }: { type: string; active: boolean }) {
   const strokeClass = active ? 'stroke-white' : 'stroke-neutral-500';
-
   switch (type) {
     case 'home':
       return (
@@ -63,14 +62,14 @@ export default function StudentBottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 px-3 pb-[max(0.8rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto flex max-w-[440px] items-center justify-between gap-2 rounded-[24px] border border-neutral-200 bg-neutral-50/90 p-1.5">
+      <div className="mx-auto flex max-w-[440px] items-center justify-between gap-2 rounded-[28px] border border-neutral-200 bg-[#f5f9ff] p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex min-w-[0] flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2 text-center transition ${
+              className={`flex min-w-[0] flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2.5 text-center transition ${
                 active ? 'bg-primary-600 text-white shadow-[0_10px_20px_rgba(24,117,204,0.2)]' : 'text-neutral-500 hover:bg-white hover:text-neutral-700'
               }`}
             >

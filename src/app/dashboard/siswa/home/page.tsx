@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,87 +36,36 @@ function getLevelInfo(xp: number) {
   return { level: level + 1, name: LEVEL_NAMES[level] ?? 'Legenda', nextXp: nextThreshold, progress };
 }
 
-function UserAvatar() {
-  return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-white/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]">
-      <svg viewBox="0 0 64 64" className="h-10 w-10" fill="none" aria-hidden="true">
-        <circle cx="32" cy="32" r="26" fill="#FFFFFF" fillOpacity="0.94" />
-        <circle cx="25" cy="28" r="3.4" fill="#1E3A5F" />
-        <circle cx="39" cy="28" r="3.4" fill="#1E3A5F" />
-        <path d="M22 41c2.5-4 7.2-6 10-6s7.5 2 10 6" stroke="#1E3A5F" strokeWidth="2.8" strokeLinecap="round" />
-        <path d="M15 20c2.2-8.5 10.7-14 17-14 8.2 0 14.5 5.8 16 14" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </div>
-  );
+function getDashboardCoverAsset(comicId?: number) {
+  if (!comicId) return '/assets/dashboard/home/covers/cover-komik-1.png';
+  return `/assets/dashboard/home/covers/cover-komik-${comicId}.png`;
 }
 
-function StatIcon({ type }: { type: string }) {
-  const iconClassName = 'h-6 w-6';
-  switch (type) {
-    case 'xp':
-      return (
-        <svg viewBox="0 0 24 24" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
-        </svg>
-      );
-    case 'level':
-      return (
-        <svg viewBox="0 0 24 24" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14" />
-          <path d="M12 5l7 7-7 7" />
-        </svg>
-      );
-    case 'streak':
-      return (
-        <svg viewBox="0 0 24 24" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 14c0-3.5 2.5-6 7-6 2.5 0 4.7 1.2 5.8 3.2" />
-          <path d="M4 20c2.2-2.5 3.8-4 8-4 2.9 0 4.8 1 7 3" />
-        </svg>
-      );
-    case 'comic':
-      return (
-        <svg viewBox="0 0 24 24" className={iconClassName} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M8 8h8" />
-          <path d="M8 12h8" />
-          <path d="M8 16h5" />
-        </svg>
-      );
-    default:
-      return null;
+function getAvatarAsset(firstName: string) {
+  const normalized = firstName.toLowerCase();
+  if (normalized.includes('ara') || normalized.includes('ani') || normalized.endsWith('a')) {
+    return '/assets/dashboard/home/avatars/avatar-anak-perempuan.png';
   }
+  return '/assets/dashboard/home/avatars/avatar-anak-laki-laki.png';
 }
 
-function BadgeIcon({ type }: { type: string }) {
+function getLevelIconAsset(level: number) {
+  const safeLevel = Math.max(1, Math.min(level, 5));
+  return `/assets/dashboard/home/levels/icon-level-${safeLevel}.png`;
+}
+
+function getStatIconAsset(type: string) {
   switch (type) {
-    case 'progress':
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14" />
-          <path d="M12 5l7 7-7 7" />
-        </svg>
-      );
     case 'xp':
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
-        </svg>
-      );
-    case 'continue':
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 7h16" />
-          <path d="M7 12h10" />
-          <path d="M10 17h4" />
-        </svg>
-      );
+      return '/assets/dashboard/home/statistics/icon-total-xp.png';
+    case 'level':
+      return '/assets/dashboard/home/levels/icon-level-3.png';
+    case 'streak':
+      return '/assets/dashboard/home/statistics/icon-streak.png';
+    case 'comic':
+      return '/assets/dashboard/home/statistics/icon-komik-selesai.png';
     default:
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 8v4l2 2" />
-        </svg>
-      );
+      return '/assets/dashboard/home/statistics/icon-total-xp.png';
   }
 }
 
@@ -124,6 +74,7 @@ export default function DashboardSiswaHomePage() {
   const { states, getProgress, isLoading } = useAllComicProgress();
   const greeting = getGreeting();
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Petualang';
+  const avatarAsset = getAvatarAsset(firstName);
 
   const comics = useMemo(() => getAllComics(), []);
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
@@ -167,190 +118,182 @@ export default function DashboardSiswaHomePage() {
   }, [isLoading]);
 
   const statCards = [
-    { label: 'Total XP', value: `${totalXp}`, accent: 'bg-amber-100 text-amber-700', type: 'xp' },
-    { label: 'Level', value: levelInfo.name, accent: 'bg-sky-100 text-sky-700', type: 'level' },
-    { label: 'Streak', value: '— Hari', accent: 'bg-rose-100 text-rose-700', type: 'streak' },
-    { label: 'Komik selesai', value: `${completedComics}`, accent: 'bg-emerald-100 text-emerald-700', type: 'comic' },
+    { label: 'Total XP', value: `${totalXp}`, type: 'xp', bg: 'bg-[#fff6e7]' },
+    { label: 'Level', value: levelInfo.name, type: 'level', bg: 'bg-[#eef7ff]' },
+    { label: 'Streak', value: '— Hari', type: 'streak', bg: 'bg-[#ffeef3]' },
+    { label: 'Komik selesai', value: `${completedComics}`, type: 'comic', bg: 'bg-[#ecfdf3]' },
   ];
 
   const badgeItems = [
     {
-      type: 'progress',
-      title: completedComics > 0 ? 'Komik pertama selesai' : 'Mulai petualanganmu',
-      subtitle: completedComics > 0 ? 'Kamu sudah menyelesaikan setidaknya satu komik.' : 'Pilih komik untuk mulai belajar sekarang.',
-      accent: 'bg-sky-100 text-sky-700',
+      asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-pemula.png',
+      title: overallPct >= 50 ? 'Progress kuat' : 'Mulai petualanganmu',
     },
     {
-      type: 'xp',
-      title: totalXp >= 100 ? 'Lebih dari 100 XP' : 'XP makin bertambah',
-      subtitle: totalXp >= 100 ? 'Hebat! Terus kumpulkan XP.' : 'Setiap langkah belajar memberi XP.',
-      accent: 'bg-amber-100 text-amber-700',
+      asset: '/assets/dashboard/home/badges/komik/badge-komik-1-pembaca-candi-jawi.png',
+      title: 'Komik Candi Jawi',
     },
     {
-      type: 'continue',
-      title: continueComic ? 'Siap melanjutkan' : 'Belum ada komik aktif',
-      subtitle: continueComic ? `Lanjutkan ${continueComic.title}.` : 'Buka halaman Komik untuk memilih materi.',
-      accent: 'bg-violet-100 text-violet-700',
+      asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-terampil.png',
+      title: 'Pembaca Terampil',
     },
     {
-      type: 'default',
-      title: overallPct >= 50 ? 'Progress kuat' : 'Ayo lanjutkan',
-      subtitle: overallPct >= 50 ? 'Momentum belajarmu sudah baik.' : 'Satu langkah lagi untuk mempercepat progres.',
-      accent: 'bg-emerald-100 text-emerald-700',
+      asset: '/assets/dashboard/home/badges/komik/badge-komik-3-pencari-bentuk.png',
+      title: 'Pencari Bentuk',
     },
   ];
 
   return (
-    <div className="space-y-4 pb-24 pt-1">
-      <section className="overflow-hidden rounded-[30px] bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 p-4 text-white shadow-[0_16px_32px_rgba(15,23,42,0.14)]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-primary-100/80">{greeting}</p>
-            <h1 className="mt-2 text-[24px] font-black leading-tight">Halo, {firstName}!</h1>
-            <p className="mt-2 text-[13px] leading-5 text-primary-100/90">Lihat progres belajar, level, dan komik yang sedang kamu kerjakan di satu layar.</p>
-          </div>
-          <UserAvatar />
-        </div>
-
-        <div className="mt-4 rounded-[24px] border border-white/20 bg-white/12 p-4 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary-100/75">Level & XP</p>
-              <div className="mt-2 flex items-end gap-2">
-                <span className="text-[30px] font-black leading-none">{levelInfo.level}</span>
-                <span className="pb-1 text-[13px] font-semibold text-primary-100/80">{levelInfo.name}</span>
+    <div className="min-h-screen bg-[#f5f8fd] pb-24">
+      <div className="mx-auto max-w-[440px] px-3 pb-4 pt-3">
+        <section className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-[#1d93ff] via-[#2a7eff] to-[#0f5fb5] pt-5 pb-6 px-5 text-white shadow-[0_28px_48px_rgba(15,23,42,0.18)]">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.36em] text-white/90">{greeting}</p>
+              <h1 className="mt-2 text-[28px] font-extrabold leading-[1.03]">Halo, {firstName}!</h1>
+              <p className="mt-2 text-[14px] leading-6 text-white/90">Lihat progres belajar, level, dan komik yang sedang kamu kerjakan di satu layar.</p>
+            </div>
+            <div className="relative z-10 shrink-0">
+              <div className="rounded-full ring-4 ring-white/30">
+                <Image src={avatarAsset} alt={`${firstName} avatar`} width={72} height={72} className="h-18 w-18 rounded-full object-cover" />
               </div>
             </div>
-            <div className="rounded-[18px] bg-white/15 px-3 py-2 text-right">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary-100/75">XP</p>
-              <p className="mt-1 text-[18px] font-black">{totalXp}</p>
-            </div>
           </div>
 
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-[11px] text-primary-100/80">
-              <span>Progress menuju {levelInfo.nextXp} XP</span>
-              <span>{levelInfo.progress}%</span>
-            </div>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/20">
-              <div className="h-full rounded-full bg-white" style={{ width: `${levelInfo.progress}%` }} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-neutral-200 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Continue Learning</p>
-            <h2 className="mt-1 text-[18px] font-black text-neutral-900">{continueComic ? continueComic.title : 'Belum ada komik aktif'}</h2>
-          </div>
-          <Link href="/dashboard/siswa/komik" className="text-[12px] font-black text-primary-600">
-            Lihat Komik
-          </Link>
-        </div>
-
-        <div className="mt-3 flex items-center gap-3 rounded-[24px] border border-neutral-200 bg-neutral-50 p-3">
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[18px] bg-neutral-200">
-            {continueComic?.cover ? (
-              <img src={continueComic.cover} alt={continueComic.title} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-neutral-400">
-                <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="4" width="16" height="16" rx="3" />
-                  <path d="M8 8h8" />
-                  <path d="M8 12h8" />
-                  <path d="M8 16h5" />
-                </svg>
-              </div>
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-semibold text-primary-700">{continueComic ? 'Lanjutkan sekarang' : 'Belum ada progres'}</p>
-            <p className="mt-1 text-[13px] font-semibold text-neutral-900">{continueComic ? continueComic.title : 'Pilih komik untuk memulai pembelajaran.'}</p>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-neutral-200">
-              <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700" style={{ width: `${todayPct}%` }} />
-            </div>
-            <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
-              <span>{todayStages}/{SINTAKS.length} tahap selesai</span>
-              <span>{todayPct}%</span>
-            </div>
-          </div>
-
-          <Link href="/dashboard/siswa/komik" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-[0_10px_20px_rgba(24,117,204,0.2)]">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14" />
-              <path d="M12 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-2 gap-2.5">
-        {statCards.map((stat) => (
-          <div key={stat.label} className="rounded-[24px] border border-neutral-200 bg-white p-3 shadow-[0_6px_16px_rgba(15,23,42,0.05)]">
-            <div className={`inline-flex h-11 w-11 items-center justify-center rounded-[16px] ${stat.accent}`}>
-              <StatIcon type={stat.type} />
-            </div>
-            <p className="mt-3 text-[22px] font-black text-neutral-900">{stat.value}</p>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">{stat.label}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Progress Belajar Hari Ini</p>
-            <h3 className="mt-1 text-[18px] font-black text-neutral-900">Tahap yang sedang kamu kerjakan</h3>
-          </div>
-          <Link href="/dashboard/siswa/komik" className="rounded-full bg-primary-50 px-3 py-2 text-[11px] font-black text-primary-700">
-            Lihat Detail Tahap
-          </Link>
-        </div>
-
-        <div className="mt-3 rounded-[22px] border border-neutral-200 bg-neutral-50 p-3">
-          <div className="flex items-center justify-between text-[12px] font-semibold text-neutral-700">
-            <span>Persentase hari ini</span>
-            <span className="text-primary-700">{todayPct}%</span>
-          </div>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-neutral-200">
-            <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700" style={{ width: `${todayPct}%` }} />
-          </div>
-          <div className="mt-2 flex items-center justify-between text-[12px] text-neutral-500">
-            <span>{todayStages}/{SINTAKS.length} tahap selesai</span>
-            <span>{continueComic ? 'Lanjutkan sekarang' : 'Siap dimulai'}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Badge Terbaru</p>
-            <h3 className="mt-1 text-[18px] font-black text-neutral-900">Progress terbaru kamu</h3>
-          </div>
-          <Link href="/dashboard/siswa/komik" className="text-[12px] font-black text-primary-600">
-            Lihat Semua
-          </Link>
-        </div>
-
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {badgeItems.map((badge) => (
-            <div key={badge.title} className="min-w-[220px] rounded-[22px] border border-neutral-200 bg-neutral-50 p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] ${badge.accent}`}>
-                  <BadgeIcon type={badge.type} />
+          <div className="mt-5">
+            <div className="relative -translate-y-4">
+              <div className="mx-auto max-w-full rounded-[30px] border border-white/22 bg-white p-4 text-[#121827] shadow-[0_18px_36px_rgba(15,23,42,0.16)]">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[16px] bg-[#eef7ff]">
+                    <Image src={getLevelIconAsset(levelInfo.level)} alt={`Level ${levelInfo.level}`} width={48} height={48} className="h-12 w-12 object-contain" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-neutral-400">Level</p>
+                        <p className="mt-1 text-[24px] font-extrabold leading-none text-neutral-900">{levelInfo.level}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-neutral-400">XP</p>
+                        <p className="mt-1 text-[20px] font-extrabold text-neutral-900">{totalXp}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[12px] text-neutral-500">
+                      <span>{levelInfo.name}</span>
+                      <span>{levelInfo.nextXp} XP</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">Baru</span>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-[12px] text-neutral-500">
+                    <span>Progress menuju level berikutnya</span>
+                    <span>{levelInfo.progress}%</span>
+                  </div>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#eef4fb]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#1d93ff] to-[#0f5fb5]" style={{ width: `${levelInfo.progress}%` }} />
+                  </div>
+                </div>
               </div>
-              <p className="mt-3 text-[13px] font-black text-neutral-900">{badge.title}</p>
-              <p className="mt-1 text-[12px] leading-5 text-neutral-500">{badge.subtitle}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-3 rounded-[28px] border border-neutral-200 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Continue Learning</p>
+              <h2 className="mt-1 text-[18px] font-black text-neutral-900">{continueComic ? continueComic.title : 'Belum ada komik aktif'}</h2>
+            </div>
+            <Link href="/dashboard/siswa/komik" className="text-[12px] font-black text-primary-600">
+              Lihat Komik
+            </Link>
+          </div>
+
+          <div className="mt-3 flex items-center gap-3 rounded-[24px] border border-neutral-200 bg-[#f6f9fe] p-3">
+            <div className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[20px] bg-neutral-200">
+              <Image src={getDashboardCoverAsset(continueComic?.id)} alt={continueComic ? continueComic.title : 'Cover komik'} width={92} height={112} className="h-full w-full object-cover" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-primary-700">{continueComic ? 'Lanjutkan sekarang' : 'Belum ada progres'}</p>
+              <p className="mt-1 text-[13px] font-semibold text-neutral-900">{continueComic ? continueComic.title : 'Pilih komik untuk memulai pembelajaran.'}</p>
+              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#e8ecf2]">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700" style={{ width: `${todayPct}%` }} />
+              </div>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
+                <span>{todayStages}/{SINTAKS.length} tahap selesai</span>
+                <span>{todayPct}%</span>
+              </div>
+            </div>
+            <Link href="/dashboard/siswa/komik" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-[0_10px_20px_rgba(24,117,204,0.2)]">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-3 grid grid-cols-2 gap-2.5">
+          {statCards.map((stat) => (
+            <div key={stat.label} className={`rounded-[24px] border border-neutral-200 p-3 shadow-[0_6px_16px_rgba(15,23,42,0.05)] ${stat.bg}`}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white/70">
+                <Image src={getStatIconAsset(stat.type)} alt={stat.label} width={32} height={32} className="h-8 w-8 object-contain" />
+              </div>
+              <p className="mt-3 text-[22px] font-black text-neutral-900">{stat.value}</p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-500">{stat.label}</p>
             </div>
           ))}
-        </div>
-      </section>
+        </section>
+
+        <section className="mt-3 rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Progress Belajar</p>
+              <h3 className="mt-1 text-[18px] font-black text-neutral-900">Tahap yang sedang kamu kerjakan</h3>
+            </div>
+            <Link href="/dashboard/siswa/komik" className="rounded-full bg-primary-50 px-3 py-2 text-[11px] font-black text-primary-700">
+              Lihat Detail Tahap
+            </Link>
+          </div>
+
+          <div className="mt-3 rounded-[24px] border border-neutral-200 bg-[#f6f9fe] p-3">
+            <div className="flex items-center justify-between text-[12px] font-semibold text-neutral-700">
+              <span>Persentase progres</span>
+              <span className="text-primary-700">{todayPct}%</span>
+            </div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#e8ecf2]">
+              <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700" style={{ width: `${todayPct}%` }} />
+            </div>
+            <div className="mt-2 flex items-center justify-between text-[12px] text-neutral-500">
+              <span>{todayStages}/{SINTAKS.length} tahap selesai</span>
+              <span>{continueComic ? 'Lanjutkan sekarang' : 'Siap dimulai'}</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-3 rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Badge Terbaru</p>
+              <h3 className="mt-1 text-[18px] font-black text-neutral-900">Progress terbaru kamu</h3>
+            </div>
+            <Link href="/dashboard/siswa/komik" className="text-[12px] font-black text-primary-600">
+              Lihat Semua
+            </Link>
+          </div>
+
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {badgeItems.map((badge) => (
+              <div key={badge.title} className="min-w-[152px] shrink-0 rounded-[24px] border border-neutral-200 bg-[#f6f9fe] p-2">
+                <div className="flex h-24 items-center justify-center overflow-hidden rounded-[20px] bg-white p-2">
+                  <Image src={badge.asset} alt={badge.title} width={112} height={112} className="h-full w-full object-contain" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
