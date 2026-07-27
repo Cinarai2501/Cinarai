@@ -12,7 +12,7 @@ const tabs = [
 ];
 
 function TabIcon({ type, active }: { type: string; active: boolean }) {
-  const strokeClass = active ? 'stroke-primary-600' : 'stroke-neutral-500';
+  const strokeClass = active ? 'stroke-white' : 'stroke-neutral-500';
 
   switch (type) {
     case 'home':
@@ -63,21 +63,21 @@ export default function StudentBottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur-xl shadow-[0_-10px_30px_rgba(15,23,42,0.08)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto flex max-w-lg items-center justify-between px-2 py-2">
+      <div className="mx-auto flex max-w-lg items-center justify-between px-2 py-3">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex min-w-[0] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-center transition ${
-                active ? 'text-primary-600' : 'text-neutral-500 hover:text-neutral-700'
+              className={`flex min-w-[0] flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 text-center transition ${
+                active ? 'bg-primary-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
-              <span className="inline-flex items-center justify-center rounded-2xl p-2">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-3xl">
                 <TabIcon type={tab.icon} active={active} />
               </span>
-              <span className="text-[10px] font-semibold leading-none">{tab.label}</span>
+              <span className="text-[11px] font-semibold leading-none">{tab.label}</span>
             </Link>
           );
         })}
