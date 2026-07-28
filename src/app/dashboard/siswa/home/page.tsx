@@ -173,9 +173,9 @@ export default function DashboardSiswaHomePage() {
           style={{ ...glassCard, boxShadow: '0 18px 36px rgba(15,23,42,0.12)' }}
         >
           <div className="flex items-center gap-[16px]">
-            <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[14px] bg-[#EEF7FF]">
+            <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[18px] bg-[#EEF7FF]">
               <Image src={getLevelIconAsset(levelInfo.level)} alt={`Level ${levelInfo.level}`}
-                width={48} height={48} className="h-[48px] w-[48px] object-contain" />
+                width={68} height={68} className="h-[68px] w-[68px] object-contain" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-[8px]">
@@ -260,13 +260,13 @@ export default function DashboardSiswaHomePage() {
                 className="press-scale relative overflow-hidden rounded-[24px] border-[1.5px] p-[12px]"
                 style={{ background: stat.gradient, borderColor: stat.border, boxShadow: '0 6px 16px rgba(15,23,42,0.05)' }}>
                 {/* watermark */}
-                <div className="pointer-events-none absolute -bottom-[10px] -right-[10px] h-[64px] w-[64px] opacity-[0.07]">
-                  <Image src={getStatIconAsset(stat.type)} alt="" width={64} height={64}
-                    className="h-[64px] w-[64px] object-contain" aria-hidden="true" />
+                <div className="pointer-events-none absolute -bottom-[8px] -right-[8px] h-[68px] w-[68px] opacity-[0.11]">
+                  <Image src={getStatIconAsset(stat.type)} alt="" width={68} height={68}
+                    className="h-[68px] w-[68px] object-contain" aria-hidden="true" />
                 </div>
-                <div className="mb-[12px]">
-                  <Image src={getStatIconAsset(stat.type)} alt={stat.label} width={40} height={40}
-                    className="h-[40px] w-[40px] object-contain" />
+                <div className="mb-[10px]">
+                  <Image src={getStatIconAsset(stat.type)} alt={stat.label} width={56} height={56}
+                    className="h-[56px] w-[56px] object-contain" />
                 </div>
                 <p className="text-[24px] font-extrabold leading-none" style={{ color: stat.valueColor }}>{stat.value}</p>
                 <p className="mt-[5px] text-[12px] font-semibold" style={{ color: stat.labelColor }}>{stat.label}</p>
@@ -291,8 +291,8 @@ export default function DashboardSiswaHomePage() {
             </span>
           </div>
           <div className="flex items-end gap-[10px] px-[16px] pt-[12px]">
-            <p className="text-[48px] font-extrabold leading-none text-[#1D93FF]">{todayPct}%</p>
-            <p className="mb-[6px] text-[13px] font-medium text-[#6B7280]">selesai hari ini</p>
+            <p className="text-[38px] font-extrabold leading-none text-[#1D93FF]">{todayPct}%</p>
+            <p className="mb-[4px] text-[18px] font-semibold text-[#6B7280]">selesai hari ini</p>
           </div>
           {/* progress bar — 8px */}
           <div className="mx-[16px] mt-[12px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
