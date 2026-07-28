@@ -58,8 +58,8 @@ export default function StudentBottomNav() {
   const pathname = usePathname() ?? '';
 
   return (
-    <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-50 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-[8px]">
-      <div className="mx-auto flex h-[72px] max-w-[390px] items-center justify-between gap-[8px] rounded-[24px] border border-[#E5E7EB] bg-white/95 px-[20px] py-[10px] shadow-[0_-8px_20px_rgba(15,23,42,0.06)]">
+    <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-50 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-[10px]">
+      <div className="mx-auto flex h-[72px] max-w-[440px] items-center justify-between gap-[8px] rounded-[24px] border border-[#E5E7EB] bg-white px-[18px] py-[10px] shadow-[0_-8px_20px_rgba(15,23,42,0.06)]">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
@@ -67,13 +67,13 @@ export default function StudentBottomNav() {
               key={tab.href}
               href={tab.href}
               className={`flex min-w-[56px] flex-1 flex-col items-center justify-center gap-[2px] text-center ${
-                active ? 'text-white' : 'text-[#6B7280]'
+                active ? 'text-[#1D93FF] font-semibold' : 'text-[#6B7280] font-medium'
               }`}
             >
               <span className={`grid h-[30px] w-[30px] place-items-center rounded-[10px] ${active ? 'bg-[#1D93FF]' : 'bg-transparent'}`}>
                 <TabIcon type={tab.icon} active={active} />
               </span>
-              <span className="text-[12px] font-semibold leading-none">{tab.label}</span>
+              <span className="text-[12px] leading-none">{tab.label}</span>
             </Link>
           );
         })}

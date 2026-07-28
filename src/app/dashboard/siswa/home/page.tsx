@@ -136,14 +136,14 @@ export default function DashboardSiswaHomePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F8FD] pb-[96px]">
-      <div className="mx-auto flex w-full max-w-[390px] flex-col px-[20px] pb-[12px] pt-[20px]">
+      <div className="mx-auto flex w-full max-w-[440px] flex-col gap-[16px] px-[20px] pb-[12px] pt-[20px]">
         <section className="relative h-[320px] overflow-hidden rounded-[36px] bg-gradient-to-br from-[#1D93FF] via-[#2A7EFF] to-[#0F5FB5] px-[20px] pb-[24px] pt-[20px] text-white shadow-[0_28px_48px_rgba(15,23,42,0.18)]">
           <div className="flex items-start justify-between gap-[16px]">
             <div className="min-w-0">
               <h1 className="text-[28px] font-extrabold leading-[36px]">Halo, Siswa! 👋</h1>
               <p className="mt-[8px] text-[14px] font-normal leading-[20px] text-white/90">Semangat belajar hari ini!</p>
             </div>
-            <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white/10 ring-[4px] ring-white/25">
+            <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white/15">
               <Image src={avatarAsset} alt={`${firstName} avatar`} width={72} height={72} className="h-[72px] w-[72px] rounded-full object-cover" />
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function DashboardSiswaHomePage() {
                     </div>
                     <div className="text-right">
                       <p className="text-[14px] font-semibold text-[#2563EB]">{totalXp}</p>
-                      <p className="text-[12px] font-medium text-[#6B7280]">/ 250 XP</p>
+                      <p className="text-[12px] font-medium text-[#6B7280]">/ {levelInfo.nextXp} XP</p>
                     </div>
                   </div>
                 </div>
@@ -179,8 +179,11 @@ export default function DashboardSiswaHomePage() {
               <Image src={getDashboardCoverAsset(continueComic?.id)} alt={continueComic ? continueComic.title : 'Cover komik'} width={92} height={112} className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2563EB]">Lanjutkan Belajar</p>
-              <h2 className="mt-[6px] text-[18px] font-black leading-[24px] text-[#111827]">{continueComic ? continueComic.title : 'Belum ada komik aktif'}</h2>
+              <div className="flex items-center justify-between gap-[10px]">
+                <span className="rounded-full bg-[#E7F2FF] px-[10px] py-[4px] text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2563EB]">COMIC</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">Lanjutkan Belajar</span>
+              </div>
+              <h2 className="mt-[10px] text-[18px] font-black leading-[26px] text-[#111827]">{continueComic ? continueComic.title : 'Belum ada komik aktif'}</h2>
               <div className="mt-[16px] h-[12px] overflow-hidden rounded-full bg-[#E8ECF2]">
                 <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${todayPct}%` }} />
               </div>
@@ -200,13 +203,13 @@ export default function DashboardSiswaHomePage() {
 
         <section className="mt-[16px] grid w-full grid-cols-2 gap-[12px]">
           {statCards.map((stat) => (
-            <div key={stat.label} className={`rounded-[24px] border border-[#E5E7EB] p-[12px] shadow-[0_6px_16px_rgba(15,23,42,0.05)] ${stat.bg}`}>
+            <div key={stat.label} className={`rounded-[24px] p-[12px] shadow-[0_6px_16px_rgba(15,23,42,0.05)] ${stat.bg}`}>
               <div className="flex items-center gap-[12px]">
                 <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[12px] bg-white/80">
                   <Image src={getStatIconAsset(stat.type)} alt={stat.label} width={32} height={32} className="h-[32px] w-[32px] object-contain" />
                 </div>
                 <div>
-                  <p className="text-[18px] font-bold text-[#111827]">{stat.value}</p>
+                  <p className="text-[20px] font-bold text-[#111827]">{stat.value}</p>
                   <p className="mt-[4px] text-[12px] font-medium text-[#6B7280]">{stat.label}</p>
                 </div>
               </div>
@@ -215,20 +218,23 @@ export default function DashboardSiswaHomePage() {
         </section>
 
         <section className="mt-[16px] h-[160px] w-full rounded-[28px] bg-[#F6F9FE] p-[16px] shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-          <div className="flex items-center justify-between gap-[12px]">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2563EB]">Progress Belajar Hari Ini</p>
-              <h3 className="mt-[6px] text-[16px] font-black text-[#111827]">Tahap yang sedang kamu kerjakan</h3>
-            </div>
-            <div className="rounded-full bg-white px-[12px] py-[8px] text-[12px] font-semibold text-[#2563EB]">Lihat Detail Tahap</div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2563EB]">Progress Belajar Hari Ini</p>
+            <h3 className="mt-[6px] text-[16px] font-black text-[#111827]">Tahap yang sedang kamu kerjakan</h3>
           </div>
-          <div className="mt-[18px] flex items-center justify-between">
+          <div className="mt-[16px] flex items-center justify-between">
             <p className="text-[24px] font-bold text-[#2563EB]">{todayPct}%</p>
             <p className="text-[12px] font-medium text-[#6B7280]">{todayStages}/{SINTAKS.length} tahap selesai</p>
           </div>
           <div className="mt-[12px] h-[12px] overflow-hidden rounded-full bg-[#E8ECF2]">
             <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${todayPct}%` }} />
           </div>
+          <button type="button" className="mt-[16px] inline-flex w-full items-center justify-between rounded-[20px] bg-white px-[14px] py-[12px] text-[12px] font-semibold text-[#2563EB] shadow-[0_6px_16px_rgba(15,23,42,0.08)]">
+            <span>Lihat Detail Tahap</span>
+            <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
         </section>
 
         <section className="mt-[16px] h-[220px] w-full rounded-[28px] bg-[#F6F9FE] p-[16px] shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
@@ -242,7 +248,7 @@ export default function DashboardSiswaHomePage() {
                 <div className="mx-auto h-[112px] w-[112px] overflow-hidden rounded-[16px] bg-[#F6F9FE] p-[10px]">
                   <Image src={badge.asset} alt={badge.title} width={112} height={112} className="h-[112px] w-[112px] object-contain" />
                 </div>
-                <p className="mt-[10px] text-[10px] font-medium text-[#111827]">{badge.title}</p>
+                <p className="mt-[10px] text-[12px] font-semibold text-[#111827]">{badge.title}</p>
               </div>
             ))}
           </div>
