@@ -12,41 +12,41 @@ const tabs = [
 ];
 
 function TabIcon({ type, active }: { type: string; active: boolean }) {
-  const strokeClass = active ? 'stroke-white' : 'stroke-[#6B7280]';
+  const stroke = active ? 'stroke-white' : 'stroke-[#6B7280]';
 
   switch (type) {
     case 'home':
       return (
         <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path className={strokeClass} d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z" />
+          <path className={stroke} d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z" />
         </svg>
       );
     case 'book':
       return (
         <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path className={strokeClass} d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          <path className={strokeClass} d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5v-13z" />
+          <path className={stroke} d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path className={stroke} d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5v-13z" />
         </svg>
       );
     case 'chat':
       return (
         <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path className={strokeClass} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <path className={stroke} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       );
     case 'quiz':
       return (
         <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path className={strokeClass} d="M4 6h16M4 12h10M4 18h10" />
-          <path className={strokeClass} d="M18 8l3 3-3 3" />
+          <path className={stroke} d="M4 6h16M4 12h10M4 18h10" />
+          <path className={stroke} d="M18 8l3 3-3 3" />
         </svg>
       );
     case 'user':
       return (
         <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path className={strokeClass} d="M20 21v-2a4 4 0 0 0-3-3.87" />
-          <path className={strokeClass} d="M4 21v-2a4 4 0 0 1 3-3.87" />
-          <path className={strokeClass} d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+          <path className={stroke} d="M20 21v-2a4 4 0 0 0-3-3.87" />
+          <path className={stroke} d="M4 21v-2a4 4 0 0 1 3-3.87" />
+          <path className={stroke} d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
         </svg>
       );
     default:
@@ -58,22 +58,48 @@ export default function StudentBottomNav() {
   const pathname = usePathname() ?? '';
 
   return (
-    <nav aria-label="Navigasi utama" className="fixed inset-x-0 bottom-0 z-50 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-[10px]">
-      <div className="mx-auto flex h-[72px] max-w-[440px] items-center justify-between gap-[8px] rounded-[24px] border border-[#E5E7EB] bg-white px-[18px] py-[10px] shadow-[0_-8px_20px_rgba(15,23,42,0.06)]">
+    <nav
+      aria-label="Navigasi utama"
+      className="fixed inset-x-0 bottom-0 z-50 px-[20px]"
+      style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+    >
+      {/* spec: height=72px, radius=24px, shadow=0 -8px 20px rgba(15,23,42,0.06), padding=12px 20px */}
+      <div
+        className="mx-auto flex h-[72px] w-full items-center justify-between rounded-[24px] border border-[#E5E7EB] bg-white px-[20px]"
+        style={{ boxShadow: '0 -8px 20px rgba(15,23,42,0.06)' }}
+      >
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex min-w-[56px] flex-1 flex-col items-center justify-center gap-[2px] text-center ${
-                active ? 'text-[#1D93FF] font-semibold' : 'text-[#6B7280] font-medium'
-              }`}
+              className="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-[3px] text-center"
             >
-              <span className={`grid h-[30px] w-[30px] place-items-center rounded-[10px] ${active ? 'bg-[#1D93FF]' : 'bg-transparent'}`}>
+              {/* spec: arrow button / touch target 44px */}
+              <span
+                className="grid h-[44px] w-[44px] place-items-center rounded-[14px] transition-all duration-200"
+                style={
+                  active
+                    ? {
+                        background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)',
+                        boxShadow: '0 4px 12px rgba(29,147,255,0.35)',
+                      }
+                    : {}
+                }
+              >
                 <TabIcon type={tab.icon} active={active} />
               </span>
-              <span className="text-[12px] leading-none">{tab.label}</span>
+              {/* spec: label 12px, weight 600 active / medium inactive, #6B7280 inactive */}
+              <span
+                className="text-[12px] leading-none"
+                style={{
+                  fontWeight: active ? 600 : 500,
+                  color: active ? '#1D93FF' : '#6B7280',
+                }}
+              >
+                {tab.label}
+              </span>
             </Link>
           );
         })}
