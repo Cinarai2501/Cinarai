@@ -172,11 +172,26 @@ export default function DashboardSiswaHomePage() {
           className="dash-enter dash-enter-2 relative z-10 -mt-[24px] rounded-[30px] p-[16px]"
           style={{ ...glassCard, boxShadow: '0 18px 36px rgba(15,23,42,0.12)' }}
         >
-          <div className="flex items-center gap-[16px]">
-            <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-[18px] bg-[#EEF7FF]">
-              <Image src={getLevelIconAsset(levelInfo.level)} alt={`Level ${levelInfo.level}`}
-                width={68} height={68} className="h-[68px] w-[68px] object-contain" />
+          <div className="flex items-center gap-[14px]">
+            {/* badge: container 108px, image 100px → mengisi ~93% */}
+            <div
+              className="shrink-0 rounded-[20px] bg-[#EEF7FF]"
+              style={{
+                width: 108,
+                height: 108,
+                padding: 4,
+                boxShadow: '0 6px 20px rgba(29,147,255,0.22)',
+              }}
+            >
+              <Image
+                src={getLevelIconAsset(levelInfo.level)}
+                alt={`Level ${levelInfo.level}`}
+                width={100}
+                height={100}
+                className="h-[100px] w-[100px] object-contain"
+              />
             </div>
+
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-[8px]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CA3AF]">Level</p>
@@ -188,7 +203,6 @@ export default function DashboardSiswaHomePage() {
                   {totalXp}<span className="text-[11px] font-semibold text-[#9CA3AF]"> / {levelInfo.nextXp} XP</span>
                 </p>
               </div>
-              {/* progress bar — 8px */}
               <div className="mt-[10px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
                 <div className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{ width: `${levelInfo.progress}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }} />
@@ -277,39 +291,82 @@ export default function DashboardSiswaHomePage() {
 
         {/* ── 4. PROGRESS ── */}
         <section
-          className="dash-enter dash-enter-5 mt-[28px] w-full overflow-hidden rounded-[28px]"
+          className="dash-enter dash-enter-5 press-scale mt-[28px] w-full overflow-hidden rounded-[28px]"
           style={{ ...glassCard, boxShadow: '0 8px 24px rgba(15,23,42,0.07)' }}
         >
-          <div className="flex items-center justify-between px-[16px] pt-[16px]">
+          {/* header row */}
+          <div className="flex items-start justify-between px-[18px] pt-[18px]">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#9CA3AF]">Progress Belajar Hari Ini</p>
-              <p className="mt-[1px] text-[12px] font-medium text-[#6B7280]">Capaian tahap hari ini</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.20em] text-[#9CA3AF]">Progress Belajar Hari Ini</p>
+              <h3 className="mt-[3px] text-[16px] font-extrabold text-[#111827]">Capaian Hari Ini</h3>
+              <p className="mt-[2px] text-[12px] font-medium text-[#6B7280]">Capai target belajar hari ini.</p>
             </div>
-            <span className="rounded-full px-[10px] py-[4px] text-[11px] font-bold text-white"
-              style={{ background: 'linear-gradient(90deg, #1D93FF, #0F5FB5)' }}>
-              {todayStages}/{SINTAKS.length} tahap
+            <span
+              className="mt-[2px] shrink-0 rounded-full px-[12px] py-[5px] text-[11px] font-extrabold text-white"
+              style={{ background: 'linear-gradient(90deg, #3B82F6, #2563EB)', boxShadow: '0 4px 10px rgba(37,99,235,0.30)' }}
+            >
+              {todayStages}/{SINTAKS.length} Tahap
             </span>
           </div>
-          <div className="flex items-end gap-[10px] px-[16px] pt-[12px]">
-            <p className="text-[38px] font-extrabold leading-none text-[#1D93FF]">{todayPct}%</p>
-            <p className="mb-[4px] text-[18px] font-semibold text-[#6B7280]">selesai hari ini</p>
+
+          {/* big % + illustration */}
+          <div className="relative mx-[18px] mt-[14px] flex items-end justify-between">
+            <p
+              className="text-[52px] font-extrabold leading-none"
+              style={{ color: '#2563EB', textShadow: '0 2px 12px rgba(37,99,235,0.18)' }}
+            >
+              {todayPct}%
+            </p>
+            {/* siluet candi — SVG inline, opacity 8% */}
+            <svg
+              viewBox="0 0 120 80"
+              className="pointer-events-none mb-[4px] h-[64px] w-[96px] opacity-[0.08]"
+              fill="#2563EB"
+              aria-hidden="true"
+            >
+              {/* siluet candi penataran sederhana */}
+              <rect x="50" y="10" width="20" height="70" />
+              <rect x="40" y="25" width="40" height="55" />
+              <rect x="28" y="38" width="64" height="42" />
+              <rect x="10" y="52" width="100" height="28" />
+              <polygon points="60,0 54,10 66,10" />
+            </svg>
           </div>
-          {/* progress bar — 8px */}
-          <div className="mx-[16px] mt-[12px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
-            <div className="h-full rounded-full transition-all duration-700 ease-out"
-              style={{ width: `${todayPct}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }} />
+
+          {/* progress bar 10px */}
+          <div className="mx-[18px] mt-[10px] h-[10px] overflow-hidden rounded-full bg-[#DBEAFE]">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${todayPct}%`,
+                background: 'linear-gradient(90deg, #3B82F6, #2563EB)',
+                transition: 'width 400ms cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+            />
           </div>
-          <div className="flex items-center justify-between px-[16px] pt-[6px]">
-            <p className="text-[11px] font-medium text-[#9CA3AF]">0%</p>
-            <p className="text-[11px] font-semibold text-[#1D93FF]">{todayPct}% dari 100%</p>
+
+          {/* 0% ——— 100% */}
+          <div className="mx-[18px] mt-[5px] flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-[#93C5FD]">0%</p>
+            <p className="text-[11px] font-semibold text-[#93C5FD]">100%</p>
           </div>
-          <div className="mx-[16px] mt-[14px] h-[1px] bg-[#E8F0FE]" />
-          <button type="button"
-            className="press-scale flex w-full items-center justify-between px-[16px] py-[14px] text-[13px] font-bold text-[#1D93FF]">
+
+          {/* motivasi */}
+          <p className="mx-[18px] mt-[10px] text-[12px] font-medium italic text-[#9CA3AF]">
+            &ldquo;Ayo selesaikan petualangan hari ini!&rdquo;
+          </p>
+
+          <div className="mx-[18px] mt-[14px] h-[1px] bg-[#E8F0FE]" />
+          <button
+            type="button"
+            className="press-scale flex w-full items-center justify-between px-[18px] py-[14px] text-[13px] font-bold text-[#2563EB]"
+          >
             <span>Lihat Detail Tahap</span>
-            <span className="flex h-[44px] w-[44px] items-center justify-center rounded-full"
-              style={{ background: 'linear-gradient(135deg, #1D93FF, #0F5FB5)', boxShadow: '0 4px 12px rgba(29,147,255,0.35)' }}>
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <span
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-full"
+              style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', boxShadow: '0 4px 12px rgba(37,99,235,0.30)' }}
+            >
+              <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 6l6 6-6 6" />
               </svg>
             </span>
@@ -332,15 +389,46 @@ export default function DashboardSiswaHomePage() {
           </div>
           <div className="flex gap-[12px] overflow-x-auto px-[16px] pb-[16px] pt-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {badgeItems.map((badge) => (
-              <div key={badge.title}
-                className="press-scale flex min-w-[140px] shrink-0 flex-col items-center rounded-[22px] bg-white/80 px-[12px] pb-[14px] pt-[16px]"
-                style={{ boxShadow: '0 6px 16px rgba(15,23,42,0.08)', border: '1px solid rgba(255,255,255,0.70)' }}>
-                <div className="flex h-[112px] w-[112px] items-center justify-center rounded-[18px] bg-[#EEF7FF]"
-                  style={{ boxShadow: '0 4px 12px rgba(29,147,255,0.10)' }}>
-                  <Image src={badge.asset} alt={badge.title} width={112} height={112}
-                    className="h-[112px] w-[112px] object-contain" />
+              <div
+                key={badge.title}
+                className="press-scale flex min-w-[148px] shrink-0 flex-col items-center rounded-[24px] pb-[14px] pt-[14px]"
+                style={{
+                  background: 'linear-gradient(160deg, rgba(238,247,255,0.95) 0%, rgba(255,255,255,0.90) 100%)',
+                  boxShadow: '0 8px 20px rgba(29,147,255,0.10)',
+                  border: '1px solid rgba(147,197,253,0.35)',
+                }}
+              >
+                {/* glow halo di belakang badge */}
+                <div className="relative flex items-center justify-center">
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      width: 96,
+                      height: 96,
+                      background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)',
+                      filter: 'blur(8px)',
+                    }}
+                  />
+                  {/* container 108px, image 100px → ~93% */}
+                  <div
+                    className="relative rounded-[20px] bg-white"
+                    style={{
+                      width: 108,
+                      height: 108,
+                      padding: 4,
+                      boxShadow: '0 6px 18px rgba(29,147,255,0.14)',
+                    }}
+                  >
+                    <Image
+                      src={badge.asset}
+                      alt={badge.title}
+                      width={100}
+                      height={100}
+                      className="h-[100px] w-[100px] object-contain"
+                    />
+                  </div>
                 </div>
-                <p className="mt-[10px] text-center text-[12px] font-bold leading-[17px] text-[#111827]">
+                <p className="mt-[10px] px-[8px] text-center text-[12px] font-bold leading-[17px] text-[#111827]">
                   {badge.title}
                 </p>
               </div>
