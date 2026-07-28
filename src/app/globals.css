@@ -194,7 +194,28 @@ a, button {
   animation: pocFeedbackPop 0.25s ease-out both;
 }
 
-/* ── PDF side-nav arrows (desktop) ────────────────────────────────────── */
+/* ── Dashboard section entrance ───────────────────────────────────────── */
+@keyframes dashEnter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dash-enter {
+  animation: dashEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dash-enter-1 { animation-delay: 0ms; }
+.dash-enter-2 { animation-delay: 60ms; }
+.dash-enter-3 { animation-delay: 120ms; }
+.dash-enter-4 { animation-delay: 180ms; }
+.dash-enter-5 { animation-delay: 240ms; }
+.dash-enter-6 { animation-delay: 300ms; }
+
+/* ── Micro-interaction press ───────────────────────────────────────────── */
+.press-scale {
+  transition: transform 120ms ease-out;
+}
+.press-scale:active {
+  transform: scale(0.97);
+}
 .fixed-side-btn {
   position: sticky;
   top: 50%;

@@ -4,16 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const tabs = [
-  { href: '/dashboard/siswa/home', label: 'Home', icon: 'home' },
-  { href: '/dashboard/siswa/komik', label: 'Komik', icon: 'book' },
-  { href: '/dashboard/siswa/ai-tutor', label: 'AI Tutor', icon: 'chat' },
-  { href: '/dashboard/siswa/kuis', label: 'Kuis', icon: 'quiz' },
-  { href: '/dashboard/siswa/profil', label: 'Profil', icon: 'user' },
+  { href: '/dashboard/siswa/home',     label: 'Home',    icon: 'home' },
+  { href: '/dashboard/siswa/komik',    label: 'Komik',   icon: 'book' },
+  { href: '/dashboard/siswa/ai-tutor', label: 'AI Tutor',icon: 'chat' },
+  { href: '/dashboard/siswa/kuis',     label: 'Kuis',    icon: 'quiz' },
+  { href: '/dashboard/siswa/profil',   label: 'Profil',  icon: 'user' },
 ];
 
 function TabIcon({ type, active }: { type: string; active: boolean }) {
   const stroke = active ? 'stroke-white' : 'stroke-[#6B7280]';
-
   switch (type) {
     case 'home':
       return (
@@ -60,13 +59,17 @@ export default function StudentBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 px-[20px]"
+      className="fixed inset-x-0 bottom-0 z-50 px-[16px]"
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
-      {/* spec: height=72px, radius=24px, shadow=0 -8px 20px rgba(15,23,42,0.06), padding=12px 20px */}
       <div
-        className="mx-auto flex h-[72px] w-full items-center justify-between rounded-[24px] border border-[#E5E7EB] bg-white px-[20px]"
-        style={{ boxShadow: '0 -8px 20px rgba(15,23,42,0.06)' }}
+        className="mx-auto flex h-[72px] w-full items-center justify-between rounded-[24px] border border-white/60 px-[12px]"
+        style={{
+          background: 'rgba(255,255,255,0.82)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          boxShadow: '0 -4px 8px rgba(15,23,42,0.04), 0 -12px 32px rgba(15,23,42,0.08)',
+        }}
       >
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
@@ -74,29 +77,26 @@ export default function StudentBottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex min-w-[56px] flex-1 flex-col items-center justify-center gap-[3px] text-center"
+              className="flex flex-1 flex-col items-center justify-center gap-[3px] text-center"
             >
-              {/* spec: arrow button / touch target 44px */}
+              {/* capsule active indicator with scale micro-interaction */}
               <span
-                className="grid h-[44px] w-[44px] place-items-center rounded-[14px] transition-all duration-200"
+                className="grid h-[44px] w-[44px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
                 style={
                   active
                     ? {
                         background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)',
-                        boxShadow: '0 4px 12px rgba(29,147,255,0.35)',
+                        boxShadow: '0 4px 14px rgba(29,147,255,0.40)',
+                        transform: 'scale(1.05)',
                       }
                     : {}
                 }
               >
                 <TabIcon type={tab.icon} active={active} />
               </span>
-              {/* spec: label 12px, weight 600 active / medium inactive, #6B7280 inactive */}
               <span
-                className="text-[12px] leading-none"
-                style={{
-                  fontWeight: active ? 600 : 500,
-                  color: active ? '#1D93FF' : '#6B7280',
-                }}
+                className="text-[12px] leading-none transition-all duration-200"
+                style={{ fontWeight: active ? 600 : 500, color: active ? '#1D93FF' : '#6B7280' }}
               >
                 {tab.label}
               </span>
