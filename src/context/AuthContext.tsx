@@ -212,11 +212,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       await firebaseUpdateUserProfile(currentUser, displayName, photoURL);
-      const updatedUser = {
-        ...(state.user as any),
+      const updatedUser: User = {
+        ...(state.user ?? {}),
         displayName,
         photoURL: photoURL ?? state.user?.photoURL,
-      };
+      } as User;
       setState({ user: updatedUser, loading: false, error: null });
     } catch (error) {
       const errorMessage =

@@ -59,21 +59,21 @@ export default function StudentBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 px-3 pb-[max(0.8rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]"
+      className="fixed inset-x-0 bottom-0 z-50 bg-transparent px-[12px] pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-[8px]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto flex max-w-[440px] items-center justify-between gap-2 rounded-[28px] border border-neutral-200 bg-[#f5f9ff] p-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+      <div className="mx-auto flex max-w-[440px] items-center justify-between gap-[6px] rounded-[20px] border border-[#E5E7EB] bg-white/95 px-[6px] py-[6px] shadow-[0_-6px_14px_rgba(15,23,42,0.06)]">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex min-w-[0] flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2.5 text-center transition ${
-                active ? 'bg-primary-600 text-white shadow-[0_10px_20px_rgba(24,117,204,0.2)]' : 'text-neutral-500 hover:bg-white hover:text-neutral-700'
+              className={`flex min-w-[0] flex-1 flex-col items-center justify-center gap-[2px] rounded-[14px] px-[2px] py-[6px] text-center transition ${
+                active ? 'bg-[#1D93FF] text-white shadow-[0_8px_16px_rgba(24,117,204,0.2)]' : 'text-[#6B7280] hover:bg-[#F6F9FE] hover:text-[#111827]'
               }`}
             >
-              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-[14px] ${active ? 'bg-white/15' : 'bg-transparent'}`}>
+              <span className={`inline-flex h-[32px] w-[32px] items-center justify-center rounded-[10px] ${active ? 'bg-white/15' : 'bg-transparent'}`}>
                 <TabIcon type={tab.icon} active={active} />
               </span>
               <span className="text-[10px] font-semibold leading-none">{tab.label}</span>

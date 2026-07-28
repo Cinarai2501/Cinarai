@@ -144,54 +144,56 @@ export default function DashboardSiswaHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f8fd] pb-24">
-      <div className="mx-auto max-w-[440px] px-3 pb-4 pt-3">
-        <section className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-[#1d93ff] via-[#2a7eff] to-[#0f5fb5] pt-5 pb-6 px-5 text-white shadow-[0_28px_48px_rgba(15,23,42,0.18)]">
-          <div className="flex items-start justify-between gap-3">
+    <div className="min-h-screen bg-[#F5F8FD] pb-[96px]">
+      <div className="mx-auto flex max-w-[440px] flex-col gap-[10px] px-[16px] pb-[12px] pt-[10px]">
+        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1D93FF] via-[#2A7EFF] to-[#0F5FB5] px-[16px] pb-[16px] pt-[16px] text-white shadow-[0_20px_36px_rgba(15,23,42,0.16)]">
+          <div className="flex items-start justify-between gap-[12px]">
             <div className="flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.36em] text-white/90">{greeting}</p>
-              <h1 className="mt-2 text-[28px] font-extrabold leading-[1.03]">Halo, {firstName}!</h1>
-              <p className="mt-2 text-[14px] leading-6 text-white/90">Lihat progres belajar, level, dan komik yang sedang kamu kerjakan di satu layar.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">{greeting}</p>
+              <h1 className="mt-[6px] text-[24px] font-extrabold leading-[1.02] text-white">Halo, {firstName}!</h1>
+              <p className="mt-[6px] text-[12px] leading-[18px] text-white/90">
+                Lihat progres belajar, level, dan komik yang sedang kamu kerjakan di satu layar.
+              </p>
             </div>
             <div className="relative z-10 shrink-0">
-              <div className="rounded-full ring-4 ring-white/30">
-                <Image src={avatarAsset} alt={`${firstName} avatar`} width={72} height={72} className="h-18 w-18 rounded-full object-cover" />
+              <div className="rounded-full ring-[3px] ring-white/30">
+                <Image src={avatarAsset} alt={`${firstName} avatar`} width={56} height={56} className="h-[56px] w-[56px] rounded-full object-cover" />
               </div>
             </div>
           </div>
 
-          <div className="mt-5">
-            <div className="relative -translate-y-4">
-              <div className="mx-auto max-w-full rounded-[30px] border border-white/22 bg-white p-4 text-[#121827] shadow-[0_18px_36px_rgba(15,23,42,0.16)]">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[16px] bg-[#eef7ff]">
-                    <Image src={getLevelIconAsset(levelInfo.level)} alt={`Level ${levelInfo.level}`} width={48} height={48} className="h-12 w-12 object-contain" />
+          <div className="mt-[12px]">
+            <div className="relative -translate-y-[10px]">
+              <div className="rounded-[24px] border border-white/20 bg-white p-[12px] text-[#121827] shadow-[0_14px_28px_rgba(15,23,42,0.14)]">
+                <div className="flex items-center gap-[12px]">
+                  <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[12px] bg-[#EEF7FF]">
+                    <Image src={getLevelIconAsset(levelInfo.level)} alt={`Level ${levelInfo.level}`} width={40} height={40} className="h-[40px] w-[40px] object-contain" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-start justify-between gap-[8px]">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-neutral-400">Level</p>
-                        <p className="mt-1 text-[24px] font-extrabold leading-none text-neutral-900">{levelInfo.level}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#9CA3AF]">Level</p>
+                        <p className="mt-[2px] text-[20px] font-extrabold leading-none text-[#111827]">{levelInfo.level}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-neutral-400">XP</p>
-                        <p className="mt-1 text-[20px] font-extrabold text-neutral-900">{totalXp}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#9CA3AF]">XP</p>
+                        <p className="mt-[2px] text-[18px] font-extrabold text-[#111827]">{totalXp}</p>
                       </div>
                     </div>
-                    <div className="mt-2 flex items-center justify-between text-[12px] text-neutral-500">
+                    <div className="mt-[6px] flex items-center justify-between text-[11px] text-[#6B7280]">
                       <span>{levelInfo.name}</span>
                       <span>{levelInfo.nextXp} XP</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-[12px] text-neutral-500">
+                <div className="mt-[12px]">
+                  <div className="flex items-center justify-between text-[11px] text-[#6B7280]">
                     <span>Progress menuju level berikutnya</span>
                     <span>{levelInfo.progress}%</span>
                   </div>
-                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#eef4fb]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#1d93ff] to-[#0f5fb5]" style={{ width: `${levelInfo.progress}%` }} />
+                  <div className="mt-[6px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${levelInfo.progress}%` }} />
                   </div>
                 </div>
               </div>
@@ -199,34 +201,34 @@ export default function DashboardSiswaHomePage() {
           </div>
         </section>
 
-        <section className="mt-3 rounded-[28px] border border-neutral-200 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-          <div className="flex items-center justify-between gap-3">
+        <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-[12px] shadow-[0_8px_18px_rgba(15,23,42,0.05)]">
+          <div className="flex items-center justify-between gap-[8px]">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Continue Learning</p>
-              <h2 className="mt-1 text-[18px] font-black text-neutral-900">{continueComic ? continueComic.title : 'Belum ada komik aktif'}</h2>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[#9CA3AF]">Continue Learning</p>
+              <h2 className="mt-[2px] text-[15px] font-black text-[#111827]">{continueComic ? continueComic.title : 'Belum ada komik aktif'}</h2>
             </div>
-            <Link href="/dashboard/siswa/komik" className="text-[12px] font-black text-primary-600">
+            <Link href="/dashboard/siswa/komik" className="text-[11px] font-black text-[#1D93FF]">
               Lihat Komik
             </Link>
           </div>
 
-          <div className="mt-3 flex items-center gap-3 rounded-[24px] border border-neutral-200 bg-[#f6f9fe] p-3">
-            <div className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[20px] bg-neutral-200">
-              <Image src={getDashboardCoverAsset(continueComic?.id)} alt={continueComic ? continueComic.title : 'Cover komik'} width={92} height={112} className="h-full w-full object-cover" />
+          <div className="mt-[10px] flex items-center gap-[10px] rounded-[20px] border border-[#E5E7EB] bg-[#F6F9FE] p-[10px]">
+            <div className="h-[80px] w-[80px] shrink-0 overflow-hidden rounded-[16px] bg-[#E5E7EB]">
+              <Image src={getDashboardCoverAsset(continueComic?.id)} alt={continueComic ? continueComic.title : 'Cover komik'} width={80} height={80} className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-primary-700">{continueComic ? 'Lanjutkan sekarang' : 'Belum ada progres'}</p>
-              <p className="mt-1 text-[13px] font-semibold text-neutral-900">{continueComic ? continueComic.title : 'Pilih komik untuk memulai pembelajaran.'}</p>
-              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#e8ecf2]">
-                <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700" style={{ width: `${todayPct}%` }} />
+              <p className="text-[11px] font-semibold text-[#1D93FF]">{continueComic ? 'Lanjutkan sekarang' : 'Belum ada progres'}</p>
+              <p className="mt-[2px] text-[12px] font-semibold text-[#111827]">{continueComic ? continueComic.title : 'Pilih komik untuk memulai pembelajaran.'}</p>
+              <div className="mt-[8px] h-[8px] overflow-hidden rounded-full bg-[#E8ECF2]">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${todayPct}%` }} />
               </div>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
+              <div className="mt-[6px] flex items-center justify-between text-[10px] text-[#6B7280]">
                 <span>{todayStages}/{SINTAKS.length} tahap selesai</span>
                 <span>{todayPct}%</span>
               </div>
             </div>
-            <Link href="/dashboard/siswa/komik" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-[0_10px_20px_rgba(24,117,204,0.2)]">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Link href="/dashboard/siswa/komik" className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full bg-[#1D93FF] text-white shadow-[0_8px_16px_rgba(24,117,204,0.2)]">
+              <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14" />
                 <path d="M12 5l7 7-7 7" />
               </svg>
@@ -234,60 +236,60 @@ export default function DashboardSiswaHomePage() {
           </div>
         </section>
 
-        <section className="mt-3 grid grid-cols-2 gap-2.5">
+        <section className="grid grid-cols-2 gap-[8px]">
           {statCards.map((stat) => (
-            <div key={stat.label} className={`rounded-[24px] border border-neutral-200 p-3 shadow-[0_6px_16px_rgba(15,23,42,0.05)] ${stat.bg}`}>
-              <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white/70">
-                <Image src={getStatIconAsset(stat.type)} alt={stat.label} width={32} height={32} className="h-8 w-8 object-contain" />
+            <div key={stat.label} className={`rounded-[20px] border border-[#E5E7EB] p-[10px] shadow-[0_5px_12px_rgba(15,23,42,0.05)] ${stat.bg}`}>
+              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] bg-white/70">
+                <Image src={getStatIconAsset(stat.type)} alt={stat.label} width={40} height={40} className="h-[40px] w-[40px] object-contain" />
               </div>
-              <p className="mt-3 text-[22px] font-black text-neutral-900">{stat.value}</p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-500">{stat.label}</p>
+              <p className="mt-[8px] text-[18px] font-black text-[#111827]">{stat.value}</p>
+              <p className="mt-[2px] text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6B7280]">{stat.label}</p>
             </div>
           ))}
         </section>
 
-        <section className="mt-3 rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-          <div className="flex items-center justify-between gap-3">
+        <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-[12px] shadow-[0_8px_18px_rgba(15,23,42,0.05)]">
+          <div className="flex items-center justify-between gap-[8px]">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Progress Belajar</p>
-              <h3 className="mt-1 text-[18px] font-black text-neutral-900">Tahap yang sedang kamu kerjakan</h3>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[#9CA3AF]">Progress Belajar Hari Ini</p>
+              <h3 className="mt-[2px] text-[15px] font-black text-[#111827]">Tahap yang sedang kamu kerjakan</h3>
             </div>
-            <Link href="/dashboard/siswa/komik" className="rounded-full bg-primary-50 px-3 py-2 text-[11px] font-black text-primary-700">
+            <Link href="/dashboard/siswa/komik" className="rounded-full bg-[#EEF7FF] px-[8px] py-[6px] text-[10px] font-black text-[#1D93FF]">
               Lihat Detail Tahap
             </Link>
           </div>
 
-          <div className="mt-3 rounded-[24px] border border-neutral-200 bg-[#f6f9fe] p-3">
-            <div className="flex items-center justify-between text-[12px] font-semibold text-neutral-700">
+          <div className="mt-[10px] rounded-[20px] border border-[#E5E7EB] bg-[#F6F9FE] p-[10px]">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-[#4B5563]">
               <span>Persentase progres</span>
-              <span className="text-primary-700">{todayPct}%</span>
+              <span className="text-[#1D93FF]">{todayPct}%</span>
             </div>
-            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#e8ecf2]">
-              <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700" style={{ width: `${todayPct}%` }} />
+            <div className="mt-[6px] h-[8px] overflow-hidden rounded-full bg-[#E8ECF2]">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${todayPct}%` }} />
             </div>
-            <div className="mt-2 flex items-center justify-between text-[12px] text-neutral-500">
+            <div className="mt-[6px] flex items-center justify-between text-[10px] text-[#6B7280]">
               <span>{todayStages}/{SINTAKS.length} tahap selesai</span>
               <span>{continueComic ? 'Lanjutkan sekarang' : 'Siap dimulai'}</span>
             </div>
           </div>
         </section>
 
-        <section className="mt-3 rounded-[28px] border border-neutral-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-          <div className="flex items-center justify-between gap-3">
+        <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-[12px] shadow-[0_8px_18px_rgba(15,23,42,0.05)]">
+          <div className="flex items-center justify-between gap-[8px]">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-400">Badge Terbaru</p>
-              <h3 className="mt-1 text-[18px] font-black text-neutral-900">Progress terbaru kamu</h3>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[#9CA3AF]">Badge Terbaru</p>
+              <h3 className="mt-[2px] text-[15px] font-black text-[#111827]">Progress terbaru kamu</h3>
             </div>
-            <Link href="/dashboard/siswa/komik" className="text-[12px] font-black text-primary-600">
+            <Link href="/dashboard/siswa/komik" className="text-[11px] font-black text-[#1D93FF]">
               Lihat Semua
             </Link>
           </div>
 
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-[10px] flex gap-[8px] overflow-x-auto pb-[2px]">
             {badgeItems.map((badge) => (
-              <div key={badge.title} className="min-w-[152px] shrink-0 rounded-[24px] border border-neutral-200 bg-[#f6f9fe] p-2">
-                <div className="flex h-24 items-center justify-center overflow-hidden rounded-[20px] bg-white p-2">
-                  <Image src={badge.asset} alt={badge.title} width={112} height={112} className="h-full w-full object-contain" />
+              <div key={badge.title} className="min-w-[120px] shrink-0 rounded-[20px] border border-[#E5E7EB] bg-[#F6F9FE] p-[8px]">
+                <div className="flex h-[64px] items-center justify-center overflow-hidden rounded-[16px] bg-white p-[6px]">
+                  <Image src={badge.asset} alt={badge.title} width={64} height={64} className="h-full w-full object-contain" />
                 </div>
               </div>
             ))}
