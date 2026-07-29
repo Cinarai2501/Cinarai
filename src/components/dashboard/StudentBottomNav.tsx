@@ -63,7 +63,7 @@ export default function StudentBottomNav() {
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[72px] w-full items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[8px]"
+        className="mx-auto flex h-[72px] max-w-[440px] items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[8px]"
         style={{
           background: 'rgba(255,255,255,0.82)',
           backdropFilter: 'blur(20px)',
