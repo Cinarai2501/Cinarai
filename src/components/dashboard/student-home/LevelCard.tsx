@@ -17,12 +17,12 @@ type LevelCardProps = {
 
 export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelCardProps) {
   return (
-    <section className="relative z-10 -mt-[24px] rounded-[30px] bg-white p-[16px] shadow-[0_18px_36px_rgba(15,23,42,0.16)]" style={{ minHeight: 144 }}>
-      <div className="flex h-full items-start gap-[14px]">
-        <div className="mt-[2px] flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[20px] bg-[#EEF7FF]">
-          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={48} height={48} className="h-[48px] w-[48px] object-contain" />
+    <section className="relative z-10 -mt-[36px] h-[112px] rounded-[28px] bg-white p-[20px] shadow-[0_18px_36px_rgba(15,23,42,0.16)]">
+      <div className="flex h-full items-center gap-[16px]">
+        <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[22px] bg-[#EEF7FF]">
+          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={60} height={60} className="h-[60px] w-[60px] object-contain" />
         </div>
-        <div className="min-w-0 flex-1 pt-[2px]">
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-[8px]">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CA3AF]">Level</p>
@@ -30,11 +30,11 @@ export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelC
             </div>
             <p className="pt-[1px] text-[11px] font-semibold text-[#9CA3AF]">XP</p>
           </div>
-          <div className="mt-[10px] flex items-center justify-between gap-[8px] text-[11px] font-semibold text-[#6B7280]">
+          <div className="mt-[8px] flex items-center justify-between gap-[8px] text-[11px] font-semibold text-[#6B7280]">
             <span>{totalXp} / {levelInfo.nextXp} XP</span>
             <span className="text-[11px] font-semibold text-[#6B7280]">{levelInfo.nextXp} target</span>
           </div>
-          <div className="mt-[8px] h-[12px] overflow-hidden rounded-full bg-[#EEF4FB]">
+          <div className="mt-[8px] h-[10px] overflow-hidden rounded-full bg-[#EEF4FB]">
             <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${levelInfo.progress}%` }} />
           </div>
         </div>
