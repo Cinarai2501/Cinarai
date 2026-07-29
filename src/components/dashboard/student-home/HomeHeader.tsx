@@ -10,7 +10,7 @@ type HomeHeaderProps = {
 export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) {
   return (
     <section
-      className="overflow-hidden rounded-[36px] px-[20px] pb-[18px] pt-[18px] text-white shadow-[0_28px_48px_rgba(15,23,42,0.18)]"
+      className="overflow-hidden rounded-[36px] px-[20px] pb-[20px] pt-[20px] text-white shadow-[0_28px_48px_rgba(15,23,42,0.18)]"
       style={{ background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)', minHeight: 280 }}
     >
       <div className="flex items-start justify-between gap-[16px]">

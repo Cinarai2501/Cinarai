@@ -1,7 +1,7 @@
 'use client';
 
-import StudentHomeBlueprint from '@/components/dashboard/student-home/StudentHomeBlueprint';
+import StudentHome from '@/components/dashboard/student-home/StudentHome';
 
 export default function DashboardSiswaHomePage() {
-  return <StudentHomeBlueprint />;
+  return <StudentHome />;
 }

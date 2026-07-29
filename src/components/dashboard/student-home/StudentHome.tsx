@@ -12,9 +12,7 @@ import DailyProgressCard from './DailyProgressCard';
 import HomeHeader from './HomeHeader';
 import LevelCard from './LevelCard';
 import StatisticsGrid from './StatisticsGrid';
-
-const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
-const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
+import StudentBottomNav from '@/components/dashboard/StudentBottomNav';
 
 type StatCard = {
   label: string;
@@ -36,6 +34,9 @@ type LevelInfo = {
   progress: number;
 };
 
+const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
+const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
+
 function getLevelInfo(xp: number): LevelInfo {
   let level = 0;
   for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i -= 1) {
@@ -48,10 +49,6 @@ function getLevelInfo(xp: number): LevelInfo {
   const next = LEVEL_THRESHOLDS[level + 1] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
   const progress = next > cur ? Math.round(((xp - cur) / (next - cur)) * 100) : 100;
   return { level: level + 1, name: LEVEL_NAMES[level] ?? 'Legenda', nextXp: next, progress };
-}
-
-function getDashboardCoverAsset(comicId?: number) {
-  return `/assets/dashboard/home/covers/cover-komik-${comicId ?? 1}.png`;
 }
 
 function getAvatarAsset(firstName: string) {
@@ -81,7 +78,11 @@ function getStatIconAsset(type: string) {
   }
 }
 
-export default function StudentHomeBlueprint() {
+function getDashboardCoverAsset(comicId?: number) {
+  return `/assets/dashboard/home/covers/cover-komik-${comicId ?? 1}.png`;
+}
+
+export default function StudentHome() {
   const { user } = useAuth();
   const { states, getProgress } = useAllComicProgress();
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Petualang';
@@ -132,7 +133,7 @@ export default function StudentHomeBlueprint() {
   ];
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full bg-transparent">
       <div className="mx-auto flex max-w-[440px] flex-col px-[16px] pb-[92px] pt-[12px]">
         <div className="flex flex-col gap-[12px]">
           <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
@@ -143,6 +144,7 @@ export default function StudentHomeBlueprint() {
           <BadgeSection badgeItems={badgeItems} />
         </div>
       </div>
+      <StudentBottomNav />
     </div>
   );
 }
