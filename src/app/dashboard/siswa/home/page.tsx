@@ -61,7 +61,7 @@ export default function DashboardSiswaHomePage() {
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Petualang';
   const avatarAsset = getAvatarAsset(firstName);
 
-  const comics        = useMemo(() => getAllComics(), []);
+  const comics         = useMemo(() => getAllComics(), []);
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
 
   const { totalXp, completedComics, continueComic } = useMemo(() => {
@@ -98,24 +98,24 @@ export default function DashboardSiswaHomePage() {
 
   const statCards = [
     {
-      label: 'Total XP',     value: `${totalXp}`,         type: 'xp',
-      bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.38)',
-      valueColor: '#92400E',        labelColor: '#B45309',
+      label: 'Total XP',      value: `${totalXp}`,         type: 'xp',
+      bg: 'rgba(251,191,36,0.12)',   border: 'rgba(251,191,36,0.38)',
+      valueColor: '#92400E',         labelColor: '#B45309',
     },
     {
-      label: 'Level',        value: levelInfo.name,        type: 'level',
-      bg: 'rgba(59,130,246,0.11)',  border: 'rgba(59,130,246,0.34)',
-      valueColor: '#1E40AF',        labelColor: '#2563EB',
+      label: 'Level',         value: levelInfo.name,        type: 'level',
+      bg: 'rgba(59,130,246,0.11)',   border: 'rgba(59,130,246,0.34)',
+      valueColor: '#1E40AF',         labelColor: '#2563EB',
     },
     {
-      label: 'Streak',       value: '—',                   type: 'streak',
-      bg: 'rgba(249,115,22,0.11)',  border: 'rgba(249,115,22,0.34)',
-      valueColor: '#9A3412',        labelColor: '#C2410C',
+      label: 'Streak',        value: '—',                   type: 'streak',
+      bg: 'rgba(249,115,22,0.11)',   border: 'rgba(249,115,22,0.34)',
+      valueColor: '#9A3412',         labelColor: '#C2410C',
     },
     {
-      label: 'Komik Selesai', value: `${completedComics}`, type: 'comic',
-      bg: 'rgba(16,185,129,0.11)', border: 'rgba(16,185,129,0.34)',
-      valueColor: '#14532D',        labelColor: '#15803D',
+      label: 'Komik Selesai', value: `${completedComics}`,  type: 'comic',
+      bg: 'rgba(16,185,129,0.11)',   border: 'rgba(16,185,129,0.34)',
+      valueColor: '#14532D',         labelColor: '#15803D',
     },
   ];
 
@@ -138,7 +138,6 @@ export default function DashboardSiswaHomePage() {
             boxShadow: '0 28px 48px rgba(15,23,42,0.20)',
           }}
         >
-          {/* decorative blobs */}
           <div className="pointer-events-none absolute -right-[30px] -top-[30px] h-[180px] w-[180px] rounded-full opacity-25"
             style={{ background: 'radial-gradient(circle, #93D4FF, transparent 65%)' }} />
           <div className="pointer-events-none absolute -bottom-[30px] -left-[20px] h-[140px] w-[140px] rounded-full opacity-15"
@@ -152,12 +151,17 @@ export default function DashboardSiswaHomePage() {
               </h1>
               <p className="mt-[6px] text-[14px] font-normal text-white/90">Semangat belajar hari ini!</p>
             </div>
-            {/* avatar */}
+            {/* avatar — fixed size intentional: circular portrait crop */}
             <div className="relative shrink-0" style={{ filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.25))' }}>
               <div className="absolute inset-0 rounded-full bg-white/20 blur-[6px]" />
               <div className="relative flex h-[80px] w-[80px] items-center justify-center rounded-full ring-[3px] ring-white/70 ring-offset-[2px] ring-offset-white/20">
-                <Image src={avatarAsset} alt={`${firstName} avatar`} width={72} height={72}
-                  className="h-[72px] w-[72px] rounded-full object-cover" />
+                <Image
+                  src={avatarAsset}
+                  alt={`${firstName} avatar`}
+                  width={72}
+                  height={72}
+                  className="h-[72px] w-[72px] rounded-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -168,44 +172,47 @@ export default function DashboardSiswaHomePage() {
           className="dash-enter dash-enter-2 relative z-10 -mt-[24px] rounded-[30px] p-[16px]"
           style={{ ...glass, boxShadow: '0 18px 36px rgba(15,23,42,0.12)' }}
         >
-          <div className="flex items-center gap-[14px]">
+          <div className="flex items-stretch gap-[16px]">
 
             {/*
-              Badge container: 112×112px, no padding.
-              Image uses `fill` + `inset-[4px]` so it occupies ~93% of the container.
-              `relative` on the outer div is required for `fill` to work.
+              PRIORITY 1 — Badge fills the left column.
+              Container is self-sizing: width fixed at 120px, height stretches to match
+              the right column via `items-stretch` on the parent flex.
+              `fill` on Image + `inset-0` means the badge occupies 100% of the container.
+              A small inset (6px) gives breathing room without shrinking the badge.
             */}
             <div
               className="relative shrink-0 rounded-[20px] bg-[#EEF7FF]"
               style={{
-                width: 112,
-                height: 112,
-                boxShadow: '0 6px 20px rgba(29,147,255,0.24)',
+                width: 120,
+                minHeight: 120,
+                boxShadow: '0 6px 20px rgba(29,147,255,0.22)',
               }}
             >
               <Image
                 src={getLevelIconAsset(levelInfo.level)}
                 alt={`Level ${levelInfo.level}`}
                 fill
-                sizes="112px"
+                sizes="120px"
                 className="object-contain"
-                style={{ inset: 4 }}
+                style={{ inset: 6 }}
               />
             </div>
 
-            <div className="min-w-0 flex-1">
+            {/* right column */}
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
               <div className="flex items-center justify-between gap-[8px]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CA3AF]">Level</p>
                 <p className="text-[11px] font-semibold text-[#9CA3AF]">XP</p>
               </div>
-              <div className="mt-[2px] flex items-center justify-between gap-[8px]">
+              <div className="mt-[4px] flex items-center justify-between gap-[8px]">
                 <p className="text-[15px] font-bold text-[#111827]">{levelInfo.level} · {levelInfo.name}</p>
                 <p className="text-[18px] font-extrabold leading-none text-[#1D93FF]">
                   {totalXp}
                   <span className="text-[11px] font-semibold text-[#9CA3AF]"> / {levelInfo.nextXp} XP</span>
                 </p>
               </div>
-              <div className="mt-[10px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
+              <div className="mt-[12px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{ width: `${levelInfo.progress}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }}
@@ -233,12 +240,16 @@ export default function DashboardSiswaHomePage() {
             </Link>
           </div>
           <div className="flex items-stretch gap-[12px] px-[16px] pb-[16px] pt-[12px]">
-            <div className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[18px]"
-              style={{ boxShadow: '0 8px 20px rgba(15,23,42,0.14)' }}>
+            {/* cover — fixed size intentional: fixed-ratio book cover thumbnail */}
+            <div
+              className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[18px]"
+              style={{ boxShadow: '0 8px 20px rgba(15,23,42,0.14)' }}
+            >
               <Image
                 src={getDashboardCoverAsset(continueComic?.id)}
                 alt={continueComic ? continueComic.title : 'Cover komik'}
-                width={92} height={112}
+                width={92}
+                height={112}
                 className="h-full w-full object-cover"
               />
             </div>
@@ -290,10 +301,12 @@ export default function DashboardSiswaHomePage() {
                 }}
               >
                 {/*
-                  Icon area: aspect-square container, icon fills it via fill + inset-[8px].
-                  No fixed width/height on the Image itself.
+                  PRIORITY 2 — Icon fills the top area of the card.
+                  padding-bottom trick creates a square responsive container.
+                  `fill` + `inset-[10px]` → icon occupies ~85% of the square.
+                  No fixed width/height on the Image.
                 */}
-                <div className="relative w-full" style={{ paddingBottom: '80%' }}>
+                <div className="relative w-full" style={{ paddingBottom: '85%' }}>
                   <Image
                     src={getStatIconAsset(stat.type)}
                     alt={stat.label}
@@ -343,16 +356,14 @@ export default function DashboardSiswaHomePage() {
                 }}
               >
                 {/*
-                  Badge container: square, fills card width minus padding.
-                  Image uses fill + inset-[6px] → badge occupies ~88% of container.
-                  Glow halo sits behind via absolute pseudo-layer.
+                  Badge image: square container (padding-bottom: 100%) fills card width.
+                  `fill` + `inset-[8px]` → badge occupies ~89% of the square.
                 */}
                 <div className="relative w-full" style={{ paddingBottom: '100%' }}>
-                  {/* glow halo */}
                   <div
                     className="absolute inset-0 rounded-[20px]"
                     style={{
-                      background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.16) 0%, transparent 68%)',
+                      background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.14) 0%, transparent 68%)',
                       filter: 'blur(6px)',
                     }}
                   />
@@ -362,7 +373,7 @@ export default function DashboardSiswaHomePage() {
                     fill
                     sizes="148px"
                     className="object-contain"
-                    style={{ inset: 6 }}
+                    style={{ inset: 8 }}
                   />
                 </div>
                 <p className="mt-[10px] px-[10px] text-center text-[12px] font-bold leading-[17px] text-[#111827]">
