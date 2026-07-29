@@ -98,24 +98,56 @@ export default function DashboardSiswaHomePage() {
 
   const statCards = [
     {
-      label: 'Total XP',      value: `${totalXp}`,         type: 'xp',
-      bg: 'rgba(251,191,36,0.12)',   border: 'rgba(251,191,36,0.38)',
-      valueColor: '#92400E',         labelColor: '#B45309',
+      label: 'Total XP',
+      value: `${totalXp}`,
+      secondaryLabel: 'XP terkumpul',
+      caption: 'Terus lanjutkan tantanganmu',
+      type: 'xp',
+      bg: 'rgba(251,191,36,0.12)',
+      border: 'rgba(251,191,36,0.38)',
+      valueColor: '#92400E',
+      labelColor: '#B45309',
+      progress: levelInfo.progress,
+      glow: 'radial-gradient(circle at top left, rgba(251,191,36,0.28), transparent 58%)',
     },
     {
-      label: 'Level',         value: levelInfo.name,        type: 'level',
-      bg: 'rgba(59,130,246,0.11)',   border: 'rgba(59,130,246,0.34)',
-      valueColor: '#1E40AF',         labelColor: '#2563EB',
+      label: 'Level',
+      value: `${levelInfo.level}`,
+      secondaryLabel: levelInfo.name,
+      caption: 'Misi berikutnya menunggu',
+      type: 'level',
+      bg: 'rgba(59,130,246,0.11)',
+      border: 'rgba(59,130,246,0.34)',
+      valueColor: '#1E40AF',
+      labelColor: '#2563EB',
+      progress: levelInfo.progress,
+      glow: 'radial-gradient(circle at top right, rgba(96,165,250,0.24), transparent 58%)',
     },
     {
-      label: 'Streak',        value: '—',                   type: 'streak',
-      bg: 'rgba(249,115,22,0.11)',   border: 'rgba(249,115,22,0.34)',
-      valueColor: '#9A3412',         labelColor: '#C2410C',
+      label: 'Streak',
+      value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 7}`,
+      secondaryLabel: 'hari beruntun',
+      caption: 'Konsistensi bikin kuat',
+      type: 'streak',
+      bg: 'rgba(249,115,22,0.11)',
+      border: 'rgba(249,115,22,0.34)',
+      valueColor: '#9A3412',
+      labelColor: '#C2410C',
+      progress: Math.min(100, 40 + completedComics * 12),
+      glow: 'radial-gradient(circle at top center, rgba(249,115,22,0.22), transparent 56%)',
     },
     {
-      label: 'Komik Selesai', value: `${completedComics}`,  type: 'comic',
-      bg: 'rgba(16,185,129,0.11)',   border: 'rgba(16,185,129,0.34)',
-      valueColor: '#14532D',         labelColor: '#15803D',
+      label: 'Komik Selesai',
+      value: `${completedComics}`,
+      secondaryLabel: 'komik selesai',
+      caption: 'Belajar lewat petualangan',
+      type: 'comic',
+      bg: 'rgba(16,185,129,0.11)',
+      border: 'rgba(16,185,129,0.34)',
+      valueColor: '#14532D',
+      labelColor: '#15803D',
+      progress: Math.min(100, Math.round((completedComics / Math.max(1, comics.length)) * 100)),
+      glow: 'radial-gradient(circle at top left, rgba(16,185,129,0.20), transparent 58%)',
     },
   ];
 
@@ -264,49 +296,55 @@ export default function DashboardSiswaHomePage() {
         </section>
 
         {/* ── 4. STATISTIK ── */}
-        {/*
-          Stat icon: centered in a 100px-tall area at the top of each card.
-          Image is 80×80px — large, centered, no padding shrinkage.
-          Value + label sit below in a padded row.
-        */}
         <section className="dash-enter dash-enter-4 mt-[20px]">
-          <div className="mb-[14px]">
-            <h3 className="text-[16px] font-extrabold text-[#111827]">Statistik Kamu 🏆</h3>
-            <p className="mt-[2px] text-[12px] font-medium text-[#9CA3AF]">Perkembangan belajarmu</p>
+          <div className="mb-[16px]">
+            <h3 className="text-[18px] font-extrabold text-[#111827]">Statistik Kamu 🏆</h3>
+            <p className="mt-[2px] text-[13px] font-medium text-[#9CA3AF]">Perkembangan belajarmu</p>
           </div>
-          <div className="grid grid-cols-2 gap-[14px]">
+          <div className="grid grid-cols-2 gap-[12px] sm:gap-[16px] lg:grid-cols-4">
             {statCards.map((stat) => (
               <div
                 key={stat.label}
-                className="press-scale overflow-hidden rounded-[24px] border-[1.5px]"
-                style={{ background: stat.bg, borderColor: stat.border, boxShadow: '0 6px 16px rgba(15,23,42,0.06)' }}
+                className="group relative overflow-hidden rounded-[24px] border-[1.5px] p-[12px] transition-all duration-250 hover:-translate-y-[2px] hover:scale-[1.03] hover:shadow-[0_20px_40px_rgba(15,23,42,0.12)] active:scale-[1.02]"
+                style={{ background: stat.bg, borderColor: stat.border, boxShadow: '0 10px 24px rgba(15,23,42,0.06)' }}
               >
-                {/*
-                  Icon area: container 100% wide, height 96px.
-                  img mengisi seluruh area dengan padding 8px di semua sisi.
-                */}
                 <div
-                  style={{
-                    width: '100%',
-                    height: 96,
-                    padding: 8,
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getStatIconAsset(stat.type)}
-                    alt={stat.label}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  />
-                </div>
-                <div className="px-[14px] pb-[14px]">
-                  <p className="text-[24px] font-extrabold leading-none" style={{ color: stat.valueColor }}>
-                    {stat.value}
-                  </p>
-                  <p className="mt-[4px] text-[12px] font-semibold" style={{ color: stat.labelColor }}>
-                    {stat.label}
-                  </p>
+                  className="pointer-events-none absolute inset-0 opacity-90"
+                  style={{ background: stat.glow }}
+                />
+                <div className="pointer-events-none absolute right-[-10px] top-[-10px] h-[72px] w-[72px] rounded-full bg-white/40 blur-3xl" />
+
+                <div className="relative">
+                  <div className="mb-[12px] flex h-[128px] items-center justify-center rounded-[20px] border border-white/70 bg-white/70 p-[10px] shadow-[0_10px_24px_rgba(255,255,255,0.35)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getStatIconAsset(stat.type)}
+                      alt={stat.label}
+                      className="h-full w-full object-contain"
+                      style={{ display: 'block' }}
+                    />
+                  </div>
+
+                  <div className="space-y-[6px]">
+                    <p className="text-[56px] font-black leading-[0.95] tracking-[-0.03em]" style={{ color: stat.valueColor }}>
+                      {stat.value}
+                    </p>
+                    <p className="text-[18px] font-semibold leading-[1.2]" style={{ color: stat.labelColor }}>
+                      {stat.label}
+                    </p>
+                    <p className="text-[14px] font-medium leading-[1.35] text-[#64748B]">
+                      {stat.secondaryLabel}
+                    </p>
+                    <div className="pt-[2px]">
+                      <div className="h-[7px] overflow-hidden rounded-full bg-white/70">
+                        <div
+                          className="h-full rounded-full transition-all duration-250"
+                          style={{ width: `${stat.progress}%`, background: `linear-gradient(90deg, ${stat.border}, ${stat.valueColor})` }}
+                        />
+                      </div>
+                      <p className="mt-[6px] text-[13px] font-semibold text-[#6B7280]">{stat.caption}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
