@@ -276,16 +276,17 @@ export default function DashboardSiswaHomePage() {
                 className="press-scale overflow-hidden rounded-[24px] border-[1.5px]"
                 style={{ background: stat.bg, borderColor: stat.border, boxShadow: '0 6px 16px rgba(15,23,42,0.06)' }}
               >
-                {/* Icon area: 100px tall, icon centered at 80×80px */}
-                <div className="flex h-[100px] items-center justify-center">
-                  <Image
-                    src={getStatIconAsset(stat.type)}
-                    alt={stat.label}
-                    width={80}
-                    height={80}
-                    className="object-contain"
-                    style={{ width: 80, height: 80 }}
-                  />
+                {/* Icon area: fills card width at 80%, ~136px on a 170px card */}
+                <div className="flex items-center justify-center px-[12px] pt-[14px] pb-[8px]">
+                  <div className="relative w-full" style={{ paddingBottom: '100%' }}>
+                    <Image
+                      src={getStatIconAsset(stat.type)}
+                      alt={stat.label}
+                      fill
+                      sizes="(max-width: 440px) 45vw, 180px"
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <div className="px-[14px] pb-[14px]">
                   <p className="text-[24px] font-extrabold leading-none" style={{ color: stat.valueColor }}>
