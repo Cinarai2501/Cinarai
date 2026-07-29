@@ -59,16 +59,16 @@ export default function StudentBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 px-[16px]"
+      className="fixed inset-x-0 bottom-0 z-50 px-[20px]"
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[72px] w-full items-center justify-between rounded-[24px] border border-white/60 px-[12px]"
+        className="mx-auto flex h-[72px] w-full items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[8px]"
         style={{
           background: 'rgba(255,255,255,0.82)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 -4px 8px rgba(15,23,42,0.04), 0 -12px 32px rgba(15,23,42,0.08)',
+          boxShadow: '0 -8px 20px rgba(15,23,42,0.06)',
         }}
       >
         {tabs.map((tab) => {
