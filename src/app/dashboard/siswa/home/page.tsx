@@ -48,13 +48,6 @@ function getStatIconAsset(type: string) {
   }
 }
 
-const glass: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.80)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-  border: '1px solid rgba(255,255,255,0.65)',
-};
-
 export default function DashboardSiswaHomePage() {
   const { user } = useAuth();
   const { states, getProgress, isLoading } = useAllComicProgress();
@@ -87,9 +80,8 @@ export default function DashboardSiswaHomePage() {
   }, [comics, getProgress, unlockStatuses]);
 
   const todayProgress = continueComic ? getProgress(continueComic.id) : undefined;
-  const todayStages   = todayProgress?.completedCount ?? 0;
-  const todayPct      = todayProgress?.percentage ?? 0;
-  const levelInfo     = getLevelInfo(totalXp);
+  const todayPct = todayProgress?.percentage ?? 0;
+  const levelInfo = getLevelInfo(totalXp);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !isLoading)
@@ -159,251 +151,182 @@ export default function DashboardSiswaHomePage() {
   ];
 
   return (
-    <div className="min-h-screen">
-      <div className="flex w-full flex-col px-[16px] pb-[32px] pt-[20px]">
+    <div className="min-h-full">
+      <div className="mx-auto flex min-h-full max-w-[420px] flex-col px-4 pb-4 pt-3">
+        <div className="flex-1 space-y-3">
 
-        {/* ── 1. HEADER ── */}
-        <section
-          className="dash-enter dash-enter-1 relative overflow-hidden rounded-[36px] px-[20px] pb-[48px] pt-[22px] text-white"
-          style={{
-            background: 'linear-gradient(135deg, #1D93FF 0%, #0A6FD4 60%, #0F5FB5 100%)',
-            boxShadow: '0 28px 48px rgba(15,23,42,0.20)',
-          }}
-        >
-          <div className="pointer-events-none absolute -right-[30px] -top-[30px] h-[180px] w-[180px] rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #93D4FF, transparent 65%)' }} />
-          <div className="pointer-events-none absolute -bottom-[30px] -left-[20px] h-[140px] w-[140px] rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #BAE6FD, transparent 65%)' }} />
-
-          <div className="relative flex items-center justify-between gap-[16px]">
-            <div className="min-w-0">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.20em] text-white/70">Selamat Datang 🎉</p>
-              <h1 className="mt-[4px] text-[28px] font-extrabold leading-[34px] tracking-tight">
-                Halo, {firstName}! 👋
-              </h1>
-              <p className="mt-[6px] text-[14px] font-normal text-white/90">Semangat belajar hari ini!</p>
-            </div>
-            <div className="relative shrink-0" style={{ filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.25))' }}>
-              <div className="absolute inset-0 rounded-full bg-white/20 blur-[6px]" />
-              <div className="relative flex h-[80px] w-[80px] items-center justify-center rounded-full ring-[3px] ring-white/70 ring-offset-[2px] ring-offset-white/20">
-                <Image src={avatarAsset} alt={`${firstName} avatar`}
-                  width={72} height={72} className="h-[72px] w-[72px] rounded-full object-cover" />
+          {/* ── 1. HEADER ── */}
+          <section
+            className="dash-enter dash-enter-1 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#1D93FF] via-[#0A6FD4] to-[#0F5FB5] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/80">Selamat Datang</p>
+                <h1 className="mt-1 text-[20px] font-extrabold leading-[24px] text-white">Halo, {firstName}!</h1>
+                <p className="mt-1 text-[12px] font-medium text-white/85">Siap belajar dalam satu layar.</p>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 2. LEVEL CARD ── */}
-        <section
-          className="dash-enter dash-enter-2 relative z-10 -mt-[24px] rounded-[30px] p-[16px]"
-          style={{ ...glass, boxShadow: '0 18px 36px rgba(15,23,42,0.12)' }}
-        >
-          <div className="flex items-center gap-[16px]">
-            {/*
-              Container: 120×120px, rounded, bg biru muda.
-              Padding 6px di semua sisi → area gambar efektif 108×108px (~90%).
-              `<img>` native digunakan karena next.config unoptimized:true,
-              sehingga tidak ada override inset dari Next.js Image fill.
-            */}
-            <div
-              className="shrink-0 rounded-[20px] bg-[#EEF7FF]"
-              style={{
-                width: 120,
-                height: 120,
-                minWidth: 120,
-                padding: 6,
-                boxShadow: '0 6px 20px rgba(29,147,255,0.22)',
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getLevelIconAsset(levelInfo.level)}
-                alt={`Level ${levelInfo.level}`}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-              />
-            </div>
-
-            <div className="flex min-w-0 flex-1 flex-col justify-center">
-              <div className="flex items-center justify-between gap-[8px]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CA3AF]">Level</p>
-                <p className="text-[11px] font-semibold text-[#9CA3AF]">XP</p>
-              </div>
-              <div className="mt-[4px] flex items-center justify-between gap-[8px]">
-                <p className="text-[15px] font-bold text-[#111827]">{levelInfo.level} · {levelInfo.name}</p>
-                <p className="text-[18px] font-extrabold leading-none text-[#1D93FF]">
-                  {totalXp}
-                  <span className="text-[11px] font-semibold text-[#9CA3AF]"> / {levelInfo.nextXp} XP</span>
-                </p>
-              </div>
-              <div className="mt-[12px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
-                <div
-                  className="h-full rounded-full transition-all duration-700 ease-out"
-                  style={{ width: `${levelInfo.progress}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }}
+              <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white/20 ring-2 ring-white/30">
+                <Image
+                  src={avatarAsset}
+                  alt={`${firstName} avatar`}
+                  width={72}
+                  height={72}
+                  className="h-[72px] w-[72px] rounded-full object-cover"
                 />
               </div>
-              <p className="mt-[5px] text-right text-[11px] font-semibold text-[#1D93FF]">
-                {levelInfo.progress}% menuju level berikutnya
-              </p>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── 3. CONTINUE LEARNING ── */}
-        <section
-          className="dash-enter dash-enter-3 mt-[20px] w-full overflow-hidden rounded-[28px]"
-          style={{ ...glass, boxShadow: '0 8px 24px rgba(15,23,42,0.07)' }}
-        >
-          <div className="flex items-center justify-between px-[16px] pt-[16px]">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#9CA3AF]">Continue Learning</p>
-              <p className="mt-[1px] text-[12px] font-medium text-[#6B7280]">Lanjutkan petualanganmu</p>
+          {/* ── 2. LEVEL CARD ── */}
+          <section
+            className="dash-enter dash-enter-2 overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_12px_26px_rgba(15,23,42,0.10)]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[20px] bg-[#EEF7FF]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getLevelIconAsset(levelInfo.level)}
+                  alt={`Level ${levelInfo.level}`}
+                  className="h-[56px] w-[56px] object-contain"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">Level</p>
+                <p className="mt-1 text-[20px] font-black leading-[1.1] text-[#111827]">{levelInfo.level} · {levelInfo.name}</p>
+                <p className="mt-1 text-[13px] font-semibold text-[#1D4ED8]">{totalXp} / {levelInfo.nextXp} XP</p>
+                <div className="mt-3 h-[6px] overflow-hidden rounded-full bg-[#EEF4FB]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#38BDF8] via-[#1D93FF] to-[#0F5FB5]"
+                    style={{ width: `${levelInfo.progress}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-[#2563EB]">{levelInfo.progress}% menuju level berikutnya</p>
+              </div>
             </div>
-            <Link href="/dashboard/siswa/komik" className="press-scale text-[12px] font-semibold text-[#1D93FF]">
-              Lihat Semua →
-            </Link>
-          </div>
-          <div className="flex items-stretch gap-[12px] px-[16px] pb-[16px] pt-[12px]">
-            <div className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[18px]"
-              style={{ boxShadow: '0 8px 20px rgba(15,23,42,0.14)' }}>
-              <Image src={getDashboardCoverAsset(continueComic?.id)}
-                alt={continueComic ? continueComic.title : 'Cover komik'}
-                width={92} height={112} className="h-full w-full object-cover" />
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-between">
-              <div>
-                <h2 className="text-[18px] font-black leading-[23px] text-[#111827]">
+          </section>
+
+          {/* ── 3. CONTINUE LEARNING ── */}
+          <section
+            className="dash-enter dash-enter-3 overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_12px_26px_rgba(15,23,42,0.10)]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-[72px] w-[72px] overflow-hidden rounded-[18px] bg-slate-100">
+                <Image
+                  src={getDashboardCoverAsset(continueComic?.id)}
+                  alt={continueComic ? continueComic.title : 'Cover komik'}
+                  width={72}
+                  height={72}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">Continue Learning</p>
+                <h2
+                  className="mt-1 text-[16px] font-black leading-[1.2] text-[#111827]"
+                  style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                >
                   {continueComic ? continueComic.title : 'Belum ada komik aktif'}
                 </h2>
-                <p className="mt-[4px] text-[12px] font-medium text-[#6B7280]">
-                  {todayStages}/{SINTAKS.length} tahap selesai
-                </p>
-                <div className="mt-[8px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
-                  <div className="h-full rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${todayPct}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }} />
+                <div className="mt-2 h-[6px] overflow-hidden rounded-full bg-[#EEF4FB]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#38BDF8] via-[#1D93FF] to-[#0F5FB5]"
+                    style={{ width: `${todayPct}%` }}
+                  />
                 </div>
-                <p className="mt-[4px] text-[12px] font-bold text-[#1D93FF]">{todayPct}% selesai</p>
+                <p className="mt-1 text-[11px] text-[#1D93FF]">{todayPct}% selesai</p>
               </div>
-              <Link href="/dashboard/siswa/komik"
-                className="press-scale mt-[10px] flex w-full items-center justify-center gap-[8px] rounded-[14px] py-[11px] text-[13px] font-extrabold text-white"
-                style={{ background: 'linear-gradient(90deg, #1D93FF, #0F5FB5)', boxShadow: '0 6px 16px rgba(29,147,255,0.35)' }}>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <Link
+                href="/dashboard/siswa/komik"
+                className="flex-1 rounded-[18px] bg-[#1D93FF] px-3 py-2 text-center text-[12px] font-bold text-white shadow-[0_10px_20px_rgba(29,147,255,0.20)]"
+              >
                 Lanjutkan
-                <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                </svg>
+              </Link>
+              <Link
+                href="/dashboard/siswa/komik"
+                className="rounded-[18px] border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-semibold text-[#374151]"
+              >
+                Lihat Semua
               </Link>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── 4. STATISTIK ── */}
-        <section className="dash-enter dash-enter-4 mt-[20px]">
-          <div className="mb-[16px]">
-            <h3 className="text-[18px] font-extrabold text-[#111827]">Statistik Kamu 🏆</h3>
-            <p className="mt-[2px] text-[13px] font-medium text-[#9CA3AF]">Perkembangan belajarmu</p>
-          </div>
-          <div className="grid grid-cols-2 gap-[12px] sm:gap-[16px] lg:grid-cols-4">
-            {statCards.map((stat) => (
-              <div
-                key={stat.label}
-                className="group relative overflow-hidden rounded-[24px] border-[1.5px] p-[12px] transition-all duration-250 hover:-translate-y-[2px] hover:scale-[1.03] hover:shadow-[0_20px_40px_rgba(15,23,42,0.12)] active:scale-[1.02]"
-                style={{ background: stat.bg, borderColor: stat.border, boxShadow: '0 10px 24px rgba(15,23,42,0.06)' }}
-              >
+          {/* ── 4. STATISTIK MINI ── */}
+          <section className="dash-enter dash-enter-4 overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_12px_26px_rgba(15,23,42,0.10)]">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">Statistik</p>
+                <p className="mt-1 text-[12px] font-medium text-[#6B7280]">Ringkas dan cepat</p>
+              </div>
+              <span className="text-[11px] font-semibold text-[#9CA3AF]">Geser untuk lihat semua</span>
+            </div>
+            <div className="mt-3 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {statCards.map((stat) => (
                 <div
-                  className="pointer-events-none absolute inset-0 opacity-90"
-                  style={{ background: stat.glow }}
-                />
-                <div className="pointer-events-none absolute right-[-10px] top-[-10px] h-[72px] w-[72px] rounded-full bg-white/40 blur-3xl" />
-
-                <div className="relative">
-                  <div className="mb-[12px] flex h-[128px] items-center justify-center rounded-[20px] border border-white/70 bg-white/70 p-[10px] shadow-[0_10px_24px_rgba(255,255,255,0.35)]">
+                  key={stat.label}
+                  className="min-w-[100px] flex-shrink-0 rounded-[24px] border border-white/80 bg-[#F8FBFF]/80 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)]"
+                  style={{ background: stat.bg, borderColor: stat.border }}
+                >
+                  <div className="flex h-[40px] items-center justify-center rounded-[18px] bg-white/70">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={getStatIconAsset(stat.type)}
                       alt={stat.label}
-                      className="h-full w-full object-contain"
-                      style={{ display: 'block' }}
+                      className="h-[28px] w-[28px] object-contain"
                     />
                   </div>
-
-                  <div className="space-y-[6px]">
-                    <p className="text-[56px] font-black leading-[0.95] tracking-[-0.03em]" style={{ color: stat.valueColor }}>
-                      {stat.value}
-                    </p>
-                    <p className="text-[18px] font-semibold leading-[1.2]" style={{ color: stat.labelColor }}>
-                      {stat.label}
-                    </p>
-                    <p className="text-[14px] font-medium leading-[1.35] text-[#64748B]">
-                      {stat.secondaryLabel}
-                    </p>
-                    <div className="pt-[2px]">
-                      <div className="h-[7px] overflow-hidden rounded-full bg-white/70">
-                        <div
-                          className="h-full rounded-full transition-all duration-250"
-                          style={{ width: `${stat.progress}%`, background: `linear-gradient(90deg, ${stat.border}, ${stat.valueColor})` }}
-                        />
-                      </div>
-                      <p className="mt-[6px] text-[13px] font-semibold text-[#6B7280]">{stat.caption}</p>
-                    </div>
+                  <p className="mt-2 text-[19px] font-black leading-[1.05]" style={{ color: stat.valueColor }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-[#475569]">{stat.label}</p>
+                  <div className="mt-2 h-[4px] overflow-hidden rounded-full bg-white/70">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#38BDF8] via-[#1D93FF] to-[#0F5FB5]"
+                      style={{ width: `${stat.progress}%` }}
+                    />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── 5. BADGE TERBARU ── */}
-        <section
-          className="dash-enter dash-enter-5 mt-[20px] w-full overflow-hidden rounded-[28px]"
-          style={{ ...glass, boxShadow: '0 8px 24px rgba(15,23,42,0.07)' }}
-        >
-          <div className="flex items-center justify-between px-[16px] pt-[16px]">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#9CA3AF]">Badge Terbaru</p>
-              <p className="mt-[1px] text-[12px] font-medium text-[#6B7280]">Pencapaian yang kamu raih</p>
+              ))}
             </div>
-            <button type="button" className="press-scale text-[12px] font-bold text-[#1D93FF]">
-              Lihat Semua →
-            </button>
-          </div>
-          <div className="flex gap-[12px] overflow-x-auto px-[16px] pb-[16px] pt-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {badgeItems.map((badge) => (
-              <div
-                key={badge.title}
-                className="press-scale flex min-w-[148px] shrink-0 flex-col items-center rounded-[24px] pb-[14px]"
-                style={{
-                  background: 'linear-gradient(160deg, #EEF7FF 0%, #FFFFFF 100%)',
-                  boxShadow: '0 8px 20px rgba(29,147,255,0.10)',
-                  border: '1px solid rgba(147,197,253,0.35)',
-                }}
-              >
-                {/*
-                  Badge: container 120×120px, padding 6px.
-                  img mengisi ~90% area container.
-                */}
-                <div
-                  style={{
-                    width: 120,
-                    height: 120,
-                    padding: 6,
-                    marginTop: 12,
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={badge.asset}
-                    alt={badge.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                  />
-                </div>
-                <p className="mt-[10px] px-[10px] text-center text-[12px] font-bold leading-[17px] text-[#111827]">
-                  {badge.title}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+          </section>
 
+          {/* ── 5. BADGE TERBARU ── */}
+          <section
+            className="dash-enter dash-enter-5 overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_12px_26px_rgba(15,23,42,0.10)]"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">Badge Terbaru</p>
+                <p className="mt-1 text-[12px] font-medium text-[#6B7280]">Pencapaian terbaru</p>
+              </div>
+              <Link href="/dashboard/siswa/profil" className="text-[12px] font-bold text-[#1D93FF]">
+                Lihat Semua
+              </Link>
+            </div>
+            <div className="mt-3 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {badgeItems.slice(0, 2).map((badge) => (
+                <div
+                  key={badge.title}
+                  className="min-w-[140px] flex-shrink-0 rounded-[24px] bg-gradient-to-br from-[#EEF7FF] to-[#FFFFFF] p-3 shadow-[0_10px_22px_rgba(29,147,255,0.12)]"
+                >
+                  <div className="flex h-[92px] items-center justify-center rounded-[20px] bg-white/90 p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={badge.asset}
+                      alt={badge.title}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <p className="mt-3 text-[12px] font-bold leading-[1.2] text-[#111827]">
+                    {badge.title}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+        </div>
       </div>
     </div>
   );
