@@ -134,14 +134,16 @@ export default function StudentHome() {
 
   return (
     <div className="min-h-full bg-transparent">
-      <div className="mx-auto flex max-w-[440px] flex-col px-[16px] pb-[92px] pt-[12px]">
-        <div className="flex flex-col gap-[12px]">
-          <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
-          <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
-          <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
-          <StatisticsGrid statCards={statCards} />
-          <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} />
-          <BadgeSection badgeItems={badgeItems} />
+      <div className="w-full">
+        <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
+        <div className="px-[24px] pb-[92px] pt-0">
+          <div className="flex flex-col gap-[12px]">
+            <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
+            <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
+            <StatisticsGrid statCards={statCards} />
+            <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} />
+            <BadgeSection badgeItems={badgeItems} />
+          </div>
         </div>
       </div>
       <StudentBottomNav />
