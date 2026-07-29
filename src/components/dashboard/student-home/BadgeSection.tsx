@@ -15,12 +15,12 @@ type BadgeSectionProps = {
 export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
   return (
     <section className="rounded-[28px] bg-[#F6F9FE] p-[16px] shadow-[0_10px_24px_rgba(15,23,42,0.05)]" style={{ minHeight: 220 }}>
-      <div className="flex items-center justify-between gap-[8px]">
-        <div>
+      <div className="flex items-start justify-between gap-[8px]">
+        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9CA3AF]">Badge Terbaru</p>
-          <p className="mt-[4px] text-[12px] font-medium text-[#6B7280]">Pencapaian terbaru kamu</p>
+          <p className="mt-[2px] text-[12px] font-medium text-[#6B7280]">Pencapaian terbaru kamu</p>
         </div>
-        <Link href="/dashboard/siswa/profil" className="rounded-full border border-[#DCE8F8] bg-white px-[12px] py-[8px] text-[11px] font-semibold text-[#1D93FF] shadow-[0_4px_10px_rgba(15,23,42,0.04)]">
+        <Link href="/dashboard/siswa/profil" className="shrink-0 rounded-full border border-[#DCE8F8] bg-white px-[12px] py-[8px] text-[11px] font-semibold text-[#1D93FF] shadow-[0_4px_10px_rgba(15,23,42,0.04)]">
           Lihat Semua
         </Link>
       </div>
