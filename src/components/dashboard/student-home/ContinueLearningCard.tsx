@@ -12,7 +12,7 @@ type ContinueLearningCardProps = {
 export default function ContinueLearningCard({ coverAsset, title, progressPct }: ContinueLearningCardProps) {
   return (
     <section className="rounded-[28px] bg-[#F6F9FE] p-[16px] shadow-[0_10px_24px_rgba(15,23,42,0.05)]" style={{ minHeight: 180 }}>
-      <div className="flex h-full items-start gap-[14px]">
+      <div className="flex h-full items-start gap-[12px]">
         <div className="mt-[2px] h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[22px] bg-slate-100">
           <Image src={coverAsset} alt={title} width={92} height={112} className="h-full w-full object-cover" />
         </div>

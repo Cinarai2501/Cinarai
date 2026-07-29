@@ -133,19 +133,31 @@ export default function StudentHome() {
   ];
 
   return (
-    <div className="min-h-full bg-transparent">
-      <div className="w-full">
-        <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
-        <div className="px-[24px] pb-[92px] pt-0">
-          <div className="flex flex-col gap-[12px]">
-            <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
-            <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
-            <StatisticsGrid statCards={statCards} />
-            <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} />
-            <BadgeSection badgeItems={badgeItems} />
-          </div>
+    <div className="min-h-screen bg-[#F7FAFF]">
+      <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
+
+      <section className="px-[24px] pb-[96px] pt-0">
+        <div className="relative -mt-[36px]">
+          <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
         </div>
-      </div>
+
+        <div className="mt-[16px]">
+          <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
+        </div>
+
+        <div className="mt-[16px]">
+          <StatisticsGrid statCards={statCards} />
+        </div>
+
+        <div className="mt-[16px]">
+          <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} />
+        </div>
+
+        <div className="mt-[16px]">
+          <BadgeSection badgeItems={badgeItems} />
+        </div>
+      </section>
+
       <StudentBottomNav />
     </div>
   );

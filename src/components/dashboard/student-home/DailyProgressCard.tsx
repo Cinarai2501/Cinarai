@@ -16,7 +16,7 @@ export default function DailyProgressCard({ progressPct, stageLabel }: DailyProg
           <p className="mt-[4px] text-[14px] font-medium leading-[20px] text-[#6B7280]">Kamu sudah menyelesaikan {progressPct}% dari perjalanan hari ini.</p>
           <p className="mt-[6px] text-[12px] font-semibold text-[#1D93FF]">{stageLabel}</p>
         </div>
-        <Link href="/dashboard/siswa/komik" className="flex h-[36px] shrink-0 items-center rounded-full bg-[#1D93FF] px-[12px] text-[11px] font-semibold text-white shadow-[0_8px_16px_rgba(29,147,255,0.24)]" aria-label="Lihat detail progres">
+        <Link href="/dashboard/siswa/komik" className="flex h-[44px] shrink-0 items-center rounded-full bg-[#1D93FF] px-[14px] text-[12px] font-semibold text-white shadow-[0_8px_16px_rgba(29,147,255,0.24)]" aria-label="Lihat detail progres">
           Lihat
         </Link>
       </div>

@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const tabs = [
-  { href: '/dashboard/siswa/home',     label: 'Home',    icon: 'home' },
-  { href: '/dashboard/siswa/komik',    label: 'Komik',   icon: 'book' },
-  { href: '/dashboard/siswa/ai-tutor', label: 'AI Tutor',icon: 'chat' },
-  { href: '/dashboard/siswa/kuis',     label: 'Kuis',    icon: 'quiz' },
-  { href: '/dashboard/siswa/profil',   label: 'Profil',  icon: 'user' },
+  { href: '/dashboard/siswa/home', label: 'Home', icon: 'home' },
+  { href: '/dashboard/siswa/komik', label: 'Komik', icon: 'book' },
+  { href: '/dashboard/siswa/ai-tutor', label: 'AI Tutor', icon: 'chat' },
+  { href: '/dashboard/siswa/kuis', label: 'Kuis', icon: 'quiz' },
+  { href: '/dashboard/siswa/profil', label: 'Profil', icon: 'user' },
 ];
 
 function TabIcon({ type, active }: { type: string; active: boolean }) {
@@ -79,7 +79,6 @@ export default function StudentBottomNav() {
               href={tab.href}
               className="flex flex-1 flex-col items-center justify-center gap-[3px] text-center"
             >
-              {/* capsule active indicator with scale micro-interaction */}
               <span
                 className="grid h-[44px] w-[44px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
                 style={
