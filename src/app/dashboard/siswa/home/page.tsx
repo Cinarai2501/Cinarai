@@ -151,55 +151,41 @@ export default function DashboardSiswaHomePage() {
               </h1>
               <p className="mt-[6px] text-[14px] font-normal text-white/90">Semangat belajar hari ini!</p>
             </div>
-            {/* avatar — fixed size intentional: circular portrait crop */}
             <div className="relative shrink-0" style={{ filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.25))' }}>
               <div className="absolute inset-0 rounded-full bg-white/20 blur-[6px]" />
               <div className="relative flex h-[80px] w-[80px] items-center justify-center rounded-full ring-[3px] ring-white/70 ring-offset-[2px] ring-offset-white/20">
-                <Image
-                  src={avatarAsset}
-                  alt={`${firstName} avatar`}
-                  width={72}
-                  height={72}
-                  className="h-[72px] w-[72px] rounded-full object-cover"
-                />
+                <Image src={avatarAsset} alt={`${firstName} avatar`}
+                  width={72} height={72} className="h-[72px] w-[72px] rounded-full object-cover" />
               </div>
             </div>
           </div>
         </section>
 
         {/* ── 2. LEVEL CARD ── */}
+        {/*
+          Level badge: container is 120×120px with p-[8px].
+          Image is 104×104px (120 - 2×8 = 104) — fills the container minus padding.
+          object-contain preserves aspect ratio.
+        */}
         <section
           className="dash-enter dash-enter-2 relative z-10 -mt-[24px] rounded-[30px] p-[16px]"
           style={{ ...glass, boxShadow: '0 18px 36px rgba(15,23,42,0.12)' }}
         >
-          <div className="flex items-stretch gap-[16px]">
-
-            {/*
-              PRIORITY 1 — Badge fills the left column.
-              Container is self-sizing: width fixed at 120px, height stretches to match
-              the right column via `items-stretch` on the parent flex.
-              `fill` on Image + `inset-0` means the badge occupies 100% of the container.
-              A small inset (6px) gives breathing room without shrinking the badge.
-            */}
+          <div className="flex items-center gap-[16px]">
             <div
-              className="relative shrink-0 rounded-[20px] bg-[#EEF7FF]"
-              style={{
-                width: 120,
-                minHeight: 120,
-                boxShadow: '0 6px 20px rgba(29,147,255,0.22)',
-              }}
+              className="flex shrink-0 items-center justify-center rounded-[20px] bg-[#EEF7FF] p-[8px]"
+              style={{ width: 120, height: 120, boxShadow: '0 6px 20px rgba(29,147,255,0.22)' }}
             >
               <Image
                 src={getLevelIconAsset(levelInfo.level)}
                 alt={`Level ${levelInfo.level}`}
-                fill
-                sizes="120px"
+                width={104}
+                height={104}
                 className="object-contain"
-                style={{ inset: 6 }}
+                style={{ width: 104, height: 104 }}
               />
             </div>
 
-            {/* right column */}
             <div className="flex min-w-0 flex-1 flex-col justify-center">
               <div className="flex items-center justify-between gap-[8px]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CA3AF]">Level</p>
@@ -240,18 +226,11 @@ export default function DashboardSiswaHomePage() {
             </Link>
           </div>
           <div className="flex items-stretch gap-[12px] px-[16px] pb-[16px] pt-[12px]">
-            {/* cover — fixed size intentional: fixed-ratio book cover thumbnail */}
-            <div
-              className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[18px]"
-              style={{ boxShadow: '0 8px 20px rgba(15,23,42,0.14)' }}
-            >
-              <Image
-                src={getDashboardCoverAsset(continueComic?.id)}
+            <div className="h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[18px]"
+              style={{ boxShadow: '0 8px 20px rgba(15,23,42,0.14)' }}>
+              <Image src={getDashboardCoverAsset(continueComic?.id)}
                 alt={continueComic ? continueComic.title : 'Cover komik'}
-                width={92}
-                height={112}
-                className="h-full w-full object-cover"
-              />
+                width={92} height={112} className="h-full w-full object-cover" />
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-between">
               <div>
@@ -262,18 +241,14 @@ export default function DashboardSiswaHomePage() {
                   {todayStages}/{SINTAKS.length} tahap selesai
                 </p>
                 <div className="mt-[8px] h-[8px] overflow-hidden rounded-full bg-[#EEF4FB]">
-                  <div
-                    className="h-full rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${todayPct}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }}
-                  />
+                  <div className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${todayPct}%`, background: 'linear-gradient(90deg, #38BDF8, #1D93FF, #0F5FB5)' }} />
                 </div>
                 <p className="mt-[4px] text-[12px] font-bold text-[#1D93FF]">{todayPct}% selesai</p>
               </div>
-              <Link
-                href="/dashboard/siswa/komik"
+              <Link href="/dashboard/siswa/komik"
                 className="press-scale mt-[10px] flex w-full items-center justify-center gap-[8px] rounded-[14px] py-[11px] text-[13px] font-extrabold text-white"
-                style={{ background: 'linear-gradient(90deg, #1D93FF, #0F5FB5)', boxShadow: '0 6px 16px rgba(29,147,255,0.35)' }}
-              >
+                style={{ background: 'linear-gradient(90deg, #1D93FF, #0F5FB5)', boxShadow: '0 6px 16px rgba(29,147,255,0.35)' }}>
                 Lanjutkan
                 <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
@@ -284,6 +259,11 @@ export default function DashboardSiswaHomePage() {
         </section>
 
         {/* ── 4. STATISTIK ── */}
+        {/*
+          Stat icon: centered in a 100px-tall area at the top of each card.
+          Image is 80×80px — large, centered, no padding shrinkage.
+          Value + label sit below in a padded row.
+        */}
         <section className="dash-enter dash-enter-4 mt-[20px]">
           <div className="mb-[14px]">
             <h3 className="text-[16px] font-extrabold text-[#111827]">Statistik Kamu 🏆</h3>
@@ -294,26 +274,17 @@ export default function DashboardSiswaHomePage() {
               <div
                 key={stat.label}
                 className="press-scale overflow-hidden rounded-[24px] border-[1.5px]"
-                style={{
-                  background: stat.bg,
-                  borderColor: stat.border,
-                  boxShadow: '0 6px 16px rgba(15,23,42,0.06)',
-                }}
+                style={{ background: stat.bg, borderColor: stat.border, boxShadow: '0 6px 16px rgba(15,23,42,0.06)' }}
               >
-                {/*
-                  PRIORITY 2 — Icon fills the top area of the card.
-                  padding-bottom trick creates a square responsive container.
-                  `fill` + `inset-[10px]` → icon occupies ~85% of the square.
-                  No fixed width/height on the Image.
-                */}
-                <div className="relative w-full" style={{ paddingBottom: '85%' }}>
+                {/* Icon area: 100px tall, icon centered at 80×80px */}
+                <div className="flex h-[100px] items-center justify-center">
                   <Image
                     src={getStatIconAsset(stat.type)}
                     alt={stat.label}
-                    fill
-                    sizes="(max-width: 440px) 45vw, 180px"
+                    width={80}
+                    height={80}
                     className="object-contain"
-                    style={{ inset: 10 }}
+                    style={{ width: 80, height: 80 }}
                   />
                 </div>
                 <div className="px-[14px] pb-[14px]">
@@ -343,7 +314,6 @@ export default function DashboardSiswaHomePage() {
               Lihat Semua →
             </button>
           </div>
-
           <div className="flex gap-[12px] overflow-x-auto px-[16px] pb-[16px] pt-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {badgeItems.map((badge) => (
               <div
@@ -355,25 +325,15 @@ export default function DashboardSiswaHomePage() {
                   border: '1px solid rgba(147,197,253,0.35)',
                 }}
               >
-                {/*
-                  Badge image: square container (padding-bottom: 100%) fills card width.
-                  `fill` + `inset-[8px]` → badge occupies ~89% of the square.
-                */}
-                <div className="relative w-full" style={{ paddingBottom: '100%' }}>
-                  <div
-                    className="absolute inset-0 rounded-[20px]"
-                    style={{
-                      background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.14) 0%, transparent 68%)',
-                      filter: 'blur(6px)',
-                    }}
-                  />
+                {/* Badge: 120×120px centered in the card */}
+                <div className="flex items-center justify-center pt-[12px]">
                   <Image
                     src={badge.asset}
                     alt={badge.title}
-                    fill
-                    sizes="148px"
+                    width={120}
+                    height={120}
                     className="object-contain"
-                    style={{ inset: 8 }}
+                    style={{ width: 120, height: 120 }}
                   />
                 </div>
                 <p className="mt-[10px] px-[10px] text-center text-[12px] font-bold leading-[17px] text-[#111827]">
