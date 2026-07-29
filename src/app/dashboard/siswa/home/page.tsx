@@ -80,6 +80,7 @@ export default function DashboardSiswaHomePage() {
 
   const todayProgress = continueComic ? getProgress(continueComic.id) : undefined;
   const todayPct = todayProgress?.percentage ?? 0;
+  const stageLabel = `${todayProgress?.completedCount ?? 0}/${SINTAKS.length} tahap`;
   const levelInfo = getLevelInfo(totalXp);
 
   useEffect(() => {
@@ -131,26 +132,28 @@ export default function DashboardSiswaHomePage() {
 
   return (
     <div className="min-h-full">
-      <div className="mx-auto flex max-w-[440px] flex-col px-[16px] pb-[92px] pt-[12px]">
+      <div className="mx-auto flex max-w-[440px] flex-col px-[16px] pb-[92px] pt-[0px]">
         <div className="flex flex-col gap-[12px]">
           <section
             className="overflow-hidden rounded-[36px] px-[20px] pb-[24px] pt-[20px] text-white shadow-[0_28px_48px_rgba(15,23,42,0.18)]"
             style={{ background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)', minHeight: 320 }}
           >
-            <div className="flex h-full items-start justify-between gap-[16px]">
-              <div className="min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-white/80">Selamat Datang</p>
-                <h1 className="mt-[6px] text-[28px] font-extrabold leading-[34px] text-white">Halo, {firstName}!</h1>
-                <p className="mt-[8px] text-[14px] font-normal text-white/90">Semangat belajar hari ini!</p>
-              </div>
-              <div className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white/20 ring-[3px] ring-white/70">
-                <Image
-                  src={avatarAsset}
-                  alt={`${firstName} avatar`}
-                  width={72}
-                  height={72}
-                  className="h-[72px] w-[72px] rounded-full object-cover"
-                />
+            <div className="flex h-full flex-col justify-between gap-[16px]">
+              <div className="flex items-start justify-between gap-[16px]">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-white/80">Selamat Datang</p>
+                  <h1 className="mt-[6px] text-[28px] font-extrabold leading-[34px] text-white">Halo, {firstName}!</h1>
+                  <p className="mt-[8px] text-[14px] font-normal text-white/90">Semangat belajar hari ini!</p>
+                </div>
+                <div className="relative mt-[2px] flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white/20 ring-[3px] ring-white/70">
+                  <Image
+                    src={avatarAsset}
+                    alt={`${firstName} avatar`}
+                    width={72}
+                    height={72}
+                    className="h-[72px] w-[72px] rounded-full object-cover"
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -220,11 +223,10 @@ export default function DashboardSiswaHomePage() {
                   <p className="text-[12px] font-semibold text-[#1D93FF]">{todayPct}% selesai</p>
                   <Link
                     href="/dashboard/siswa/komik"
-                    className="flex h-[44px] items-center gap-[6px] rounded-full bg-[#1D93FF] px-[12px] text-[12px] font-semibold text-white shadow-[0_8px_16px_rgba(29,147,255,0.24)]"
+                    className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#1D93FF] shadow-[0_8px_16px_rgba(29,147,255,0.24)]"
                     aria-label="Lanjutkan belajar"
                   >
-                    <span>Lanjutkan</span>
-                    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14" />
                       <path d="M13 6l6 6-6 6" />
                     </svg>
@@ -236,6 +238,7 @@ export default function DashboardSiswaHomePage() {
 
           <section className="rounded-[24px] bg-white p-[12px] shadow-[0_6px_16px_rgba(15,23,42,0.05)]">
             <div className="grid grid-cols-2 gap-[8px]">
+
               {statCards.map((stat) => (
                 <div
                   key={stat.label}
@@ -267,6 +270,7 @@ export default function DashboardSiswaHomePage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9CA3AF]">Progress Belajar Hari Ini</p>
                 <p className="mt-[4px] text-[14px] font-medium text-[#6B7280]">Kamu sudah menyelesaikan {todayPct}% dari perjalanan hari ini.</p>
+                <p className="mt-[4px] text-[12px] font-semibold text-[#1D93FF]">{stageLabel}</p>
               </div>
               <Link
                 href="/dashboard/siswa/komik"
@@ -297,7 +301,7 @@ export default function DashboardSiswaHomePage() {
               </div>
               <Link
                 href="/dashboard/siswa/profil"
-                className="rounded-full border border-[#DCE8F8] bg-white px-[12px] py-[8px] text-[11px] font-semibold text-[#1D93FF]"
+                className="rounded-full border border-[#DCE8F8] bg-white px-[12px] py-[8px] text-[11px] font-semibold text-[#1D93FF] shadow-[0_4px_10px_rgba(15,23,42,0.04)]"
               >
                 Lihat Semua
               </Link>
