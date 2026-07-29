@@ -35,13 +35,13 @@ function getAvatarAsset(firstName: string) {
 }
 
 function getLevelIconAsset(level: number) {
-  return `/assets/dashboard/home/levels/icon-level-${Math.max(1, Math.min(level, 5))}.png`;
+  return `/assets/dashboard/home/levels/icon-level-${Math.max(1, Math.min(level, 5))}-v2.png`;
 }
 
 function getStatIconAsset(type: string) {
   switch (type) {
     case 'xp':     return '/assets/dashboard/home/statistics/icon-total-xp.png';
-    case 'level':  return '/assets/dashboard/home/levels/icon-level-3.png';
+    case 'level':  return '/assets/dashboard/home/levels/icon-level-3-v2.png';
     case 'streak': return '/assets/dashboard/home/statistics/icon-streak.png';
     case 'comic':  return '/assets/dashboard/home/statistics/icon-komik-selesai.png';
     default:       return '/assets/dashboard/home/statistics/icon-total-xp.png';
