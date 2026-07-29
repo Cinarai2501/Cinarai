@@ -162,27 +162,32 @@ export default function DashboardSiswaHomePage() {
         </section>
 
         {/* ── 2. LEVEL CARD ── */}
-        {/*
-          Level badge: container is 120×120px with p-[8px].
-          Image is 104×104px (120 - 2×8 = 104) — fills the container minus padding.
-          object-contain preserves aspect ratio.
-        */}
         <section
           className="dash-enter dash-enter-2 relative z-10 -mt-[24px] rounded-[30px] p-[16px]"
           style={{ ...glass, boxShadow: '0 18px 36px rgba(15,23,42,0.12)' }}
         >
           <div className="flex items-center gap-[16px]">
+            {/*
+              Container: 120×120px, rounded, bg biru muda.
+              Padding 6px di semua sisi → area gambar efektif 108×108px (~90%).
+              `<img>` native digunakan karena next.config unoptimized:true,
+              sehingga tidak ada override inset dari Next.js Image fill.
+            */}
             <div
-              className="flex shrink-0 items-center justify-center rounded-[20px] bg-[#EEF7FF] p-[8px]"
-              style={{ width: 120, height: 120, boxShadow: '0 6px 20px rgba(29,147,255,0.22)' }}
+              className="shrink-0 rounded-[20px] bg-[#EEF7FF]"
+              style={{
+                width: 120,
+                height: 120,
+                minWidth: 120,
+                padding: 6,
+                boxShadow: '0 6px 20px rgba(29,147,255,0.22)',
+              }}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={getLevelIconAsset(levelInfo.level)}
                 alt={`Level ${levelInfo.level}`}
-                width={104}
-                height={104}
-                className="object-contain"
-                style={{ width: 104, height: 104 }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               />
             </div>
 
@@ -276,17 +281,24 @@ export default function DashboardSiswaHomePage() {
                 className="press-scale overflow-hidden rounded-[24px] border-[1.5px]"
                 style={{ background: stat.bg, borderColor: stat.border, boxShadow: '0 6px 16px rgba(15,23,42,0.06)' }}
               >
-                {/* Icon area: fills card width at 80%, ~136px on a 170px card */}
-                <div className="flex items-center justify-center px-[12px] pt-[14px] pb-[8px]">
-                  <div className="relative w-full" style={{ paddingBottom: '100%' }}>
-                    <Image
-                      src={getStatIconAsset(stat.type)}
-                      alt={stat.label}
-                      fill
-                      sizes="(max-width: 440px) 45vw, 180px"
-                      className="object-contain"
-                    />
-                  </div>
+                {/*
+                  Icon area: container 100% wide, height 96px.
+                  img mengisi seluruh area dengan padding 8px di semua sisi.
+                */}
+                <div
+                  style={{
+                    width: '100%',
+                    height: 96,
+                    padding: 8,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getStatIconAsset(stat.type)}
+                    alt={stat.label}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                  />
                 </div>
                 <div className="px-[14px] pb-[14px]">
                   <p className="text-[24px] font-extrabold leading-none" style={{ color: stat.valueColor }}>
@@ -326,15 +338,24 @@ export default function DashboardSiswaHomePage() {
                   border: '1px solid rgba(147,197,253,0.35)',
                 }}
               >
-                {/* Badge: 120×120px centered in the card */}
-                <div className="flex items-center justify-center pt-[12px]">
-                  <Image
+                {/*
+                  Badge: container 120×120px, padding 6px.
+                  img mengisi ~90% area container.
+                */}
+                <div
+                  style={{
+                    width: 120,
+                    height: 120,
+                    padding: 6,
+                    marginTop: 12,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={badge.asset}
                     alt={badge.title}
-                    width={120}
-                    height={120}
-                    className="object-contain"
-                    style={{ width: 120, height: 120 }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                   />
                 </div>
                 <p className="mt-[10px] px-[10px] text-center text-[12px] font-bold leading-[17px] text-[#111827]">
