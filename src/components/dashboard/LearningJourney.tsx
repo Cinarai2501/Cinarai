@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { fetchAllComics } from '@/services/comicFirestoreService';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { useSnackbar } from '@/context/SnackbarContext';
-import { SINTAKS } from '@/types/progress';
 import type { Comic } from '@/types/comic';
 
 // Per-comic visual identity — no external assets needed
@@ -52,31 +51,26 @@ export default function LearningJourney() {
   }
 
   return (
-    <div className="rounded-3xl bg-white shadow-md overflow-hidden">
-      {/* Section header */}
-      <div className="px-5 pt-5 pb-4 border-b border-neutral-100">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
+    <div className="rounded-[28px] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)] overflow-hidden">
+      <div className="px-5 pt-5 pb-3 border-b border-neutral-100">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
           Petualangan Belajar
         </p>
-        <h2 className="mt-0.5 text-base font-black text-neutral-900">Komik Saya 📚</h2>
+        <h2 className="mt-1.5 text-lg font-black text-neutral-900">Komik Saya 📚</h2>
       </div>
 
-      {/* Cards */}
-      <div className="divide-y divide-neutral-100">
-        {comics.map((comic, index) => {
+      <div className="space-y-4 px-4 pb-4 pt-4">
+        {comics.map((comic) => {
           const progress = getProgress(comic.id);
           const percentage = progress?.percentage ?? 0;
           const isCompleted = progress?.isCompleted ?? false;
-          const completedCount = progress?.completedCount ?? 0;
           const theme = COMIC_THEME[comic.id] ?? DEFAULT_THEME;
 
           return (
             <ComicCard
               key={comic.id}
               comic={comic}
-              index={index}
               percentage={percentage}
-              completedCount={completedCount}
               isCompleted={isCompleted}
               theme={theme}
               onRequestReset={handleRequestReset}
@@ -141,9 +135,7 @@ export default function LearningJourney() {
 
 interface ComicCardProps {
   comic: Comic;
-  index: number;
   percentage: number;
-  completedCount: number;
   isCompleted: boolean;
   theme: typeof DEFAULT_THEME;
   onRequestReset: (id: number) => void;
@@ -152,9 +144,7 @@ interface ComicCardProps {
 }
 const ComicCard = React.memo(function ComicCard({
   comic,
-  index,
   percentage,
-  completedCount,
   isCompleted,
   theme,
   onRequestReset,
@@ -179,50 +169,29 @@ const ComicCard = React.memo(function ComicCard({
 
   return (
     <div
-      className="p-4 transition-all hover:shadow-lg rounded-3xl bg-white cursor-pointer"
+      className="rounded-[24px] border border-neutral-100 bg-white p-4 shadow-sm transition hover:shadow-lg"
       role="button"
       tabIndex={0}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
     >
-      <div className="flex gap-3">
-
-        {/* ── Illustration panel ── */}
-        <div className="flex-shrink-0 relative">
-          <div
-            className={`relative h-24 w-20 rounded-2xl bg-gradient-to-br ${theme.bg} flex items-center justify-center overflow-hidden shadow-sm`}
-          >
-            {/* Cover image with emoji fallback */}
+      <div className="flex items-start gap-4">
+        <div className="relative flex-shrink-0 overflow-hidden rounded-[22px] bg-slate-100 shadow-sm">
+          <div className="relative h-[104px] w-[104px]">
             <Image
               src={comic.cover}
               alt={comic.title}
               fill
-              sizes="80px"
-              className="object-cover rounded-2xl"
+              sizes="104px"
+              className="object-cover"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             />
-            {/* Emoji always rendered behind image as fallback */}
-            <span className="absolute text-4xl select-none">{theme.emoji}</span>
-
-            {/* Completed checkmark */}
-            {isCompleted && (
-              <div className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent-500 shadow">
-                <span className="text-xs text-white font-black">✓</span>
-              </div>
-            )}
           </div>
-
-          {/* Step number */}
-          <span className="absolute -bottom-1.5 -left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[10px] font-black text-neutral-500 shadow ring-1 ring-neutral-200">
-            {index + 1}
-          </span>
         </div>
 
-        {/* ── Content ── */}
-        <div className="flex-1 min-w-0">
-          {/* Title row */}
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-black leading-snug text-neutral-900">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="min-w-0 text-base font-black leading-[1.2] text-neutral-900 line-clamp-2">
               {comic.title}
             </h3>
             <StatusBadge
@@ -231,73 +200,56 @@ const ComicCard = React.memo(function ComicCard({
             />
           </div>
 
-          {/* Meta chips */}
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-500">
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-neutral-500">
               Kelas {comic.kelas}
             </span>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${theme.difficultyColor}`}>
+            <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] ${theme.difficultyColor}`}>
               {theme.difficulty}
             </span>
-            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-500">
-              ⏱ {comic.estimatedMinutes} mnt
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-neutral-500">
+              {comic.estimatedMinutes} mnt
             </span>
           </div>
 
-          {/* Progress bar + stage dots */}
-          <div className="mt-2.5">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex gap-0.5">
-                  {SINTAKS.map((s) => {
-                    const idx = SINTAKS.indexOf(s);
-                    const done = idx < completedCount;
-                    return (
-                      <span
-                        key={s}
-                        title={s}
-                        className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                          done ? 'bg-primary-500' : 'bg-neutral-200'
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
-                <span className="text-[10px] font-bold text-neutral-500">{percentage}%</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-                <div
-                  className={`h-1.5 rounded-full transition-all duration-500 ${
-                    isCompleted
-                      ? 'bg-gradient-to-r from-accent-400 to-accent-500'
-                      : 'bg-gradient-to-r from-primary-400 to-primary-600'
-                  }`}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
+          <div className="mt-4">
+            <div className="flex items-center justify-between gap-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-neutral-500">
+              <span>Progress</span>
+              <span>{percentage}%</span>
             </div>
-
-          {/* CTA */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <CtaButton
-              comicId={comic.id}
-              isCompleted={isCompleted}
-              percentage={percentage}
-              accentClass={theme.accent}
-            />
-            {canReset && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onRequestReset(comic.id);
-                }}
-                disabled={isResetting}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-[11px] font-black text-neutral-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 disabled:opacity-60"
-              >
-                🔄 Ulangi Petualangan
-              </button>
-            )}
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isCompleted
+                    ? 'bg-gradient-to-r from-accent-400 to-accent-500'
+                    : 'bg-gradient-to-r from-primary-400 to-primary-600'
+                }`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
           </div>
+        </div>
+
+        <div className="flex flex-col items-end gap-3">
+          <CtaButton
+            comicId={comic.id}
+            isCompleted={isCompleted}
+            percentage={percentage}
+            accentClass={theme.accent}
+          />
+          {canReset && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRequestReset(comic.id);
+              }}
+              disabled={isResetting}
+              className="inline-flex h-[46px] items-center justify-center rounded-[16px] border border-neutral-200 bg-white px-4 text-[12px] font-black text-neutral-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 disabled:opacity-60"
+            >
+              Ulangi
+            </button>
+          )}
         </div>
       </div>
     </div>

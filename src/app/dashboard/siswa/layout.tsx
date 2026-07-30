@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
+import StudentBottomNav from '@/components/dashboard/StudentBottomNav';
 
 export default function DashboardSiswaLayout({ children }: { children: ReactNode }) {
   return (
@@ -104,7 +105,8 @@ export default function DashboardSiswaLayout({ children }: { children: ReactNode
         </div>
 
         {/* all page content above decorations */}
-        <main className="relative z-10 min-h-[calc(100dvh-92px)] w-full px-0 pb-[92px] pt-1">{children}</main>
+        <main className="relative z-10 min-h-[calc(100dvh-112px)] w-full px-0 pb-[112px] pt-1">{children}</main>
+        <StudentBottomNav />
       </div>
     </RoleProtectedRoute>
   );
