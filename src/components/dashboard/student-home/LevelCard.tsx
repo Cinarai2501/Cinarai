@@ -17,24 +17,26 @@ type LevelCardProps = {
 
 export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelCardProps) {
   return (
-    <section className="relative z-10 -mt-[18px] min-h-[140px] rounded-[28px] bg-white p-[18px] shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+    <section className="relative z-10 -mt-[52px] min-h-[118px] rounded-[28px] bg-white p-[18px] shadow-[0_10px_30px_rgba(15,23,42,0.1)]">
       <div className="flex h-full items-start gap-[16px]">
-        <div className="mt-[2px] flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[18px] bg-[#EEF7FF]">
-          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={48} height={48} className="h-[48px] w-[48px] object-contain" />
+        <div className="mt-[2px] flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-[20px] bg-[#EEF7FF]">
+          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={56} height={56} className="h-[56px] w-[56px] object-contain" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-[8px]">
+          <div className="flex items-center justify-between gap-[10px]">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9CA3AF]">Level</p>
-              <p className="mt-[2px] text-[18px] font-black leading-[1.15] text-[#111827]">{levelInfo.level} · {levelInfo.name}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">Level</p>
+              <p className="mt-[2px] text-[20px] font-black leading-[1.1] text-[#111827]">{levelInfo.level} · {levelInfo.name}</p>
             </div>
-            <p className="pt-[1px] text-[11px] font-semibold text-[#9CA3AF]">XP</p>
+            <div className="rounded-full bg-[#EFF6FF] px-[10px] py-[6px] text-[12px] font-semibold text-[#1D4ED8]">
+              XP
+            </div>
           </div>
-          <div className="mt-[8px] flex items-center justify-between gap-[8px] text-[11px] font-semibold text-[#6B7280]">
-            <span>{totalXp} / {levelInfo.nextXp} XP</span>
-            <span className="text-[11px] font-semibold text-[#6B7280]">{levelInfo.nextXp} target</span>
+          <div className="mt-[10px] flex flex-wrap items-center gap-[10px] text-[12px] font-semibold text-[#6B7280]">
+            <span>{totalXp} dari {levelInfo.nextXp} XP</span>
+            <span className="rounded-full bg-[#EEF4FB] px-2 py-1 text-[#475569]">{levelInfo.progress}%</span>
           </div>
-          <div className="mt-[8px] h-[12px] overflow-hidden rounded-full bg-[#EEF4FB]">
+          <div className="mt-[12px] h-[14px] overflow-hidden rounded-full bg-[#EEF4FB]">
             <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${levelInfo.progress}%` }} />
           </div>
         </div>

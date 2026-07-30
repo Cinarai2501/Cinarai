@@ -133,11 +133,11 @@ export default function StudentHome() {
   ];
 
   return (
-    <main className="w-full min-h-screen pb-[112px]">
+    <main className="w-full min-h-screen pb-[132px]">
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
       <section className="px-5 pb-[32px] pt-0">
-        <div className="relative -mt-[48px] space-y-[20px]">
+        <div className="relative -mt-[52px] space-y-[18px]">
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
           <StatisticsGrid statCards={statCards} />
