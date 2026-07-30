@@ -115,7 +115,9 @@ export default function StudentHome() {
 
   const todayProgress = continueComic ? getProgress(continueComic.id) : undefined;
   const todayPct = todayProgress?.percentage ?? 0;
-  const stageLabel = `${todayProgress?.completedCount ?? 0}/${SINTAKS.length} tahap`;
+  const currentStage = todayProgress?.completedCount ?? 0;
+  const stageLabel = `${currentStage}/${SINTAKS.length} tahap`;
+  const nextStageLabel = `Tahap ${Math.min(currentStage + 1, SINTAKS.length)}`;
   const levelInfo = getLevelInfo(totalXp);
 
   const statCards: StatCard[] = [
@@ -141,7 +143,7 @@ export default function StudentHome() {
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
           <StatisticsGrid statCards={statCards} />
-          <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} />
+          <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} nextStageLabel={nextStageLabel} />
           <BadgeSection badgeItems={badgeItems} />
         </div>
       </section>

@@ -63,7 +63,7 @@ export default function StudentBottomNav() {
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[72px] max-w-[440px] items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[8px]"
+        className="mx-auto flex h-[64px] max-w-[440px] items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[6px]"
         style={{
           background: 'rgba(255,255,255,0.82)',
           backdropFilter: 'blur(20px)',
@@ -80,7 +80,7 @@ export default function StudentBottomNav() {
               className="flex flex-1 flex-col items-center justify-center gap-[3px] text-center"
             >
               <span
-                className="grid h-[44px] w-[44px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
+                className="grid h-[48px] w-[48px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
                 style={
                   active
                     ? {

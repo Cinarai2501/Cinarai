@@ -24,7 +24,7 @@ export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
           Lihat Semua
         </Link>
       </div>
-      <div className="mt-[12px] flex gap-[10px] overflow-x-auto pb-[4px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-[12px] flex gap-[10px] overflow-x-auto pb-[4px] pr-[20px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {badgeItems.map((badge) => (
           <div key={badge.title} className="flex min-w-[104px] shrink-0 flex-col items-center rounded-[24px] border border-[#E5E7EB] bg-white p-[10px] shadow-sm">
             <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[22px] bg-[#EFF6FF] p-[10px]">
