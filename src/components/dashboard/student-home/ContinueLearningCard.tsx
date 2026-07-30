@@ -11,8 +11,8 @@ type ContinueLearningCardProps = {
 
 export default function ContinueLearningCard({ coverAsset, title, progressPct }: ContinueLearningCardProps) {
   return (
-    <section className="rounded-[28px] bg-[#F6F9FE] p-[16px] shadow-[0_10px_24px_rgba(15,23,42,0.05)]" style={{ minHeight: 180 }}>
-      <div className="flex h-full items-start gap-[12px]">
+    <section className="rounded-[28px] bg-[#F6F9FE] p-[18px] shadow-[0_10px_24px_rgba(15,23,42,0.08)]" style={{ minHeight: 168 }}>
+      <div className="flex h-full items-start gap-[14px]">
         <div className="mt-[2px] h-[112px] w-[92px] shrink-0 overflow-hidden rounded-[22px] bg-slate-100">
           <Image src={coverAsset} alt={title} width={92} height={112} className="h-full w-full object-cover" />
         </div>
@@ -27,7 +27,7 @@ export default function ContinueLearningCard({ coverAsset, title, progressPct }:
               <p className="text-[12px] font-semibold text-[#1D93FF]">{progressPct}%</p>
               <p className="text-[11px] font-medium text-[#6B7280]">4 dari 8 tahap selesai</p>
             </div>
-            <Link href="/dashboard/siswa/komik" className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#1D93FF] shadow-[0_8px_16px_rgba(29,147,255,0.24)]" aria-label="Lanjutkan belajar">
+            <Link href="/dashboard/siswa/komik" className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#1D93FF] shadow-[0_8px_20px_rgba(29,147,255,0.18)]" aria-label="Lanjutkan belajar">
               <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14" />
                 <path d="M13 6l6 6-6 6" />

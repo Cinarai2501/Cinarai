@@ -133,32 +133,20 @@ export default function StudentHome() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7FAFF]">
+    <main className="w-full min-h-screen pb-[112px]">
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
-      <section className="px-[24px] pb-[96px] pt-0">
-        <div className="relative -mt-[36px]">
+      <section className="px-5 pb-[32px] pt-0">
+        <div className="relative -mt-[48px] space-y-[20px]">
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
-        </div>
-
-        <div className="mt-[16px]">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
-        </div>
-
-        <div className="mt-[16px]">
           <StatisticsGrid statCards={statCards} />
-        </div>
-
-        <div className="mt-[16px]">
           <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} />
-        </div>
-
-        <div className="mt-[16px]">
           <BadgeSection badgeItems={badgeItems} />
         </div>
       </section>
 
       <StudentBottomNav />
-    </div>
+    </main>
   );
 }

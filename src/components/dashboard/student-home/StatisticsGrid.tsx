@@ -16,10 +16,10 @@ type StatisticsGridProps = {
 
 export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
   return (
-    <section className="rounded-[24px] bg-white p-[12px] shadow-[0_6px_16px_rgba(15,23,42,0.05)]">
-      <div className="grid grid-cols-2 gap-[12px]">
+    <section className="rounded-[28px] bg-white p-[18px] shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+      <div className="grid grid-cols-2 gap-[14px]">
         {statCards.map((stat) => (
-          <div key={stat.label} className="flex min-h-[96px] items-center rounded-[24px] border border-[#E5E7EB] p-[12px]" style={{ background: stat.bg }}>
+          <div key={stat.label} className="flex min-h-[96px] items-center rounded-[24px] border border-[#E5E7EB] p-[14px]" style={{ background: stat.bg }}>
             <div className="flex items-center gap-[10px]">
               <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-white/70">
                 <Image src={stat.iconAsset} alt={stat.label} width={32} height={32} className="h-[32px] w-[32px] object-contain" />
