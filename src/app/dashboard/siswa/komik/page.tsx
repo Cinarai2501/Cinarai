@@ -5,12 +5,12 @@ import LearningJourney from '@/components/dashboard/LearningJourney';
 
 export default function DashboardSiswaKomikPage() {
     return (
-        <div className="space-y-4 pb-28">
+        <div className="mx-auto max-w-[1200px] bg-[#f5f7fb] px-3 pb-28 sm:px-6 lg:px-8">
             <section
-                className="relative overflow-hidden rounded-[28px] px-5 py-4"
+                className="relative overflow-hidden rounded-[30px] px-5 py-5 sm:px-8 sm:py-7"
                 style={{
                     background: 'linear-gradient(135deg, #0DBF7E 0%, #0AA86E 40%, #0891B2 100%)',
-                    minHeight: '128px',
+                    minHeight: '160px',
                 }}
             >
                 <div
@@ -48,7 +48,9 @@ export default function DashboardSiswaKomikPage() {
                 </div>
             </section>
 
-            <LearningJourney />
+            <div className="mt-4 sm:mt-5">
+                <LearningJourney />
+            </div>
         </div>
     );
 }
