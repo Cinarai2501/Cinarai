@@ -153,121 +153,71 @@ const ComicCard = React.memo(function ComicCard({
 }: ComicCardProps) {
   const router = useRouter();
   const cardHref = `/comic/${comic.id}/learn`;
-  const handleCardClick = useCallback(() => {
-    router.push(cardHref);
-  }, [cardHref, router]);
+  const handleCardClick = useCallback(() => router.push(cardHref), [cardHref, router]);
 
-  const handleCardKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        router.push(cardHref);
-      }
-    },
-    [cardHref, router]
-  );
-
+  // New card structure strictly following blueprint visual hierarchy.
   return (
-    <div
-      className="relative w-full max-w-full overflow-hidden rounded-[22px] border border-neutral-100 bg-white p-3 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition hover:shadow-[0_14px_40px_rgba(15,23,42,0.10)] sm:p-4"
+    <article
       role="button"
       tabIndex={0}
       onClick={handleCardClick}
-      onKeyDown={handleCardKeyDown}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(cardHref); }}
+      className="group w-full max-w-full overflow-hidden rounded-[20px] border border-neutral-100 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.08)] transition-colors hover:shadow-[0_18px_48px_rgba(15,23,42,0.10)] sm:p-5"
     >
-      {/* Desktop: badge absolute top-right. Mobile: badge shown inline under title */}
-      <div className="hidden sm:block absolute top-4 right-4">
-        <StatusBadge isCompleted={isCompleted} percentage={percentage} />
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-        <div className="relative flex-shrink-0 self-center overflow-hidden rounded-[12px] bg-slate-100 shadow-md sm:self-start sm:rounded-[22px]">
-          <div className="relative h-24 w-24 max-w-full sm:h-[120px] sm:w-[120px]">
-            <Image
-              src={comic.cover}
-              alt={comic.title}
-              fill
-              sizes="(max-width: 640px) 112px, 120px"
-              className="object-cover"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            />
-          </div>
+      <div className="flex items-start gap-4">
+        {/* Cover area: fixed square left */}
+        <div className="relative flex-shrink-0 rounded-[12px] overflow-hidden bg-slate-100 shadow-sm" style={{ width: 104, height: 136 }}>
+          <Image src={comic.cover} alt={comic.title} fill sizes="104px" className="object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         </div>
 
-        <div className="min-w-0 flex-1 w-full max-w-full">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-            <h3 className="min-w-0 w-full break-words text-[17px] font-black leading-6 text-neutral-900 line-clamp-2 sm:text-[20px] sm:leading-7">
+        {/* Main content column */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start">
+            <h3 className="min-w-0 mr-3 text-[20px] font-black leading-[24px] text-neutral-900 line-clamp-2">
               {comic.title}
             </h3>
-            <div className="sm:hidden">
+
+            {/* Badge positioned to top-right visually */}
+            <div className="ml-auto flex-shrink-0">
               <StatusBadge isCompleted={isCompleted} percentage={percentage} />
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500 sm:text-sm">
-              Kelas {comic.kelas}
-            </span>
-            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${theme.difficultyColor} sm:text-[12px]`}>
-              {theme.difficulty}
-            </span>
-            <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500 sm:text-sm">
-              {comic.estimatedMinutes} mnt
-            </span>
+          {/* metadata row: Kelas | Difficulty | Duration */}
+          <div className="mt-3 flex items-center gap-3 text-[13px]">
+            <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-neutral-500">Kelas {comic.kelas}</span>
+            <span className={`rounded-full px-3 py-1 font-semibold uppercase tracking-[0.14em] ${theme.difficultyColor}`}>{theme.difficulty}</span>
+            <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-neutral-500">{comic.estimatedMinutes} mnt</span>
           </div>
 
+          {/* progress row */}
           <div className="mt-4">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[12px] font-semibold tracking-[0.14em] text-neutral-500 sm:text-sm">Progress</span>
-              <span className="flex items-center">
-                <span className={`inline-flex h-7 shrink-0 items-center justify-center rounded-full px-3 text-[12px] font-black sm:text-sm ${
-                  isCompleted ? 'bg-accent-100 text-accent-700' : 'bg-primary-100 text-primary-700'
-                }`}>
-                  {percentage}%
-                </span>
-              </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-semibold tracking-[0.14em] text-neutral-500">Progress</span>
+              <span className={`inline-flex items-center justify-center min-w-[56px] rounded-full px-3 py-1 text-[13px] font-black ${isCompleted ? 'bg-accent-100 text-accent-700' : 'bg-primary-100 text-primary-700'}`}>{percentage}%</span>
             </div>
 
-            <div className="mt-2 flex items-center">
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100 sm:h-3.5">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    isCompleted
-                      ? 'bg-gradient-to-r from-accent-400 to-accent-500'
-                      : 'bg-gradient-to-r from-primary-500 to-primary-700'
-                  }`}
-                  style={{ width: `${percentage}%` }}
-                />
+            <div className="mt-2 w-full">
+              <div className="h-3 rounded-full bg-neutral-100 overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-gradient-to-r from-accent-400 to-accent-500' : 'bg-gradient-to-r from-primary-500 to-primary-700'}`} style={{ width: `${percentage}%` }} />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:items-end">
-          <div className="w-full sm:w-auto">
-            <CtaButton
-              comicId={comic.id}
-              isCompleted={isCompleted}
-              percentage={percentage}
-              accentClass={theme.accent}
-            />
+        {/* Actions column */}
+        <div className="ml-4 flex flex-col items-end gap-3">
+          <div className="w-[132px]">
+            <CtaButton comicId={comic.id} isCompleted={isCompleted} percentage={percentage} accentClass={theme.accent} />
           </div>
           {canReset && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onRequestReset(comic.id);
-              }}
-              disabled={isResetting}
-              className="inline-flex h-11 w-full max-w-full items-center justify-center rounded-[12px] border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto"
-            >
+            <button type="button" onClick={(e) => { e.stopPropagation(); onRequestReset(comic.id); }} disabled={isResetting} className="inline-flex h-10 items-center justify-center rounded-[12px] border border-neutral-200 bg-white px-3 text-sm font-black text-neutral-700 shadow-sm transition hover:border-primary-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
               Ulangi
             </button>
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 });
 
