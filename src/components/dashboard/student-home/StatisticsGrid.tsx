@@ -32,7 +32,7 @@ export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
               alt={stat.label}
               width={48}
               height={48}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain scale-[1.35]"
             />
           </div>
           <div className="min-w-0">
