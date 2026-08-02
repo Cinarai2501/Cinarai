@@ -74,6 +74,8 @@ export default function StudentBottomNav() {
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const isKomik = tab.href.includes('/komik');
+          const isKuis = tab.href.includes('/kuis');
+          const isProfil = tab.href.includes('/profil');
           
           let activeBg = 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)';
           let activeShadow = '0 4px 14px rgba(29,147,255,0.40)';
@@ -83,6 +85,14 @@ export default function StudentBottomNav() {
             activeBg = 'linear-gradient(135deg, #0DBF7E 0%, #0AA86E 100%)';
             activeShadow = '0 4px 14px rgba(13,191,126,0.40)';
             activeColor = '#0DBF7E';
+          } else if (isKuis) {
+            activeBg = 'linear-gradient(135deg, #FF6B00 0%, #FF8800 100%)';
+            activeShadow = '0 4px 14px rgba(255,107,0,0.40)';
+            activeColor = '#FF6B00';
+          } else if (isProfil) {
+            activeBg = 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)';
+            activeShadow = '0 4px 14px rgba(15,118,110,0.40)';
+            activeColor = '#0F766E';
           }
 
           return (
