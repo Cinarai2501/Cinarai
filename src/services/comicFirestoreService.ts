@@ -40,7 +40,7 @@ function toComic(doc: ComicDocument): Comic {
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: doc.coverUrl,
+    cover: doc.coverUrl || `/assets/dashboard/home/covers/cover-komik-${doc.comicId}.png`,
     thumbnail: doc.thumbnailUrl,
     stages: ['comic', 'quiz', 'ar', 'reflection'],
     availability: doc.availability,
