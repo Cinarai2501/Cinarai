@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllComics } from '@/services/comicFirestoreService';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
-import { getAllUnlockStatuses, type UnlockStatus } from '@/lib/unlockEngine';
+import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { useSnackbar } from '@/context/SnackbarContext';
 import type { Comic } from '@/types/comic';
 
