@@ -62,25 +62,21 @@ export default function LearningJourney() {
         const progress = getProgress(comic.id);
         const percentage = progress?.percentage ?? 0;
         const isCompleted = progress?.isCompleted ?? false;
-        const unlockStatus = unlockStatuses.get(comic.id) ?? 'UNLOCKED';
 
-        if (statusFilter === 'Berlangsung' && (percentage === 0 || isCompleted || unlockStatus === 'LOCKED')) {
+        if (statusFilter === 'Berlangsung' && (percentage === 0 || isCompleted)) {
           return false;
         }
-        if (statusFilter === 'Belum Mulai' && (percentage > 0 || isCompleted || unlockStatus === 'LOCKED')) {
+        if (statusFilter === 'Belum Mulai' && (percentage > 0 || isCompleted)) {
           return false;
         }
         if (statusFilter === 'Selesai' && !isCompleted) {
-          return false;
-        }
-        if (statusFilter === 'Terkunci' && unlockStatus !== 'LOCKED') {
           return false;
         }
       }
 
       return true;
     });
-  }, [comics, searchQuery, selectedClass, statusFilter, getProgress, unlockStatuses]);
+  }, [comics, searchQuery, selectedClass, statusFilter, getProgress]);
 
   if (isLoading || comicsLoading) {
     return <JourneySkeleton />;
@@ -154,7 +150,6 @@ export default function LearningJourney() {
               <option value="Berlangsung">Berlangsung</option>
               <option value="Belum Mulai">Belum Mulai</option>
               <option value="Selesai">Selesai</option>
-              <option value="Terkunci">Terkunci</option>
             </select>
           </div>
         </div>
@@ -270,11 +265,8 @@ const ComicCard = React.memo(function ComicCard({
   totalStages,
   difficulty,
 }: ComicCardProps) {
-  // Card click target
   const cardHref = `/comic/${comic.id}/learn`;
 
-  // Status Badge Logic matching blueprint status rules:
-  // Berlangsung (blue), Belum Mulai (grey), Terkunci (purple lock), Selesai (green)
   let statusBadge = (
     <span className="rounded-full bg-[#E0F2FE] px-3 py-1 text-[12px] font-bold text-[#1D93FF]">
       Berlangsung
@@ -318,7 +310,7 @@ const ComicCard = React.memo(function ComicCard({
               alt={comic.title}
               width={100}
               height={110}
-              className={`h-full w-full object-cover ${isLocked ? 'grayscale opacity-75' : ''}`}
+              className="h-full w-full object-cover"
             />
           </div>
         </div>
@@ -327,7 +319,7 @@ const ComicCard = React.memo(function ComicCard({
         <div className="min-w-0 flex-1 w-full">
           {/* Title and Status Badge Row */}
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-[17px] font-bold leading-snug text-[#1E293B] line-clamp-2">
+            <h3 className="text-[16px] font-bold leading-snug text-[#1E293B]">
               {comic.title}
             </h3>
             <div className="shrink-0">{statusBadge}</div>
@@ -357,53 +349,43 @@ const ComicCard = React.memo(function ComicCard({
           </div>
 
           {/* Progress Section */}
-          {!isLocked && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="font-medium text-[#64748B]">Progress</span>
-                <span className="font-bold text-[#0DBF7E]">{percentage}%</span>
-              </div>
-              <div className="mt-1.5 h-[8px] w-full overflow-hidden rounded-full bg-[#EEF4FB]">
-                <div
-                  className="h-full rounded-full bg-[#0DBF7E] transition-all duration-500"
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-[13px]">
+              <span className="font-medium text-[#64748B]">Progress</span>
+              <span className="font-bold text-[#0DBF7E]">{percentage}%</span>
             </div>
-          )}
+            <div className="mt-1.5 h-[8px] w-full overflow-hidden rounded-full bg-[#EEF4FB]">
+              <div
+                className="h-full rounded-full bg-[#0DBF7E] transition-all duration-500"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+          </div>
 
           {/* Bottom Action Row */}
           <div className="mt-3 flex items-center justify-between gap-2 pt-1">
             <div className="text-[12px] font-medium text-[#64748B]">
-              {isLocked ? (
-                <span className="flex items-center gap-1 text-[#9333EA]">
-                  <span>🔒 Selesaikan komik sebelumnya untuk membuka.</span>
-                </span>
-              ) : (
-                <span>{completedCount} dari {totalStages} tahap selesai</span>
-              )}
+              <span>{completedCount} dari {totalStages} tahap selesai</span>
             </div>
 
             {/* Action Button */}
-            {!isLocked && (
-              <div>
-                {percentage > 0 ? (
-                  <Link
-                    href={cardHref}
-                    className="inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-5 py-1.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-[#0AA86E] active:scale-95"
-                  >
-                    Lanjutkan
-                  </Link>
-                ) : (
-                  <Link
-                    href={cardHref}
-                    className="inline-flex items-center justify-center rounded-full border-2 border-[#0DBF7E] bg-white px-5 py-1.5 text-[14px] font-bold text-[#0DBF7E] transition hover:bg-[#F0FDF4] active:scale-95"
-                  >
-                    Mulai
-                  </Link>
-                )}
-              </div>
-            )}
+            <div>
+              {percentage > 0 ? (
+                <Link
+                  href={cardHref}
+                  className="inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-5 py-1.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-[#0AA86E] active:scale-95"
+                >
+                  Lanjutkan
+                </Link>
+              ) : (
+                <Link
+                  href={cardHref}
+                  className="inline-flex items-center justify-center rounded-full border-2 border-[#0DBF7E] bg-white px-5 py-1.5 text-[14px] font-bold text-[#0DBF7E] transition hover:bg-[#F0FDF4] active:scale-95"
+                >
+                  Mulai
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
