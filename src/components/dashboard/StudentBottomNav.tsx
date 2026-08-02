@@ -76,6 +76,7 @@ export default function StudentBottomNav() {
           const isKomik = tab.href.includes('/komik');
           const isKuis = tab.href.includes('/kuis');
           const isProfil = tab.href.includes('/profil');
+          const isAiTutor = tab.href.includes('/ai-tutor');
           
           let activeBg = 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)';
           let activeShadow = '0 4px 14px rgba(29,147,255,0.40)';
@@ -93,6 +94,10 @@ export default function StudentBottomNav() {
             activeBg = 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)';
             activeShadow = '0 4px 14px rgba(15,118,110,0.40)';
             activeColor = '#0F766E';
+          } else if (isAiTutor) {
+            activeBg = 'linear-gradient(135deg, #4F46E5 0%, #6D5DF6 100%)';
+            activeShadow = '0 4px 14px rgba(79,70,229,0.40)';
+            activeColor = '#4F46E5';
           }
 
           return (
