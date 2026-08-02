@@ -10,7 +10,7 @@ export default function DashboardSiswaLayout({ children }: { children: ReactNode
       <div
         className="relative min-h-screen overflow-hidden text-neutral-900"
         style={{
-          background: 'linear-gradient(180deg, #EAF7FF 0%, #F5FBFF 35%, #FFFCEB 70%, #FFFFFF 100%)',
+          background: '#F5F8FD',
           paddingTop: 'max(0px, env(safe-area-inset-top))',
         }}
       >
