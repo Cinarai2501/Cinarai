@@ -16,33 +16,33 @@ function TabIcon({ type, active }: { type: string; active: boolean }) {
   switch (type) {
     case 'home':
       return (
-        <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path className={stroke} d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z" />
         </svg>
       );
     case 'book':
       return (
-        <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path className={stroke} d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
           <path className={stroke} d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5v-13z" />
         </svg>
       );
     case 'chat':
       return (
-        <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path className={stroke} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       );
     case 'quiz':
       return (
-        <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path className={stroke} d="M4 6h16M4 12h10M4 18h10" />
           <path className={stroke} d="M18 8l3 3-3 3" />
         </svg>
       );
     case 'user':
       return (
-        <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px]" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path className={stroke} d="M20 21v-2a4 4 0 0 0-3-3.87" />
           <path className={stroke} d="M4 21v-2a4 4 0 0 1 3-3.87" />
           <path className={stroke} d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
@@ -59,15 +59,15 @@ export default function StudentBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 px-[20px]"
+      className="fixed inset-x-0 bottom-0 z-50 px-[clamp(14px,4vw,20px)]"
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[64px] max-w-[440px] items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[6px]"
+        className="mx-auto flex h-[58px] max-w-[440px] items-center justify-between rounded-[22px] border border-white/60 px-[10px] py-[6px]"
         style={{
-          background: 'rgba(255,255,255,0.82)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
           boxShadow: '0 -8px 20px rgba(15,23,42,0.06)',
         }}
       >
@@ -102,7 +102,7 @@ export default function StudentBottomNav() {
               className="flex flex-1 flex-col items-center justify-center gap-[3px] text-center"
             >
               <span
-                className="grid h-[48px] w-[48px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
+                className="grid h-[50px] w-[50px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
                 style={
                   active
                     ? {

@@ -100,8 +100,8 @@ export default function DashboardSiswaAiTutorPage() {
       {/* 1. Header Bar AI Tutor */}
       <section className="rounded-3xl bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] border border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-[48px] w-[48px] items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#1D93FF] shadow-sm">
-            <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="relative flex h-[56px] w-[56px] items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#1D93FF] shadow-sm">
+            <svg viewBox="0 0 24 24" className="h-[30px] w-[30px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="10" rx="2" />
               <circle cx="12" cy="5" r="2" />
               <path d="M12 7v4" />
@@ -121,10 +121,10 @@ export default function DashboardSiswaAiTutorPage() {
         <button
           type="button"
           onClick={() => setShowInfoModal(true)}
-          className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-slate-50 text-[#64748B] hover:bg-slate-100 transition"
+          className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-slate-50 text-[#64748B] hover:bg-slate-100 transition"
           aria-label="Info AI Tutor"
         >
-          <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="16" x2="12" y2="12" />
             <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -212,10 +212,10 @@ export default function DashboardSiswaAiTutorPage() {
           />
           <button
             type="submit"
-            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#1D93FF] text-white shadow-md transition hover:bg-[#0F5FB5] active:scale-95"
+            className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-[#1D93FF] text-white shadow-md transition hover:bg-[#0F5FB5] active:scale-95"
             aria-label="Kirim pesan"
           >
-            <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
