@@ -21,6 +21,7 @@ type StatCard = {
   bg: string;
   valueColor: string;
   sublabel?: string;
+  scale?: string;
 };
 
 type BadgeItem = {
