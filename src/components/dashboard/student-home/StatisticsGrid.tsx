@@ -16,20 +16,18 @@ type StatisticsGridProps = {
 
 export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
   return (
-    <section className="rounded-3xl bg-[#F6F9FE] p-3 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
-      <div className="grid grid-cols-2 gap-3">
-        {statCards.map((stat) => (
-          <div key={stat.label} className="flex min-h-[96px] items-center gap-3 rounded-2xl bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.08)]">
-            <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full shadow-[0_8px_20px_rgba(15,23,42,0.08)]" style={{ background: stat.bg }}>
-              <Image src={stat.iconAsset} alt={stat.label} width={32} height={32} className="h-[32px] w-[32px] object-contain" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[32px] font-bold leading-none" style={{ color: stat.valueColor }}>{stat.value}</p>
-              <p className="mt-1 text-[14px] font-medium text-[#6B7280]">{stat.label}</p>
-            </div>
+    <section className="grid grid-cols-2 gap-3">
+      {statCards.map((stat) => (
+        <div key={stat.label} className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-[0_8px_20px_rgba(15,23,42,0.06)] min-h-[84px]">
+          <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-2xl" style={{ background: stat.bg }}>
+            <Image src={stat.iconAsset} alt={stat.label} width={30} height={30} className="h-[30px] w-[30px] object-contain" />
           </div>
-        ))}
-      </div>
+          <div className="min-w-0">
+            <p className="text-[22px] font-bold leading-tight text-[#111827]">{stat.value}</p>
+            <p className="text-[12px] font-medium text-[#6B7280]">{stat.label}</p>
+          </div>
+        </div>
+      ))}
     </section>
   );
 }
