@@ -73,6 +73,18 @@ export default function StudentBottomNav() {
       >
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          const isKomik = tab.href.includes('/komik');
+          
+          let activeBg = 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)';
+          let activeShadow = '0 4px 14px rgba(29,147,255,0.40)';
+          let activeColor = '#1D93FF';
+
+          if (isKomik) {
+            activeBg = 'linear-gradient(135deg, #0DBF7E 0%, #0AA86E 100%)';
+            activeShadow = '0 4px 14px rgba(13,191,126,0.40)';
+            activeColor = '#0DBF7E';
+          }
+
           return (
             <Link
               key={tab.href}
@@ -84,8 +96,8 @@ export default function StudentBottomNav() {
                 style={
                   active
                     ? {
-                        background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)',
-                        boxShadow: '0 4px 14px rgba(29,147,255,0.40)',
+                        background: activeBg,
+                        boxShadow: activeShadow,
                         transform: 'scale(1.05)',
                       }
                     : {}
@@ -95,7 +107,7 @@ export default function StudentBottomNav() {
               </span>
               <span
                 className="text-[12px] leading-none transition-all duration-200"
-                style={{ fontWeight: active ? 600 : 500, color: active ? '#1D93FF' : '#6B7280' }}
+                style={{ fontWeight: active ? 600 : 500, color: active ? activeColor : '#6B7280' }}
               >
                 {tab.label}
               </span>

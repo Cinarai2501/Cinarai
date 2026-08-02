@@ -3,41 +3,32 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { fetchAllComics } from '@/services/comicFirestoreService';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
+import { getAllUnlockStatuses, type UnlockStatus } from '@/lib/unlockEngine';
 import { useSnackbar } from '@/context/SnackbarContext';
 import type { Comic } from '@/types/comic';
 
-// Per-comic visual identity — no external assets needed
-const COMIC_THEME: Record<number, {
-  emoji: string;
-  bg: string;
-  accent: string;
-  difficulty: string;
-  difficultyColor: string;
-}> = {
-  1: { emoji: '🏛️', bg: 'from-blue-400 to-primary-500',     accent: 'bg-primary-600',   difficulty: 'Menengah', difficultyColor: 'bg-warning-100 text-warning-700' },
-  2: { emoji: '🪷', bg: 'from-pink-400 to-rose-500',         accent: 'bg-rose-500',      difficulty: 'Menengah', difficultyColor: 'bg-warning-100 text-warning-700' },
-  3: { emoji: '🐘', bg: 'from-teal-400 to-accent-500',       accent: 'bg-accent-600',    difficulty: 'Mudah',    difficultyColor: 'bg-accent-100 text-accent-700' },
-  4: { emoji: '🌉', bg: 'from-orange-400 to-secondary-500',  accent: 'bg-secondary-600', difficulty: 'Menengah', difficultyColor: 'bg-warning-100 text-warning-700' },
-  5: { emoji: '👑', bg: 'from-purple-400 to-purple-600',     accent: 'bg-purple-600',    difficulty: 'Mudah',    difficultyColor: 'bg-accent-100 text-accent-700' },
+const COMIC_DIFFICULTY: Record<number, string> = {
+  1: 'Menengah',
+  2: 'Menengah',
+  3: 'Mudah',
+  4: 'Menengah',
+  5: 'Mudah',
 };
 
-const DEFAULT_THEME = COMIC_THEME[1];
-
 export default function LearningJourney() {
-  const { getProgress, resetProgressForComic, isLoading } = useAllComicProgress();
+  const { states, getProgress, resetProgressForComic, isLoading } = useAllComicProgress();
   const { showSnackbar } = useSnackbar();
   const [comics, setComics] = useState<Comic[]>([]);
   const [comicsLoading, setComicsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState<string>('Semua');
+  const [statusFilter, setStatusFilter] = useState<string>('Semua');
   const [pendingResetComicId, setPendingResetComicId] = useState<number | null>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const pendingComic = useMemo(() => comics.find((comic) => comic.id === pendingResetComicId) ?? null, [comics, pendingResetComicId]);
 
-  const handleRequestReset = useCallback((id: number) => {
-    setPendingResetComicId(id);
-  }, [setPendingResetComicId]);
+  const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
 
   useEffect(() => {
     fetchAllComics()
@@ -46,60 +37,183 @@ export default function LearningJourney() {
       .finally(() => setComicsLoading(false));
   }, []);
 
+  const handleRequestReset = useCallback((id: number) => {
+    setPendingResetComicId(id);
+  }, []);
+
+  const filteredComics = useMemo(() => {
+    return comics.filter((comic) => {
+      // Search filter
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        if (!comic.title.toLowerCase().includes(query)) return false;
+      }
+
+      // Class filter
+      if (selectedClass !== 'Semua') {
+        const classNum = selectedClass.replace('Kelas ', '').trim();
+        if (comic.kelas.toLowerCase() !== classNum.toLowerCase() && comic.kelas !== classNum) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (statusFilter !== 'Semua') {
+        const progress = getProgress(comic.id);
+        const percentage = progress?.percentage ?? 0;
+        const isCompleted = progress?.isCompleted ?? false;
+        const unlockStatus = unlockStatuses.get(comic.id) ?? 'UNLOCKED';
+
+        if (statusFilter === 'Berlangsung' && (percentage === 0 || isCompleted || unlockStatus === 'LOCKED')) {
+          return false;
+        }
+        if (statusFilter === 'Belum Mulai' && (percentage > 0 || isCompleted || unlockStatus === 'LOCKED')) {
+          return false;
+        }
+        if (statusFilter === 'Selesai' && !isCompleted) {
+          return false;
+        }
+        if (statusFilter === 'Terkunci' && unlockStatus !== 'LOCKED') {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [comics, searchQuery, selectedClass, statusFilter, getProgress, unlockStatuses]);
+
   if (isLoading || comicsLoading) {
     return <JourneySkeleton />;
   }
 
   return (
-    <div className="overflow-x-hidden rounded-[28px] bg-white shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
-      <div className="border-b border-neutral-100 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-neutral-400">
-          Petualangan Belajar
-        </p>
-        <h2 className="mt-1.5 text-[18px] font-black leading-6 text-neutral-900 sm:text-lg">Komik Saya 📚</h2>
+    <div className="space-y-4">
+      {/* 2. Search & Filter Bar */}
+      <div className="space-y-3">
+        {/* Search input + Filter button */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <svg
+              viewBox="0 0 24 24"
+              className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#94A3B8]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari komik..."
+              className="w-full rounded-full border border-[#E2E8F0] bg-white py-2.5 pl-10 pr-4 text-[14px] text-[#1E293B] placeholder-[#94A3B8] shadow-sm outline-none transition focus:border-[#0DBF7E]"
+            />
+          </div>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-4 py-2.5 text-[14px] font-semibold text-[#0DBF7E] shadow-sm transition hover:bg-slate-50"
+          >
+            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="7" y1="12" x2="17" y2="12" />
+              <line x1="10" y1="18" x2="14" y2="18" />
+            </svg>
+            <span>Filter</span>
+          </button>
+        </div>
+
+        {/* Horizontal Filter Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-[13px] font-medium">
+          {['Semua', 'Kelas IV', 'Kelas V', 'Kelas VI'].map((cls) => (
+            <button
+              key={cls}
+              type="button"
+              onClick={() => setSelectedClass(cls)}
+              className={`shrink-0 rounded-full px-4 py-1.5 transition ${
+                selectedClass === cls
+                  ? 'bg-[#0DBF7E] font-bold text-white shadow-sm'
+                  : 'border border-[#E2E8F0] bg-white text-[#475569] hover:bg-slate-50'
+              }`}
+            >
+              {cls}
+            </button>
+          ))}
+
+          {/* Status Filter Dropdown Chip */}
+          <div className="relative shrink-0">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="appearance-none rounded-full border border-[#E2E8F0] bg-white py-1.5 pl-4 pr-8 text-[13px] font-medium text-[#475569] shadow-sm outline-none transition focus:border-[#0DBF7E]"
+            >
+              <option value="Semua">Berlangsung ∨</option>
+              <option value="Berlangsung">Berlangsung</option>
+              <option value="Belum Mulai">Belum Mulai</option>
+              <option value="Selesai">Selesai</option>
+              <option value="Terkunci">Terkunci</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-3 px-3 pb-3 pt-3 sm:space-y-4 sm:px-4 sm:pb-4 sm:pt-4">
-        {comics.map((comic) => {
+      {/* Section Header & Sort Row */}
+      <div className="flex items-center justify-between pt-1">
+        <h2 className="text-[16px] font-bold text-[#1E293B]">Semua Komik</h2>
+        <div className="flex items-center gap-1 text-[13px] font-medium text-[#64748B]">
+          <span>Urutkan:</span>
+          <span className="font-semibold text-[#1E293B]">Terbaru ∨</span>
+        </div>
+      </div>
+
+      {/* 3. Comic Cards List */}
+      <div className="space-y-4">
+        {filteredComics.map((comic, index) => {
           const progress = getProgress(comic.id);
           const percentage = progress?.percentage ?? 0;
           const isCompleted = progress?.isCompleted ?? false;
-          const theme = COMIC_THEME[comic.id] ?? DEFAULT_THEME;
+          const unlockStatus = unlockStatuses.get(comic.id) ?? 'UNLOCKED';
+          const isLocked = unlockStatus === 'LOCKED';
+          const completedCount = progress?.completedCount ?? 0;
+          const totalStages = 8;
+          const sequenceNumber = index + 1;
+          const difficulty = COMIC_DIFFICULTY[comic.id] ?? 'Menengah';
 
           return (
             <ComicCard
               key={comic.id}
+              sequenceNumber={sequenceNumber}
               comic={comic}
               percentage={percentage}
               isCompleted={isCompleted}
-              theme={theme}
+              isLocked={isLocked}
+              completedCount={completedCount}
+              totalStages={totalStages}
+              difficulty={difficulty}
               onRequestReset={handleRequestReset}
               isResetting={isResetting && pendingResetComicId === comic.id}
-              canReset={percentage > 0 || isCompleted}
             />
           );
         })}
       </div>
 
-      {pendingResetComicId !== null && pendingComic && (
-        <div className="border-t border-neutral-100 bg-neutral-50/70 px-5 py-4">
-          <div className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-sm">
-            <h3 className="text-base font-black text-neutral-900">Ulangi Petualangan? 🔄</h3>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-              Kamu akan mengulang petualangan dari awal. Semua tahap akan kembali ke awal, tetapi kamu bisa belajar lagi kapan saja.
+      {/* Reset confirmation modal */}
+      {pendingResetComicId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl">
+            <h3 className="text-lg font-bold text-[#1E293B]">Ulangi Komik? 🔄</h3>
+            <p className="mt-2 text-sm text-[#64748B]">
+              Semua progres tahap pada komik ini akan diulang dari awal.
             </p>
-            {isResetting && (
-              <div className="mt-3 flex items-center gap-2 rounded-2xl bg-primary-50 px-3 py-2.5">
-                <div className="h-4 w-4 rounded-full border-2 border-primary-200 border-t-primary-600 animate-spin flex-shrink-0" />
-                <span className="text-sm font-semibold text-primary-700">Mengatur ulang petualangan...</span>
-              </div>
-            )}
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 type="button"
                 disabled={isResetting}
                 onClick={() => setPendingResetComicId(null)}
-                className="inline-flex h-11 items-center justify-center rounded-[14px] border border-neutral-200 bg-white px-5 text-sm font-black text-neutral-700 transition hover:bg-neutral-50 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="rounded-xl border border-[#E2E8F0] px-4 py-2 text-sm font-semibold text-[#475569] hover:bg-slate-50"
               >
                 Batal
               </button>
@@ -107,19 +221,19 @@ export default function LearningJourney() {
                 type="button"
                 disabled={isResetting}
                 onClick={async () => {
-                  if (pendingResetComicId === null || isResetting) return;
+                  if (pendingResetComicId === null) return;
                   setIsResetting(true);
                   try {
                     await resetProgressForComic(pendingResetComicId);
-                    showSnackbar('Petualangan berhasil diulang. Selamat belajar kembali! 🎉', 'success');
+                    showSnackbar('Progres berhasil diulang!', 'success');
                     setPendingResetComicId(null);
                   } catch {
-                    showSnackbar('Tidak dapat mengatur ulang progres. Silakan coba lagi.', 'error');
+                    showSnackbar('Gagal mengulang progres.', 'error');
                   } finally {
                     setIsResetting(false);
                   }
                 }}
-                className="inline-flex h-11 items-center justify-center rounded-[14px] bg-primary-600 px-5 text-sm font-black text-white shadow-md transition hover:bg-primary-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="rounded-xl bg-[#0DBF7E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0AA86E]"
               >
                 {isResetting ? 'Mengulang...' : 'Ya, Ulangi'}
               </button>
@@ -131,174 +245,187 @@ export default function LearningJourney() {
   );
 }
 
-// ─── Comic Card ───────────────────────────────────────────────────────────────
+// ─── Comic Card Component ───────────────────────────────────────────────────
 
 interface ComicCardProps {
+  sequenceNumber: number;
   comic: Comic;
   percentage: number;
   isCompleted: boolean;
-  theme: typeof DEFAULT_THEME;
+  isLocked: boolean;
+  completedCount: number;
+  totalStages: number;
+  difficulty: string;
   onRequestReset: (id: number) => void;
   isResetting: boolean;
-  canReset: boolean;
 }
+
 const ComicCard = React.memo(function ComicCard({
+  sequenceNumber,
   comic,
   percentage,
   isCompleted,
-  theme,
-  onRequestReset,
-  isResetting,
-  canReset,
+  isLocked,
+  completedCount,
+  totalStages,
+  difficulty,
 }: ComicCardProps) {
-  const router = useRouter();
+  // Card click target
   const cardHref = `/comic/${comic.id}/learn`;
-  const handleCardClick = useCallback(() => router.push(cardHref), [cardHref, router]);
 
-  // New card structure strictly following blueprint visual hierarchy.
+  // Status Badge Logic matching blueprint status rules:
+  // Berlangsung (blue), Belum Mulai (grey), Terkunci (purple lock), Selesai (green)
+  let statusBadge = (
+    <span className="rounded-full bg-[#E0F2FE] px-3 py-1 text-[12px] font-bold text-[#1D93FF]">
+      Berlangsung
+    </span>
+  );
+
+  if (isLocked) {
+    statusBadge = (
+      <span className="flex items-center gap-1 rounded-full bg-[#F3E8FF] px-3 py-1 text-[12px] font-bold text-[#9333EA]">
+        <span>Terkunci</span>
+        <svg viewBox="0 0 24 24" className="h-[12px] w-[12px]" fill="currentColor">
+          <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+        </svg>
+      </span>
+    );
+  } else if (isCompleted) {
+    statusBadge = (
+      <span className="rounded-full bg-[#DCFCE7] px-3 py-1 text-[12px] font-bold text-[#16A34A]">
+        Selesai
+      </span>
+    );
+  } else if (percentage === 0) {
+    statusBadge = (
+      <span className="rounded-full bg-[#F1F5F9] px-3 py-1 text-[12px] font-bold text-[#64748B]">
+        Belum Mulai
+      </span>
+    );
+  }
+
   return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={handleCardClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(cardHref); }}
-      className="group w-full max-w-full overflow-hidden rounded-[20px] border border-neutral-100 bg-white p-4 shadow-[0_12px_36px_rgba(15,23,42,0.08)] transition-colors hover:shadow-[0_18px_48px_rgba(15,23,42,0.10)] sm:p-5"
-    >
-      <div className="flex items-start gap-4">
-        {/* Cover area: fixed square left */}
-        <div className="relative flex-shrink-0 rounded-[12px] overflow-hidden bg-slate-100 shadow-sm" style={{ width: 104, height: 136 }}>
-          <Image src={comic.cover} alt={comic.title} fill sizes="104px" className="object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+    <article className="relative overflow-hidden rounded-3xl bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] border border-slate-100 transition-all hover:shadow-[0_14px_36px_rgba(15,23,42,0.09)]">
+      <div className="flex flex-col sm:flex-row items-start gap-4">
+        {/* Cover Thumbnail with Sequence Badge */}
+        <div className="relative shrink-0">
+          <div className="absolute -left-2 -top-2 z-10 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#1D93FF] text-[13px] font-bold text-white shadow-md">
+            {sequenceNumber}
+          </div>
+          <div className="h-[110px] w-[100px] overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
+            <Image
+              src={comic.cover}
+              alt={comic.title}
+              width={100}
+              height={110}
+              className={`h-full w-full object-cover ${isLocked ? 'grayscale opacity-75' : ''}`}
+            />
+          </div>
         </div>
 
-        {/* Main content column */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start">
-            <h3 className="min-w-0 mr-3 text-[20px] font-black leading-[24px] text-neutral-900 line-clamp-2">
+        {/* Content Section */}
+        <div className="min-w-0 flex-1 w-full">
+          {/* Title and Status Badge Row */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[17px] font-bold leading-snug text-[#1E293B] line-clamp-2">
               {comic.title}
             </h3>
-
-            {/* Badge positioned to top-right visually */}
-            <div className="ml-auto flex-shrink-0">
-              <StatusBadge isCompleted={isCompleted} percentage={percentage} />
-            </div>
+            <div className="shrink-0">{statusBadge}</div>
           </div>
 
-          {/* metadata row: Kelas | Difficulty | Duration */}
-          <div className="mt-3 flex items-center gap-3 text-[13px]">
-            <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-neutral-500">Kelas {comic.kelas}</span>
-            <span className={`rounded-full px-3 py-1 font-semibold uppercase tracking-[0.14em] ${theme.difficultyColor}`}>{theme.difficulty}</span>
-            <span className="rounded-full bg-neutral-100 px-3 py-1 font-semibold uppercase tracking-[0.14em] text-neutral-500">{comic.estimatedMinutes} mnt</span>
+          {/* Metadata Badges: Kelas | Difficulty | Duration */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[12px] font-medium">
+            <span className="rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[#475569]">
+              Kelas {comic.kelas}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 font-semibold ${
+                difficulty === 'Mudah'
+                  ? 'bg-[#DCFCE7] text-[#15803D]'
+                  : 'bg-[#FEF3C7] text-[#D97706]'
+              }`}
+            >
+              {difficulty}
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[#64748B]">
+              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>{comic.estimatedMinutes} menit</span>
+            </span>
           </div>
 
-          {/* progress row */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-semibold tracking-[0.14em] text-neutral-500">Progress</span>
-              <span className={`inline-flex items-center justify-center min-w-[56px] rounded-full px-3 py-1 text-[13px] font-black ${isCompleted ? 'bg-accent-100 text-accent-700' : 'bg-primary-100 text-primary-700'}`}>{percentage}%</span>
-            </div>
-
-            <div className="mt-2 w-full">
-              <div className="h-3 rounded-full bg-neutral-100 overflow-hidden">
-                <div className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-gradient-to-r from-accent-400 to-accent-500' : 'bg-gradient-to-r from-primary-500 to-primary-700'}`} style={{ width: `${percentage}%` }} />
+          {/* Progress Section */}
+          {!isLocked && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="font-medium text-[#64748B]">Progress</span>
+                <span className="font-bold text-[#0DBF7E]">{percentage}%</span>
+              </div>
+              <div className="mt-1.5 h-[8px] w-full overflow-hidden rounded-full bg-[#EEF4FB]">
+                <div
+                  className="h-full rounded-full bg-[#0DBF7E] transition-all duration-500"
+                  style={{ width: `${percentage}%` }}
+                />
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Actions column */}
-        <div className="ml-4 flex flex-col items-end gap-3">
-          <div className="w-[132px]">
-            <CtaButton comicId={comic.id} isCompleted={isCompleted} percentage={percentage} accentClass={theme.accent} />
-          </div>
-          {canReset && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onRequestReset(comic.id); }} disabled={isResetting} className="inline-flex h-10 items-center justify-center rounded-[12px] border border-neutral-200 bg-white px-3 text-sm font-black text-neutral-700 shadow-sm transition hover:border-primary-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
-              Ulangi
-            </button>
           )}
+
+          {/* Bottom Action Row */}
+          <div className="mt-3 flex items-center justify-between gap-2 pt-1">
+            <div className="text-[12px] font-medium text-[#64748B]">
+              {isLocked ? (
+                <span className="flex items-center gap-1 text-[#9333EA]">
+                  <span>🔒 Selesaikan komik sebelumnya untuk membuka.</span>
+                </span>
+              ) : (
+                <span>{completedCount} dari {totalStages} tahap selesai</span>
+              )}
+            </div>
+
+            {/* Action Button */}
+            {!isLocked && (
+              <div>
+                {percentage > 0 ? (
+                  <Link
+                    href={cardHref}
+                    className="inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-5 py-1.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-[#0AA86E] active:scale-95"
+                  >
+                    Lanjutkan
+                  </Link>
+                ) : (
+                  <Link
+                    href={cardHref}
+                    className="inline-flex items-center justify-center rounded-full border-2 border-[#0DBF7E] bg-white px-5 py-1.5 text-[14px] font-bold text-[#0DBF7E] transition hover:bg-[#F0FDF4] active:scale-95"
+                  >
+                    Mulai
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </article>
   );
 });
 
-// ─── CTA Button ───────────────────────────────────────────────────────────────
-
-const CtaButton = React.memo(function CtaButton({
-  comicId, isCompleted, percentage, accentClass,
-}: {
-  comicId: number;
-  isCompleted: boolean;
-  percentage: number;
-  accentClass: string;
-}) {
-  // Semua komik (belum mulai maupun sedang berlangsung) masuk ke /learn.
-  // LearningEngine membaca stage dari Firestore dan menampilkan stage yang tepat.
-  const continueHref = `/comic/${comicId}/learn`;
-
-  if (isCompleted) {
-    return (
-      <Link
-        href={`/comic/${comicId}/learn`}
-        className="inline-flex h-11 w-full max-w-full items-center justify-center gap-2 rounded-[14px] bg-accent-500 px-5 text-sm font-black text-white shadow-md transition-all hover:brightness-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-200"
-      >
-        ✅ Lihat Hasil
-      </Link>
-    );
-  }
-  if (percentage > 0) {
-    return (
-      <Link
-        href={continueHref}
-        className={`inline-flex h-11 w-full max-w-full items-center justify-center gap-2 rounded-[14px] ${accentClass} px-5 text-sm font-black text-white shadow-md transition-all hover:brightness-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-200`}
-      >
-        ▶ Lanjutkan
-      </Link>
-    );
-  }
-  return (
-    <Link
-      href={`/comic/${comicId}/learn`}
-      className={`inline-flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-[14px] ${accentClass} px-5 text-sm font-black text-white shadow-md hover:brightness-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-200 transition-all`}
-    >
-      🚀 Mulai Petualangan
-    </Link>
-  );
-});
-
-// ─── Status Badge ─────────────────────────────────────────────────────────────
-
-const StatusBadge = React.memo(function StatusBadge({
-  isCompleted, percentage,
-}: {
-  isCompleted: boolean; percentage: number;
-}) {
-  if (isCompleted)   return <span className="flex-shrink-0 rounded-full bg-accent-100 px-2 py-0.5 text-[10px] font-black text-accent-700">Selesai ✓</span>;
-  if (percentage > 0) return <span className="flex-shrink-0 rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-black text-primary-700">Berlangsung</span>;
-  return               <span className="flex-shrink-0 rounded-full bg-secondary-100 px-2 py-0.5 text-[10px] font-black text-secondary-700">Baru</span>;
-});
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── Skeleton ───────────────────────────────────────────────────────────────
 
 function JourneySkeleton() {
   return (
-    <div className="rounded-3xl bg-white shadow-md overflow-hidden">
-      <div className="px-5 pt-5 pb-4 border-b border-neutral-100">
-        <div className="h-3 w-28 rounded-full bg-neutral-200 animate-pulse" />
-        <div className="mt-2 h-5 w-36 rounded-full bg-neutral-200 animate-pulse" />
-      </div>
-      <div className="divide-y divide-neutral-100">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="p-4 flex gap-3">
-            <div className="h-24 w-20 rounded-2xl bg-neutral-200 animate-pulse flex-shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-3/4 rounded-full bg-neutral-200 animate-pulse" />
-              <div className="h-3 w-1/2 rounded-full bg-neutral-200 animate-pulse" />
-              <div className="h-2 w-full rounded-full bg-neutral-100 animate-pulse" />
-              <div className="h-8 w-28 rounded-xl bg-neutral-200 animate-pulse" />
-            </div>
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-3xl bg-white p-4 shadow-sm border border-slate-100 flex gap-4 animate-pulse">
+          <div className="h-[110px] w-[100px] rounded-2xl bg-slate-200 shrink-0" />
+          <div className="flex-1 space-y-2 py-1">
+            <div className="h-5 w-3/4 rounded-full bg-slate-200" />
+            <div className="h-4 w-1/2 rounded-full bg-slate-200" />
+            <div className="h-2.5 w-full rounded-full bg-slate-100" />
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
