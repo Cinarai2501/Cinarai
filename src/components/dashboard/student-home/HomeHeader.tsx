@@ -9,15 +9,24 @@ type HomeHeaderProps = {
 
 export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) {
   return (
-    <section className="relative h-[130px] max-h-[130px] w-full overflow-hidden rounded-b-[24px] px-[clamp(16px,4vw,20px)] pt-[16px] pb-[10px] text-white shadow-[0_10px_20px_rgba(15,23,42,0.12)]" style={{ background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)' }}>
-      <div className="flex h-full items-start justify-between gap-[12px]">
-        <div className="min-w-0">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.20em] text-white/85">Selamat Datang</p>
-          <h1 className="mt-[4px] text-[clamp(20px,5vw,26px)] font-extrabold leading-[1.05] text-white">Halo, {firstName}!</h1>
-          <p className="mt-[4px] text-[clamp(10px,2.5vw,12px)] font-medium text-white/90">Semangat belajar hari ini!</p>
+    <section className="relative w-full rounded-b-[32px] bg-gradient-to-b from-[#0077FF] to-[#0066FF] px-5 pt-[max(20px,env(safe-area-inset-top))] pb-14 text-white">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[24px] font-extrabold leading-tight tracking-tight text-white flex items-center gap-1.5">
+            Halo, {firstName}! 👋
+          </h1>
+          <p className="mt-1 text-[13px] font-medium text-white/90">
+            Semangat belajar hari ini!
+          </p>
         </div>
-        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 ring-[3px] ring-white/75">
-          <Image src={avatarAsset} alt={`${firstName} avatar`} width={64} height={64} className="h-full w-full rounded-full object-cover" />
+        <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 backdrop-blur-sm shadow-md">
+          <Image
+            src={avatarAsset}
+            alt={`${firstName} avatar`}
+            width={56}
+            height={56}
+            className="h-full w-full rounded-full object-cover"
+          />
         </div>
       </div>
     </section>

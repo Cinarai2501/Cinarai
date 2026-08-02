@@ -11,31 +11,56 @@ type ContinueLearningCardProps = {
 
 export default function ContinueLearningCard({ coverAsset, title, progressPct }: ContinueLearningCardProps) {
   return (
-    <section className="relative overflow-hidden rounded-[26px] bg-white p-[14px] shadow-[0_12px_24px_rgba(15,23,42,0.10)]" style={{ maxHeight: 110, minHeight: 110 }}>
-      <div className="flex h-full items-center gap-[12px]">
-        <div className="h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[20px] bg-slate-100 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-          <Image src={coverAsset} alt={title} width={88} height={88} className="h-full w-full object-cover" />
+    <section className="relative rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100">
+      <div className="flex items-center gap-3.5">
+        <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-sm border border-slate-100">
+          <Image
+            src={coverAsset}
+            alt={title}
+            width={84}
+            height={84}
+            className="h-full w-full object-cover"
+          />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[#9CA3AF]">Continue Learning</p>
-          <h2 className="mt-[4px] text-[15px] font-black leading-[1.12] text-[#111827] line-clamp-2">{title}</h2>
-          <div className="mt-[7px] flex flex-wrap items-center gap-[6px]">
-            <span className="rounded-full bg-[#EAF4FF] px-2 py-[4px] text-[10px] font-semibold text-[#1D4ED8]">{progressPct}% selesai</span>
-            <span className="text-[9px] font-medium text-[#6B7280]">4 dari 8 tahap selesai</span>
+        <div className="flex-1 min-w-0 pr-10">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#0066FF] tracking-wide uppercase">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5v-13z" />
+            </svg>
+            <span>Lanjutkan Belajar</span>
           </div>
-          <div className="mt-[8px] h-[7px] w-full overflow-hidden rounded-full bg-[#EEF4FB]">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#1D93FF] to-[#0F5FB5]" style={{ width: `${progressPct}%` }} />
-          </div>
-          <p className="mt-[8px] text-[12px] font-medium text-[#6B7280]">Lanjutkan tahap berikutnya dan capai targetmu</p>
-        </div>
-      </div>
 
-      <Link href="/dashboard/siswa/komik" className="absolute right-[12px] bottom-[12px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#1D93FF] shadow-[0_12px_22px_rgba(29,147,255,0.22)]" aria-label="Lanjutkan belajar">
-        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14" />
-          <path d="M13 6l6 6-6 6" />
-        </svg>
-      </Link>
+          <h2 className="mt-1 text-[15px] font-bold leading-snug text-slate-900 line-clamp-1">
+            {title}
+          </h2>
+
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span className="text-[13px] font-bold text-[#0066FF]">{progressPct}%</span>
+          </div>
+
+          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#0077FF] to-[#0055FF]"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+
+          <p className="mt-1.5 text-[11px] font-medium text-slate-500">
+            4 dari 8 tahap selesai
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard/siswa/komik"
+          className="absolute right-4 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-[#0066FF] text-white shadow-md transition-transform hover:scale-105 active:scale-95"
+          aria-label="Lanjutkan belajar"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Link>
+      </div>
     </section>
   );
 }

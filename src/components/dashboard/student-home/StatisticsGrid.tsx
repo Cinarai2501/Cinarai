@@ -8,6 +8,7 @@ type StatCard = {
   iconAsset: string;
   bg: string;
   valueColor: string;
+  sublabel?: string;
 };
 
 type StatisticsGridProps = {
@@ -16,20 +17,34 @@ type StatisticsGridProps = {
 
 export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
   return (
-    <section className="h-[130px] rounded-[24px] bg-[#F8FAFF] p-[12px] shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
-      <div className="grid h-full grid-cols-2 gap-[8px]">
-        {statCards.map((stat) => (
-          <div key={stat.label} className="flex h-full items-center gap-[10px] rounded-[20px] bg-white px-[10px] py-[10px] shadow-sm">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_6px_16px_rgba(15,23,42,0.08)]" style={{ background: stat.bg }}>
-              <Image src={stat.iconAsset} alt={stat.label} width={36} height={36} className="h-[32px] w-[32px] object-contain" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[18px] font-black leading-none" style={{ color: stat.valueColor }}>{stat.value}</p>
-              <p className="mt-[2px] text-[9px] font-semibold uppercase tracking-[0.18em] text-[#6B7280]">{stat.label}</p>
-            </div>
+    <section className="grid grid-cols-2 gap-3">
+      {statCards.map((stat) => (
+        <div
+          key={stat.label}
+          className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100"
+        >
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl p-2"
+            style={{ background: stat.bg }}
+          >
+            <Image
+              src={stat.iconAsset}
+              alt={stat.label}
+              width={32}
+              height={32}
+              className="h-full w-full object-contain"
+            />
           </div>
-        ))}
-      </div>
+          <div className="min-w-0">
+            <p className="text-[18px] font-extrabold leading-tight text-slate-900">
+              {stat.value}
+            </p>
+            <p className="text-[12px] font-medium text-slate-500 truncate">
+              {stat.sublabel ?? stat.label}
+            </p>
+          </div>
+        </div>
+      ))}
     </section>
   );
 }

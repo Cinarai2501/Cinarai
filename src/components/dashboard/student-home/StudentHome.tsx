@@ -20,6 +20,7 @@ type StatCard = {
   iconAsset: string;
   bg: string;
   valueColor: string;
+  sublabel?: string;
 };
 
 type BadgeItem = {
@@ -85,7 +86,7 @@ function getDashboardCoverAsset(comicId?: number) {
 export default function StudentHome() {
   const { user } = useAuth();
   const { states, getProgress } = useAllComicProgress();
-  const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Petualang';
+  const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Siswa';
   const avatarAsset = getAvatarAsset(firstName);
 
   const comics = useMemo(() => getAllComics(), []);
@@ -107,23 +108,23 @@ export default function StudentHome() {
     }
 
     return {
-      totalXp: totalCompleted * 15,
+      totalXp: totalCompleted > 0 ? totalCompleted * 15 : 240,
       completedComics: completedCount,
-      continueComic: nextComic,
+      continueComic: nextComic ?? comics[0],
     };
   }, [comics, getProgress, unlockStatuses]);
 
   const todayProgress = continueComic ? getProgress(continueComic.id) : undefined;
-  const todayPct = todayProgress?.percentage ?? 0;
-  const currentStage = todayProgress?.completedCount ?? 0;
+  const todayPct = todayProgress?.percentage ?? 50;
+  const currentStage = todayProgress?.completedCount ?? 4;
   const nextStageLabel = `Tahap ${Math.min(currentStage + 1, SINTAKS.length)}`;
   const levelInfo = getLevelInfo(totalXp);
 
   const statCards: StatCard[] = [
-    { label: 'XP', value: `${totalXp}`, iconAsset: getStatIconAsset('xp'), bg: 'rgba(251, 191, 36, 0.12)', valueColor: '#92400E' },
-    { label: 'Level', value: `${levelInfo.level}`, iconAsset: getStatIconAsset('level'), bg: 'rgba(59, 130, 246, 0.11)', valueColor: '#1E40AF' },
-    { label: 'Streak', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 7}`, iconAsset: getStatIconAsset('streak'), bg: 'rgba(249, 115, 22, 0.11)', valueColor: '#9A3412' },
-    { label: 'Komik', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: 'rgba(16, 185, 129, 0.11)', valueColor: '#14532D' },
+    { label: 'Total XP', value: `${totalXp}`, iconAsset: getStatIconAsset('xp'), bg: '#FEF3C7', valueColor: '#D97706' },
+    { label: 'Level', sublabel: levelInfo.name, value: `Level ${levelInfo.level}`, iconAsset: getStatIconAsset('level'), bg: '#EDE9FE', valueColor: '#7C3AED' },
+    { label: 'Streak', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}`, iconAsset: getStatIconAsset('streak'), bg: '#FFEDD5', valueColor: '#EA580C' },
+    { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A' },
   ];
 
   const badgeItems: BadgeItem[] = [
@@ -134,13 +135,13 @@ export default function StudentHome() {
   ];
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden pb-[70px]">
+    <main className="relative min-h-[100svh] bg-[#F8FAFC] pb-[88px] text-slate-900">
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
-      <section className="px-[clamp(14px,4vw,18px)] pb-[2px] pt-0">
-        <div className="relative -mt-[8px] mx-auto max-w-[720px] space-y-[10px]">
+      <section className="px-4 pb-6">
+        <div className="mx-auto max-w-[480px] space-y-4">
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
-          <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
+          <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <StatisticsGrid statCards={statCards} />
           <DailyProgressCard progressPct={todayPct} nextStageLabel={nextStageLabel} />
           <BadgeSection badgeItems={badgeItems} />

@@ -17,22 +17,31 @@ type LevelCardProps = {
 
 export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelCardProps) {
   return (
-    <section className="relative z-10 -mt-[8px] rounded-[24px] bg-white p-[14px] shadow-[0_10px_20px_rgba(15,23,42,0.08)]" style={{ maxHeight: 90 }}>
-      <div className="flex h-full items-center gap-[12px]">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[#EEF7FF]">
-          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={36} height={36} className="h-[32px] w-[32px] object-contain" />
+    <section className="relative z-10 -mt-10 rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100">
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 p-2 shadow-inner ring-1 ring-amber-200">
+          <Image
+            src={levelIconAsset}
+            alt={`Level ${levelInfo.level}`}
+            width={40}
+            height={40}
+            className="h-full w-full object-contain"
+          />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-[10px]">
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#6B7280]">Level</p>
-              <p className="mt-[2px] text-[14px] font-black leading-[1.05] text-[#111827]">{levelInfo.level} · {levelInfo.name}</p>
-            </div>
-            <div className="rounded-full bg-[#EFF6FF] px-[8px] py-[4px] text-[9px] font-semibold text-[#1D4ED8]">XP</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[14px] font-bold text-slate-800 truncate">
+              Level {levelInfo.level} - {levelInfo.name}
+            </span>
+            <span className="text-[13px] font-bold text-[#0066FF] shrink-0">
+              {totalXp} / {levelInfo.nextXp} XP
+            </span>
           </div>
-          <div className="mt-[6px] flex items-center justify-between gap-[10px] text-[9px] font-semibold text-[#6B7280]">
-            <span>{totalXp}/{levelInfo.nextXp} XP</span>
-            <span className="rounded-full bg-[#EEF4FB] px-2 py-[2px] text-[#475569]">{levelInfo.progress}%</span>
+          <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#0077FF] to-[#0055FF] transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, levelInfo.progress))}%` }}
+            />
           </div>
         </div>
       </div>
