@@ -58,6 +58,7 @@ export async function signUpUser(
     uid: firebaseUser.uid,
     email: normalizedEmail,
     displayName: firebaseUser.displayName ?? displayName,
+    username: normalizedEmail.split('@')[0],
     photoURL: firebaseUser.photoURL ?? undefined,
     role,
     isActive: true,

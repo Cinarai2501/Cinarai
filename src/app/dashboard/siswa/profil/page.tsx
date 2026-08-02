@@ -2,10 +2,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
+import type { UserDocument } from '@/types/firestore';
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
 const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
@@ -54,6 +55,11 @@ export default function DashboardSiswaProfilPage() {
   const { getProgress } = useAllComicProgress();
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+  const [nickname, setNickname] = useState(user?.nickname ?? '');
+  const [gender, setGender] = useState<UserDocument['gender'] | ''>(user?.gender ?? '');
+  const [classLevel, setClassLevel] = useState<UserDocument['classLevel'] | ''>(user?.classLevel ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
+  const [avatar, setAvatar] = useState(user?.avatar ?? '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL ?? '');
   const [status, setStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -62,10 +68,30 @@ export default function DashboardSiswaProfilPage() {
 
   const firstName = user?.displayName?.split(' ')[0] ?? 'Siswa';
   const email = user?.email ?? 'siswa@email.com';
-  const avatarAsset = user?.photoURL?.trim() ? user.photoURL : getAvatarAsset(firstName);
+  const username = user?.username ?? email.split('@')[0];
+  const avatarAsset = user?.photoURL?.trim()
+    ? user.photoURL
+    : user?.avatar?.trim()
+      ? user.avatar
+      : getAvatarAsset(firstName);
+  const modalAvatarPreview = photoURL?.trim()
+    ? photoURL
+    : avatar?.trim()
+      ? avatar
+      : getAvatarAsset(firstName);
 
   // Compute stats
   const comics = useMemo(() => getAllComics(), []);
+  useEffect(() => {
+    setDisplayName(user?.displayName ?? '');
+    setNickname(user?.nickname ?? '');
+    setGender(user?.gender ?? '');
+    setClassLevel(user?.classLevel ?? '');
+    setBio(user?.bio ?? '');
+    setAvatar(user?.avatar ?? '');
+    setPhotoURL(user?.photoURL ?? '');
+  }, [user]);
+
   const { totalXp, completedComics } = useMemo(() => {
     let completedXP = 0;
     let completedCount = 0;
@@ -91,7 +117,15 @@ export default function DashboardSiswaProfilPage() {
     setStatus(null);
 
     try {
-      await updateUserProfile(displayName.trim(), photoURL.trim() || undefined);
+      await updateUserProfile({
+        displayName: displayName.trim(),
+        photoURL: photoURL.trim() || undefined,
+        nickname: nickname.trim() || undefined,
+        gender: gender || undefined,
+        classLevel: classLevel || undefined,
+        bio: bio.trim() || undefined,
+        avatar: avatar.trim() || undefined,
+      });
       setStatus('Profil berhasil diperbarui!');
       setTimeout(() => {
         setShowEditModal(false);
@@ -169,13 +203,85 @@ export default function DashboardSiswaProfilPage() {
 
       {/* USER INFO FLOATING CARD */}
       <div className="relative z-20 -mt-10 px-5">
-        <div className="flex flex-col items-center justify-center rounded-[28px] bg-white px-5 py-6 text-center shadow-[0_8px_30px_rgba(15,23,42,0.06)] border border-slate-100">
-          <h2 className="text-[22px] font-extrabold text-[#1E293B]">
-            {user?.displayName ?? 'Siswa CINARAI'}
-          </h2>
-          <p className="mt-0.5 text-[14px] font-medium text-[#64748B]">{email}</p>
-          <div className="mt-3 flex items-center gap-1.5 rounded-full bg-[#ECFDF5] px-4 py-1.5 text-[13px] font-bold text-[#10B981]">
-            <span>⭐ Level {levelInfo.level} - {levelInfo.name}</span>
+        <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+          <div className="rounded-[28px] bg-white px-5 py-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] border border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-[28px] bg-[#E0F2FE] border border-slate-200">
+                <Image
+                  src={avatarAsset}
+                  alt={`${displayName} avatar`}
+                  width={88}
+                  height={88}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-[22px] font-extrabold text-[#1E293B] truncate">
+                  {user?.displayName ?? 'Siswa CINARAI'}
+                </h2>
+                <p className="mt-1 text-[14px] font-medium text-[#64748B] truncate">{email}</p>
+                <p className="mt-2 text-[13px] text-[#475569]">Username: <span className="font-bold text-[#0F766E]">{username}</span></p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {user?.nickname ? (
+                <div className="rounded-[24px] bg-[#ECFDF5] px-4 py-3 text-[13px] font-semibold text-[#065F46]">
+                  Panggilan: {user.nickname}
+                </div>
+              ) : null}
+              {user?.gender ? (
+                <div className="rounded-[24px] bg-[#FCE7F3] px-4 py-3 text-[13px] font-semibold text-[#9D174D]">
+                  Jenis Kelamin: {user.gender}
+                </div>
+              ) : null}
+              {user?.classLevel ? (
+                <div className="rounded-[24px] bg-[#EFF6FF] px-4 py-3 text-[13px] font-semibold text-[#1D4ED8]">
+                  Kelas: {user.classLevel}
+                </div>
+              ) : null}
+              <div className="rounded-[24px] bg-[#FEF3C7] px-4 py-3 text-[13px] font-semibold text-[#92400E]">
+                {user?.role === 'teacher' ? 'Guru' : 'Siswa'} CINARAI
+              </div>
+            </div>
+
+            {user?.bio ? (
+              <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-4 text-[14px] leading-relaxed text-slate-700">
+                <p className="font-bold text-slate-900">Tentang Saya</p>
+                <p className="mt-2 whitespace-pre-line">{user.bio}</p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded-[28px] bg-white px-5 py-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] border border-slate-100">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-[#1E293B]">Detail Profil</h3>
+                <p className="mt-1 text-[13px] text-slate-500">Periksa dan perbarui data profil siswa.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(true)}
+                className="rounded-2xl bg-[#0D9488] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#0F766E]"
+              >
+                Edit Profil
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
+                <p className="text-slate-500">Nama Panggilan</p>
+                <p className="mt-1 font-semibold text-[#1E293B]">{user?.nickname ?? '-'}</p>
+              </div>
+              <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
+                <p className="text-slate-500">Jenis Kelamin</p>
+                <p className="mt-1 font-semibold text-[#1E293B]">{user?.gender ?? '-'}</p>
+              </div>
+              <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
+                <p className="text-slate-500">Kelas</p>
+                <p className="mt-1 font-semibold text-[#1E293B]">{user?.classLevel ?? '-'}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -396,9 +502,12 @@ export default function DashboardSiswaProfilPage() {
       {/* Edit Profil Modal */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-5 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[18px] font-extrabold text-[#1E293B]">Edit Profil</h3>
+          <div className="w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-[#1E293B]">Edit Profil</h3>
+                <p className="mt-1 text-[13px] text-slate-500">Perbarui data profil siswa dengan cepat.</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
@@ -412,40 +521,131 @@ export default function DashboardSiswaProfilPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                Nama Lengkap
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Masukkan nama lengkap"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                />
-              </label>
+            <div className="grid gap-4 rounded-[24px] border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[24px] bg-white shadow-sm border border-slate-200">
+                  <Image
+                    src={modalAvatarPreview}
+                    alt="Pratinjau avatar"
+                    width={72}
+                    height={72}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-bold text-[#1E293B]">Pratinjau Avatar</p>
+                  <p className="mt-1 text-[12px] text-slate-500">Gunakan foto profil atau avatar khusus.</p>
+                </div>
+              </div>
+            </div>
 
-              <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                URL Foto Profil (Opsional)
-                <input
-                  value={photoURL}
-                  onChange={(e) => setPhotoURL(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                />
-              </label>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4">
+                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                  Nama Lengkap
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Masukkan nama lengkap"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
+                  />
+                </label>
+
+                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                  Nama Panggilan
+                  <input
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="Contoh: Ara"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
+                  />
+                </label>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                    Username
+                    <input
+                      value={username}
+                      readOnly
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-[14px] font-semibold text-[#64748B] outline-none"
+                    />
+                  </label>
+                  <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                    Jenis Kelamin
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value as UserDocument['gender'] | '')}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
+                    >
+                      <option value="">Pilih jenis kelamin</option>
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                  Kelas
+                  <select
+                    value={classLevel}
+                    onChange={(e) => setClassLevel(e.target.value as UserDocument['classLevel'] | '')}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
+                  >
+                    <option value="">Pilih kelas</option>
+                    <option value="Kelas I">Kelas I</option>
+                    <option value="Kelas II">Kelas II</option>
+                    <option value="Kelas III">Kelas III</option>
+                    <option value="Kelas IV">Kelas IV</option>
+                    <option value="Kelas V">Kelas V</option>
+                    <option value="Kelas VI">Kelas VI</option>
+                  </select>
+                </label>
+
+                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                  Tentang Saya
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    rows={4}
+                    placeholder="Ceritakan sedikit tentang dirimu"
+                    className="min-h-[112px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10 resize-none"
+                  />
+                </label>
+
+                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                  URL Avatar (Opsional)
+                  <input
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
+                  />
+                </label>
+
+                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
+                  URL Foto Profil (Opsional)
+                  <input
+                    value={photoURL}
+                    onChange={(e) => setPhotoURL(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
+                  />
+                </label>
+              </div>
 
               {status && <p className="text-[13px] font-bold text-[#0D9488] animate-pulse">{status}</p>}
 
-              <div className="flex items-center justify-end gap-2.5 pt-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center pt-3">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="rounded-xl px-5 py-2.5 text-[14px] font-bold text-slate-500 hover:bg-slate-100 transition-colors"
+                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-[14px] font-bold text-slate-600 hover:bg-slate-100 transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || !displayName.trim()}
                   className="rounded-xl bg-[#0D9488] px-6 py-2.5 text-[14px] font-bold text-white shadow-md transition-all hover:bg-[#0F766E] hover:shadow-lg active:scale-95 disabled:opacity-60"
                 >
                   {isSaving ? 'Menyimpan...' : 'Simpan Profil'}

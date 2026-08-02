@@ -4,6 +4,12 @@ export interface User {
   uid: string;
   email: string | null;
   displayName: string | null;
+  username?: string;
+  nickname?: string;
+  gender?: 'Laki-laki' | 'Perempuan';
+  classLevel?: 'Kelas I' | 'Kelas II' | 'Kelas III' | 'Kelas IV' | 'Kelas V' | 'Kelas VI';
+  bio?: string;
+  avatar?: string;
   photoURL: string | null;
   emailVerified: boolean;
   createdAt: Date;
@@ -22,6 +28,14 @@ export interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+  updateUserProfile: (profile: {
+    displayName: string;
+    photoURL?: string;
+    nickname?: string;
+    gender?: 'Laki-laki' | 'Perempuan';
+    classLevel?: 'Kelas I' | 'Kelas II' | 'Kelas III' | 'Kelas IV' | 'Kelas V' | 'Kelas VI';
+    bio?: string;
+    avatar?: string;
+  }) => Promise<void>;
   clearError: () => void;
 }

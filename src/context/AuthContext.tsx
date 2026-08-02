@@ -25,7 +25,7 @@ import {
 } from '@/lib/auth/role';
 import { signUpUser, signInUser } from '@/lib/auth/authService';
 import type { User, AuthContextType, AuthState } from '@/types/auth';
-import type { UserRole } from '@/types/firestore';
+import type { UserDocument, UserRole } from '@/types/firestore';
 
 declare global {
   interface Window {
@@ -43,11 +43,21 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const mapFirebaseUserToUser = (firebaseUser: FirebaseUser, role: UserRole): User => ({
+const mapFirebaseUserToUser = (
+  firebaseUser: FirebaseUser,
+  role: UserRole,
+  userDocument?: UserDocument | null
+): User => ({
   uid: firebaseUser.uid,
-  email: firebaseUser.email,
-  displayName: firebaseUser.displayName,
-  photoURL: firebaseUser.photoURL,
+  email: firebaseUser.email ?? userDocument?.email ?? null,
+  displayName: firebaseUser.displayName ?? userDocument?.displayName ?? null,
+  username: userDocument?.username,
+  nickname: userDocument?.nickname,
+  gender: userDocument?.gender,
+  classLevel: userDocument?.classLevel,
+  bio: userDocument?.bio,
+  avatar: userDocument?.avatar,
+  photoURL: firebaseUser.photoURL ?? userDocument?.photoURL ?? null,
   emailVerified: firebaseUser.emailVerified,
   createdAt: firebaseUser.metadata.creationTime
     ? new Date(firebaseUser.metadata.creationTime)
@@ -79,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      const user = mapFirebaseUserToUser(firebaseUser, resolvedRole);
+      const user = mapFirebaseUserToUser(firebaseUser, resolvedRole, userDocument);
 
       if (typeof window !== 'undefined') {
         window.__cinaraiAuthDebug = {
@@ -203,7 +213,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [syncUserFromFirestore]);
 
-  const updateUserProfile = useCallback(async (displayName: string, photoURL?: string) => {
+  const updateUserProfile = useCallback(async (profile: {
+    displayName: string;
+    photoURL?: string;
+    nickname?: string;
+    gender?: UserDocument['gender'];
+    classLevel?: UserDocument['classLevel'];
+    bio?: string;
+    avatar?: string;
+  }) => {
     const currentUser = getCurrentUser();
     if (!currentUser) {
       throw new Error('unauthenticated');
@@ -211,12 +229,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      await firebaseUpdateUserProfile(currentUser, displayName, photoURL);
+      await firebaseUpdateUserProfile(currentUser, profile.displayName, profile.photoURL);
+
+      const role = state.user?.role ?? 'student';
+      const email = currentUser.email ?? state.user?.email ?? '';
+      const userPayload: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> = {
+        uid: currentUser.uid,
+        email,
+        displayName: profile.displayName,
+        role,
+        isActive: true,
+        duplicate: false,
+        ...(profile.photoURL !== undefined ? { photoURL: profile.photoURL } : {}),
+        ...(profile.nickname !== undefined ? { nickname: profile.nickname } : {}),
+        ...(profile.gender !== undefined ? { gender: profile.gender } : {}),
+        ...(profile.classLevel !== undefined ? { classLevel: profile.classLevel } : {}),
+        ...(profile.bio !== undefined ? { bio: profile.bio } : {}),
+        ...(profile.avatar !== undefined ? { avatar: profile.avatar } : {}),
+      };
+
+      await upsertUser(userPayload);
+
       const updatedUser: User = {
-        ...(state.user ?? {}),
-        displayName,
-        photoURL: photoURL ?? state.user?.photoURL,
+        ...(state.user ?? {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          emailVerified: currentUser.emailVerified,
+          createdAt: currentUser.metadata.creationTime
+            ? new Date(currentUser.metadata.creationTime)
+            : new Date(),
+          role,
+        }),
+        displayName: profile.displayName,
+        photoURL: profile.photoURL ?? state.user?.photoURL ?? currentUser.photoURL,
+        nickname: profile.nickname,
+        gender: profile.gender,
+        classLevel: profile.classLevel,
+        bio: profile.bio,
+        avatar: profile.avatar,
       } as User;
+
       setState({ user: updatedUser, loading: false, error: null });
     } catch (error) {
       const errorMessage =

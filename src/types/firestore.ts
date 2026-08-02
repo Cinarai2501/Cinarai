@@ -24,6 +24,12 @@ export interface UserDocument extends FirestoreBaseDocument {
   uid: string;
   email: string;
   displayName?: string;
+  username?: string;
+  nickname?: string;
+  gender?: 'Laki-laki' | 'Perempuan';
+  classLevel?: 'Kelas I' | 'Kelas II' | 'Kelas III' | 'Kelas IV' | 'Kelas V' | 'Kelas VI';
+  bio?: string;
+  avatar?: string;
   photoURL?: string;
   role: UserRole;
   schoolName?: string;

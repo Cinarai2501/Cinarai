@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
       uid,
       email,
       displayName,
+      username: email.split('@')[0],
       photoURL: undefined,
       role: userRole,
       isActive: true,
