@@ -79,7 +79,7 @@ export default function DashboardSiswaAiTutorPage() {
     setTimeout(() => {
       let botResponseText = 'Aku siap membantu! Mari kita bahas konsep geometris dan matematika dari materi komik CINARAI.';
       let items: string[] | undefined = undefined;
-      let followUp: string | undefined = undefined;
+      const followUp: string | undefined = undefined;
 
       const lower = text.toLowerCase();
       if (lower.includes('kubus')) {
@@ -314,7 +314,7 @@ export default function DashboardSiswaAiTutorPage() {
                 ))}
               </ul>
               <div className="mt-3 rounded-xl bg-rose-50 p-3 text-rose-700">
-                <p className="text-[13px] italic">"Jika bertanya di luar topik, AI akan menjawab: Maaf, AI Tutor CINARAI hanya membantu pembelajaran materi yang tersedia pada aplikasi."</p>
+                <p className="text-[13px] italic">&quot;Jika bertanya di luar topik, AI akan menjawab: Maaf, AI Tutor CINARAI hanya membantu pembelajaran materi yang tersedia pada aplikasi.&quot;</p>
               </div>
             </div>
             
