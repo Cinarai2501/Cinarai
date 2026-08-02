@@ -59,15 +59,15 @@ export default function StudentBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 px-[20px]"
+      className="fixed inset-x-0 bottom-0 z-50 px-[clamp(14px,4vw,20px)]"
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[64px] max-w-[440px] items-center justify-between rounded-[24px] border border-white/60 px-[12px] py-[6px]"
+        className="mx-auto flex h-[58px] max-w-[440px] items-center justify-between rounded-[22px] border border-white/60 px-[10px] py-[6px]"
         style={{
-          background: 'rgba(255,255,255,0.82)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
           boxShadow: '0 -8px 20px rgba(15,23,42,0.06)',
         }}
       >

@@ -116,7 +116,6 @@ export default function StudentHome() {
   const todayProgress = continueComic ? getProgress(continueComic.id) : undefined;
   const todayPct = todayProgress?.percentage ?? 0;
   const currentStage = todayProgress?.completedCount ?? 0;
-  const stageLabel = `${currentStage}/${SINTAKS.length} tahap`;
   const nextStageLabel = `Tahap ${Math.min(currentStage + 1, SINTAKS.length)}`;
   const levelInfo = getLevelInfo(totalXp);
 
@@ -135,15 +134,15 @@ export default function StudentHome() {
   ];
 
   return (
-    <main className="relative min-h-screen overflow-hidden pb-[70px]">
+    <main className="relative min-h-[100svh] overflow-hidden pb-[70px]">
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
-      <section className="px-4 pb-6 pt-0">
-        <div className="relative -mt-6 space-y-4">
+      <section className="px-[clamp(14px,4vw,18px)] pb-[2px] pt-0">
+        <div className="relative -mt-[8px] mx-auto max-w-[720px] space-y-[10px]">
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Belum ada komik aktif'} progressPct={todayPct} />
           <StatisticsGrid statCards={statCards} />
-          <DailyProgressCard progressPct={todayPct} stageLabel={stageLabel} nextStageLabel={nextStageLabel} />
+          <DailyProgressCard progressPct={todayPct} nextStageLabel={nextStageLabel} />
           <BadgeSection badgeItems={badgeItems} />
         </div>
       </section>

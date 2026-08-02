@@ -8,7 +8,7 @@ export default function DashboardSiswaLayout({ children }: { children: ReactNode
   return (
     <RoleProtectedRoute allowedRole="student">
       <div
-        className="relative min-h-screen overflow-hidden text-neutral-900"
+        className="relative min-h-[100dvh] overflow-hidden text-neutral-900"
         style={{
           background: '#F5F8FD',
           paddingTop: 'max(0px, env(safe-area-inset-top))',
@@ -105,7 +105,7 @@ export default function DashboardSiswaLayout({ children }: { children: ReactNode
         </div>
 
         {/* all page content above decorations */}
-        <main className="relative z-10 min-h-[calc(100dvh-112px)] w-full px-0 pb-[112px] pt-1">{children}</main>
+        <main className="relative z-10 min-h-[calc(100dvh-70px)] w-full px-0 pb-[calc(70px+env(safe-area-inset-bottom))] pt-1">{children}</main>
         <StudentBottomNav />
       </div>
     </RoleProtectedRoute>
