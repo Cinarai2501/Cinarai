@@ -121,10 +121,10 @@ export default function StudentHome() {
   const levelInfo = getLevelInfo(totalXp);
 
   const statCards: StatCard[] = [
-    { label: 'Total XP', value: `${totalXp}`, iconAsset: getStatIconAsset('xp'), bg: '#FEF3C7', valueColor: '#D97706' },
-    { label: 'Level', sublabel: levelInfo.name, value: `Level ${levelInfo.level}`, iconAsset: getStatIconAsset('level'), bg: '#EDE9FE', valueColor: '#7C3AED' },
-    { label: 'Streak', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}`, iconAsset: getStatIconAsset('streak'), bg: '#FFEDD5', valueColor: '#EA580C' },
-    { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A' },
+    { label: 'Total XP', value: `${totalXp}`, iconAsset: getStatIconAsset('xp'), bg: '#FEF3C7', valueColor: '#D97706', scale: 'scale-[1.8]' },
+    { label: 'Level', sublabel: levelInfo.name, value: `Level ${levelInfo.level}`, iconAsset: getStatIconAsset('level'), bg: '#EDE9FE', valueColor: '#7C3AED', scale: 'scale-[1.0]' },
+    { label: 'Streak', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}`, iconAsset: getStatIconAsset('streak'), bg: '#FFEDD5', valueColor: '#EA580C', scale: 'scale-[1.65]' },
+    { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A', scale: 'scale-[1.65]' },
   ];
 
   const badgeItems: BadgeItem[] = [
