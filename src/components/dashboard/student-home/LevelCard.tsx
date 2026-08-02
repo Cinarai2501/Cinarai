@@ -17,14 +17,14 @@ type LevelCardProps = {
 
 export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelCardProps) {
   return (
-    <section className="relative z-10 -mt-10 rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100">
+    <section className="relative z-10 -mt-6 rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 p-2 shadow-inner ring-1 ring-amber-200">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 p-0.5 shadow-inner ring-1 ring-amber-200 overflow-hidden">
           <Image
             src={levelIconAsset}
             alt={`Level ${levelInfo.level}`}
-            width={40}
-            height={40}
+            width={48}
+            height={48}
             className="h-full w-full object-contain"
           />
         </div>

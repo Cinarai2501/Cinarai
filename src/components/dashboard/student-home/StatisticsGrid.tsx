@@ -24,14 +24,14 @@ export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
           className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-slate-100"
         >
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl p-2"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl p-0.5 overflow-hidden shadow-sm"
             style={{ background: stat.bg }}
           >
             <Image
               src={stat.iconAsset}
               alt={stat.label}
-              width={32}
-              height={32}
+              width={48}
+              height={48}
               className="h-full w-full object-contain"
             />
           </div>

@@ -9,7 +9,7 @@ type HomeHeaderProps = {
 
 export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) {
   return (
-    <section className="relative w-full rounded-b-[32px] bg-gradient-to-b from-[#0077FF] to-[#0066FF] px-5 pt-[max(20px,env(safe-area-inset-top))] pb-14 text-white">
+    <section className="relative w-full rounded-b-[32px] bg-gradient-to-b from-[#0077FF] to-[#0066FF] px-5 pt-[max(20px,env(safe-area-inset-top))] pb-10 text-white">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-[24px] font-extrabold leading-tight tracking-tight text-white flex items-center gap-1.5">
