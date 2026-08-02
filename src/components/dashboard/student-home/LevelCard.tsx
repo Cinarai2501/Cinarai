@@ -19,8 +19,8 @@ export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelC
   return (
     <section className="relative z-10 -mt-[8px] rounded-[24px] bg-white p-[14px] shadow-[0_10px_20px_rgba(15,23,42,0.08)]" style={{ maxHeight: 90 }}>
       <div className="flex h-full items-center gap-[12px]">
-        <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[16px] bg-[#EEF7FF]">
-          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={40} height={40} className="h-[30px] w-[30px] object-contain" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[#EEF7FF]">
+          <Image src={levelIconAsset} alt={`Level ${levelInfo.level}`} width={36} height={36} className="h-[32px] w-[32px] object-contain" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-[10px]">

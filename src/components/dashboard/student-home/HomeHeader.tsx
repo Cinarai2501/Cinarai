@@ -16,8 +16,8 @@ export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) 
           <h1 className="mt-[4px] text-[clamp(20px,5vw,26px)] font-extrabold leading-[1.05] text-white">Halo, {firstName}!</h1>
           <p className="mt-[4px] text-[clamp(10px,2.5vw,12px)] font-medium text-white/90">Semangat belajar hari ini!</p>
         </div>
-        <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-white/20 ring-[2px] ring-white/75">
-          <Image src={avatarAsset} alt={`${firstName} avatar`} width={42} height={42} className="h-[38px] w-[38px] rounded-full object-cover" />
+        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 ring-[3px] ring-white/75">
+          <Image src={avatarAsset} alt={`${firstName} avatar`} width={64} height={64} className="h-full w-full rounded-full object-cover" />
         </div>
       </div>
     </section>

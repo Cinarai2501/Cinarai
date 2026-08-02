@@ -20,8 +20,8 @@ export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
       <div className="grid h-full grid-cols-2 gap-[8px]">
         {statCards.map((stat) => (
           <div key={stat.label} className="flex h-full items-center gap-[10px] rounded-[20px] bg-white px-[10px] py-[10px] shadow-sm">
-            <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_6px_16px_rgba(15,23,42,0.08)]" style={{ background: stat.bg }}>
-              <Image src={stat.iconAsset} alt={stat.label} width={24} height={24} className="h-[18px] w-[18px] object-contain" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_6px_16px_rgba(15,23,42,0.08)]" style={{ background: stat.bg }}>
+              <Image src={stat.iconAsset} alt={stat.label} width={36} height={36} className="h-[32px] w-[32px] object-contain" />
             </div>
             <div className="min-w-0">
               <p className="text-[18px] font-black leading-none" style={{ color: stat.valueColor }}>{stat.value}</p>

@@ -25,8 +25,8 @@ export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
       <div className="mt-[8px] grid h-[54px] grid-cols-2 gap-[8px]">
         {badgeItems.slice(0, 2).map((badge) => (
           <div key={badge.title} className="flex flex-col items-center justify-center rounded-[20px] border border-[#E5E7EB] bg-white p-[8px] shadow-sm">
-            <div className="flex h-[36px] w-[36px] items-center justify-center rounded-[14px] bg-[#EFF6FF] p-[3px]">
-              <Image src={badge.asset} alt={badge.title} width={36} height={36} className="h-[28px] w-[28px] object-contain" />
+            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-[16px] bg-[#EFF6FF] p-[4px]">
+              <Image src={badge.asset} alt={badge.title} width={40} height={40} className="h-[36px] w-[36px] object-contain" />
             </div>
             <p className="mt-[4px] text-center text-[10px] font-semibold leading-[12px] text-[#111827]">{badge.title}</p>
           </div>

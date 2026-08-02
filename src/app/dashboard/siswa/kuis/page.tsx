@@ -68,7 +68,7 @@ function QuizIcon({ type }: { type: QuizItem['iconType'] }) {
   switch (type) {
     case 'cube':
       return (
-        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px] text-[#2563EB]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[32px] w-[32px] text-[#2563EB]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
           <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
           <line x1="12" y1="22.08" x2="12" y2="12" />
@@ -76,21 +76,21 @@ function QuizIcon({ type }: { type: QuizItem['iconType'] }) {
       );
     case 'pyramid':
       return (
-        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px] text-[#E11D48]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[32px] w-[32px] text-[#E11D48]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2L2 19h20L12 2z" />
           <path d="M12 2v17" />
         </svg>
       );
     case 'cylinder':
       return (
-        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px] text-[#D97706]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[32px] w-[32px] text-[#D97706]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <ellipse cx="12" cy="5" rx="8" ry="3" />
           <path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
         </svg>
       );
     case 'cube-green':
       return (
-        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px] text-[#16A34A]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[32px] w-[32px] text-[#16A34A]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
           <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
           <line x1="12" y1="22.08" x2="12" y2="12" />
@@ -98,7 +98,7 @@ function QuizIcon({ type }: { type: QuizItem['iconType'] }) {
       );
     case 'search':
       return (
-        <svg viewBox="0 0 24 24" className="h-[28px] w-[28px] text-[#9333EA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className="h-[32px] w-[32px] text-[#9333EA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
@@ -335,8 +335,8 @@ export default function DashboardSiswaKuisPage() {
         <div className="grid grid-cols-4 gap-2 rounded-3xl bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] border border-slate-100">
           {/* Stat 1: Kuis Selesai */}
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#3B82F6] text-white shadow-sm">
-              <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-[50px] w-[50px] items-center justify-center rounded-full bg-[#3B82F6] text-white shadow-sm">
+              <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 11l3 3L22 4" />
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
               </svg>
@@ -347,8 +347,8 @@ export default function DashboardSiswaKuisPage() {
 
           {/* Stat 2: Rata-rata Nilai */}
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#22C55E] text-white shadow-sm">
-              <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-[50px] w-[50px] items-center justify-center rounded-full bg-[#22C55E] text-white shadow-sm">
+              <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
@@ -358,8 +358,8 @@ export default function DashboardSiswaKuisPage() {
 
           {/* Stat 3: Streak Kuis */}
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#F97316] text-white shadow-sm">
-              <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="currentColor">
+            <div className="flex h-[50px] w-[50px] items-center justify-center rounded-full bg-[#F97316] text-white shadow-sm">
+              <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="currentColor">
                 <path d="M12 23c-4.97 0-9-4.03-9-9 0-3.53 2.04-6.58 5-8.05.55-.28 1.23.03 1.35.63.18.91.56 1.76 1.1 2.5 1.05-2.07 2.87-3.66 5.08-4.39.6-.2 1.2.25 1.2.89 0 2.21 1.79 4 4 4 .55 0 1.07-.11 1.55-.31.59-.25 1.25.16 1.25.8 0 7.18-5.82 13-11.53 13z" />
               </svg>
             </div>
@@ -369,8 +369,8 @@ export default function DashboardSiswaKuisPage() {
 
           {/* Stat 4: Total Soal Dikerjakan */}
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-[#8B5CF6] text-white shadow-sm">
-              <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-[50px] w-[50px] items-center justify-center rounded-full bg-[#8B5CF6] text-white shadow-sm">
+              <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <circle cx="12" cy="12" r="6" />
                 <circle cx="12" cy="12" r="2" />

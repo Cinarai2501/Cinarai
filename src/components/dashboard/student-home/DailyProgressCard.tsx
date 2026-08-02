@@ -13,8 +13,8 @@ export default function DailyProgressCard({ progressPct, nextStageLabel }: Daily
       <div className="flex h-full flex-col justify-between gap-[10px]">
         <div className="flex items-center justify-between gap-[8px]">
           <div className="flex items-center gap-[10px]">
-            <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#E0F2FE] text-[#1D93FF]">
-              <svg viewBox="0 0 24 24" className="h-[12px] w-[12px]" fill="none" stroke="#1D93FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E0F2FE] text-[#1D93FF]">
+              <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="#1D93FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 12h16" />
                 <path d="M12 4v16" />
               </svg>
