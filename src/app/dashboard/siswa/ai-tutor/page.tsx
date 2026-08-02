@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 
 type Message = {
   id: string;
@@ -13,11 +14,9 @@ type Message = {
 
 const QUICK_QUESTIONS = [
   'Apa itu kubus?',
-  'Apa ciri prisma?',
-  'Apa itu limas?',
-  'Apa rumus balok?',
-  'Apa diagonal ruang?',
-  'Lainnya',
+  'Rumus balok?',
+  'Ciri prisma?',
+  'Diagonal ruang?',
 ];
 
 const INITIAL_MESSAGES: Message[] = [
@@ -109,35 +108,36 @@ export default function DashboardSiswaAiTutorPage() {
   return (
     <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] text-neutral-900">
       {/* 1. HEADER */}
-      <section className="sticky top-0 z-40 w-full overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#4F46E5] to-[#6D5DF6] px-5 pb-6 pt-[max(24px,env(safe-area-inset-top))] text-white shadow-md">
-        <div className="flex items-start gap-4">
-          <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl bg-white/20 p-2 shadow-inner ring-[2px] ring-white/50 backdrop-blur-sm">
-            <svg viewBox="0 0 24 24" className="h-full w-full text-white" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="10" rx="2" />
-              <circle cx="12" cy="5" r="2" />
-              <path d="M12 7v4" />
-              <line x1="8" y1="16" x2="8.01" y2="16" />
-              <line x1="16" y1="16" x2="16.01" y2="16" />
-            </svg>
-          </div>
-          <div className="flex-1 pt-1">
-            <h1 className="text-[20px] font-bold leading-tight">AI Tutor CINARAI</h1>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#22C55E]" />
-              <span className="text-[13px] font-medium">Online</span>
+      <section className="sticky top-0 z-40 w-full overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#623CEA] to-[#7550F1] px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] text-white shadow-md">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-4 flex-1">
+            <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center">
+              <Image
+                src="/assets/images/ai/RobotAI.png"
+                alt="Robot AI"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-            <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/90">
-              Siap membantumu belajar kapan saja!
-            </p>
+            <div className="flex-1 pb-1">
+              <h1 className="text-[20px] font-extrabold leading-tight text-white tracking-wide">AI Tutor CINARAI</h1>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#00FF00] shadow-[0_0_6px_#00FF00]" />
+                <span className="text-[13px] font-semibold text-white">Online</span>
+              </div>
+              <p className="mt-2 text-[12px] font-medium leading-tight text-white/95 max-w-[180px]">
+                Siap membantumu belajar kapan saja!
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={() => setShowInfoModal(true)}
-            className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+            className="mt-1 flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white hover:bg-white/10 active:bg-white/20 transition-colors"
             aria-label="Info Batasan AI"
           >
-            <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
+            <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
@@ -157,7 +157,7 @@ export default function DashboardSiswaAiTutorPage() {
           if (msg.sender === 'user') {
             return (
               <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="max-w-[75%] rounded-2xl rounded-br-md bg-gradient-to-r from-indigo-500 to-purple-500 p-3 text-white shadow-sm">
+                <div className="max-w-[75%] rounded-[20px] rounded-br-md bg-[#845EF7] p-3 text-white shadow-[0_4px_12px_rgba(132,94,247,0.25)]">
                   <p className="text-[15px] font-medium leading-relaxed">{msg.text}</p>
                   <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/80">
                     <span>{msg.time}</span>
@@ -172,23 +172,24 @@ export default function DashboardSiswaAiTutorPage() {
 
           return (
             <div key={msg.id} className="flex justify-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[#4F46E5] ring-2 ring-white">
-                <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="10" rx="2" />
-                  <circle cx="12" cy="5" r="2" />
-                  <path d="M12 7v4" />
-                </svg>
+              <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center overflow-hidden">
+                <Image
+                  src="/assets/images/ai/RobotAI.png"
+                  alt="Robot AI"
+                  fill
+                  className="object-contain"
+                />
               </div>
-              <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-[#F4F3FF] p-4 border border-[#E5E7EB] shadow-sm text-neutral-800">
+              <div className="max-w-[80%] rounded-[20px] rounded-tl-md bg-white p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-neutral-800">
                 <div className="text-[15px] font-medium leading-relaxed whitespace-pre-line text-neutral-800">
                   {msg.text}
                 </div>
                 
                 {msg.listItems && (
-                  <ul className="mt-2 space-y-1.5 pl-1.5 text-[14px] font-medium leading-relaxed text-neutral-700">
+                  <ul className="mt-3 space-y-2 pl-2 text-[14px] font-medium leading-relaxed text-neutral-700">
                     {msg.listItems.map((item) => (
-                      <li key={item} className="flex items-start gap-2">
-                        <span className="text-[#4F46E5] font-bold mt-0.5">•</span>
+                      <li key={item} className="flex items-start gap-2.5">
+                        <span className="text-[#623CEA] font-bold mt-1 text-[8px]">⚫</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -196,12 +197,12 @@ export default function DashboardSiswaAiTutorPage() {
                 )}
 
                 {msg.followUp && (
-                  <p className="mt-2.5 text-[15px] font-semibold text-[#4F46E5]">
+                  <p className="mt-2.5 text-[15px] font-semibold text-[#623CEA]">
                     {msg.followUp}
                   </p>
                 )}
 
-                <div className="mt-1.5 text-right text-[10px] font-medium text-slate-400">
+                <div className="mt-2 text-right text-[10px] font-medium text-slate-400">
                   {msg.time}
                 </div>
               </div>
@@ -213,18 +214,15 @@ export default function DashboardSiswaAiTutorPage() {
 
       {/* 3. PERTANYAAN CEPAT */}
       <div className="px-5 pt-2 pb-6 animate-in fade-in duration-500">
-        <h3 className="mb-3 text-[14px] font-bold text-[#4F46E5]">
-          Pertanyaan Cepat
-        </h3>
         <div className="flex flex-wrap gap-2.5">
           {QUICK_QUESTIONS.map((chip) => (
             <button
               key={chip}
               type="button"
               onClick={() => handleSend(chip)}
-              className="flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-[14px] font-medium text-indigo-700 shadow-sm transition-all hover:bg-indigo-50 active:scale-95"
+              className="flex items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95"
             >
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
               {chip}
@@ -243,14 +241,14 @@ export default function DashboardSiswaAiTutorPage() {
             e.preventDefault();
             handleSend();
           }}
-          className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_12px_40px_rgba(79,70,229,0.15)] border border-slate-100"
+          className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_8px_30px_rgba(98,60,234,0.12)] border border-slate-100"
         >
           <button
             type="button"
-            className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 transition-colors hover:bg-indigo-100 active:scale-95"
+            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#F3F0FF] text-[#623CEA] transition-colors hover:bg-indigo-100 active:scale-95"
             aria-label="Lampiran"
           >
-            <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -260,11 +258,11 @@ export default function DashboardSiswaAiTutorPage() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ketik pertanyaanmu di sini..."
-            className="flex-1 bg-transparent px-2 text-[15px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
+            className="flex-1 bg-transparent px-2 text-[14px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
           />
           <button
             type="submit"
-            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md transition-transform hover:scale-105 active:scale-95"
+            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#845EF7] text-white shadow-md transition-transform hover:scale-105 active:scale-95"
             aria-label="Kirim pesan"
           >
             <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -321,7 +319,7 @@ export default function DashboardSiswaAiTutorPage() {
             <button
               type="button"
               onClick={() => setShowInfoModal(false)}
-              className="mt-2 w-full rounded-full bg-[#4F46E5] py-3 text-[15px] font-bold text-white transition-colors hover:bg-indigo-700 active:scale-95"
+              className="mt-2 w-full rounded-full bg-[#623CEA] py-3 text-[15px] font-bold text-white transition-colors hover:bg-indigo-700 active:scale-95"
             >
               Mengerti
             </button>
