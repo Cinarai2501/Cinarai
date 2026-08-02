@@ -266,6 +266,11 @@ const ComicCard = React.memo(function ComicCard({
   difficulty,
 }: ComicCardProps) {
   const cardHref = `/comic/${comic.id}/learn`;
+  const [hasImageError, setHasImageError] = useState(false);
+
+  React.useEffect(() => {
+    setHasImageError(false);
+  }, [comic.cover]);
 
   let statusBadge = (
     <span className="rounded-full bg-[#E0F2FE] px-3 py-1 text-[12px] font-bold text-[#1D93FF]">
@@ -301,17 +306,24 @@ const ComicCard = React.memo(function ComicCard({
       <div className="flex flex-col sm:flex-row items-start gap-4">
         {/* Cover Thumbnail with Sequence Badge */}
         <div className="relative shrink-0">
-          <div className="absolute -left-2 -top-2 z-10 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#1D93FF] text-[13px] font-bold text-white shadow-md">
+          <div className="absolute -left-2 -top-2 z-20 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#1D93FF] text-[13px] font-bold text-white shadow-md">
             {sequenceNumber}
           </div>
-          <div className="h-[110px] w-[100px] overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
-            <Image
-              src={comic.cover}
-              alt={comic.title}
-              width={100}
-              height={110}
-              className="h-full w-full object-cover"
-            />
+          <div className="h-[96px] w-[96px] overflow-hidden rounded-[24px] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
+            {!hasImageError ? (
+              <Image
+                src={comic.cover}
+                alt={comic.title}
+                width={96}
+                height={96}
+                className="h-full w-full object-cover object-center"
+                onError={() => setHasImageError(true)}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC] text-center text-[12px] font-semibold text-[#475569]">
+                Gambar tidak tersedia
+              </div>
+            )}
           </div>
         </div>
 
