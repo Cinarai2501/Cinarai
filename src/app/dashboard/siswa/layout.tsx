@@ -7,15 +7,16 @@ import StudentBottomNav from '@/components/dashboard/StudentBottomNav';
 export default function DashboardSiswaLayout({ children }: { children: ReactNode }) {
   return (
     <RoleProtectedRoute allowedRole="student">
-      <div
-        className="relative min-h-screen overflow-hidden text-neutral-900"
-        style={{
-          background: '#F5F8FD',
-          paddingTop: 'max(0px, env(safe-area-inset-top))',
-        }}
-      >
-        {/* ── Blur blobs — z-0 ── */}
-        {/* Blue */}
+      <div className="flex min-h-screen justify-center bg-slate-100">
+        <div
+          className="relative min-h-screen w-full max-w-[480px] overflow-hidden text-neutral-900 shadow-2xl bg-white"
+          style={{
+            background: '#F5F8FD',
+            paddingTop: 'max(0px, env(safe-area-inset-top))',
+          }}
+        >
+          {/* ── Blur blobs — z-0 ── */}
+          {/* Blue */}
         <div
           className="pointer-events-none absolute -right-[120px] -top-[100px] z-0 h-[420px] w-[420px] rounded-full"
           style={{
@@ -104,9 +105,9 @@ export default function DashboardSiswaLayout({ children }: { children: ReactNode
           </svg>
         </div>
 
-        {/* all page content above decorations */}
         <main className="relative z-10 min-h-[calc(100dvh-112px)] w-full px-0 pb-[112px] pt-1">{children}</main>
         <StudentBottomNav />
+        </div>
       </div>
     </RoleProtectedRoute>
   );
