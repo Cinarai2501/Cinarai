@@ -111,13 +111,19 @@ export default function DashboardSiswaAiTutorPage() {
       <section className="sticky top-0 z-40 w-full overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#623CEA] to-[#7550F1] px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] text-white shadow-md">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md">
               <Image
-                src="/assets/images/ai/RobotAI.png"
-                alt="Robot AI"
-                fill
-                className="object-contain"
-                priority
+                src="/images/ai/RobotAI.png"
+                alt=""
+                width={64}
+                height={64}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src !== '/images/ai/RobotAI.png') {
+                    target.src = '/images/ai/RobotAI.png';
+                  }
+                }}
               />
             </div>
             <div className="flex-1 pb-1">
@@ -172,12 +178,19 @@ export default function DashboardSiswaAiTutorPage() {
 
           return (
             <div key={msg.id} className="flex justify-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center overflow-hidden">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md">
                 <Image
-                  src="/assets/images/ai/RobotAI.png"
-                  alt="Robot AI"
-                  fill
-                  className="object-contain"
+                  src="/images/ai/RobotAI.png"
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src !== '/images/ai/RobotAI.png') {
+                      target.src = '/images/ai/RobotAI.png';
+                    }
+                  }}
                 />
               </div>
               <div className="max-w-[80%] rounded-[20px] rounded-tl-md bg-white p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-neutral-800">

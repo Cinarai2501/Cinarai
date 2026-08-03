@@ -6,14 +6,13 @@ import clsx from 'clsx';
 interface RobotMascotProps {
   variant?: 'desktop' | 'mobile' | 'fab' | 'inline';
   className?: string;
-  alt?: string;
   isThinking?: boolean;
   isTyping?: boolean;
 }
 
-export default function RobotMascot({ variant = 'desktop', className, alt = 'AI Tutor', isThinking = false, isTyping = false }: RobotMascotProps) {
-  const size = variant === 'fab' ? 64 : variant === 'mobile' ? 40 : variant === 'inline' ? 24 : 48;
-  const base = 'rounded-full overflow-hidden';
+export default function RobotMascot({ variant = 'desktop', className, isThinking = false, isTyping = false }: RobotMascotProps) {
+  const size = variant === 'fab' || variant === 'desktop' ? 64 : variant === 'mobile' ? 40 : 24;
+  const base = 'rounded-full overflow-hidden bg-white shadow-md';
 
   const anim = clsx(
     'transition-transform duration-200 ease-out',
@@ -25,7 +24,19 @@ export default function RobotMascot({ variant = 'desktop', className, alt = 'AI 
 
   return (
     <div className={clsx(base, anim, className)} style={{ width: size, height: size }}>
-      <Image src="/images/ai/RobotAI.png" alt={alt} width={size} height={size} priority={false} />
+      <Image
+        src="/images/ai/RobotAI.png"
+        alt=""
+        width={size}
+        height={size}
+        className="h-full w-full object-cover"
+        onError={(e) => {
+          const target = e.currentTarget;
+          if (target.src !== '/images/ai/RobotAI.png') {
+            target.src = '/images/ai/RobotAI.png';
+          }
+        }}
+      />
     </div>
   );
 }
