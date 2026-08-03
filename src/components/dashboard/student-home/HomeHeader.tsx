@@ -15,16 +15,16 @@ export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) 
       subtitle="Semangat belajar hari ini!"
       gradientFrom="#0077FF"
       gradientTo="#0066FF"
+      className="px-6 sm:px-6"
       rightContent={
-        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
-          <Image
-            src={avatarAsset}
-            alt={`${firstName} avatar`}
-            width={64}
-            height={64}
-            className="h-full w-full rounded-full object-cover"
-          />
-        </div>
+        <Image
+          src={avatarAsset}
+          alt={`${firstName} avatar`}
+          width={96}
+          height={96}
+          sizes="(max-width: 640px) 80px, 96px"
+          className="ml-4 h-20 w-20 object-contain sm:ml-6 sm:h-24 sm:w-24"
+        />
       }
     />
   );
