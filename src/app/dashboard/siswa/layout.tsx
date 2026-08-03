@@ -106,7 +106,7 @@ export default function DashboardSiswaLayout({ children }: { children: ReactNode
           </div>
 
           {/* all page content above decorations */}
-          <main className="relative z-10 min-h-[calc(100dvh-70px)] w-full px-0 pb-[calc(70px+env(safe-area-inset-bottom))] pt-1">{children}</main>
+          <main className="relative z-10 min-h-0 w-full px-0 pb-[calc(70px+16px+env(safe-area-inset-bottom))] pt-1">{children}</main>
           <StudentBottomNav />
         </div>
       </div>

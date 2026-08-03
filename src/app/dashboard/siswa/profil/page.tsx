@@ -106,7 +106,7 @@ export default function DashboardSiswaProfilPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-[100px] text-neutral-900 sm:px-5 lg:px-6">
+    <div className="mx-auto min-h-0 w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-2 text-neutral-900 sm:px-5 lg:px-6">
       <HeroHeader
         title="Profil"
         subtitle="Kelola akun dan pengaturan aplikasi"

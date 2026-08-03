@@ -6,7 +6,7 @@ import HeroHeader from '@/components/dashboard/HeroHeader';
 
 export default function DashboardSiswaKomikPage() {
   return (
-    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] px-4 text-neutral-900 sm:px-5 lg:px-6">
+    <div className="mx-auto min-h-0 w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-2 text-neutral-900 sm:px-5 lg:px-6">
       <HeroHeader
         title="Daftar Komik"
         subtitle="Pilih komik untuk belajar dengan seru!"

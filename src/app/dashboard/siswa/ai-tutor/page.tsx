@@ -107,7 +107,7 @@ export default function DashboardSiswaAiTutorPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] px-4 text-neutral-900 sm:px-5 lg:px-6">
+    <div className="mx-auto min-h-0 w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-2 text-neutral-900 sm:px-5 lg:px-6">
       <HeroHeader
         title="AI Tutor CINARAI"
         subtitle="Siap membantumu belajar kapan saja!"
