@@ -2,11 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
-import type { UserDocument } from '@/types/firestore';
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
 const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
@@ -51,20 +50,10 @@ function getStatIconAsset(type: string) {
 }
 
 export default function DashboardSiswaProfilPage() {
-  const { user, updateUserProfile, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { getProgress } = useAllComicProgress();
 
-  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
-  const [nickname, setNickname] = useState(user?.nickname ?? '');
-  const [gender, setGender] = useState<UserDocument['gender'] | ''>(user?.gender ?? '');
-  const [classLevel, setClassLevel] = useState<UserDocument['classLevel'] | ''>(user?.classLevel ?? '');
-  const [bio, setBio] = useState(user?.bio ?? '');
-  const [avatar, setAvatar] = useState(user?.avatar ?? '');
-  const [photoURL, setPhotoURL] = useState(user?.photoURL ?? '');
-  const [status, setStatus] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   const firstName = user?.displayName?.split(' ')[0] ?? 'Siswa';
   const email = user?.email ?? 'siswa@email.com';
@@ -74,23 +63,9 @@ export default function DashboardSiswaProfilPage() {
     : user?.avatar?.trim()
       ? user.avatar
       : getAvatarAsset(firstName);
-  const modalAvatarPreview = photoURL?.trim()
-    ? photoURL
-    : avatar?.trim()
-      ? avatar
-      : getAvatarAsset(firstName);
 
   // Compute stats
   const comics = useMemo(() => getAllComics(), []);
-  useEffect(() => {
-    setDisplayName(user?.displayName ?? '');
-    setNickname(user?.nickname ?? '');
-    setGender(user?.gender ?? '');
-    setClassLevel(user?.classLevel ?? '');
-    setBio(user?.bio ?? '');
-    setAvatar(user?.avatar ?? '');
-    setPhotoURL(user?.photoURL ?? '');
-  }, [user]);
 
   const { totalXp, completedComics } = useMemo(() => {
     let completedXP = 0;
@@ -111,39 +86,12 @@ export default function DashboardSiswaProfilPage() {
   const levelInfo = getLevelInfo(totalXp);
   const streak = completedComics > 0 ? Math.min(14, 3 + completedComics) : 3;
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSaving(true);
-    setStatus(null);
-
-    try {
-      await updateUserProfile({
-        displayName: displayName.trim(),
-        photoURL: photoURL.trim() || undefined,
-        nickname: nickname.trim() || undefined,
-        gender: gender || undefined,
-        classLevel: classLevel || undefined,
-        bio: bio.trim() || undefined,
-        avatar: avatar.trim() || undefined,
-      });
-      setStatus('Profil berhasil diperbarui!');
-      setTimeout(() => {
-        setShowEditModal(false);
-        setStatus(null);
-      }, 1000);
-    } catch {
-      setStatus('Gagal memperbarui profil. Coba lagi.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       await logout();
     } catch {
-      setStatus('Gagal logout. Coba lagi.');
+      // keep logout error simple
     } finally {
       setIsLoggingOut(false);
     }
@@ -180,23 +128,12 @@ export default function DashboardSiswaProfilPage() {
             <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#E0F2FE] shadow-[0_4px_12px_rgba(15,118,110,0.4)] overflow-hidden border-2 border-white/20">
               <Image
                 src={avatarAsset}
-                alt={`${displayName} avatar`}
+                alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
                 width={88}
                 height={88}
                 className="h-full w-full object-cover"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setShowEditModal(true)}
-              className="absolute bottom-0 right-0 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-white text-[#0F766E] shadow-md transition hover:scale-110 active:scale-95"
-              aria-label="Ubah foto profil"
-            >
-              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </button>
           </div>
         </div>
       </section>
@@ -209,7 +146,7 @@ export default function DashboardSiswaProfilPage() {
               <div className="flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-[28px] bg-[#E0F2FE] border border-slate-200">
                 <Image
                   src={avatarAsset}
-                  alt={`${displayName} avatar`}
+                  alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
                   width={88}
                   height={88}
                   className="h-full w-full object-cover"
@@ -257,18 +194,8 @@ export default function DashboardSiswaProfilPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-[18px] font-extrabold text-[#1E293B]">Detail Profil</h3>
-                <p className="mt-1 text-[13px] text-slate-500">Periksa dan perbarui data profil siswa.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowEditModal(true)}
-                className="rounded-2xl bg-[#0D9488] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#0F766E]"
-              >
-                Edit Profil
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-3">
+                  <p className="mt-1 text-[13px] text-slate-500">Periksa detail informasi profil siswa.</p>
+                </div>
               <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
                 <p className="text-slate-500">Nama Panggilan</p>
                 <p className="mt-1 font-semibold text-[#1E293B]">{user?.nickname ?? '-'}</p>
@@ -290,9 +217,8 @@ export default function DashboardSiswaProfilPage() {
         {/* 2. MENU PENGATURAN UTAMA & 3. LOGOUT */}
         <div className="rounded-[28px] bg-white p-2.5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] border border-slate-100 divide-y divide-slate-100/80">
           {/* Edit Profil */}
-          <button
-            type="button"
-            onClick={() => setShowEditModal(true)}
+          <Link
+            href="/profile/edit"
             className="w-full flex items-center justify-between p-3.5 text-left transition hover:bg-slate-50/80 rounded-2xl"
           >
             <div className="flex items-center gap-4 min-w-0">
@@ -310,7 +236,7 @@ export default function DashboardSiswaProfilPage() {
             <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] text-[#CBD5E1] shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 18l6-6-6-6" />
             </svg>
-          </button>
+          </Link>
 
           {/* Pengaturan Akun */}
           <button
@@ -499,162 +425,6 @@ export default function DashboardSiswaProfilPage() {
         </div>
       </div>
 
-      {/* Edit Profil Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-5 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-[#1E293B]">Edit Profil</h3>
-                <p className="mt-1 text-[13px] text-slate-500">Perbarui data profil siswa dengan cepat.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowEditModal(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"
-                aria-label="Tutup"
-              >
-                <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid gap-4 rounded-[24px] border border-slate-100 bg-slate-50 p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[24px] bg-white shadow-sm border border-slate-200">
-                  <Image
-                    src={modalAvatarPreview}
-                    alt="Pratinjau avatar"
-                    width={72}
-                    height={72}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[14px] font-bold text-[#1E293B]">Pratinjau Avatar</p>
-                  <p className="mt-1 text-[12px] text-slate-500">Gunakan foto profil atau avatar khusus.</p>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4">
-                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                  Nama Lengkap
-                  <input
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Masukkan nama lengkap"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                  />
-                </label>
-
-                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                  Nama Panggilan
-                  <input
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    placeholder="Contoh: Ara"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                  />
-                </label>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                    Username
-                    <input
-                      value={username}
-                      readOnly
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-[14px] font-semibold text-[#64748B] outline-none"
-                    />
-                  </label>
-                  <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                    Jenis Kelamin
-                    <select
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value as UserDocument['gender'] | '')}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                    >
-                      <option value="">Pilih jenis kelamin</option>
-                      <option value="Laki-laki">Laki-laki</option>
-                      <option value="Perempuan">Perempuan</option>
-                    </select>
-                  </label>
-                </div>
-
-                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                  Kelas
-                  <select
-                    value={classLevel}
-                    onChange={(e) => setClassLevel(e.target.value as UserDocument['classLevel'] | '')}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                  >
-                    <option value="">Pilih kelas</option>
-                    <option value="Kelas I">Kelas I</option>
-                    <option value="Kelas II">Kelas II</option>
-                    <option value="Kelas III">Kelas III</option>
-                    <option value="Kelas IV">Kelas IV</option>
-                    <option value="Kelas V">Kelas V</option>
-                    <option value="Kelas VI">Kelas VI</option>
-                  </select>
-                </label>
-
-                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                  Tentang Saya
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={4}
-                    placeholder="Ceritakan sedikit tentang dirimu"
-                    className="min-h-[112px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10 resize-none"
-                  />
-                </label>
-
-                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                  URL Avatar (Opsional)
-                  <input
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                  />
-                </label>
-
-                <label className="block space-y-1.5 text-[14px] font-bold text-[#334155]">
-                  URL Foto Profil (Opsional)
-                  <input
-                    value={photoURL}
-                    onChange={(e) => setPhotoURL(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[14px] font-semibold text-[#1E293B] outline-none transition-all focus:border-[#0D9488] focus:bg-white focus:ring-4 focus:ring-[#0D9488]/10"
-                  />
-                </label>
-              </div>
-
-              {status && <p className="text-[13px] font-bold text-[#0D9488] animate-pulse">{status}</p>}
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-[14px] font-bold text-slate-600 hover:bg-slate-100 transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving || !displayName.trim()}
-                  className="rounded-xl bg-[#0D9488] px-6 py-2.5 text-[14px] font-bold text-white shadow-md transition-all hover:bg-[#0F766E] hover:shadow-lg active:scale-95 disabled:opacity-60"
-                >
-                  {isSaving ? 'Menyimpan...' : 'Simpan Profil'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
