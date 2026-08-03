@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { getAllComics } from '@/lib/comicRepository';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
+import HeroHeader from '@/components/dashboard/HeroHeader';
 
 type QuizItem = {
   id: number;
@@ -145,26 +146,20 @@ export default function DashboardSiswaKuisPage() {
   }, [unlockStatuses]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] text-neutral-900">
-      {/* 1. HEADER */}
-      <section className="sticky top-0 z-40 w-full overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#FF6B00] to-[#FF8800] px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] text-white shadow-md">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[24px] font-extrabold leading-tight tracking-tight text-white">
-              Kuis
-            </h1>
-            <p className="mt-1 text-[13px] font-medium leading-relaxed text-white/90">
-              Belajar makin seru dengan kuis!
-            </p>
+    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] px-4 text-neutral-900 sm:px-5 lg:px-6">
+      <HeroHeader
+        title="Kuis"
+        subtitle="Belajar makin seru dengan kuis!"
+        gradientFrom="#FF6B00"
+        gradientTo="#FF8800"
+        rightContent={
+          <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white/20 p-1 ring-2 ring-white/40 shadow-md backdrop-blur-sm">
+            <span className="text-[42px] leading-none drop-shadow-md">🏆</span>
           </div>
+        }
+      />
 
-          <div className="relative flex h-[70px] w-[70px] shrink-0 items-center justify-center">
-            <span className="text-[54px] leading-none drop-shadow-md">🏆</span>
-          </div>
-        </div>
-      </section>
-
-      <div className="px-5 pt-4 space-y-4">
+      <div className="pt-4 space-y-4">
         {/* 2. TAB NAVIGASI (Tersedia | Riwayat) */}
         <div className="flex rounded-full bg-[#F1F5F9] p-1 text-[14px] font-bold border border-slate-100">
           <button

@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
+import HeroHeader from '@/components/dashboard/HeroHeader';
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
 const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
@@ -106,44 +107,23 @@ export default function DashboardSiswaProfilPage() {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-[100px] text-neutral-900 sm:px-5 lg:px-6">
-      {/* 1. HEADER PROFIL */}
-      <section className="relative w-full overflow-hidden rounded-[32px] bg-gradient-to-br from-[#0F766E] to-[#14B8A6] px-4 pb-20 pt-[max(32px,env(safe-area-inset-top))] text-white shadow-md sm:px-5 lg:px-6">
-        {/* Dekorasi Awan/Bintang */}
-        <div className="absolute top-4 left-6 text-white/20">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
-        </div>
-        <div className="absolute top-12 right-1/3 text-white/20">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
-        </div>
-        <div className="absolute -bottom-10 left-0 w-full opacity-20">
-          <svg viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto text-white fill-current">
-            <path d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          </svg>
-        </div>
-
-        <div className="relative z-10 flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0 pr-3">
-            <h1 className="text-[32px] font-extrabold leading-tight tracking-wide text-white">
-              Profil
-            </h1>
-            <p className="mt-1 text-[14px] font-medium leading-relaxed text-white/90 max-w-[200px]">
-              Kelola akun dan pengaturan aplikasi
-            </p>
+      <HeroHeader
+        title="Profil"
+        subtitle="Kelola akun dan pengaturan aplikasi"
+        gradientFrom="#0F766E"
+        gradientTo="#14B8A6"
+        rightContent={
+          <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-[#E0F2FE] shadow-[0_4px_12px_rgba(15,118,110,0.4)]">
+            <Image
+              src={avatarAsset}
+              alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
+              width={72}
+              height={72}
+              className="h-full w-full object-cover"
+            />
           </div>
-
-          <div className="relative flex-shrink-0">
-            <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#E0F2FE] shadow-[0_4px_12px_rgba(15,118,110,0.4)] overflow-hidden border-2 border-white/20">
-              <Image
-                src={avatarAsset}
-                alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
-                width={88}
-                height={88}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* USER INFO FLOATING CARD */}
       <div className="relative z-20 -mt-10">

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import HeroHeader from '@/components/dashboard/HeroHeader';
 
 type Message = {
   id: string;
@@ -106,12 +107,15 @@ export default function DashboardSiswaAiTutorPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] text-neutral-900">
-      {/* 1. HEADER */}
-      <section className="sticky top-0 z-40 w-full overflow-hidden rounded-b-[32px] bg-gradient-to-br from-[#623CEA] to-[#7550F1] px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] text-white shadow-md">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md">
+    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[88px] px-4 text-neutral-900 sm:px-5 lg:px-6">
+      <HeroHeader
+        title="AI Tutor CINARAI"
+        subtitle="Siap membantumu belajar kapan saja!"
+        gradientFrom="#623CEA"
+        gradientTo="#7550F1"
+        rightContent={
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/50">
               <Image
                 src="/images/ai/RobotAI.png"
                 alt=""
@@ -126,33 +130,23 @@ export default function DashboardSiswaAiTutorPage() {
                 }}
               />
             </div>
-            <div className="flex-1 pb-1">
-              <h1 className="text-[20px] font-extrabold leading-tight text-white tracking-wide">AI Tutor CINARAI</h1>
-              <div className="mt-1 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[#00FF00] shadow-[0_0_6px_#00FF00]" />
-                <span className="text-[13px] font-semibold text-white">Online</span>
-              </div>
-              <p className="mt-2 text-[12px] font-medium leading-tight text-white/95 max-w-[180px]">
-                Siap membantumu belajar kapan saja!
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowInfoModal(true)}
+              className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white transition-colors hover:bg-white/10 active:bg-white/20"
+              aria-label="Info Batasan AI"
+            >
+              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowInfoModal(true)}
-            className="mt-1 flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white hover:bg-white/10 active:bg-white/20 transition-colors"
-            aria-label="Info Batasan AI"
-          >
-            <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-          </button>
-        </div>
-      </section>
+        }
+      />
 
       {/* 2. CHAT AREA */}
-      <div className="px-5 pt-6 pb-2 space-y-5">
+      <div className="pt-6 pb-2 space-y-5">
         <div className="flex justify-center">
           <span className="rounded-full bg-slate-200/60 px-4 py-1 text-[12px] font-semibold text-slate-500">
             Hari ini
