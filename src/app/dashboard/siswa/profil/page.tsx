@@ -105,9 +105,9 @@ export default function DashboardSiswaProfilPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-[1200px] bg-[#F8FAFC] pb-[100px] text-neutral-900">
+    <div className="mx-auto min-h-screen w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-[100px] text-neutral-900 sm:px-5 lg:px-6">
       {/* 1. HEADER PROFIL */}
-      <section className="relative w-full overflow-hidden rounded-b-[40px] bg-gradient-to-br from-[#0F766E] to-[#14B8A6] px-6 pb-20 pt-[max(32px,env(safe-area-inset-top))] text-white shadow-md">
+      <section className="relative w-full overflow-hidden rounded-[32px] bg-gradient-to-br from-[#0F766E] to-[#14B8A6] px-4 pb-20 pt-[max(32px,env(safe-area-inset-top))] text-white shadow-md sm:px-5 lg:px-6">
         {/* Dekorasi Awan/Bintang */}
         <div className="absolute top-4 left-6 text-white/20">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
@@ -146,7 +146,7 @@ export default function DashboardSiswaProfilPage() {
       </section>
 
       {/* USER INFO FLOATING CARD */}
-      <div className="relative z-20 -mt-10 px-5">
+      <div className="relative z-20 -mt-10">
         <div className="grid gap-4">
           <div className="rounded-[28px] bg-white px-5 py-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] border border-slate-100">
             <div className="flex items-center gap-4">
@@ -179,7 +179,7 @@ export default function DashboardSiswaProfilPage() {
         </div>
       </div>
 
-      <div className="px-5 pt-6 space-y-6">
+      <div className="pt-6 space-y-6">
         {/* 2. MENU PENGATURAN UTAMA & 3. LOGOUT */}
         <div className="rounded-[28px] bg-white p-2.5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] border border-slate-100 divide-y divide-slate-100/80">
           {/* Edit Profil */}
@@ -350,7 +350,7 @@ export default function DashboardSiswaProfilPage() {
 
         {/* 4. RINGKASAN AKUN SECTION */}
         <div className="space-y-3">
-          <h2 className="text-[16px] font-extrabold text-[#1E293B] px-1">Ringkasan Akun</h2>
+          <h2 className="px-1 text-[16px] font-extrabold text-[#1E293B]">Ringkasan Akun</h2>
           <div className="grid grid-cols-4 gap-2 rounded-[24px] bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] border border-slate-100">
             {/* Stat 1: Total XP */}
             <div className="flex flex-col items-center justify-center text-center">
