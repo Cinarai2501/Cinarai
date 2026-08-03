@@ -302,25 +302,25 @@ const ComicCard = React.memo(function ComicCard({
   }
 
   return (
-    <article className="relative overflow-hidden rounded-3xl bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] border border-slate-100 transition-all hover:shadow-[0_14px_36px_rgba(15,23,42,0.09)]">
-      <div className="flex flex-col sm:flex-row items-start gap-4">
+    <article className="overflow-hidden rounded-[24px] border border-slate-100 bg-white p-3 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-all hover:shadow-[0_14px_36px_rgba(15,23,42,0.09)]">
+      <div className="flex items-start gap-3">
         {/* Cover Thumbnail with Sequence Badge */}
         <div className="relative shrink-0">
-          <div className="absolute -left-2 -top-2 z-20 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#1D93FF] text-[13px] font-bold text-white shadow-md">
+          <div className="absolute -left-1 -top-1 z-20 flex h-[24px] w-[24px] items-center justify-center rounded-full bg-[#1D93FF] text-[12px] font-bold text-white shadow-md">
             {sequenceNumber}
           </div>
-          <div className="h-[96px] w-[96px] overflow-hidden rounded-[24px] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
+          <div className="h-[122px] w-[92px] overflow-hidden rounded-[20px] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
             {!hasImageError ? (
               <Image
                 src={comic.cover}
                 alt={comic.title}
-                width={96}
-                height={96}
+                width={92}
+                height={122}
                 className="h-full w-full object-cover object-center"
                 onError={() => setHasImageError(true)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC] text-center text-[12px] font-semibold text-[#475569]">
+              <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold text-[#475569]">
                 Gambar tidak tersedia
               </div>
             )}
@@ -328,22 +328,20 @@ const ComicCard = React.memo(function ComicCard({
         </div>
 
         {/* Content Section */}
-        <div className="min-w-0 flex-1 w-full">
-          {/* Title and Status Badge Row */}
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-[16px] font-bold leading-snug text-[#1E293B]">
+            <h3 className="text-[15px] font-bold leading-tight text-[#1E293B] line-clamp-2">
               {comic.title}
             </h3>
             <div className="shrink-0">{statusBadge}</div>
           </div>
 
-          {/* Metadata Badges: Kelas | Difficulty | Duration */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[12px] font-medium">
-            <span className="rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[#475569]">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
+            <span className="rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[#475569]">
               Kelas {comic.kelas}
             </span>
             <span
-              className={`rounded-full px-2.5 py-0.5 font-semibold ${
+              className={`rounded-full px-2 py-0.5 font-semibold ${
                 difficulty === 'Mudah'
                   ? 'bg-[#DCFCE7] text-[#15803D]'
                   : 'bg-[#FEF3C7] text-[#D97706]'
@@ -351,8 +349,8 @@ const ComicCard = React.memo(function ComicCard({
             >
               {difficulty}
             </span>
-            <span className="flex items-center gap-1 rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[#64748B]">
-              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <span className="flex items-center gap-1 rounded-full bg-[#F1F5F9] px-2 py-0.5 text-[#64748B]">
+              <svg viewBox="0 0 24 24" className="h-[12px] w-[12px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
@@ -360,13 +358,12 @@ const ComicCard = React.memo(function ComicCard({
             </span>
           </div>
 
-          {/* Progress Section */}
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-[13px]">
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-[12px]">
               <span className="font-medium text-[#64748B]">Progress</span>
               <span className="font-bold text-[#0DBF7E]">{percentage}%</span>
             </div>
-            <div className="mt-1.5 h-[8px] w-full overflow-hidden rounded-full bg-[#EEF4FB]">
+            <div className="mt-1 h-[7px] w-full overflow-hidden rounded-full bg-[#EEF4FB]">
               <div
                 className="h-full rounded-full bg-[#0DBF7E] transition-all duration-500"
                 style={{ width: `${percentage}%` }}
@@ -374,25 +371,23 @@ const ComicCard = React.memo(function ComicCard({
             </div>
           </div>
 
-          {/* Bottom Action Row */}
-          <div className="mt-3 flex items-center justify-between gap-2 pt-1">
-            <div className="text-[12px] font-medium text-[#64748B]">
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="text-[11px] font-medium text-[#64748B]">
               <span>{completedCount} dari {totalStages} tahap selesai</span>
             </div>
 
-            {/* Action Button */}
             <div>
               {percentage > 0 ? (
                 <Link
                   href={cardHref}
-                  className="inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-5 py-1.5 text-[14px] font-bold text-white shadow-sm transition hover:bg-[#0AA86E] active:scale-95"
+                  className="inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-4 py-1.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#0AA86E] active:scale-95"
                 >
                   Lanjutkan
                 </Link>
               ) : (
                 <Link
                   href={cardHref}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-[#0DBF7E] bg-white px-5 py-1.5 text-[14px] font-bold text-[#0DBF7E] transition hover:bg-[#F0FDF4] active:scale-95"
+                  className="inline-flex items-center justify-center rounded-full border-2 border-[#0DBF7E] bg-white px-4 py-1.5 text-[13px] font-bold text-[#0DBF7E] transition hover:bg-[#F0FDF4] active:scale-95"
                 >
                   Mulai
                 </Link>
