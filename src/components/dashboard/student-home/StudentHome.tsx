@@ -5,10 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
-import { SINTAKS } from '@/types/progress';
 import BadgeSection from './BadgeSection';
 import ContinueLearningCard from './ContinueLearningCard';
-import DailyProgressCard from './DailyProgressCard';
 import HomeHeader from './HomeHeader';
 import LevelCard from './LevelCard';
 import StatisticsGrid from './StatisticsGrid';
@@ -117,8 +115,6 @@ export default function StudentHome() {
 
   const todayProgress = continueComic ? getProgress(continueComic.id) : undefined;
   const todayPct = todayProgress?.percentage ?? 50;
-  const currentStage = todayProgress?.completedCount ?? 4;
-  const nextStageLabel = `Tahap ${Math.min(currentStage + 1, SINTAKS.length)}`;
   const levelInfo = getLevelInfo(totalXp);
 
   const statCards: StatCard[] = [
@@ -140,11 +136,10 @@ export default function StudentHome() {
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
       <section className="px-4 pb-6">
-        <div className="mx-auto max-w-[480px] space-y-4">
+        <div className="mx-auto max-w-[480px] space-y-5">
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <StatisticsGrid statCards={statCards} />
-          <DailyProgressCard progressPct={todayPct} nextStageLabel={nextStageLabel} />
           <BadgeSection badgeItems={badgeItems} />
         </div>
       </section>
