@@ -153,8 +153,8 @@ export default function DashboardSiswaKuisPage() {
         gradientFrom="#FF6B00"
         gradientTo="#FF8800"
         rightContent={
-          <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white/20 p-1 ring-2 ring-white/40 shadow-md backdrop-blur-sm">
-            <span className="text-[42px] leading-none drop-shadow-md">🏆</span>
+          <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
+            <span className="text-[40px] leading-none drop-shadow-md">🏆</span>
           </div>
         }
       />

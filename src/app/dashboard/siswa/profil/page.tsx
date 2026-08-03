@@ -113,14 +113,16 @@ export default function DashboardSiswaProfilPage() {
         gradientFrom="#0F766E"
         gradientTo="#14B8A6"
         rightContent={
-          <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-[#E0F2FE] shadow-[0_4px_12px_rgba(15,118,110,0.4)]">
-            <Image
-              src={avatarAsset}
-              alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
-              width={72}
-              height={72}
-              className="h-full w-full object-cover"
-            />
+          <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
+            <div className="relative h-full w-full overflow-hidden rounded-full">
+              <Image
+                src={avatarAsset}
+                alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
+                fill
+                sizes="68px"
+                className="object-cover"
+              />
+            </div>
           </div>
         }
       />
