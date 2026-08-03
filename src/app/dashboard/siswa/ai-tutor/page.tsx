@@ -1,486 +1,342 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { addDoc, collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { buildSuggestedQuestions, getConversationTitle, groupConversationHistoryByPeriod } from '@/lib/ai/tutorUi';
+import HeaderCard from '@/components/dashboard/HeaderCard';
 
-type ChatRole = 'assistant' | 'user';
-
-type ChatMessage = {
+type Message = {
   id: string;
-  role: ChatRole;
-  content: string;
-  timestamp: string;
-};
-
-type ConversationItem = {
-  id: string;
-  title: string;
-  updatedAt: string;
+  sender: 'bot' | 'user';
+  text: string;
+  listItems?: string[];
+  followUp?: string;
+  time: string;
 };
 
 const QUICK_QUESTIONS = [
   'Apa itu kubus?',
-  'Apa perbedaan kubus dan balok?',
-  'Bantu memahami Komik 1',
-  'Contoh bangun ruang di rumah',
+  'Rumus balok?',
+  'Ciri prisma?',
+  'Diagonal ruang?',
 ];
 
-const WELCOME_COPY = {
-  title: 'Halo 👋\nAku AI Tutor CINARAI',
-  description: 'Aku siap menemanimu belajar matematika lewat komik CINARAI. Kamu bisa bertanya tentang kubus, balok, bangun datar, rumus, contoh soal, atau materi komik.',
-};
-
-function formatTime(value: string) {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return '';
-  }
-
-  return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+const INITIAL_MESSAGES: Message[] = [
+  {
+    id: '1',
+    sender: 'bot',
+    text: 'Halo! 👋\nAku AI Tutor CINARAI.\nAku siap membantumu belajar tentang bangun ruang, bangun datar, rumus, ciri-ciri, dan materi komik CINARAI.\nAda yang ingin kamu tanyakan?',
+    time: '09:30',
+  },
+  {
+    id: '2',
+    sender: 'user',
+    text: 'Apa itu kubus?',
+    time: '09:31',
+  },
+  {
+    id: '3',
+    sender: 'bot',
+    text: 'Kubus adalah bangun ruang yang memiliki 6 sisi berbentuk persegi yang kongruen.\n\nCiri-ciri kubus:',
+    listItems: [
+      '6 sisi berbentuk persegi',
+      '12 rusuk yang sama panjang',
+      '8 titik sudut',
+      'Semua sudutnya siku-siku (90°)',
+    ],
+    time: '09:31',
+  },
+];
 
 export default function DashboardSiswaAiTutorPage() {
-  const { user } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages]);
 
-  useEffect(() => {
-    if (!user?.uid) {
-      return;
-    }
+  const handleSend = (textToSend?: string) => {
+    const text = textToSend ?? inputText;
+    if (!text.trim()) return;
 
-    let isCancelled = false;
-    const loadConversations = async () => {
-      setLoadingHistory(true);
-      try {
-        const queryRef = query(collection(firestore, 'conversations'), where('userId', '==', user.uid));
-        const snapshot = await getDocs(queryRef);
-        const loadedConversations = snapshot.docs
-          .map((docSnap) => {
-            const data = docSnap.data() as { title?: string; updatedAt?: string };
-            return {
-              id: docSnap.id,
-              title: data.title ?? 'Percakapan',
-              updatedAt: data.updatedAt ?? new Date().toISOString(),
-            } satisfies ConversationItem;
-          })
-          .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
-
-        if (!isCancelled) {
-          setConversations(loadedConversations);
-        }
-      } catch (loadError) {
-        console.error('[ai-tutor] failed to load conversations', loadError);
-      } finally {
-        if (!isCancelled) {
-          setLoadingHistory(false);
-        }
-      }
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: text.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    void loadConversations();
-    return () => {
-      isCancelled = true;
-    };
-  }, [user?.uid]);
+    setMessages((prev) => [...prev, userMsg]);
+    if (!textToSend) setInputText('');
 
-  const historyGroups = useMemo(() => groupConversationHistoryByPeriod(conversations), [conversations]);
-  const latestUserQuestion = messages.filter((message) => message.role === 'user').at(-1)?.content ?? '';
-  const suggestedQuestions = useMemo(() => buildSuggestedQuestions(latestUserQuestion), [latestUserQuestion]);
-  const showWelcome = !activeConversationId && messages.length === 0;
+    // Simulate AI Tutor response
+    setTimeout(() => {
+      let botResponseText = 'Aku siap membantu! Mari kita bahas konsep geometris dan matematika dari materi komik CINARAI.';
+      let items: string[] | undefined = undefined;
+      const followUp: string | undefined = undefined;
 
-  const refreshConversationList = (conversationId: string, title: string) => {
-    setConversations((previous) => {
-      const existing = previous.find((conversation) => conversation.id === conversationId);
-      const updatedAt = new Date().toISOString();
-      const next = [
-        { id: conversationId, title, updatedAt },
-        ...previous.filter((conversation) => conversation.id !== conversationId),
-      ];
-
-      if (existing) {
-        return next;
+      const lower = text.toLowerCase();
+      if (lower.includes('kubus')) {
+        botResponseText = 'Rumus volume kubus adalah:\n\nV = s × s × s\n\nKeterangan:\nV = Volume\ns = Panjang rusuk kubus';
+      } else if (lower.includes('persegi') && !lower.includes('panjang')) {
+        botResponseText = 'Persegi adalah bangun datar yang memiliki:';
+        items = ['4 sisi sama panjang', '4 sudut siku-siku (90°)', '2 diagonal sama panjang dan tegak lurus'];
+      } else if (lower.includes('lingkaran')) {
+        botResponseText = 'Ciri-ciri lingkaran meliputi:';
+        items = ['Memiliki 1 titik pusat', 'Memiliki simetri lipat dan putar tak terhingga', 'Jarak dari titik pusat ke semua tepi selalu sama (jari-jari)'];
+      } else if (lower.includes('luar topik') || lower.includes('game') || lower.includes('film')) {
+        botResponseText = 'Maaf, AI Tutor CINARAI hanya membantu pembelajaran materi yang tersedia pada aplikasi.';
       }
 
-      return next.slice(0, 10);
-    });
-  };
-
-  const openConversation = async (conversationId: string) => {
-    if (!user?.uid) {
-      return;
-    }
-
-    setHistoryOpen(false);
-    setIsTyping(false);
-    setErrorText(null);
-    setActiveConversationId(conversationId);
-
-    try {
-      const queryRef = query(collection(firestore, 'messages'), where('conversationId', '==', conversationId));
-      const snapshot = await getDocs(queryRef);
-      const loadedMessages = snapshot.docs
-        .map((docSnap) => {
-          const data = docSnap.data() as { role?: ChatRole; content?: string; timestamp?: string };
-          return {
-            id: docSnap.id,
-            role: data.role === 'assistant' ? 'assistant' : 'user',
-            content: data.content ?? '',
-            timestamp: data.timestamp ?? new Date().toISOString(),
-          } satisfies ChatMessage;
-        })
-        .sort((left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime());
-
-      setMessages(loadedMessages);
-    } catch (loadError) {
-      console.error('[ai-tutor] failed to load conversation messages', loadError);
-      setErrorText('Riwayat percakapan tidak bisa dibuka saat ini.');
-    }
-  };
-
-  const startNewConversation = () => {
-    setActiveConversationId(null);
-    setMessages([]);
-    setInputText('');
-    setErrorText(null);
-    setHistoryOpen(false);
-  };
-
-  const handleSend = async (textToSend?: string) => {
-    const rawText = (textToSend ?? inputText).trim();
-    if (!rawText) {
-      return;
-    }
-
-    setErrorText(null);
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: rawText,
-      timestamp: new Date().toISOString(),
-    };
-
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
-    if (!textToSend) {
-      setInputText('');
-    }
-
-    const conversationTitle = getConversationTitle(rawText);
-    let conversationId = activeConversationId;
-
-    if (!conversationId && user?.uid) {
-      const createdConversation = await addDoc(collection(firestore, 'conversations'), {
-        userId: user.uid,
-        title: conversationTitle,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-      conversationId = createdConversation.id;
-      setActiveConversationId(conversationId);
-      refreshConversationList(conversationId, conversationTitle);
-    }
-
-    if (conversationId && user?.uid) {
-      await addDoc(collection(firestore, 'messages'), {
-        conversationId,
-        role: 'user',
-        content: rawText,
-        timestamp: userMessage.timestamp,
-      });
-      await updateDoc(doc(firestore, 'conversations', conversationId), {
-        title: conversationTitle,
-        updatedAt: new Date().toISOString(),
-      });
-      refreshConversationList(conversationId, conversationTitle);
-    }
-
-    setIsTyping(true);
-
-    try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: rawText,
-          context: {
-            moduleName: 'Matematika SD',
-            identification: [],
-            objectInfo: {
-              location: 'Kelas 2',
-              classLevel: 'SD',
-              synopsis: 'Belajar matematika melalui komik CINARAI',
-              learningTargets: ['Memahami bangun ruang', 'Mengaitkan materi dengan kehidupan sehari-hari'],
-            },
-            observationAnswers: {},
-            sessionHistory: nextMessages.map((message) => ({ role: message.role, content: message.content })),
-            comicTitle: 'Komik CINARAI',
-            pageLabel: 'AI Tutor',
-            objectName: 'Matematika',
-            learningStage: 'Pendampingan',
-          },
-        }),
-      });
-
-      const payload = (await response.json()) as { answer?: string; error?: string };
-      const assistantText = payload.answer?.trim() || 'Boleh, kita pelajari bersama ya. Saya akan bantu dengan contoh sederhana dan satu pertanyaan kecil supaya kamu semakin paham.';
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: assistantText,
-        timestamp: new Date().toISOString(),
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'bot',
+        text: botResponseText,
+        listItems: items,
+        followUp: followUp,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-
-      setMessages((previous) => [...previous, assistantMessage]);
-
-      if (conversationId && user?.uid) {
-        await addDoc(collection(firestore, 'messages'), {
-          conversationId,
-          role: 'assistant',
-          content: assistantText,
-          timestamp: assistantMessage.timestamp,
-        });
-        await updateDoc(doc(firestore, 'conversations', conversationId), {
-          updatedAt: new Date().toISOString(),
-        });
-        refreshConversationList(conversationId, conversationTitle);
-      }
-    } catch (requestError) {
-      console.error('[ai-tutor] request failed', requestError);
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: 'Aku sedang mempersiapkan jawaban yang lebih ramah. Coba lagi sebentar ya.',
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-      setErrorText('AI Tutor sedang sibuk. Coba sebentar lagi.');
-    } finally {
-      setIsTyping(false);
-    }
+      setMessages((prev) => [...prev, botMsg]);
+    }, 600);
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#F6F8FF_0%,#F9FAFF_100%)] text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 pb-40 pt-4 sm:px-6 lg:px-8">
-        <header className="overflow-hidden rounded-[28px] border border-white/70 bg-gradient-to-br from-[#6D5CF6] via-[#865FF6] to-[#5B63F3] p-4 text-white shadow-[0_20px_50px_rgba(92,96,243,0.18)] sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 p-1 shadow-inner">
-                <Image src="/images/ai/RobotAI.png" alt="AI Tutor" width={56} height={56} className="rounded-2xl object-cover" />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">AI Tutor CINARAI</p>
-                <h1 className="text-lg font-black sm:text-xl">Guru pendamping belajar</h1>
-                <p className="mt-1 text-sm text-white/85">🟢 Online · Siap membantu belajar</p>
+    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
+      <HeaderCard
+        title="AI Tutor CINARAI"
+        subtitle="Siap membantumu belajar kapan saja!"
+        gradientFrom="#623CEA"
+        gradientTo="#7550F1"
+        rightContent={
+          <div className="flex items-center gap-3">
+            <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
+              <div className="relative h-full w-full overflow-hidden rounded-full">
+                <Image
+                  src="/images/ai/RobotAI.png"
+                  alt=""
+                  fill
+                  sizes="68px"
+                  className="object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src !== '/images/ai/RobotAI.png') {
+                      target.src = '/images/ai/RobotAI.png';
+                    }
+                  }}
+                />
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setHistoryOpen(true)}
-                className="rounded-full border border-white/30 bg-white/15 px-3 py-2 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/20"
-              >
-                History
-              </button>
-              <button
-                type="button"
-                onClick={startNewConversation}
-                className="rounded-full border border-white/30 bg-white/15 px-3 py-2 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/20"
-              >
-                Chat Baru
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowInfoModal(true)}
+              className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white transition-colors hover:bg-white/10 active:bg-white/20"
+              aria-label="Info Batasan AI"
+            >
+              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </button>
           </div>
-        </header>
+        }
+      />
 
-        <main className="mt-4 flex-1">
-          {showWelcome ? (
-            <section className="rounded-[28px] border border-slate-200/80 bg-white/80 p-5 shadow-[0_15px_40px_rgba(15,23,42,0.06)] backdrop-blur sm:p-7">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="flex min-h-[180px] items-center justify-center rounded-[24px] bg-gradient-to-br from-[#F6F2FF] to-[#EEF5FF] p-4 sm:w-[220px]">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white p-2 shadow-lg">
-                    <Image src="/images/ai/RobotAI.png" alt="Avatar AI Tutor" width={90} height={90} className="rounded-full object-cover" />
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
+        {/* 2. CHAT AREA */}
+        <div className="space-y-5">
+        <div className="flex justify-center">
+          <span className="rounded-full bg-slate-200/60 px-4 py-1 text-[12px] font-semibold text-slate-500">
+            Hari ini
+          </span>
+        </div>
+
+        {messages.map((msg) => {
+          if (msg.sender === 'user') {
+            return (
+              <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="max-w-[75%] rounded-[20px] rounded-br-md bg-[#845EF7] p-3 text-white shadow-[0_4px_12px_rgba(132,94,247,0.25)]">
+                  <p className="text-[15px] font-medium leading-relaxed">{msg.text}</p>
+                  <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/80">
+                    <span>{msg.time}</span>
+                    <svg viewBox="0 0 24 24" className="h-[12px] w-[12px]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <h2 className="whitespace-pre-line text-2xl font-black text-slate-900 sm:text-[28px]">{WELCOME_COPY.title}</h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-[15px]">{WELCOME_COPY.description}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {QUICK_QUESTIONS.map((question) => (
-                      <button
-                        key={question}
-                        type="button"
-                        onClick={() => void handleSend(question)}
-                        className="rounded-full border border-[#D9CDFE] bg-[#F7F3FF] px-3 py-2 text-sm font-semibold text-[#5F44E0] transition hover:bg-[#EEE8FF]"
-                      >
-                        {question}
-                      </button>
+              </div>
+            );
+          }
+
+          return (
+            <div key={msg.id} className="flex justify-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_8px_24px_rgba(37,99,235,0.08)]">
+                <Image
+                  src="/images/ai/RobotAI.png"
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src !== '/images/ai/RobotAI.png') {
+                      target.src = '/images/ai/RobotAI.png';
+                    }
+                  }}
+                />
+              </div>
+              <div className="max-w-[80%] rounded-[20px] rounded-tl-md bg-white p-4 border border-slate-100 shadow-[0_8px_24px_rgba(37,99,235,0.06)] text-neutral-800">
+                <div className="text-[15px] font-medium leading-relaxed whitespace-pre-line text-neutral-800">
+                  {msg.text}
+                </div>
+                
+                {msg.listItems && (
+                  <ul className="mt-3 space-y-2 pl-2 text-[14px] font-medium leading-relaxed text-neutral-700">
+                    {msg.listItems.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5">
+                        <span className="text-[#623CEA] font-bold mt-1 text-[8px]">⚫</span>
+                        <span>{item}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
+                )}
+
+                {msg.followUp && (
+                  <p className="mt-2.5 text-[15px] font-semibold text-[#623CEA]">
+                    {msg.followUp}
+                  </p>
+                )}
+
+                <div className="mt-2 text-right text-[10px] font-medium text-slate-400">
+                  {msg.time}
                 </div>
               </div>
-            </section>
-          ) : (
-            <section className="rounded-[28px] border border-slate-200/80 bg-white/80 p-3 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur sm:p-4">
-              <div className="flex items-center justify-between rounded-[20px] bg-slate-50 px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-                <span>{activeConversationId ? 'Percakapan aktif' : 'Mulai belajar'}</span>
-                {loadingHistory ? <span>Memuat riwayat…</span> : null}
-              </div>
-
-              <div className="mt-3 space-y-3">
-                {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[88%] rounded-[24px] px-4 py-3 shadow-[0_10px_26px_rgba(15,23,42,0.06)] sm:max-w-[80%] ${message.role === 'user' ? 'bg-gradient-to-br from-[#6D5CF6] to-[#8C7BFF] text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>
-                      <div className="whitespace-pre-line text-[14px] leading-7 sm:text-[15px]">
-                        {message.role === 'assistant' ? message.content.replace(/\n{3,}/g, '\n\n') : message.content}
-                      </div>
-                      <div className={`mt-2 text-[11px] ${message.role === 'user' ? 'text-white/80' : 'text-slate-400'}`}>
-                        {formatTime(message.timestamp)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {isTyping ? (
-                  <div className="flex justify-start">
-                    <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_26px_rgba(15,23,42,0.06)]">
-                      <div className="flex items-center gap-1 text-sm text-slate-500">
-                        <span className="text-lg leading-none">•••</span>
-                        <span>AI sedang menyiapkan jawaban...</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {errorText ? (
-                  <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    {errorText}
-                  </div>
-                ) : null}
-
-                {suggestedQuestions.length > 0 && !isTyping ? (
-                  <div className="rounded-[24px] border border-slate-200 bg-[#F8FAFF] px-3 py-3">
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.25em] text-slate-500">Pertanyaan lanjutan</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {suggestedQuestions.map((question) => (
-                        <button
-                          key={question}
-                          type="button"
-                          onClick={() => void handleSend(question)}
-                          className="rounded-full border border-[#D9CDFE] bg-white px-3 py-2 text-sm font-semibold text-[#5F44E0] transition hover:bg-[#F2EBFF]"
-                        >
-                          {question}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div ref={messagesEndRef} />
-              </div>
-            </section>
-          )}
-        </main>
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/90 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:px-4">
-        <div className="mx-auto flex max-w-5xl items-end gap-2">
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleSend();
-            }}
-            className="flex flex-1 items-center gap-2 rounded-[24px] border border-slate-200 bg-[#F8FAFF] px-2 py-2 shadow-[0_10px_30px_rgba(15,23,42,0.05)]"
-          >
-            <button type="button" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#6D5CF6] shadow-sm" aria-label="Lampiran">
-              <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-            <input
-              type="text"
-              value={inputText}
-              onChange={(event) => setInputText(event.target.value)}
-              placeholder="Tanya tentang kubus, balok, atau komik…"
-              className="min-h-[44px] flex-1 bg-transparent px-1 text-[14px] font-medium text-slate-800 outline-none placeholder:text-slate-400"
-            />
-            <button type="submit" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6D5CF6] text-white shadow-md transition hover:scale-[1.02]" aria-label="Kirim pesan">
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
-          </form>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {historyOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm sm:items-center">
-          <div className="w-full max-w-xl rounded-[28px] bg-white p-4 shadow-2xl">
+      {/* 3. PERTANYAAN CEPAT */}
+      <div className="px-5 pt-2 pb-6 animate-in fade-in duration-500">
+        <div className="flex flex-wrap gap-2.5">
+          {QUICK_QUESTIONS.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => handleSend(chip)}
+              className="flex items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {chip}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 4. INPUT BAR */}
+      <div 
+        className="fixed left-0 right-0 z-30 mx-auto w-full max-w-[480px] px-5"
+        style={{ bottom: 'calc(84px + env(safe-area-inset-bottom))' }}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)] border border-slate-100"
+        >
+          <button
+            type="button"
+            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#F3F0FF] text-[#623CEA] transition-colors hover:bg-indigo-100 active:scale-95"
+            aria-label="Lampiran"
+          >
+            <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Ketik pertanyaanmu di sini..."
+            className="flex-1 bg-transparent px-2 text-[14px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
+          />
+          <button
+            type="submit"
+            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#845EF7] text-white shadow-md transition-transform hover:scale-105 active:scale-95"
+            aria-label="Kirim pesan"
+          >
+            <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      {/* Info Modal */}
+      {showInfoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-5 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-[0_16px_40px_rgba(37,99,235,0.10)] space-y-4 animate-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Riwayat belajar</p>
-                <h3 className="text-lg font-black text-slate-900">Percakapan sebelumnya</h3>
+              <div className="flex items-center gap-2 text-rose-500">
+                <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <h3 className="text-[16px] font-bold">Batasan AI Tutor</h3>
               </div>
-              <button type="button" onClick={() => setHistoryOpen(false)} className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100">
-                ✕
+              <button
+                type="button"
+                onClick={() => setShowInfoModal(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"
+                aria-label="Tutup"
+              >
+                <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
-
-            <div className="mt-4 max-h-[70vh] space-y-4 overflow-y-auto">
-              {Object.entries(historyGroups).map(([groupLabel, items]) => {
-                if (!items.length) {
-                  return null;
-                }
-
-                return (
-                  <div key={groupLabel}>
-                    <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.24em] text-slate-400">{groupLabel}</p>
-                    <div className="space-y-2">
-                      {items.map((conversation) => (
-                        <button
-                          key={conversation.id}
-                          type="button"
-                          onClick={() => void openConversation(conversation.id)}
-                          className="flex w-full items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:border-[#CFC8FF] hover:bg-[#F8F5FF]"
-                        >
-                          <span className="text-sm font-semibold text-slate-800">{conversation.title}</span>
-                          <span className="text-xs text-slate-400">{formatTime(conversation.updatedAt)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+            
+            <div className="text-[14px] font-medium leading-relaxed text-slate-600 space-y-3">
+              <p>AI hanya menjawab topik berikut:</p>
+              <ul className="space-y-1.5 pl-2">
+                {['Bangun ruang', 'Bangun datar', 'Rumus', 'Ciri-ciri', 'Identifikasi bentuk', 'Materi semua komik CINARAI', 'Numerasi', 'Geometri', 'Materi pembelajaran aplikasi'].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" className="h-[16px] w-[16px] text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 rounded-xl bg-rose-50 p-3 text-rose-700">
+                <p className="text-[13px] italic">&quot;Jika bertanya di luar topik, AI akan menjawab: Maaf, AI Tutor CINARAI hanya membantu pembelajaran materi yang tersedia pada aplikasi.&quot;</p>
+              </div>
             </div>
+            
+            <button
+              type="button"
+              onClick={() => setShowInfoModal(false)}
+              className="mt-2 w-full rounded-full bg-[#623CEA] py-3 text-[15px] font-bold text-white transition-colors hover:bg-indigo-700 active:scale-95"
+            >
+              Mengerti
+            </button>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
