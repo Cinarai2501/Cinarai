@@ -105,7 +105,7 @@ export default function DashboardSiswaProfilPage() {
   };
 
   return (
-    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
       <HeaderCard
         title="Profil"
         subtitle="Kelola akun dan pengaturan aplikasi"
@@ -129,7 +129,7 @@ export default function DashboardSiswaProfilPage() {
       <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
         <div className="relative z-20 -mt-10">
           <div className="grid gap-4">
-            <div className="rounded-[28px] border border-slate-100 bg-white px-5 py-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
+            <div className="soft-card rounded-[28px] px-5 py-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-[#E0F2FE]">
                   <Image
@@ -162,7 +162,7 @@ export default function DashboardSiswaProfilPage() {
         </div>
 
         <div className="space-y-6 pt-6">
-          <div className="rounded-[28px] border border-slate-100 bg-white p-2.5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] divide-y divide-slate-100/80">
+          <div className="soft-card rounded-[28px] p-2.5 divide-y divide-slate-100/80">
             <Link
               href="/profile/edit"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
@@ -324,7 +324,7 @@ export default function DashboardSiswaProfilPage() {
 
           <div className="space-y-3">
             <h2 className="px-1 text-[16px] font-extrabold text-[#1E293B]">Ringkasan Akun</h2>
-            <div className="grid grid-cols-4 gap-2 rounded-[24px] border border-slate-100 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+            <div className="soft-card grid grid-cols-4 gap-2 rounded-[24px] p-4">
               <div className="flex flex-col items-center justify-center text-center">
                 <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
                   <Image src={getStatIconAsset('xp')} alt="XP" width={48} height={48} className="scale-[1.35] object-contain" />

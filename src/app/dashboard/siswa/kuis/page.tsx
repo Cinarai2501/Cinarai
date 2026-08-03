@@ -146,7 +146,7 @@ export default function DashboardSiswaKuisPage() {
   }, [unlockStatuses]);
 
   return (
-    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
       <HeaderCard
         title="Kuis"
         subtitle="Belajar makin seru dengan kuis!"
@@ -200,7 +200,7 @@ export default function DashboardSiswaKuisPage() {
                   Selesaikan kuis yang sedang kamu kerjakan
                 </p>
 
-                <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100 flex items-center justify-between gap-3">
+                <div className="soft-card rounded-2xl p-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     <div className={`flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl ${inProgressQuiz.bgColor} shadow-sm border border-slate-100`}>
                       <QuizIcon type={inProgressQuiz.iconType} />
@@ -263,7 +263,7 @@ export default function DashboardSiswaKuisPage() {
                     return (
                       <div
                         key={quiz.id}
-                        className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100 flex items-center justify-between gap-3 transition hover:shadow-md"
+                        className="soft-card rounded-2xl p-4 flex items-center justify-between gap-3 transition hover:shadow-[0_10px_28px_rgba(37,99,235,0.10)]"
                       >
                         <div className="flex items-center gap-3.5 min-w-0 flex-1">
                           <div className={`flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl ${quiz.bgColor} shadow-sm border border-slate-100`}>
@@ -309,7 +309,7 @@ export default function DashboardSiswaKuisPage() {
           </>
         ) : (
           /* TAB RIWAYAT */
-          <div className="rounded-2xl bg-white p-6 text-center shadow-sm border border-slate-100">
+          <div className="soft-card rounded-2xl p-6 text-center">
             <p className="text-[14px] font-semibold text-slate-500">
               Riwayat hasil kuis kamu akan ditampilkan di sini.
             </p>
@@ -326,7 +326,7 @@ export default function DashboardSiswaKuisPage() {
             Ringkasan performa kuis kamu
           </p>
 
-          <div className="grid grid-cols-4 gap-2 rounded-2xl bg-white p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100">
+          <div className="soft-card grid grid-cols-4 gap-2 rounded-2xl p-3.5">
             {/* Stat 1: Kuis Selesai */}
             <div className="flex flex-col items-center text-center">
               <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#0066FF] text-white shadow-sm">

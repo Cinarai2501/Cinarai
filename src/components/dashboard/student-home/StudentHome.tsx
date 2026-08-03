@@ -132,7 +132,7 @@ export default function StudentHome() {
   ];
 
   return (
-    <main className="relative min-h-0 bg-[#F8FAFC] pb-2 text-slate-900">
+    <main className="relative min-h-0 bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] pb-2 text-slate-900">
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
       <section className="px-4 pb-6">

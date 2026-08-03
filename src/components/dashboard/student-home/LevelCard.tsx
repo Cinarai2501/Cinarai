@@ -17,7 +17,7 @@ type LevelCardProps = {
 
 export default function LevelCard({ levelInfo, totalXp, levelIconAsset }: LevelCardProps) {
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+    <section className="soft-card rounded-2xl p-4">
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 p-0.5 shadow-inner ring-1 ring-amber-200 overflow-hidden">
           <Image

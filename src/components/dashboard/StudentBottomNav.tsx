@@ -63,12 +63,12 @@ export default function StudentBottomNav() {
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[58px] max-w-[440px] items-center justify-between rounded-[22px] border border-white/60 px-[10px] py-[6px]"
+        className="mx-auto flex h-[58px] max-w-[440px] items-center justify-between rounded-[22px] border border-slate-100/80 px-[10px] py-[6px]"
         style={{
-          background: 'rgba(255,255,255,0.92)',
+          background: 'rgba(255,255,255,0.96)',
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
-          boxShadow: '0 -8px 20px rgba(15,23,42,0.06)',
+          boxShadow: '0 -10px 28px rgba(37, 99, 235, 0.08)',
         }}
       >
         {tabs.map((tab) => {

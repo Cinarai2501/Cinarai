@@ -7,11 +7,11 @@ import StudentBottomNav from '@/components/dashboard/StudentBottomNav';
 export default function DashboardSiswaLayout({ children }: { children: ReactNode }) {
   return (
     <RoleProtectedRoute allowedRole="student">
-      <div className="flex min-h-[100dvh] justify-center bg-slate-100">
+      <div className="flex min-h-[100dvh] justify-center bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)]">
         <div
-          className="relative min-h-[100dvh] w-full max-w-[480px] overflow-hidden text-neutral-900 shadow-2xl bg-white"
+          className="relative min-h-[100dvh] w-full max-w-[480px] overflow-hidden text-neutral-900 shadow-[0_24px_80px_rgba(37,99,235,0.08)]"
           style={{
-            background: '#F5F8FD',
+            background: 'linear-gradient(180deg, #F5F8FF 0%, #F8FAFF 100%)',
             paddingTop: 'max(0px, env(safe-area-inset-top))',
           }}
         >

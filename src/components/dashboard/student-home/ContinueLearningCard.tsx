@@ -11,7 +11,7 @@ type ContinueLearningCardProps = {
 
 export default function ContinueLearningCard({ coverAsset, title, progressPct }: ContinueLearningCardProps) {
   return (
-    <section className="relative rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-slate-100">
+    <section className="soft-card relative rounded-2xl p-4">
       <div className="flex items-center gap-3.5">
         <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-sm border border-slate-100">
           <Image

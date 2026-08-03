@@ -107,7 +107,7 @@ export default function DashboardSiswaAiTutorPage() {
   };
 
   return (
-    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
       <HeaderCard
         title="AI Tutor CINARAI"
         subtitle="Siap membantumu belajar kapan saja!"
@@ -175,7 +175,7 @@ export default function DashboardSiswaAiTutorPage() {
 
           return (
             <div key={msg.id} className="flex justify-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_8px_24px_rgba(37,99,235,0.08)]">
                 <Image
                   src="/images/ai/RobotAI.png"
                   alt=""
@@ -190,7 +190,7 @@ export default function DashboardSiswaAiTutorPage() {
                   }}
                 />
               </div>
-              <div className="max-w-[80%] rounded-[20px] rounded-tl-md bg-white p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-neutral-800">
+              <div className="max-w-[80%] rounded-[20px] rounded-tl-md bg-white p-4 border border-slate-100 shadow-[0_8px_24px_rgba(37,99,235,0.06)] text-neutral-800">
                 <div className="text-[15px] font-medium leading-relaxed whitespace-pre-line text-neutral-800">
                   {msg.text}
                 </div>
@@ -252,7 +252,7 @@ export default function DashboardSiswaAiTutorPage() {
             e.preventDefault();
             handleSend();
           }}
-          className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_8px_30px_rgba(98,60,234,0.12)] border border-slate-100"
+          className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)] border border-slate-100"
         >
           <button
             type="button"
@@ -287,7 +287,7 @@ export default function DashboardSiswaAiTutorPage() {
       {/* Info Modal */}
       {showInfoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-5 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-300">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-[0_16px_40px_rgba(37,99,235,0.10)] space-y-4 animate-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-rose-500">
                 <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

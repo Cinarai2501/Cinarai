@@ -6,7 +6,7 @@ import LearningJourney from '@/components/dashboard/LearningJourney';
 
 export default function DashboardSiswaKomikPage() {
   return (
-    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
       <HeaderCard
         title="Daftar Komik"
         subtitle="Pilih komik untuk belajar dengan seru!"

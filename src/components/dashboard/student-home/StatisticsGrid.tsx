@@ -22,7 +22,7 @@ export default function StatisticsGrid({ statCards }: StatisticsGridProps) {
       {statCards.map((stat) => (
         <div
           key={stat.label}
-          className="flex min-h-[118px] items-center gap-3 rounded-[28px] border border-slate-100 bg-white p-3.5 pr-4 shadow-[0_8px_24px_rgba(0,0,0,0.05)]"
+          className="soft-card flex min-h-[118px] items-center gap-3 rounded-[28px] p-3.5 pr-4"
         >
           <div
             className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full shadow-sm"

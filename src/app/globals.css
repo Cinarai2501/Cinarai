@@ -18,7 +18,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  background-color: #f0f7ff;
+  background: linear-gradient(180deg, #F5F8FF 0%, #F8FAFF 100%);
+  color: #0F172A;
+}
+
+.soft-card {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
