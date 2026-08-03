@@ -14,7 +14,7 @@ type BadgeSectionProps = {
 
 export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
   return (
-    <section className="soft-card rounded-[28px] p-4 space-y-3">
+    <section className="soft-card rounded-[24px] p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-extrabold uppercase tracking-wide text-[#0066FF]">
           Badge Terbaru
