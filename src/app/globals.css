@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,18 +16,38 @@ html {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   background: linear-gradient(180deg, #F5F8FF 0%, #F8FAFF 100%);
   color: #0F172A;
+  line-height: 1.5;
 }
 
 .soft-card {
   background-color: #FFFFFF;
   border: 1px solid rgba(226, 232, 240, 0.95);
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+  border-radius: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.soft-card:hover {
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Decorative accent styles for cards */
+.card-accent-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #EEF5FF;
+  flex-shrink: 0;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
@@ -95,6 +117,15 @@ body {
 }
 .animate-fade-in {
   animation: fadeIn 0.25s ease-out both;
+}
+
+/* Motivation content fade transition - 300ms smooth fade */
+@keyframes motivationContentFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-motivation-fade {
+  animation: motivationContentFade 0.3s ease-in-out both;
 }
 
 /* Stage transition — slide up + fade */

@@ -178,11 +178,22 @@ export default function StudentHome() {
     { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A', scale: 'scale-[1.65]' },
   ];
 
+  // Get level badge dynamically based on user level
+  const getLevelBadge = (): BadgeItem => {
+    const levelMapping: Record<number, BadgeItem> = {
+      1: { asset: '/assets/dashboard/home/levels/icon-level-1-v2.png', title: 'Pembaca Pemula' },
+      2: { asset: '/assets/dashboard/home/levels/icon-level-2-v2.png', title: 'Penjelajah Candi' },
+      3: { asset: '/assets/dashboard/home/levels/icon-level-3-v2.png', title: 'Petualang Candi' },
+      4: { asset: '/assets/dashboard/home/levels/icon-level-4-v2.png', title: 'Pahlawan Candi' },
+      5: { asset: '/assets/dashboard/home/levels/icon-level-5-v2.png', title: 'Legenda Cinarai' },
+    };
+    return levelMapping[levelInfo.level] || levelMapping[1]!;
+  };
+
   const badgeItems: BadgeItem[] = [
-    { asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-pemula.png', title: 'Pembaca Pemula' },
+    getLevelBadge(),
     { asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-terampil.png', title: 'Penjelajah Candi' },
     { asset: '/assets/dashboard/home/badges/komik/badge-komik-3-pencari-bentuk.png', title: 'Pencari Bentuk' },
-    { asset: '/assets/dashboard/home/badges/komik/badge-komik-5-master-cinarai.png', title: 'Pecinta Belajar' },
   ];
 
   return (
