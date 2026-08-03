@@ -27,22 +27,22 @@ export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
         </Link>
       </div>
 
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none">
+      <div className="mt-2 grid grid-cols-3 gap-2">
         {badgeItems.map((badge) => (
           <div
             key={badge.title}
-            className="flex min-w-[64px] flex-col items-center justify-center gap-1 text-center"
+            className="flex min-h-[116px] flex-col items-center justify-start gap-2 text-center"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full transition-transform hover:scale-105">
+            <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[20px] bg-white p-0 transition-transform hover:scale-105">
               <Image
                 src={badge.asset}
                 alt={badge.title}
-                width={56}
-                height={56}
-                className="h-[56px] w-[56px] object-contain"
+                width={72}
+                height={72}
+                className="h-full w-full object-contain"
               />
             </div>
-            <span className="text-[10px] font-bold leading-tight text-slate-800 line-clamp-2">
+            <span className="min-h-[28px] text-[10px] font-bold leading-3 text-slate-800 line-clamp-2">
               {badge.title}
             </span>
           </div>
