@@ -24,7 +24,14 @@ function getLevelInfo(xp: number) {
   return { level: level + 1, name: LEVEL_NAMES[level] ?? 'Legenda', nextXp: next, progress };
 }
 
-function getAvatarAsset(firstName: string) {
+function getAvatarAsset(firstName: string, gender?: 'Laki-laki' | 'Perempuan') {
+  if (gender === 'Perempuan') {
+    return '/assets/dashboard/home/avatars/avatar-anak-perempuan.png';
+  }
+  if (gender === 'Laki-laki') {
+    return '/assets/dashboard/home/avatars/avatar-anak-laki-laki.png';
+  }
+
   const n = firstName.toLowerCase();
   if (n.includes('ara') || n.includes('ani') || n.endsWith('a')) {
     return '/assets/dashboard/home/avatars/avatar-anak-perempuan.png';
@@ -62,7 +69,7 @@ export default function DashboardSiswaProfilPage() {
     ? user.photoURL
     : user?.avatar?.trim()
       ? user.avatar
-      : getAvatarAsset(firstName);
+      : getAvatarAsset(firstName, user?.gender);
 
   // Compute stats
   const comics = useMemo(() => getAllComics(), []);

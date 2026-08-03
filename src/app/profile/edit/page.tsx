@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useSnackbar } from '@/context/SnackbarContext';
+import { uploadFile } from '@/lib/firebase/storage';
 import type { UserDocument } from '@/types/firestore';
 
 const CLASS_OPTIONS = [
@@ -27,18 +28,21 @@ export default function ProfileEditPage() {
   const [gender, setGender] = useState<UserDocument['gender'] | ''>('');
   const [classLevel, setClassLevel] = useState<UserDocument['classLevel'] | ''>('');
   const [bio, setBio] = useState('');
-  const [avatar, setAvatar] = useState('');
-  const [photoURL, setPhotoURL] = useState('');
+  const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const email = user?.email ?? 'siswa@email.com';
   const username = user?.username ?? email.split('@')[0];
 
   const avatarAsset = useMemo(() => {
-    if (photoURL.trim()) return photoURL.trim();
-    if (avatar.trim()) return avatar.trim();
+    if (profilePhotoPreview.trim()) return profilePhotoPreview;
+    if (user?.photoURL?.trim()) return user.photoURL.trim();
+    if (gender === 'Perempuan') {
+      return '/assets/dashboard/home/avatars/avatar-anak-perempuan.png';
+    }
     return '/assets/dashboard/home/avatars/avatar-anak-laki-laki.png';
-  }, [avatar, photoURL]);
+  }, [gender, profilePhotoPreview, user?.photoURL]);
 
   useEffect(() => {
     setDisplayName(user?.displayName ?? '');
@@ -46,9 +50,22 @@ export default function ProfileEditPage() {
     setGender(user?.gender ?? '');
     setClassLevel(user?.classLevel ?? '');
     setBio(user?.bio ?? '');
-    setAvatar(user?.avatar ?? '');
-    setPhotoURL(user?.photoURL ?? '');
+    setProfilePhotoPreview(user?.photoURL ?? '');
+    setProfilePhotoFile(null);
   }, [user]);
+
+  useEffect(() => {
+    if (!profilePhotoFile) {
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(profilePhotoFile);
+    setProfilePhotoPreview(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [profilePhotoFile]);
 
   if (!user) {
     return (
@@ -68,14 +85,22 @@ export default function ProfileEditPage() {
     setIsSaving(true);
 
     try {
+      let profileUrl = user?.photoURL ?? '';
+
+      if (profilePhotoFile) {
+        const fileName = `${user?.uid ?? 'profile'}-${Date.now()}-${profilePhotoFile.name}`;
+        profileUrl = await uploadFile(`profile-photos/${user?.uid}/${fileName}`, profilePhotoFile, {
+          contentType: profilePhotoFile.type,
+        });
+      }
+
       await updateUserProfile({
         displayName: displayName.trim(),
-        photoURL: photoURL.trim() || undefined,
+        photoURL: profileUrl.trim() || undefined,
         nickname: nickname.trim() || undefined,
         gender: gender || undefined,
         classLevel: classLevel || undefined,
         bio: bio.trim() || undefined,
-        avatar: avatar.trim() || undefined,
       });
       showSnackbar('Profil berhasil diperbarui', 'success');
       router.push('/dashboard/siswa/profil');
@@ -110,7 +135,7 @@ export default function ProfileEditPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-[#0F172A]">Foto Profil</h2>
-                  <p className="mt-1 text-sm text-[#64748B]">Bagikan avatar atau URL foto profil pilihanmu.</p>
+                  <p className="mt-1 text-sm text-[#64748B]">Unggah foto profil dari galeri untuk menyesuaikan tampilannya.</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[24px] bg-slate-100 border border-slate-200">
@@ -187,22 +212,15 @@ export default function ProfileEditPage() {
               </div>
 
               <label className="block space-y-2 text-sm font-semibold text-[#334155]">
-                URL Avatar
+                Pilih Foto Profil
                 <input
-                  value={avatar}
-                  onChange={(event) => setAvatar(event.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-[#0F172A] outline-none transition focus:border-[#0D9488] focus:ring-4 focus:ring-[#0D9488]/10"
-                />
-              </label>
-
-              <label className="block space-y-2 text-sm font-semibold text-[#334155]">
-                URL Foto Profil
-                <input
-                  value={photoURL}
-                  onChange={(event) => setPhotoURL(event.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-[#0F172A] outline-none transition focus:border-[#0D9488] focus:ring-4 focus:ring-[#0D9488]/10"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    setProfilePhotoFile(file);
+                  }}
+                  className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-[#0F172A] file:mr-4 file:rounded-full file:border-0 file:bg-[#0D9488] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white file:transition hover:file:bg-[#0F766E]"
                 />
               </label>
             </div>
