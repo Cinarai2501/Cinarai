@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import HeroHeader from '@/components/dashboard/HeroHeader';
+import HeaderCard from '@/components/dashboard/HeaderCard';
 
 type Message = {
   id: string;
@@ -107,8 +107,8 @@ export default function DashboardSiswaAiTutorPage() {
   };
 
   return (
-    <div className="mx-auto min-h-0 w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-2 text-neutral-900 sm:px-5 lg:px-6">
-      <HeroHeader
+    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+      <HeaderCard
         title="AI Tutor CINARAI"
         subtitle="Siap membantumu belajar kapan saja!"
         gradientFrom="#623CEA"
@@ -147,8 +147,9 @@ export default function DashboardSiswaAiTutorPage() {
         }
       />
 
-      {/* 2. CHAT AREA */}
-      <div className="pt-6 pb-2 space-y-5">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
+        {/* 2. CHAT AREA */}
+        <div className="space-y-5">
         <div className="flex justify-center">
           <span className="rounded-full bg-slate-200/60 px-4 py-1 text-[12px] font-semibold text-slate-500">
             Hari ini
@@ -219,6 +220,7 @@ export default function DashboardSiswaAiTutorPage() {
           );
         })}
         <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* 3. PERTANYAAN CEPAT */}

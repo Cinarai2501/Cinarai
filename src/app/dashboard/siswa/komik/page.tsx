@@ -1,13 +1,13 @@
 'use client';
 
 import Image from 'next/image';
+import HeaderCard from '@/components/dashboard/HeaderCard';
 import LearningJourney from '@/components/dashboard/LearningJourney';
-import HeroHeader from '@/components/dashboard/HeroHeader';
 
 export default function DashboardSiswaKomikPage() {
   return (
-    <div className="mx-auto min-h-0 w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-2 text-neutral-900 sm:px-5 lg:px-6">
-      <HeroHeader
+    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+      <HeaderCard
         title="Daftar Komik"
         subtitle="Pilih komik untuk belajar dengan seru!"
         gradientFrom="#0DBF7E"
@@ -28,7 +28,7 @@ export default function DashboardSiswaKomikPage() {
         }
       />
 
-      <div className="pt-4">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
         <LearningJourney />
       </div>
     </div>

@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { getAllComics } from '@/lib/comicRepository';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
-import HeroHeader from '@/components/dashboard/HeroHeader';
+import HeaderCard from '@/components/dashboard/HeaderCard';
 
 type QuizItem = {
   id: number;
@@ -146,8 +146,8 @@ export default function DashboardSiswaKuisPage() {
   }, [unlockStatuses]);
 
   return (
-    <div className="mx-auto min-h-0 w-full max-w-[1200px] bg-[#F8FAFC] px-4 pb-2 text-neutral-900 sm:px-5 lg:px-6">
-      <HeroHeader
+    <div className="min-h-0 w-full bg-[#F8FAFC] text-neutral-900">
+      <HeaderCard
         title="Kuis"
         subtitle="Belajar makin seru dengan kuis!"
         gradientFrom="#FF6B00"
@@ -159,7 +159,8 @@ export default function DashboardSiswaKuisPage() {
         }
       />
 
-      <div className="pt-4 space-y-4">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
+        <div className="space-y-4">
         {/* 2. TAB NAVIGASI (Tersedia | Riwayat) */}
         <div className="flex rounded-full bg-[#F1F5F9] p-1 text-[14px] font-bold border border-slate-100">
           <button
@@ -373,6 +374,7 @@ export default function DashboardSiswaKuisPage() {
               <p className="mt-1 text-[10px] font-semibold text-slate-500 leading-tight">Total Soal Dikerjakan</p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
