@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import HeroHeader from '@/components/dashboard/HeroHeader';
+import HeaderCard from '@/components/dashboard/HeaderCard';
 
 type HomeHeaderProps = {
   firstName: string;
@@ -10,7 +10,7 @@ type HomeHeaderProps = {
 
 export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) {
   return (
-    <HeroHeader
+    <HeaderCard
       title={`Halo, ${firstName}! 👋`}
       subtitle="Semangat belajar hari ini!"
       gradientFrom="#0077FF"

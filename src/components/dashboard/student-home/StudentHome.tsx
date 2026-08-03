@@ -136,7 +136,7 @@ export default function StudentHome() {
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
       <section className="px-4 pb-6">
-        <div className="mx-auto max-w-[480px] space-y-5">
+        <div className="mx-auto mt-5 max-w-[480px] space-y-5">
           <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <StatisticsGrid statCards={statCards} />
