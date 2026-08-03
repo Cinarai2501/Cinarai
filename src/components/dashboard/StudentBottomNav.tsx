@@ -60,10 +60,10 @@ export default function StudentBottomNav() {
     <nav
       aria-label="Navigasi utama"
       className="fixed inset-x-0 bottom-0 z-50 px-[clamp(14px,4vw,20px)]"
-      style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[58px] max-w-[440px] items-center justify-between rounded-[22px] border border-slate-100/80 px-[10px] py-[6px]"
+        className="mx-auto flex h-[56px] max-w-[440px] items-center justify-between rounded-[22px] border border-slate-100/80 px-[10px] py-[6px]"
         style={{
           background: 'rgba(255,255,255,0.96)',
           backdropFilter: 'blur(18px)',

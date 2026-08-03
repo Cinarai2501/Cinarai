@@ -62,30 +62,12 @@ function getAvatarAsset(firstName: string) {
   return '/assets/dashboard/home/avatars/avatar-anak-laki-laki.png';
 }
 
-const LEVEL_BADGE_TITLES = [
-  'Pembaca Pemula',
-  'Penjelajah Candi',
-  'Petualang Candi',
-  'Pahlawan Candi',
-  'Legenda Cinarai',
-];
-
-function getLevelBadgeAsset(level: number) {
-  const normalized = Math.min(Math.max(Math.floor(level), 1), 5);
-  return `/assets/dashboard/home/levels/icon-level-${normalized}-v2.png`;
-}
-
-function getLevelBadgeTitle(level: number) {
-  const normalized = Math.min(Math.max(Math.floor(level), 1), 5);
-  return LEVEL_BADGE_TITLES[normalized - 1];
-}
-
-function getStatIconAsset(type: string, level = 1) {
+function getStatIconAsset(type: string) {
   switch (type) {
     case 'xp':
       return '/assets/dashboard/home/statistics/icon-total-xp.png';
     case 'level':
-      return getLevelBadgeAsset(level);
+      return '/assets/dashboard/home/levels/icon-level-3-v2.png';
     case 'streak':
       return '/assets/dashboard/home/statistics/icon-streak.png';
     case 'comic':
@@ -191,32 +173,44 @@ export default function StudentHome() {
 
   const statCards: StatCard[] = [
     { label: 'Total XP', value: `${totalXp}`, iconAsset: getStatIconAsset('xp'), bg: '#FEF3C7', valueColor: '#D97706', scale: 'scale-[1.8]' },
-    { label: 'Level', sublabel: levelInfo.name, value: `Level ${levelInfo.level}`, iconAsset: getStatIconAsset('level', levelInfo.level), bg: '#EDE9FE', valueColor: '#7C3AED', scale: 'scale-[1.0]' },
+    { label: 'Level', sublabel: levelInfo.name, value: `Level ${levelInfo.level}`, iconAsset: getStatIconAsset('level'), bg: '#EDE9FE', valueColor: '#7C3AED', scale: 'scale-[1.0]' },
     { label: 'Streak Belajar', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}`, iconAsset: getStatIconAsset('streak'), bg: '#FFEDD5', valueColor: '#EA580C', scale: 'scale-[1.65]' },
     { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A', scale: 'scale-[1.65]' },
   ];
 
+  // Get level badge dynamically based on user level
+  const getLevelBadge = (): BadgeItem => {
+    const levelMapping: Record<number, BadgeItem> = {
+      1: { asset: '/assets/dashboard/home/levels/icon-level-1-v2.png', title: 'Pembaca Pemula' },
+      2: { asset: '/assets/dashboard/home/levels/icon-level-2-v2.png', title: 'Penjelajah Candi' },
+      3: { asset: '/assets/dashboard/home/levels/icon-level-3-v2.png', title: 'Petualang Candi' },
+      4: { asset: '/assets/dashboard/home/levels/icon-level-4-v2.png', title: 'Pahlawan Candi' },
+      5: { asset: '/assets/dashboard/home/levels/icon-level-5-v2.png', title: 'Legenda Cinarai' },
+    };
+    return levelMapping[levelInfo.level] || levelMapping[1]!;
+  };
+
   const badgeItems: BadgeItem[] = [
-    {
-      asset: getLevelBadgeAsset(levelInfo.level),
-      title: getLevelBadgeTitle(levelInfo.level),
-    },
+    getLevelBadge(),
     { asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-terampil.png', title: 'Penjelajah Candi' },
     { asset: '/assets/dashboard/home/badges/komik/badge-komik-3-pencari-bentuk.png', title: 'Pencari Bentuk' },
   ];
 
   return (
-    <main className="relative min-h-0 bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] pb-2 text-slate-900">
-      <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
+    <main
+      className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900"
+      style={{ minHeight: 'calc(100vh - env(safe-area-inset-bottom))' }}
+    >
+      <div className="mx-auto flex h-full w-full max-w-[480px] flex-col px-3 pb-[86px] pt-2">
+        <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
-      <section className="px-4 pb-6">
-        <div className="mx-auto mt-5 max-w-[480px] space-y-4">
+        <section className="mt-2 flex-1 space-y-2.5">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <MotivationCard motivation={motivation} isLoading={motivationLoading} />
           <StatisticsGrid statCards={statCards} />
           <BadgeSection badgeItems={badgeItems.slice(0, 3)} />
-        </div>
-      </section>
+        </section>
+      </div>
 
       <StudentBottomNav />
     </main>
