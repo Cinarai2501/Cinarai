@@ -34,6 +34,11 @@ service cloud.firestore {
         allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
         allow write: if isSignedIn() && ownsUserDoc(uid);
       }
+
+      match /daily_motivation/{date} {
+        allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
+        allow write: if isSignedIn() && ownsUserDoc(uid);
+      }
     }
 
     match /dashboard/{docId} {

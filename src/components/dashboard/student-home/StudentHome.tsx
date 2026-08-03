@@ -1,14 +1,17 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase/client';
+import { generateDailyMotivation } from '@/lib/ai/dailyMotivation';
 import BadgeSection from './BadgeSection';
 import ContinueLearningCard from './ContinueLearningCard';
 import HomeHeader from './HomeHeader';
-import LevelCard from './LevelCard';
+import MotivationCard from './MotivationCard';
 import StatisticsGrid from './StatisticsGrid';
 import StudentBottomNav from '@/components/dashboard/StudentBottomNav';
 
@@ -59,10 +62,6 @@ function getAvatarAsset(firstName: string) {
   return '/assets/dashboard/home/avatars/avatar-anak-laki-laki.png';
 }
 
-function getLevelIconAsset(level: number) {
-  return `/assets/dashboard/home/levels/icon-level-${Math.max(1, Math.min(level, 5))}-v2.png`;
-}
-
 function getStatIconAsset(type: string) {
   switch (type) {
     case 'xp':
@@ -87,6 +86,8 @@ export default function StudentHome() {
   const { states, getProgress } = useAllComicProgress();
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Siswa';
   const avatarAsset = getAvatarAsset(firstName);
+  const [motivation, setMotivation] = useState('Belajar sedikit demi sedikit tetap membawa kita maju.');
+  const [motivationLoading, setMotivationLoading] = useState(true);
 
   const comics = useMemo(() => getAllComics(), []);
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
@@ -117,10 +118,63 @@ export default function StudentHome() {
   const todayPct = todayProgress?.percentage ?? 50;
   const levelInfo = getLevelInfo(totalXp);
 
+  useEffect(() => {
+    if (!user?.uid) {
+      setMotivationLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMotivation = async () => {
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const motivationDoc = doc(firestore, 'users', user.uid, 'daily_motivation', todayKey);
+
+      try {
+        const snapshot = await getDoc(motivationDoc);
+        if (!cancelled && snapshot.exists()) {
+          const data = snapshot.data() as { text?: string } | undefined;
+          if (typeof data?.text === 'string' && data.text.trim()) {
+            setMotivation(data.text.trim());
+            setMotivationLoading(false);
+            return;
+          }
+        }
+
+        if (cancelled) return;
+
+        const generated = await generateDailyMotivation();
+        if (!cancelled) {
+          setMotivation(generated.motivation);
+          await setDoc(motivationDoc, {
+            userId: user.uid,
+            text: generated.motivation,
+            createdAt: serverTimestamp(),
+            date: todayKey,
+          }, { merge: true });
+        }
+      } catch {
+        if (!cancelled) {
+          setMotivation('Belajar sedikit demi sedikit tetap membawa kita maju.');
+        }
+      } finally {
+        if (!cancelled) {
+          setMotivationLoading(false);
+        }
+      }
+    };
+
+    void loadMotivation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
+
   const statCards: StatCard[] = [
     { label: 'Total XP', value: `${totalXp}`, iconAsset: getStatIconAsset('xp'), bg: '#FEF3C7', valueColor: '#D97706', scale: 'scale-[1.8]' },
     { label: 'Level', sublabel: levelInfo.name, value: `Level ${levelInfo.level}`, iconAsset: getStatIconAsset('level'), bg: '#EDE9FE', valueColor: '#7C3AED', scale: 'scale-[1.0]' },
-    { label: 'Streak', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}`, iconAsset: getStatIconAsset('streak'), bg: '#FFEDD5', valueColor: '#EA580C', scale: 'scale-[1.65]' },
+    { label: 'Streak Belajar', value: `${completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}`, iconAsset: getStatIconAsset('streak'), bg: '#FFEDD5', valueColor: '#EA580C', scale: 'scale-[1.65]' },
     { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A', scale: 'scale-[1.65]' },
   ];
 
@@ -136,11 +190,11 @@ export default function StudentHome() {
       <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
       <section className="px-4 pb-6">
-        <div className="mx-auto mt-5 max-w-[480px] space-y-5">
-          <LevelCard levelInfo={levelInfo} totalXp={totalXp} levelIconAsset={getLevelIconAsset(levelInfo.level)} />
+        <div className="mx-auto mt-5 max-w-[480px] space-y-4">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
+          <MotivationCard motivation={motivation} isLoading={motivationLoading} />
           <StatisticsGrid statCards={statCards} />
-          <BadgeSection badgeItems={badgeItems} />
+          <BadgeSection badgeItems={badgeItems.slice(0, 3)} />
         </div>
       </section>
 
