@@ -197,14 +197,11 @@ export default function StudentHome() {
   ];
 
   return (
-    <main
-      className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900"
-      style={{ minHeight: 'calc(100vh - env(safe-area-inset-bottom))' }}
-    >
-      <div className="mx-auto flex h-full w-full max-w-[480px] flex-col px-3 pb-[86px] pt-2">
+    <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
+      <div className="mx-auto flex w-full max-w-[480px] flex-col px-3 pb-[72px] pt-2">
         <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
-        <section className="mt-2 flex-1 space-y-2.5">
+        <section className="mt-2 space-y-2.5">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <MotivationCard motivation={motivation} isLoading={motivationLoading} />
           <StatisticsGrid statCards={statCards} />
