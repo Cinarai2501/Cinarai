@@ -147,7 +147,7 @@ export default function DashboardSiswaProfilPage() {
 
       {/* USER INFO FLOATING CARD */}
       <div className="relative z-20 -mt-10 px-5">
-        <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+        <div className="grid gap-4">
           <div className="rounded-[28px] bg-white px-5 py-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] border border-slate-100">
             <div className="flex items-center gap-4">
               <div className="flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-[28px] bg-[#E0F2FE] border border-slate-200">
@@ -168,27 +168,6 @@ export default function DashboardSiswaProfilPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {user?.nickname ? (
-                <div className="rounded-[24px] bg-[#ECFDF5] px-4 py-3 text-[13px] font-semibold text-[#065F46]">
-                  Panggilan: {user.nickname}
-                </div>
-              ) : null}
-              {user?.gender ? (
-                <div className="rounded-[24px] bg-[#FCE7F3] px-4 py-3 text-[13px] font-semibold text-[#9D174D]">
-                  Jenis Kelamin: {user.gender}
-                </div>
-              ) : null}
-              {user?.classLevel ? (
-                <div className="rounded-[24px] bg-[#EFF6FF] px-4 py-3 text-[13px] font-semibold text-[#1D4ED8]">
-                  Kelas: {user.classLevel}
-                </div>
-              ) : null}
-              <div className="rounded-[24px] bg-[#FEF3C7] px-4 py-3 text-[13px] font-semibold text-[#92400E]">
-                {user?.role === 'teacher' ? 'Guru' : 'Siswa'} CINARAI
-              </div>
-            </div>
-
             {user?.bio ? (
               <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-4 text-[14px] leading-relaxed text-slate-700">
                 <p className="font-bold text-slate-900">Tentang Saya</p>
@@ -197,26 +176,6 @@ export default function DashboardSiswaProfilPage() {
             ) : null}
           </div>
 
-          <div className="rounded-[28px] bg-white px-5 py-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] border border-slate-100">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-[#1E293B]">Detail Profil</h3>
-                  <p className="mt-1 text-[13px] text-slate-500">Periksa detail informasi profil siswa.</p>
-                </div>
-              <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
-                <p className="text-slate-500">Nama Panggilan</p>
-                <p className="mt-1 font-semibold text-[#1E293B]">{user?.nickname ?? '-'}</p>
-              </div>
-              <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
-                <p className="text-slate-500">Jenis Kelamin</p>
-                <p className="mt-1 font-semibold text-[#1E293B]">{user?.gender ?? '-'}</p>
-              </div>
-              <div className="rounded-[24px] bg-slate-50 p-4 text-[14px] text-slate-700">
-                <p className="text-slate-500">Kelas</p>
-                <p className="mt-1 font-semibold text-[#1E293B]">{user?.classLevel ?? '-'}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
