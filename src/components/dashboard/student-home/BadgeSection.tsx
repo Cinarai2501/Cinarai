@@ -33,16 +33,16 @@ export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
             key={badge.title}
             className="flex min-h-[116px] flex-col items-center justify-start gap-2 text-center"
           >
-            <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-[20px] bg-white p-0 transition-transform hover:scale-105">
+            <div className="flex h-[80px] w-[80px] items-center justify-center overflow-hidden rounded-[20px] bg-white p-0 transition-transform hover:scale-105">
               <Image
                 src={badge.asset}
                 alt={badge.title}
-                width={72}
-                height={72}
+                width={80}
+                height={80}
                 className="h-full w-full object-contain"
               />
             </div>
-            <span className="min-h-[28px] text-[10px] font-bold leading-3 text-slate-800 line-clamp-2">
+            <span className="flex min-h-[28px] items-center justify-center text-[10px] font-bold leading-3 text-slate-800 line-clamp-2">
               {badge.title}
             </span>
           </div>

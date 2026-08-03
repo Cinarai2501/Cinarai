@@ -15,7 +15,7 @@ export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) 
       subtitle="Semangat belajar hari ini!"
       gradientFrom="#0077FF"
       gradientTo="#0066FF"
-      className="!min-h-[124px] rounded-b-[24px] px-4 py-3 pb-8 sm:px-4"
+      className="!min-h-[124px] rounded-b-[24px] px-0 py-3 pb-8 sm:px-0"
       rightContent={
         <Image
           src={avatarAsset}

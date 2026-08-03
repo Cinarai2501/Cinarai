@@ -14,6 +14,7 @@ import HomeHeader from './HomeHeader';
 import MotivationCard from './MotivationCard';
 import StatisticsGrid from './StatisticsGrid';
 import StudentBottomNav from '@/components/dashboard/StudentBottomNav';
+import { getLevelConfig } from './levelConfig';
 
 type StatCard = {
   label: string;
@@ -37,21 +38,9 @@ type LevelInfo = {
   progress: number;
 };
 
-const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
-const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
-
 function getLevelInfo(xp: number): LevelInfo {
-  let level = 0;
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i -= 1) {
-    if (xp >= LEVEL_THRESHOLDS[i]) {
-      level = i;
-      break;
-    }
-  }
-  const cur = LEVEL_THRESHOLDS[level] ?? 0;
-  const next = LEVEL_THRESHOLDS[level + 1] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
-  const progress = next > cur ? Math.round(((xp - cur) / (next - cur)) * 100) : 100;
-  return { level: level + 1, name: LEVEL_NAMES[level] ?? 'Legenda', nextXp: next, progress };
+  const config = getLevelConfig(xp);
+  return { level: config.level, name: config.name, nextXp: config.nextXp, progress: config.progress };
 }
 
 function getAvatarAsset(firstName: string) {
@@ -178,27 +167,20 @@ export default function StudentHome() {
     { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A', scale: 'scale-[1.65]' },
   ];
 
-  // Get level badge dynamically based on user level
-  const getLevelBadge = (): BadgeItem => {
-    const levelMapping: Record<number, BadgeItem> = {
-      1: { asset: '/assets/dashboard/home/levels/icon-level-1-v2.png', title: 'Pembaca Pemula' },
-      2: { asset: '/assets/dashboard/home/levels/icon-level-2-v2.png', title: 'Penjelajah Candi' },
-      3: { asset: '/assets/dashboard/home/levels/icon-level-3-v2.png', title: 'Petualang Candi' },
-      4: { asset: '/assets/dashboard/home/levels/icon-level-4-v2.png', title: 'Pahlawan Candi' },
-      5: { asset: '/assets/dashboard/home/levels/icon-level-5-v2.png', title: 'Legenda Cinarai' },
-    };
-    return levelMapping[levelInfo.level] || levelMapping[1]!;
+  const levelBadge: BadgeItem = {
+    asset: getLevelConfig(totalXp).badgeAsset,
+    title: getLevelConfig(totalXp).badgeTitle,
   };
 
   const badgeItems: BadgeItem[] = [
-    getLevelBadge(),
+    levelBadge,
     { asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-terampil.png', title: 'Penjelajah Candi' },
     { asset: '/assets/dashboard/home/badges/komik/badge-komik-3-pencari-bentuk.png', title: 'Pencari Bentuk' },
   ];
 
   return (
     <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
-      <div className="mx-auto flex w-full max-w-[480px] flex-col px-3 pb-[72px] pt-2">
+      <div className="mx-auto flex w-full max-w-[480px] flex-col px-0 pb-[72px] pt-2">
         <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
         <section className="mt-2 space-y-2.5">

@@ -21,7 +21,7 @@ export default function HeaderCard({
 }: HeaderCardProps) {
   return (
     <section
-      className={`relative flex min-h-[144px] w-full items-center justify-between overflow-hidden rounded-b-[32px] px-6 py-5 pb-14 text-white shadow-[0_10px_30px_rgba(37,99,235,0.12)] sm:px-6 ${className}`}
+      className={`relative flex min-h-[144px] w-full items-center justify-between overflow-hidden rounded-b-[32px] px-4 py-5 pb-14 text-white shadow-[0_10px_30px_rgba(37,99,235,0.12)] sm:px-4 ${className}`}
       style={{
         background: `linear-gradient(135deg, ${gradientFrom} 0%, ${gradientTo} 100%)`,
       }}
