@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import HeaderCard from '@/components/dashboard/HeaderCard';
 
 type HomeHeaderProps = {
   firstName: string;
