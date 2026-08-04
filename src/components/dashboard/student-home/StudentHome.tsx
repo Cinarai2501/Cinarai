@@ -180,7 +180,7 @@ export default function StudentHome() {
 
   return (
     <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
-      <div className="mx-auto flex w-full max-w-[480px] flex-col px-0 pb-[72px] pt-2">
+      <div className="mx-auto flex w-full max-w-[480px] flex-col px-0 pb-[72px]">
         <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
         <section className="mt-2 space-y-2.5">
