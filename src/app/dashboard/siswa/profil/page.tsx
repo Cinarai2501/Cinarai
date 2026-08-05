@@ -299,28 +299,29 @@ export default function DashboardSiswaProfilPage() {
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-red-50/80"
+              className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[18px] bg-[#FEE2E2] text-[#EF4444]">
+                <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[18px] bg-[#FEE2E2] text-[#DC2626]">
                   <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
+                    <path d="M16 17l5-5-5-5" />
+                    <path d="M21 12H9" />
+                    <path d="M9 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" />
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[15px] font-bold text-[#EF4444]">
-                    {isLoggingOut ? 'Keluar...' : 'Logout'}
-                  </h3>
-                  <p className="mt-0.5 truncate text-[12px] font-semibold text-[#F87171]">Keluar dari akun dengan aman</p>
+                  <h3 className="text-[15px] font-bold text-[#1E293B]">Keluar</h3>
+                  <p className="mt-0.5 truncate text-[12px] font-semibold text-[#94A3B8]">Keluar dari akun CINARAI</p>
                 </div>
               </div>
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-[#CBD5E1]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
+              <span className="flex items-center gap-2 text-[13px] font-bold text-[#0D9488]">
+                {isLoggingOut ? 'Memproses...' : 'Keluar'}
+                <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] text-[#CBD5E1]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </span>
             </button>
-          </div>
+          </SoftCard>
 
           <div className="space-y-3">
             <h2 className="px-1 text-[16px] font-extrabold text-[#1E293B]">Ringkasan Akun</h2>
@@ -360,6 +361,6 @@ export default function DashboardSiswaProfilPage() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardPage>
   );
 }

@@ -233,7 +233,7 @@ export default function DashboardSiswaKuisPage() {
                   >
                     Lanjutkan
                   </Link>
-                </div>
+                </SoftCard>
               </div>
             )}
 
