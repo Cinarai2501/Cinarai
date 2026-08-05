@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import HeaderCard from '@/components/dashboard/HeaderCard';
+import DashboardPage from '@/components/dashboard/DashboardPage';
 
 type Message = {
   id: string;
@@ -107,45 +107,44 @@ export default function DashboardSiswaAiTutorPage() {
   };
 
   return (
-    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
-      <HeaderCard
-        title="AI Tutor CINARAI"
-        subtitle="Siap membantumu belajar kapan saja!"
-        gradientFrom="#623CEA"
-        gradientTo="#7550F1"
-        rightContent={
-          <div className="flex items-center gap-3">
-            <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
-              <div className="relative h-full w-full overflow-hidden rounded-full">
-                <Image
-                  src="/images/ai/RobotAI.png"
-                  alt=""
-                  fill
-                  sizes="68px"
-                  className="object-cover"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (target.src !== '/images/ai/RobotAI.png') {
-                      target.src = '/images/ai/RobotAI.png';
-                    }
-                  }}
-                />
-              </div>
+    <DashboardPage
+      title="AI Tutor CINARAI"
+      subtitle="Siap membantumu belajar kapan saja!"
+      gradientFrom="#623CEA"
+      gradientTo="#7550F1"
+      rightContent={
+        <div className="flex items-center gap-3">
+          <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
+            <div className="relative h-full w-full overflow-hidden rounded-full">
+              <Image
+                src="/images/ai/RobotAI.png"
+                alt=""
+                fill
+                sizes="68px"
+                className="object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src !== '/images/ai/RobotAI.png') {
+                    target.src = '/images/ai/RobotAI.png';
+                  }
+                }}
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => setShowInfoModal(true)}
-              className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white transition-colors hover:bg-white/10 active:bg-white/20"
-              aria-label="Info Batasan AI"
-            >
-              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
-            </button>
           </div>
-        }
-      />
+          <button
+            type="button"
+            onClick={() => setShowInfoModal(true)}
+            className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white transition-colors hover:bg-white/10 active:bg-white/20"
+            aria-label="Info Batasan AI"
+          >
+            <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </button>
+        </div>
+      }
+    >
 
       <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
         {/* 2. CHAT AREA */}
@@ -337,6 +336,6 @@ export default function DashboardSiswaAiTutorPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardPage>
   );
 }

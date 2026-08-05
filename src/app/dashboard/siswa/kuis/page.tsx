@@ -5,7 +5,8 @@ import { useMemo, useState } from 'react';
 import { getAllComics } from '@/lib/comicRepository';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
-import HeaderCard from '@/components/dashboard/HeaderCard';
+import DashboardPage from '@/components/dashboard/DashboardPage';
+import SoftCard from '@/components/ui/SoftCard';
 
 type QuizItem = {
   id: number;
@@ -146,21 +147,18 @@ export default function DashboardSiswaKuisPage() {
   }, [unlockStatuses]);
 
   return (
-    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
-      <HeaderCard
-        title="Kuis"
-        subtitle="Belajar makin seru dengan kuis!"
-        gradientFrom="#FF6B00"
-        gradientTo="#FF8800"
-        rightContent={
-          <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
-            <span className="text-[40px] leading-none drop-shadow-md">🏆</span>
-          </div>
-        }
-      />
-
-      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
-        <div className="space-y-4">
+    <DashboardPage
+      title="Kuis"
+      subtitle="Belajar makin seru dengan kuis!"
+      gradientFrom="#FF6B00"
+      gradientTo="#FF8800"
+      rightContent={
+        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
+          <span className="text-[40px] leading-none drop-shadow-md">🏆</span>
+        </div>
+      }
+    >
+      <div className="space-y-4">
         {/* 2. TAB NAVIGASI (Tersedia | Riwayat) */}
         <div className="flex rounded-full bg-[#F1F5F9] p-1 text-[14px] font-bold border border-slate-100">
           <button
@@ -200,7 +198,7 @@ export default function DashboardSiswaKuisPage() {
                   Selesaikan kuis yang sedang kamu kerjakan
                 </p>
 
-                <div className="soft-card rounded-2xl p-4 flex items-center justify-between gap-3">
+                <SoftCard className="rounded-2xl p-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     <div className={`flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl ${inProgressQuiz.bgColor} shadow-sm border border-slate-100`}>
                       <QuizIcon type={inProgressQuiz.iconType} />
@@ -261,9 +259,9 @@ export default function DashboardSiswaKuisPage() {
                     const isStarted = (progress?.percentage ?? 0) > 0;
 
                     return (
-                      <div
+                      <SoftCard
                         key={quiz.id}
-                        className="soft-card rounded-2xl p-4 flex items-center justify-between gap-3 transition hover:shadow-[0_10px_28px_rgba(37,99,235,0.10)]"
+                        className="rounded-2xl p-4 flex items-center justify-between gap-3 transition hover:shadow-[0_10px_28px_rgba(37,99,235,0.10)]"
                       >
                         <div className="flex items-center gap-3.5 min-w-0 flex-1">
                           <div className={`flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl ${quiz.bgColor} shadow-sm border border-slate-100`}>
@@ -300,7 +298,7 @@ export default function DashboardSiswaKuisPage() {
                         >
                           Mulai
                         </Link>
-                      </div>
+                      </SoftCard>
                     );
                   })
                 )}
@@ -309,11 +307,11 @@ export default function DashboardSiswaKuisPage() {
           </>
         ) : (
           /* TAB RIWAYAT */
-          <div className="soft-card rounded-2xl p-6 text-center">
+          <SoftCard className="rounded-2xl p-6 text-center">
             <p className="text-[14px] font-semibold text-slate-500">
               Riwayat hasil kuis kamu akan ditampilkan di sini.
             </p>
-          </div>
+          </SoftCard>
         )}
 
         {/* 5. STATISTIK KUIS SECTION */}
@@ -326,7 +324,7 @@ export default function DashboardSiswaKuisPage() {
             Ringkasan performa kuis kamu
           </p>
 
-          <div className="soft-card grid grid-cols-4 gap-2 rounded-2xl p-3.5">
+          <SoftCard className="grid grid-cols-4 gap-2 rounded-2xl p-3.5">
             {/* Stat 1: Kuis Selesai */}
             <div className="flex flex-col items-center text-center">
               <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#0066FF] text-white shadow-sm">
@@ -373,10 +371,9 @@ export default function DashboardSiswaKuisPage() {
               <p className="mt-2 text-[18px] font-extrabold leading-none text-slate-900">{totalQuestionsAnswered}</p>
               <p className="mt-1 text-[10px] font-semibold text-slate-500 leading-tight">Total Soal Dikerjakan</p>
             </div>
-          </div>
-        </div>
+          </SoftCard>
         </div>
       </div>
-    </div>
+    </DashboardPage>
   );
 }

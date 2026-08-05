@@ -6,7 +6,8 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
-import HeaderCard from '@/components/dashboard/HeaderCard';
+import DashboardPage from '@/components/dashboard/DashboardPage';
+import SoftCard from '@/components/ui/SoftCard';
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
 const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
@@ -105,31 +106,30 @@ export default function DashboardSiswaProfilPage() {
   };
 
   return (
-    <div className="min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900">
-      <HeaderCard
-        title="Profil"
-        subtitle="Kelola akun dan pengaturan aplikasi"
-        gradientFrom="#0F766E"
-        gradientTo="#14B8A6"
-        rightContent={
-          <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
-            <div className="relative h-full w-full overflow-hidden rounded-full">
-              <Image
-                src={avatarAsset}
-                alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
-                fill
-                sizes="68px"
-                className="object-cover"
-              />
-            </div>
+    <DashboardPage
+      title="Profil"
+      subtitle="Kelola akun dan pengaturan aplikasi"
+      gradientFrom="#0F766E"
+      gradientTo="#14B8A6"
+      rightContent={
+        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
+          <div className="relative h-full w-full overflow-hidden rounded-full">
+            <Image
+              src={avatarAsset}
+              alt={user?.displayName ? `${user.displayName} avatar` : 'Avatar siswa'}
+              fill
+              sizes="68px"
+              className="object-cover"
+            />
           </div>
-        }
-      />
+        </div>
+      }
+    >
 
-      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
+      <div className="space-y-6 pt-6">
         <div className="relative z-20 -mt-10">
           <div className="grid gap-4">
-            <div className="soft-card rounded-[28px] px-5 py-6">
+            <SoftCard className="rounded-[28px] px-5 py-6">
               <div className="flex items-center gap-4">
                 <div className="flex h-[88px] w-[88px] items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-[#E0F2FE]">
                   <Image
@@ -157,12 +157,12 @@ export default function DashboardSiswaProfilPage() {
                   <p className="mt-2 whitespace-pre-line">{user.bio}</p>
                 </div>
               ) : null}
-            </div>
+            </SoftCard>
           </div>
         </div>
 
         <div className="space-y-6 pt-6">
-          <div className="soft-card rounded-[28px] p-2.5 divide-y divide-slate-100/80">
+          <SoftCard className="rounded-[28px] p-2.5 divide-y divide-slate-100/80">
             <Link
               href="/profile/edit"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
