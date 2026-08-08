@@ -9,7 +9,6 @@ const PdfViewer = dynamic(() => import("@/components/pdf/PdfViewer"), { ssr: fal
 interface PdfReaderProps {
   asset?: ComicAsset | null;
   pdfPath?: string | null;
-  comicTitle?: string;
   comicId?: number;
   onComplete?: () => void;
   showCompleteButton?: boolean;
@@ -23,7 +22,6 @@ interface PdfReaderProps {
 export default function PdfReader({
   asset,
   pdfPath,
-  comicTitle,
   comicId,
   onComplete,
   showCompleteButton = false,
@@ -34,7 +32,6 @@ export default function PdfReader({
   completeButtonLabelWhenDone = "Lanjut ke Identification",
 }: PdfReaderProps) {
   const resolvedPdfPath = asset?.sourcePdfPath ?? pdfPath ?? "";
-  const resolvedTitle = comicTitle ?? asset?.title ?? undefined;
   const initialPage = getPdfReaderInitialPage(comicId);
 
   if (!resolvedPdfPath) {
@@ -49,7 +46,6 @@ export default function PdfReader({
   return (
     <PdfViewer
       pdfPath={resolvedPdfPath}
-      comicTitle={resolvedTitle}
       comicId={comicId}
       onComplete={onComplete}
       showCompleteButton={showCompleteButton}

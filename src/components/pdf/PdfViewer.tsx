@@ -8,16 +8,13 @@ import PdfError from "./PdfError";
 import PdfLoading from "./PdfLoading";
 import PdfNavigation from "./PdfNavigation";
 import PdfPage from "./PdfPage";
-import PdfToolbar from "./PdfToolbar";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
-const DESKTOP_MAX_PAGE_WIDTH = 900;
 
-interface PdfViewerProps {
+interface UnifiedComicViewerProps {
   pdfPath: string;
   comicId?: number;
-  comicTitle?: string;
   onComplete?: () => void;
   showCompleteButton?: boolean;
   completeButtonLabel?: string;
@@ -28,9 +25,8 @@ interface PdfViewerProps {
   initialPage?: number;
 }
 
-export default function PdfViewer({
+export default function UnifiedComicViewer({
   pdfPath,
-  comicTitle,
   onComplete,
   showCompleteButton = false,
   completeButtonLabel = "🎉 Selesai Membaca",
@@ -39,7 +35,7 @@ export default function PdfViewer({
   isComicCompleted = false,
   completeButtonLabelWhenDone = "Lanjut ke Identification",
   initialPage = 1,
-}: PdfViewerProps) {
+}: UnifiedComicViewerProps) {
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [workerReady, setWorkerReady] = useState(false);
@@ -150,7 +146,7 @@ export default function PdfViewer({
 
   const pageWidth = useMemo(() => {
     const base = containerWidth > 0 ? containerWidth : (isDesktop ? 800 : 360);
-    return isDesktop ? Math.min(base, DESKTOP_MAX_PAGE_WIDTH) : base;
+    return base;
   }, [containerWidth, isDesktop]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
@@ -160,7 +156,6 @@ export default function PdfViewer({
 
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
-  const progressPct = numPages > 0 ? Math.round((page / numPages) * 100) : 0;
 
   if (!workerReady) {
     return (
@@ -171,24 +166,16 @@ export default function PdfViewer({
   }
 
   return (
-    <div className="flex h-full flex-col bg-[#f5f7fa]">
-      <PdfToolbar
-        comicTitle={comicTitle}
-        currentPage={page}
-        totalPages={numPages}
-        progress={progressPct}
-        isLoading={!workerReady}
-      />
-
+    <div className="flex h-full min-w-0 flex-col bg-white">
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-[#f5f7fa] px-1 py-3 sm:px-2 md:px-3"
+        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-white px-0 py-0"
         style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="mx-auto flex w-full max-w-full flex-col items-center">
+        <div className="flex h-full w-full flex-col items-center justify-center">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -196,9 +183,9 @@ export default function PdfViewer({
             loading={<PdfLoading />}
             error={<PdfError onRetry={handleRetry} />}
           >
-            <div className="my-3 w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="w-full overflow-hidden bg-white">
               <div className="flex justify-center overflow-hidden">
-                <div className="w-full max-w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
                     <div className="mx-auto w-full" style={{ maxWidth: `${pageWidth}px` }}>
                       <PdfPage
