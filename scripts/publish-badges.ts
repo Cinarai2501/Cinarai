@@ -3,7 +3,8 @@ import fs from "fs/promises";
 import path from "path";
 
 const optimizedDir = path.resolve(process.cwd(), "assets/optimized-badges");
-const publicDir = path.resolve(process.cwd(), "public/badges");
+const publicLevelsDir = path.resolve(process.cwd(), "public/assets/dashboard/home/levels");
+const publicBadgesDir = path.resolve(process.cwd(), "public/assets/dashboard/home/badges");
 
 async function ensureDir(dir: string) {
   await fs.mkdir(dir, { recursive: true });
@@ -29,9 +30,30 @@ async function collectPngs(dir: string): Promise<string[]> {
   return files;
 }
 
+function getDestinationPath(file: string) {
+  const fileName = path.basename(file);
+  const lower = fileName.toLowerCase();
+
+  if (lower.startsWith("icon-level-")) {
+    return path.join(publicLevelsDir, fileName);
+  }
+
+  if (lower.includes("badge-pembaca-")) {
+    return path.join(publicBadgesDir, "pembaca", fileName);
+  }
+
+  if (lower.includes("badge-komik-")) {
+    return path.join(publicBadgesDir, "komik", fileName);
+  }
+
+  return path.join(publicBadgesDir, fileName);
+}
+
 async function publishBadges() {
-  await fs.rm(publicDir, { recursive: true, force: true });
-  await ensureDir(publicDir);
+  await fs.rm(publicLevelsDir, { recursive: true, force: true });
+  await fs.rm(publicBadgesDir, { recursive: true, force: true });
+  await ensureDir(publicLevelsDir);
+  await ensureDir(publicBadgesDir);
 
   const files = await collectPngs(optimizedDir);
 
@@ -42,13 +64,13 @@ async function publishBadges() {
 
   for (const file of files) {
     const relativeFile = path.relative(optimizedDir, file);
-    const destination = path.join(publicDir, relativeFile);
+    const destination = getDestinationPath(file);
     await ensureDir(path.dirname(destination));
     await fs.copyFile(file, destination);
-    console.log(`✔ ${relativeFile} → public/badges/${relativeFile}`);
+    console.log(`✔ ${relativeFile} → ${path.relative(process.cwd(), destination)}`);
   }
 
-  console.log(`\nPublished ${files.length} badge(s) to public/badges.`);
+  console.log(`\nPublished ${files.length} badge(s) to public/assets/dashboard/home.`);
 }
 
 publishBadges().catch((error) => {
