@@ -180,13 +180,27 @@ export default function StudentHome() {
 
   return (
     <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
-      <div className="mx-auto flex w-full max-w-[480px] flex-col px-0 pb-[72px]">
-        <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
+      <div className="mx-auto flex w-full max-w-[480px] flex-col px-4 pb-[calc(90px+env(safe-area-inset-bottom))] sm:px-5">
+        <section className="soft-card overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(37,99,235,0.08)]">
+          <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
+        </section>
 
-        <section className="mt-2 space-y-2.5">
+        <section className="mt-4 space-y-4">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <MotivationCard motivation={motivation} isLoading={motivationLoading} />
-          <StatisticsGrid statCards={statCards} />
+
+          <section className="soft-card rounded-[28px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_28px_rgba(37,99,235,0.08)]">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#0066FF]">Statistik Belajar</p>
+                <p className="mt-1 text-[15px] font-bold text-slate-900">Cek progresmu dengan cepat</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <StatisticsGrid statCards={statCards} />
+            </div>
+          </section>
+
           <BadgeSection badgeItems={badgeItems.slice(0, 3)} />
         </section>
       </div>
