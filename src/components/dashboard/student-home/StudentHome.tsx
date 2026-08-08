@@ -8,7 +8,6 @@ import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import { generateDailyMotivation } from '@/lib/ai/dailyMotivation';
-import BadgeSection from './BadgeSection';
 import ContinueLearningCard from './ContinueLearningCard';
 import HomeHeader from './HomeHeader';
 import MotivationCard from './MotivationCard';
@@ -24,11 +23,6 @@ type StatCard = {
   valueColor: string;
   sublabel?: string;
   scale?: string;
-};
-
-type BadgeItem = {
-  asset: string;
-  title: string;
 };
 
 type LevelInfo = {
@@ -167,17 +161,6 @@ export default function StudentHome() {
     { label: 'Komik Selesai', value: `${completedComics}`, iconAsset: getStatIconAsset('comic'), bg: '#DCFCE7', valueColor: '#16A34A', scale: 'scale-[1.65]' },
   ];
 
-  const levelBadge: BadgeItem = {
-    asset: getLevelConfig(totalXp).badgeAsset,
-    title: getLevelConfig(totalXp).badgeTitle,
-  };
-
-  const badgeItems: BadgeItem[] = [
-    levelBadge,
-    { asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-terampil.png', title: 'Penjelajah Candi' },
-    { asset: '/assets/dashboard/home/badges/komik/badge-komik-3-pencari-bentuk.png', title: 'Pencari Bentuk' },
-  ];
-
   return (
     <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
       <div className="flex w-full flex-col pb-[calc(90px+env(safe-area-inset-bottom))]">
@@ -198,8 +181,6 @@ export default function StudentHome() {
               <StatisticsGrid statCards={statCards} />
             </div>
           </section>
-
-          <BadgeSection badgeItems={badgeItems.slice(0, 3)} />
         </section>
       </div>
 

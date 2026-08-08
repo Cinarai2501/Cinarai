@@ -161,6 +161,43 @@ export default function DashboardSiswaProfilPage() {
           </div>
         </div>
 
+        <div className="space-y-3">
+          <h2 className="px-1 text-[16px] font-extrabold text-[#1E293B]">Ringkasan Akun</h2>
+          <div className="soft-card grid grid-cols-4 gap-2 rounded-[24px] p-4">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                <Image src={getStatIconAsset('xp')} alt="XP" width={48} height={48} className="scale-[1.35] object-contain" />
+              </div>
+              <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{totalXp}</p>
+              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Total XP</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                <Image src={getStatIconAsset('streak')} alt="Streak" width={48} height={48} className="scale-[1.35] object-contain" />
+              </div>
+              <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{streak}</p>
+              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Streak</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                <Image src={getStatIconAsset('comic')} alt="Komik" width={48} height={48} className="scale-[1.35] object-contain" />
+              </div>
+              <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{completedComics}</p>
+              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Komik Selesai</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                <Image src={getLevelIconAsset(levelInfo.level)} alt="Level" width={48} height={48} className="scale-[0.9] object-contain" />
+              </div>
+              <p className="text-[14px] font-extrabold leading-none text-[#1E293B]">Level {levelInfo.level}</p>
+              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">{levelInfo.name}</p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-6 pt-6">
           <SoftCard className="rounded-[28px] p-2.5 divide-y divide-slate-100/80">
             <Link
@@ -323,42 +360,6 @@ export default function DashboardSiswaProfilPage() {
             </button>
           </SoftCard>
 
-          <div className="space-y-3">
-            <h2 className="px-1 text-[16px] font-extrabold text-[#1E293B]">Ringkasan Akun</h2>
-            <div className="soft-card grid grid-cols-4 gap-2 rounded-[24px] p-4">
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                  <Image src={getStatIconAsset('xp')} alt="XP" width={48} height={48} className="scale-[1.35] object-contain" />
-                </div>
-                <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{totalXp}</p>
-                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Total XP</p>
-              </div>
-
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                  <Image src={getStatIconAsset('streak')} alt="Streak" width={48} height={48} className="scale-[1.35] object-contain" />
-                </div>
-                <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{streak}</p>
-                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Streak</p>
-              </div>
-
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                  <Image src={getStatIconAsset('comic')} alt="Komik" width={48} height={48} className="scale-[1.35] object-contain" />
-                </div>
-                <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{completedComics}</p>
-                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Komik Selesai</p>
-              </div>
-
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                  <Image src={getLevelIconAsset(levelInfo.level)} alt="Level" width={48} height={48} className="scale-[0.9] object-contain" />
-                </div>
-                <p className="text-[14px] font-extrabold leading-none text-[#1E293B]">Level {levelInfo.level}</p>
-                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">{levelInfo.name}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </DashboardPage>
