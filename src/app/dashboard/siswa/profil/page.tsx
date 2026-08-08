@@ -8,6 +8,7 @@ import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
 import DashboardPage from '@/components/dashboard/DashboardPage';
 import SoftCard from '@/components/ui/SoftCard';
+import { getLevelConfig } from '@/components/dashboard/student-home/levelConfig';
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000];
 const LEVEL_NAMES = ['Pemula', 'Penjelajah', 'Petualang', 'Pahlawan', 'Legenda'];
@@ -93,6 +94,12 @@ export default function DashboardSiswaProfilPage() {
 
   const levelInfo = getLevelInfo(totalXp);
   const streak = completedComics > 0 ? Math.min(14, 3 + completedComics) : 3;
+  const levelBadgeConfig = getLevelConfig(totalXp);
+  const profileBadgeItems = [
+    { asset: levelBadgeConfig.badgeAsset, title: levelBadgeConfig.badgeTitle },
+    { asset: '/assets/dashboard/home/badges/pembaca/badge-pembaca-terampil.png', title: 'Penjelajah Candi' },
+    { asset: '/assets/dashboard/home/badges/komik/badge-komik-3-pencari-bentuk.png', title: 'Pencari Bentuk' },
+  ];
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -163,37 +170,56 @@ export default function DashboardSiswaProfilPage() {
 
         <div className="space-y-3">
           <h2 className="px-1 text-[16px] font-extrabold text-[#1E293B]">Ringkasan Akun</h2>
-          <div className="soft-card grid grid-cols-4 gap-2 rounded-[24px] p-4">
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                <Image src={getStatIconAsset('xp')} alt="XP" width={48} height={48} className="scale-[1.35] object-contain" />
+          <div className="soft-card rounded-[24px] p-4">
+            <div className="grid grid-cols-4 gap-2">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                  <Image src={getStatIconAsset('xp')} alt="XP" width={48} height={48} className="scale-[1.35] object-contain" />
+                </div>
+                <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{totalXp}</p>
+                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Total XP</p>
               </div>
-              <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{totalXp}</p>
-              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Total XP</p>
+
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                  <Image src={getStatIconAsset('streak')} alt="Streak" width={48} height={48} className="scale-[1.35] object-contain" />
+                </div>
+                <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{streak}</p>
+                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Streak</p>
+              </div>
+
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                  <Image src={getStatIconAsset('comic')} alt="Komik" width={48} height={48} className="scale-[1.35] object-contain" />
+                </div>
+                <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{completedComics}</p>
+                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Komik Selesai</p>
+              </div>
+
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
+                  <Image src={getLevelIconAsset(levelInfo.level)} alt="Level" width={48} height={48} className="scale-[0.9] object-contain" />
+                </div>
+                <p className="text-[14px] font-extrabold leading-none text-[#1E293B]">Level {levelInfo.level}</p>
+                <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">{levelInfo.name}</p>
+              </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                <Image src={getStatIconAsset('streak')} alt="Streak" width={48} height={48} className="scale-[1.35] object-contain" />
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#0066FF]">Badge Terbaru</span>
+                <span className="text-[10px] font-bold text-[#64748B]">{profileBadgeItems.length} item</span>
               </div>
-              <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{streak}</p>
-              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Streak</p>
-            </div>
-
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                <Image src={getStatIconAsset('comic')} alt="Komik" width={48} height={48} className="scale-[1.35] object-contain" />
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {profileBadgeItems.map((badge) => (
+                  <div key={badge.title} className="flex min-h-[84px] flex-col items-center justify-center gap-1 rounded-2xl bg-slate-50/80 px-1 py-2 text-center">
+                    <div className="flex h-[56px] w-[56px] items-center justify-center overflow-hidden rounded-[14px] bg-white p-1 shadow-sm ring-1 ring-slate-100">
+                      <Image src={badge.asset} alt={badge.title} width={56} height={56} className="h-full w-full object-contain" />
+                    </div>
+                    <span className="line-clamp-2 text-[9px] font-bold leading-3 text-slate-700">{badge.title}</span>
+                  </div>
+                ))}
               </div>
-              <p className="text-[16px] font-extrabold leading-none text-[#1E293B]">{completedComics}</p>
-              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">Komik Selesai</p>
-            </div>
-
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-1.5 flex h-[48px] w-[48px] items-center justify-center overflow-hidden drop-shadow-sm">
-                <Image src={getLevelIconAsset(levelInfo.level)} alt="Level" width={48} height={48} className="scale-[0.9] object-contain" />
-              </div>
-              <p className="text-[14px] font-extrabold leading-none text-[#1E293B]">Level {levelInfo.level}</p>
-              <p className="mt-1 text-[10px] font-bold text-[#94A3B8]">{levelInfo.name}</p>
             </div>
           </div>
         </div>

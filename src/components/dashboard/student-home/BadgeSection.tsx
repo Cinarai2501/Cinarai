@@ -14,7 +14,7 @@ type BadgeSectionProps = {
 
 export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
   return (
-    <section className="soft-card rounded-[24px] p-3">
+    <section className="soft-card rounded-[24px] p-2.5">
       <div className="flex items-center justify-between">
         <h3 className="text-[12px] font-extrabold uppercase tracking-wide text-[#0066FF]">
           Badge Terbaru
@@ -27,22 +27,22 @@ export default function BadgeSection({ badgeItems }: BadgeSectionProps) {
         </Link>
       </div>
 
-      <div className="mt-2 grid grid-cols-3 gap-2">
+      <div className="mt-1 grid grid-cols-3 gap-1.5">
         {badgeItems.map((badge) => (
           <div
             key={badge.title}
-            className="flex min-h-[116px] flex-col items-center justify-start gap-2 text-center"
+            className="flex min-h-[96px] flex-col items-center justify-start gap-1 text-center"
           >
-            <div className="flex h-[96px] w-[96px] items-center justify-center overflow-hidden rounded-[20px] bg-white p-0 transition-transform hover:scale-105">
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[16px] bg-white p-1 transition-transform hover:scale-105">
               <Image
                 src={badge.asset}
                 alt={badge.title}
-                width={96}
-                height={96}
-                className="object-contain"
+                width={84}
+                height={84}
+                className="h-full w-full object-contain"
               />
             </div>
-            <span className="flex min-h-[28px] items-center justify-center text-[10px] font-bold leading-3 text-slate-800 line-clamp-2">
+            <span className="flex min-h-[22px] items-center justify-center text-[9px] font-bold leading-3 text-slate-800 line-clamp-2">
               {badge.title}
             </span>
           </div>
