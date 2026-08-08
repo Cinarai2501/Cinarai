@@ -181,9 +181,7 @@ export default function StudentHome() {
   return (
     <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
       <div className="mx-auto flex w-full max-w-[480px] flex-col px-4 pb-[calc(90px+env(safe-area-inset-bottom))] sm:px-5">
-        <section className="soft-card overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(37,99,235,0.08)]">
-          <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
-        </section>
+        <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
         <section className="mt-4 space-y-4">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
