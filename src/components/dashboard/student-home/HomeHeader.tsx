@@ -11,7 +11,7 @@ export default function HomeHeader({ firstName, avatarAsset }: HomeHeaderProps) 
   return (
     <section
       className="relative flex min-h-[144px] w-full items-center justify-between overflow-hidden rounded-b-[32px] px-4 py-5 pb-14 text-white shadow-[0_10px_30px_rgba(37,99,235,0.12)] sm:px-4"
-      style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #1D93FF 0%, #0F5FB5 100%)' }}
     >
       <div className="flex-1 pr-3 sm:pr-4">
         <p className="text-[9px] font-semibold uppercase tracking-[0.20em] text-white/85">Selamat Datang</p>
