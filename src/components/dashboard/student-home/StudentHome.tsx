@@ -180,10 +180,10 @@ export default function StudentHome() {
 
   return (
     <main className="relative overflow-hidden bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-slate-900">
-      <div className="mx-auto flex w-full flex-col px-4 pb-[calc(90px+env(safe-area-inset-bottom))] sm:px-5">
+      <div className="flex w-full flex-col pb-[calc(90px+env(safe-area-inset-bottom))]">
         <HomeHeader firstName={firstName} avatarAsset={avatarAsset} />
 
-        <section className="mt-4 space-y-4">
+        <section className="mt-4 space-y-4 px-4 sm:px-5">
           <ContinueLearningCard coverAsset={getDashboardCoverAsset(continueComic?.id)} title={continueComic ? continueComic.title : 'Petualang Bangun Ruang Candi Jawi'} progressPct={todayPct} />
           <MotivationCard motivation={motivation} isLoading={motivationLoading} />
 
