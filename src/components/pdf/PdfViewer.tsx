@@ -291,6 +291,7 @@ export default function UnifiedComicViewer({
   );
 
   const preloadPage = page < numPages ? page + 1 : page > 1 ? page - 1 : null;
+  const backgroundPage = pageTransition?.to ?? page;
 
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
@@ -327,7 +328,26 @@ export default function UnifiedComicViewer({
             loading={<PdfLoading />}
             error={<PdfError onRetry={handleRetry} />}
           >
-            <div className="pdf-page-shell w-full overflow-hidden rounded-md bg-white sm:rounded-xl">
+            {numPages > 0 && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#172033] [&>div]:h-full [&_canvas]:h-full [&_canvas]:w-full [&_canvas]:max-w-none [&_canvas]:object-cover [&_canvas]:opacity-20 [&_canvas]:blur-[16px]"
+                style={{
+                  transform: pageTransition ? "scale(1.07)" : "scale(1.05)",
+                  transition: prefersReducedMotion
+                    ? "none"
+                    : "opacity 220ms ease, transform 220ms ease",
+                }}
+              >
+                <PdfPage
+                  pageNumber={backgroundPage}
+                  width={renderWidth}
+                  scale={renderScale}
+                  loading={null}
+                />
+              </div>
+            )}
+            <div className="pdf-page-shell relative z-10 w-full overflow-hidden rounded-md bg-white sm:rounded-xl">
               <div className="flex justify-center overflow-hidden">
                 <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
