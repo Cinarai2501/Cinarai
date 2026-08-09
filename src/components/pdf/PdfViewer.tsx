@@ -12,7 +12,6 @@ import PdfPage from "./PdfPage";
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
 const PAGE_TRANSITION_DURATION = 300;
-const PAGE_ASPECT_RATIO = 8.5 / 11;
 
 type PageTransition = {
   from: number;
@@ -57,7 +56,7 @@ export default function UnifiedComicViewer({
   const [transitionPhase, setTransitionPhase] = useState<"idle" | "active">("idle");
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
+  const { containerRef, containerWidth } = usePdfSize<HTMLDivElement>();
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -267,10 +266,8 @@ export default function UnifiedComicViewer({
 
   const pageWidth = useMemo(() => {
     const availableWidth = containerWidth > 0 ? containerWidth - (isDesktop ? 48 : 24) : isDesktop ? 800 : 336;
-    const availableHeight = containerHeight > 0 ? containerHeight - (isDesktop ? 48 : 24) : isDesktop ? 700 : 560;
-    const heightConstrainedWidth = Math.floor(availableHeight * PAGE_ASPECT_RATIO);
-    return Math.min(920, Math.max(1, Math.min(availableWidth, heightConstrainedWidth)));
-  }, [containerHeight, containerWidth, isDesktop]);
+    return Math.min(920, Math.max(1, availableWidth));
+  }, [containerWidth, isDesktop]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
   const renderWidth = useMemo(() => Math.max(1, Math.floor(pageWidth / renderScale)), [pageWidth, renderScale]);
@@ -307,22 +304,22 @@ export default function UnifiedComicViewer({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#0b1220]">
+    <div className="comic-reader relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#0b1220]">
       {comicTitle && (
-        <header className="z-20 flex h-11 shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-12 backdrop-blur-md">
+        <header className="comic-reader__header z-20 flex h-11 shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-12 backdrop-blur-md">
           <h1 className="max-w-full truncate text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
         </header>
       )}
       <div
         ref={containerRef}
-        className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 pb-20 sm:px-6 sm:py-5 sm:pb-24"
+        className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 pb-20 sm:px-6 sm:py-5 sm:pb-24"
         style={{ touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="flex h-full w-full items-center justify-center">
+        <div className="pdf-viewer-container__content flex h-full w-full items-center justify-center">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -330,7 +327,7 @@ export default function UnifiedComicViewer({
             loading={<PdfLoading />}
             error={<PdfError onRetry={handleRetry} />}
           >
-            <div className="w-full overflow-hidden rounded-2xl bg-white shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:rounded-3xl">
+            <div className="pdf-page-shell w-full overflow-hidden rounded-2xl bg-white shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:rounded-3xl">
               <div className="flex justify-center overflow-hidden">
                 <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
@@ -386,22 +383,24 @@ export default function UnifiedComicViewer({
         </div>
       </div>
 
-      <PdfNavigation
-        floating
-        visible={showFloatingControls}
-        onPrev={() => goTo(page - 1)}
-        onNext={() => goTo(page + 1)}
-        currentPage={page}
-        numPages={numPages}
-        isFirstPage={isFirstPage}
-        isLastPage={isLastPage}
-        showCompleteButton={showCompleteButton}
-        completeButtonLabel={completeButtonLabel}
-        completeButtonDisabled={completeButtonDisabled}
-        onComplete={onComplete}
-        isComicCompleted={isComicCompleted}
-        completeButtonLabelWhenDone={completeButtonLabelWhenDone}
-      />
+      <div className="pdf-viewer-container__navigation">
+        <PdfNavigation
+          floating
+          visible={showFloatingControls}
+          onPrev={() => goTo(page - 1)}
+          onNext={() => goTo(page + 1)}
+          currentPage={page}
+          numPages={numPages}
+          isFirstPage={isFirstPage}
+          isLastPage={isLastPage}
+          showCompleteButton={showCompleteButton}
+          completeButtonLabel={completeButtonLabel}
+          completeButtonDisabled={completeButtonDisabled}
+          onComplete={onComplete}
+          isComicCompleted={isComicCompleted}
+          completeButtonLabelWhenDone={completeButtonLabelWhenDone}
+        />
+      </div>
     </div>
   );
 }
