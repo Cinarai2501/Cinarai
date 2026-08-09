@@ -87,8 +87,8 @@ export default function PdfNavigation({
 
   if (floating) {
     return (
-      <div className={visible ? "flex h-[60px] w-full items-center justify-center bg-[#0b1220] px-2 py-2" : "hidden"}>
-        <div className="flex w-full items-center gap-2">
+      <div className={visible ? "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:bottom-3 sm:px-4" : "hidden"}>
+        <div className="pointer-events-auto flex w-full max-w-[1100px] items-center gap-2 rounded-xl border border-white/10 bg-[#0b1220]/95 p-1.5 shadow-lg backdrop-blur-md">
           <button
             onClick={onPrev}
             disabled={isFirstPage}

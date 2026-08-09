@@ -312,14 +312,14 @@ export default function UnifiedComicViewer({
       )}
       <div
         ref={containerRef}
-        className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1 py-1 sm:px-4 sm:py-2"
+        className="pdf-viewer-container relative flex min-h-0 flex-1 items-start justify-center overflow-hidden px-1 py-1 sm:px-4 sm:py-2"
         style={{ touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="pdf-viewer-container__content flex h-full w-full items-center justify-center">
+        <div className="pdf-viewer-container__content flex w-full items-start justify-center">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -383,8 +383,9 @@ export default function UnifiedComicViewer({
         </div>
       </div>
 
-      <div className="pdf-viewer-container__navigation shrink-0">
+      <div className="pdf-viewer-container__navigation pointer-events-none absolute inset-0 z-30">
         <PdfNavigation
+          floating
           visible={showFloatingControls}
           onPrev={() => goTo(page - 1)}
           onNext={() => goTo(page + 1)}
