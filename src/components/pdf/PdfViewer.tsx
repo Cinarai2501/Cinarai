@@ -13,12 +13,16 @@ import PdfPage from "./PdfPage";
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
 const PAGE_TRANSITION_DURATION = 220;
-const DEFAULT_PDF_ASPECT_RATIO = 8.5 / 11;
 
 type PageTransition = {
   from: number;
   to: number;
   direction: "next" | "previous";
+};
+
+type PdfDimensions = {
+  width: number;
+  height: number;
 };
 
 interface UnifiedComicViewerProps {
@@ -50,13 +54,16 @@ export default function UnifiedComicViewer({
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [workerReady, setWorkerReady] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const [showFloatingControls, setShowFloatingControls] = useState(true);
   const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<"idle" | "active">("idle");
   const [targetPageReady, setTargetPageReady] = useState(false);
-  const [pdfAspectRatio, setPdfAspectRatio] = useState(DEFAULT_PDF_ASPECT_RATIO);
+  const [visibleTargetReady, setVisibleTargetReady] = useState(false);
+  const [pdfDimensions, setPdfDimensions] = useState<PdfDimensions>({
+    width: 8.5,
+    height: 11,
+  });
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
@@ -134,7 +141,7 @@ export default function UnifiedComicViewer({
   }, []);
 
   useEffect(() => {
-    if (!pageTransition || !targetPageReady) return;
+    if (!pageTransition || !targetPageReady || !visibleTargetReady) return;
 
     transitionFrame.current = window.requestAnimationFrame(() => {
       setTransitionPhase("active");
@@ -153,7 +160,7 @@ export default function UnifiedComicViewer({
         clearTimeout(transitionTimer.current);
       }
     };
-  }, [finishPageTransition, pageTransition, prefersReducedMotion, targetPageReady]);
+  }, [finishPageTransition, pageTransition, prefersReducedMotion, targetPageReady, visibleTargetReady]);
 
   const goTo = useCallback(
     (next: number) => {
@@ -171,6 +178,7 @@ export default function UnifiedComicViewer({
       isTransitioningRef.current = true;
       transitionRef.current = nextTransition;
       setTargetPageReady(false);
+      setVisibleTargetReady(false);
       setTransitionPhase("idle");
       setPageTransition(nextTransition);
     },
@@ -216,13 +224,17 @@ export default function UnifiedComicViewer({
       const requestedPage = initialPage ?? 1;
       const resolvedPage = requestedPage < 1 || requestedPage > n ? 1 : requestedPage;
       setPage(resolvedPage);
+      setPageTransition(null);
+      setTargetPageReady(false);
+      setVisibleTargetReady(false);
+      setTransitionPhase("idle");
     },
     [initialPage]
   );
 
   const handlePageLoadSuccess = useCallback((loadedPage: { width: number; height: number }) => {
     if (loadedPage.width > 0 && loadedPage.height > 0) {
-      setPdfAspectRatio(loadedPage.width / loadedPage.height);
+      setPdfDimensions({ width: loadedPage.width, height: loadedPage.height });
     }
   }, []);
 
@@ -230,8 +242,8 @@ export default function UnifiedComicViewer({
     setTargetPageReady(true);
   }, []);
 
-  const handleRetry = useCallback(() => {
-    setRetryCount((prev) => prev + 1);
+  const handleVisibleTargetRenderSuccess = useCallback(() => {
+    setVisibleTargetReady(true);
   }, []);
 
   const showControlsTemporarily = useCallback(() => {
@@ -277,29 +289,37 @@ export default function UnifiedComicViewer({
     };
   }, []);
 
-  const pageWidth = useMemo(() => {
+  const pageSize = useMemo(() => {
     const availableWidth = containerWidth > 0 ? containerWidth : isDesktop ? 800 : 360;
     const availableHeight = containerHeight > 0 ? containerHeight : isDesktop ? 700 : 600;
-    return Math.max(1, Math.min(availableWidth, availableHeight * pdfAspectRatio));
-  }, [containerHeight, containerWidth, isDesktop, pdfAspectRatio]);
+    const scale = Math.min(
+      availableWidth / pdfDimensions.width,
+      availableHeight / pdfDimensions.height,
+    );
+
+    return {
+      width: Math.max(1, Math.floor(pdfDimensions.width * scale)),
+      height: Math.max(1, Math.floor(pdfDimensions.height * scale)),
+    };
+  }, [containerHeight, containerWidth, isDesktop, pdfDimensions]);
 
   const renderPage = useCallback(
-    (pageNumber: number, isTarget = false) => (
+    (pageNumber: number, onRenderSuccess?: () => void, loading?: React.ReactNode) => (
       <div
         key={pageNumber}
         className="absolute inset-0 flex h-full w-full items-center justify-center"
       >
         <PdfPage
-          key={`${pageNumber}-${Math.round(pageWidth)}`}
+          key={`${pageNumber}-${pageSize.width}`}
           pageNumber={pageNumber}
-          width={Math.round(pageWidth)}
-          loading={<PdfLoading variant="skeleton" />}
+          width={pageSize.width}
+          loading={loading}
           onLoadSuccess={handlePageLoadSuccess}
-          onRenderSuccess={isTarget ? handleTargetPageRenderSuccess : undefined}
+          onRenderSuccess={onRenderSuccess}
         />
       </div>
     ),
-    [handlePageLoadSuccess, handleTargetPageRenderSuccess, pageWidth]
+    [handlePageLoadSuccess, pageSize.width]
   );
 
   const backgroundPage = page;
@@ -345,11 +365,10 @@ export default function UnifiedComicViewer({
       >
         <div className="pdf-viewer-container__content flex h-full w-full items-start justify-center">
           <Document
-            key={`pdf-${retryCount}`}
             file={pdfPath}
             onLoadSuccess={onDocumentLoadSuccess}
             loading={<PdfLoading />}
-            error={<PdfError onRetry={handleRetry} />}
+            error={<PdfError />}
           >
             {numPages > 0 && (
               <div
@@ -358,59 +377,58 @@ export default function UnifiedComicViewer({
               >
                 <PdfPage
                   pageNumber={backgroundPage}
-                  width={Math.round(pageWidth)}
+                  width={pageSize.width}
                   loading={null}
                 />
               </div>
             )}
             <div
               className="pdf-page-shell relative z-10 flex max-h-full w-full items-start justify-center overflow-hidden rounded-md bg-white sm:rounded-xl"
-              style={{ width: `${pageWidth}px`, aspectRatio: `${pdfAspectRatio}` }}
+              style={{ width: `${pageSize.width}px`, height: `${pageSize.height}px` }}
             >
               {numPages > 0 ? (
                 <div className="relative h-full w-full overflow-hidden">
-                  {pageTransition ? (
-                    <>
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{
-                          opacity: transitionPhase === "active" ? 0 : 1,
-                          transform: transitionPhase === "active"
-                            ? pageTransition.direction === "next" ? "translateX(-4%)" : "translateX(4%)"
-                            : "translateX(0)",
-                          transition: prefersReducedMotion
-                            ? "none"
-                            : `opacity ${PAGE_TRANSITION_DURATION}ms ease, transform ${PAGE_TRANSITION_DURATION}ms ease`,
-                          willChange: "opacity, transform",
-                        }}
-                      >
-                        {renderPage(pageTransition.from)}
-                      </div>
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        aria-hidden={!targetPageReady}
-                        style={{
-                          opacity: targetPageReady && transitionPhase === "active" ? 1 : 0,
-                          transform: targetPageReady && transitionPhase === "active"
-                            ? "translateX(0)"
-                            : pageTransition.direction === "next" ? "translateX(4%)" : "translateX(-4%)",
-                          transition: prefersReducedMotion
-                            ? "none"
-                            : `opacity ${PAGE_TRANSITION_DURATION}ms ease, transform ${PAGE_TRANSITION_DURATION}ms ease`,
-                          willChange: "opacity, transform",
-                        }}
-                      >
-                        {renderPage(pageTransition.to, true)}
-                      </div>
-                    </>
-                  ) : (
-                    renderPage(page)
+                  <div className="absolute inset-0">
+                    {renderPage(page, undefined, <PdfLoading variant="skeleton" />)}
+                  </div>
+                  {pageTransition && targetPageReady && (
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      aria-hidden="true"
+                      style={{
+                        opacity: transitionPhase === "active" ? 1 : 0,
+                        transform: transitionPhase === "active"
+                          ? "translateX(0)"
+                          : pageTransition.direction === "next" ? "translateX(20px)" : "translateX(-20px)",
+                        transition: prefersReducedMotion
+                          ? "none"
+                          : `opacity ${PAGE_TRANSITION_DURATION}ms ease, transform ${PAGE_TRANSITION_DURATION}ms ease`,
+                        willChange: "opacity, transform",
+                      }}
+                    >
+                      {renderPage(pageTransition.to, handleVisibleTargetRenderSuccess)}
+                    </div>
                   )}
                 </div>
               ) : (
                 <PdfLoading variant="skeleton" />
               )}
             </div>
+            {pageTransition && !targetPageReady && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none fixed z-[-1] overflow-hidden"
+                style={{
+                  left: "-10000px",
+                  top: 0,
+                  width: `${pageSize.width}px`,
+                  height: `${pageSize.height}px`,
+                  visibility: "hidden",
+                }}
+              >
+                {renderPage(pageTransition.to, handleTargetPageRenderSuccess, null)}
+              </div>
+            )}
           </Document>
         </div>
       </div>
