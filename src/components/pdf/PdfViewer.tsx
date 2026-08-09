@@ -52,7 +52,6 @@ export default function UnifiedComicViewer({
   const [workerReady, setWorkerReady] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [devicePixelRatio, setDevicePixelRatio] = useState(1);
   const [showFloatingControls, setShowFloatingControls] = useState(true);
   const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<"idle" | "active">("idle");
@@ -101,7 +100,6 @@ export default function UnifiedComicViewer({
   useEffect(() => {
     const updateViewport = () => {
       setIsDesktop(window.innerWidth >= 1024);
-      setDevicePixelRatio(window.devicePixelRatio || 1);
     };
 
     updateViewport();
@@ -285,9 +283,6 @@ export default function UnifiedComicViewer({
     return Math.max(1, Math.min(availableWidth, availableHeight * pdfAspectRatio));
   }, [containerHeight, containerWidth, isDesktop, pdfAspectRatio]);
 
-  const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
-  const renderWidth = useMemo(() => Math.max(1, Math.floor(pageWidth / renderScale)), [pageWidth, renderScale]);
-
   const renderPage = useCallback(
     (pageNumber: number, isTarget = false) => (
       <div
@@ -295,17 +290,16 @@ export default function UnifiedComicViewer({
         className="absolute inset-0 flex h-full w-full items-center justify-center"
       >
         <PdfPage
-          key={`${pageNumber}-${Math.round(pageWidth)}-${renderScale}`}
+          key={`${pageNumber}-${Math.round(pageWidth)}`}
           pageNumber={pageNumber}
-          width={renderWidth}
-          scale={renderScale}
+          width={Math.round(pageWidth)}
           loading={<PdfLoading variant="skeleton" />}
           onLoadSuccess={handlePageLoadSuccess}
           onRenderSuccess={isTarget ? handleTargetPageRenderSuccess : undefined}
         />
       </div>
     ),
-    [handlePageLoadSuccess, handleTargetPageRenderSuccess, pageWidth, renderScale, renderWidth]
+    [handlePageLoadSuccess, handleTargetPageRenderSuccess, pageWidth]
   );
 
   const backgroundPage = page;
@@ -327,7 +321,8 @@ export default function UnifiedComicViewer({
         <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
           <Link
             href="/dashboard"
-            aria-label="Kembali ke dashboard"
+            aria-label="Home"
+            title="Home"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/10"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -348,7 +343,7 @@ export default function UnifiedComicViewer({
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="pdf-viewer-container__content flex h-full w-full items-center justify-center">
+        <div className="pdf-viewer-container__content flex h-full w-full items-start justify-center">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -363,14 +358,13 @@ export default function UnifiedComicViewer({
               >
                 <PdfPage
                   pageNumber={backgroundPage}
-                  width={renderWidth}
-                  scale={renderScale}
+                  width={Math.round(pageWidth)}
                   loading={null}
                 />
               </div>
             )}
             <div
-              className="pdf-page-shell relative z-10 flex max-h-full w-full items-center justify-center overflow-hidden rounded-md bg-white sm:rounded-xl"
+              className="pdf-page-shell relative z-10 flex max-h-full w-full items-start justify-center overflow-hidden rounded-md bg-white sm:rounded-xl"
               style={{ width: `${pageWidth}px`, aspectRatio: `${pdfAspectRatio}` }}
             >
               {numPages > 0 ? (
@@ -397,7 +391,6 @@ export default function UnifiedComicViewer({
                         aria-hidden={!targetPageReady}
                         style={{
                           opacity: targetPageReady && transitionPhase === "active" ? 1 : 0,
-                          visibility: targetPageReady ? "visible" : "hidden",
                           transform: targetPageReady && transitionPhase === "active"
                             ? "translateX(0)"
                             : pageTransition.direction === "next" ? "translateX(4%)" : "translateX(-4%)",

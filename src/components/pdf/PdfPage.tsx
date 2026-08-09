@@ -8,13 +8,12 @@ import "react-pdf/dist/Page/TextLayer.css";
 interface PdfPageProps {
   pageNumber: number;
   width: number;
-  scale?: number;
   loading?: ReactNode;
   onLoadSuccess?: (page: { width: number; height: number }) => void;
   onRenderSuccess?: () => void;
 }
 
-function PdfPage({ pageNumber, width, scale = 1, loading, onLoadSuccess, onRenderSuccess }: PdfPageProps) {
+function PdfPage({ pageNumber, width, loading, onLoadSuccess, onRenderSuccess }: PdfPageProps) {
   const safeWidth = width > 0 ? width : undefined;
 
   return (
@@ -22,7 +21,6 @@ function PdfPage({ pageNumber, width, scale = 1, loading, onLoadSuccess, onRende
       <Page
         pageNumber={pageNumber}
         width={safeWidth}
-        scale={scale}
         loading={loading}
         onLoadSuccess={onLoadSuccess}
         onRenderSuccess={onRenderSuccess}
