@@ -281,7 +281,7 @@ export default function UnifiedComicViewer({
   const pageWidth = useMemo(() => {
     const availableWidth = containerWidth > 0 ? containerWidth : isDesktop ? 800 : 360;
     const availableHeight = containerHeight > 0 ? containerHeight : isDesktop ? 700 : 600;
-    return Math.max(1, Math.min(1100, availableWidth, availableHeight * pdfAspectRatio));
+    return Math.max(1, Math.min(availableWidth, availableHeight * pdfAspectRatio));
   }, [containerHeight, containerWidth, isDesktop, pdfAspectRatio]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
@@ -291,7 +291,7 @@ export default function UnifiedComicViewer({
     (pageNumber: number, isTarget = false) => (
       <div
         key={pageNumber}
-        className={pageTransition ? "w-1/2 min-w-0 shrink-0" : "w-full min-w-0"}
+        className="absolute inset-0 flex h-full w-full items-center justify-center"
       >
         <PdfPage
           key={`${pageNumber}-${Math.round(pageWidth)}-${renderScale}`}
@@ -304,10 +304,10 @@ export default function UnifiedComicViewer({
         />
       </div>
     ),
-    [handlePageLoadSuccess, handleTargetPageRenderSuccess, pageTransition, pageWidth, renderScale, renderWidth]
+    [handlePageLoadSuccess, handleTargetPageRenderSuccess, pageWidth, renderScale, renderWidth]
   );
 
-  const backgroundPage = pageTransition?.to ?? page;
+  const backgroundPage = page;
 
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
@@ -348,12 +348,6 @@ export default function UnifiedComicViewer({
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#172033] [&>div]:h-full [&_canvas]:h-full [&_canvas]:w-full [&_canvas]:max-w-none [&_canvas]:object-cover [&_canvas]:opacity-20 [&_canvas]:blur-[16px]"
-                style={{
-                  transform: pageTransition ? "scale(1.07)" : "scale(1.05)",
-                  transition: prefersReducedMotion
-                    ? "none"
-                    : "opacity 220ms ease, transform 220ms ease",
-                }}
               >
                 <PdfPage
                   pageNumber={backgroundPage}
@@ -363,47 +357,59 @@ export default function UnifiedComicViewer({
                 />
               </div>
             )}
-            <div className="pdf-page-shell relative z-10 flex max-h-full w-full items-center justify-center overflow-hidden rounded-md bg-white sm:rounded-xl">
-              <div className="flex w-full justify-center overflow-hidden">
-                <div className="w-full min-w-0 overflow-hidden">
-                  {numPages > 0 ? (
-                    <div className="mx-auto w-full overflow-hidden" style={{ maxWidth: `${pageWidth}px` }}>
+            <div
+              className="pdf-page-shell relative z-10 flex max-h-full w-full items-center justify-center overflow-hidden rounded-md bg-white sm:rounded-xl"
+              style={{ width: `${pageWidth}px`, aspectRatio: `${pdfAspectRatio}` }}
+            >
+              {numPages > 0 ? (
+                <div
+                  className="relative h-full w-full overflow-hidden"
+                  onTransitionEnd={(event) => {
+                    if (event.target === event.currentTarget && event.propertyName === "opacity") {
+                      finishPageTransition();
+                    }
+                  }}
+                >
+                  {pageTransition ? (
+                    <>
                       <div
-                        className={pageTransition ? "flex w-[200%]" : "relative w-full"}
+                        className="absolute inset-0 flex items-center justify-center"
                         style={{
-                          transform: pageTransition
-                            ? transitionPhase === "active"
-                              ? pageTransition.direction === "next"
-                                ? "translateX(-50%)"
-                                : "translateX(0)"
-                              : pageTransition.direction === "next"
-                                ? "translateX(0)"
-                                : "translateX(-50%)"
+                          opacity: transitionPhase === "active" ? 0 : 1,
+                          transform: transitionPhase === "active"
+                            ? pageTransition.direction === "next" ? "translateX(-4%)" : "translateX(4%)"
                             : "translateX(0)",
                           transition: prefersReducedMotion
                             ? "none"
-                            : `transform ${PAGE_TRANSITION_DURATION}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
-                          willChange: pageTransition ? "transform" : "auto",
-                          contain: "layout paint",
-                        }}
-                        onTransitionEnd={(event) => {
-                          if (event.target === event.currentTarget && event.propertyName === "transform") {
-                            finishPageTransition();
-                          }
+                            : `opacity ${PAGE_TRANSITION_DURATION}ms ease, transform ${PAGE_TRANSITION_DURATION}ms ease`,
+                          willChange: "opacity, transform",
                         }}
                       >
-                        {pageTransition
-                          ? pageTransition.direction === "next"
-                            ? <>{renderPage(pageTransition.from)}{renderPage(pageTransition.to, true)}</>
-                            : <>{renderPage(pageTransition.to, true)}{renderPage(pageTransition.from)}</>
-                          : renderPage(page)}
+                        {renderPage(pageTransition.from)}
                       </div>
-                    </div>
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{
+                          opacity: targetPageReady && transitionPhase === "active" ? 1 : 0,
+                          transform: targetPageReady && transitionPhase === "active"
+                            ? "translateX(0)"
+                            : pageTransition.direction === "next" ? "translateX(4%)" : "translateX(-4%)",
+                          transition: prefersReducedMotion
+                            ? "none"
+                            : `opacity ${PAGE_TRANSITION_DURATION}ms ease, transform ${PAGE_TRANSITION_DURATION}ms ease`,
+                          willChange: "opacity, transform",
+                        }}
+                      >
+                        {renderPage(pageTransition.to, true)}
+                      </div>
+                    </>
                   ) : (
-                    <PdfLoading variant="skeleton" />
+                    renderPage(page)
                   )}
                 </div>
-              </div>
+              ) : (
+                <PdfLoading variant="skeleton" />
+              )}
             </div>
           </Document>
         </div>

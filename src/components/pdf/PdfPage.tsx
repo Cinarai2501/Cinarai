@@ -18,7 +18,7 @@ function PdfPage({ pageNumber, width, scale = 1, loading, onLoadSuccess, onRende
   const safeWidth = width > 0 ? width : undefined;
 
   return (
-    <div className="w-full max-w-full overflow-hidden">
+    <div className="flex h-full w-full max-w-full items-center justify-center overflow-hidden">
       <Page
         pageNumber={pageNumber}
         width={safeWidth}
