@@ -61,7 +61,7 @@ export default function PdfNavigation({
   if (completeButton) {
     if (floating) {
       return (
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4">
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:px-4">
           <div className="pointer-events-auto w-full max-w-[min(92vw,560px)]">{completeButton}</div>
         </div>
       );
@@ -87,7 +87,7 @@ export default function PdfNavigation({
 
   if (floating) {
     return (
-      <div className={visible ? "pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4" : "hidden"}>
+      <div className={visible ? "pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:px-4" : "hidden"}>
         <div className="pointer-events-auto flex w-full max-w-[min(92vw,520px)] items-center gap-2 rounded-2xl border border-white/15 bg-[#111827]/90 p-2 shadow-2xl backdrop-blur-md">
           <button
             onClick={onPrev}

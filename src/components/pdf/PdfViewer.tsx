@@ -12,6 +12,7 @@ import PdfPage from "./PdfPage";
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
 const PAGE_TRANSITION_DURATION = 300;
+const PAGE_ASPECT_RATIO = 8.5 / 11;
 
 type PageTransition = {
   from: number;
@@ -51,12 +52,12 @@ export default function UnifiedComicViewer({
   const [retryCount, setRetryCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const [devicePixelRatio, setDevicePixelRatio] = useState(1);
-  const [showFloatingControls, setShowFloatingControls] = useState(false);
+  const [showFloatingControls, setShowFloatingControls] = useState(true);
   const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<"idle" | "active">("idle");
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  const { containerRef, containerWidth } = usePdfSize<HTMLDivElement>();
+  const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -266,8 +267,10 @@ export default function UnifiedComicViewer({
 
   const pageWidth = useMemo(() => {
     const availableWidth = containerWidth > 0 ? containerWidth - (isDesktop ? 48 : 24) : isDesktop ? 800 : 336;
-    return Math.min(920, Math.max(1, availableWidth));
-  }, [containerWidth, isDesktop]);
+    const availableHeight = containerHeight > 0 ? containerHeight - (isDesktop ? 48 : 24) : isDesktop ? 700 : 560;
+    const heightConstrainedWidth = Math.floor(availableHeight * PAGE_ASPECT_RATIO);
+    return Math.min(920, Math.max(1, Math.min(availableWidth, heightConstrainedWidth)));
+  }, [containerHeight, containerWidth, isDesktop]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
   const renderWidth = useMemo(() => Math.max(1, Math.floor(pageWidth / renderScale)), [pageWidth, renderScale]);
@@ -304,17 +307,22 @@ export default function UnifiedComicViewer({
   }
 
   return (
-    <div className="relative flex h-full min-w-0 flex-col bg-[#0b1220]">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#0b1220]">
+      {comicTitle && (
+        <header className="z-20 flex h-11 shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-12 backdrop-blur-md">
+          <h1 className="max-w-full truncate text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
+        </header>
+      )}
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-6 sm:py-5"
-        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } as React.CSSProperties}
+        className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 pb-20 sm:px-6 sm:py-5 sm:pb-24"
+        style={{ touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="flex w-full flex-col items-center justify-start">
+        <div className="flex h-full w-full items-center justify-center">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -377,14 +385,6 @@ export default function UnifiedComicViewer({
           </Document>
         </div>
       </div>
-
-      {showFloatingControls && comicTitle && (
-        <div className="pointer-events-none absolute left-0 right-0 top-4 z-30 flex justify-center px-4">
-          <div className="pointer-events-auto max-w-[min(92vw,640px)] truncate rounded-full border border-white/50 bg-black/55 px-5 py-2 text-center text-xs font-black text-white shadow-lg backdrop-blur-md sm:text-sm">
-            {comicTitle}
-          </div>
-        </div>
-      )}
 
       <PdfNavigation
         floating

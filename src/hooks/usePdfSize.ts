@@ -25,6 +25,7 @@ function getDefaultWidth(): number {
 export function usePdfSize<T extends HTMLElement>() {
   const containerRef = useRef<T | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [containerHeight, setContainerHeight] = useState<number>(0);
   const lastPositiveWidth = useRef<number>(0);
 
   useLayoutEffect(() => {
@@ -36,6 +37,7 @@ export function usePdfSize<T extends HTMLElement>() {
       if (next > 0) {
         lastPositiveWidth.current = next;
         setContainerWidth(next);
+        setContainerHeight(Math.floor(el.getBoundingClientRect().height));
       } else if (lastPositiveWidth.current > 0) {
         setContainerWidth(lastPositiveWidth.current);
       } else {
@@ -51,6 +53,7 @@ export function usePdfSize<T extends HTMLElement>() {
       if (next > 0) {
         lastPositiveWidth.current = next;
         setContainerWidth(next);
+        setContainerHeight(Math.floor(entry.contentRect.height));
       }
     });
 
@@ -65,5 +68,5 @@ export function usePdfSize<T extends HTMLElement>() {
     };
   }, []);
 
-  return { containerRef, containerWidth };
+  return { containerRef, containerWidth, containerHeight };
 }
