@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Document, pdfjs } from "react-pdf";
 import { usePdfSize } from "@/hooks/usePdfSize";
 import { markNextDocumentLoadAsInitial, shouldNotifyPageChange } from "./pdfViewerProgress";
@@ -323,8 +324,19 @@ export default function UnifiedComicViewer({
   return (
     <div className="comic-reader relative flex h-[100dvh] min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
       {comicTitle && (
-        <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
-          <h1 className="max-w-full truncate text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
+        <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
+          <Link
+            href="/dashboard"
+            aria-label="Kembali ke dashboard"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/10"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 9.5V21h13V9.5M9 21v-6h6v6" />
+            </svg>
+          </Link>
+          <h1 className="min-w-0 flex-1 truncate text-center text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
+          <div className="h-11 w-11 shrink-0" aria-hidden="true" />
         </header>
       )}
       <div
@@ -362,14 +374,7 @@ export default function UnifiedComicViewer({
               style={{ width: `${pageWidth}px`, aspectRatio: `${pdfAspectRatio}` }}
             >
               {numPages > 0 ? (
-                <div
-                  className="relative h-full w-full overflow-hidden"
-                  onTransitionEnd={(event) => {
-                    if (event.target === event.currentTarget && event.propertyName === "opacity") {
-                      finishPageTransition();
-                    }
-                  }}
-                >
+                <div className="relative h-full w-full overflow-hidden">
                   {pageTransition ? (
                     <>
                       <div
@@ -389,8 +394,10 @@ export default function UnifiedComicViewer({
                       </div>
                       <div
                         className="absolute inset-0 flex items-center justify-center"
+                        aria-hidden={!targetPageReady}
                         style={{
                           opacity: targetPageReady && transitionPhase === "active" ? 1 : 0,
+                          visibility: targetPageReady ? "visible" : "hidden",
                           transform: targetPageReady && transitionPhase === "active"
                             ? "translateX(0)"
                             : pageTransition.direction === "next" ? "translateX(4%)" : "translateX(-4%)",
