@@ -2,25 +2,15 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 
-const DEFAULT_MOBILE_WIDTH = 360;
-const DEFAULT_DESKTOP_WIDTH = 800;
-
-function getDefaultWidth(): number {
-  if (typeof window === "undefined") return DEFAULT_MOBILE_WIDTH;
-  return window.innerWidth >= 1024 ? DEFAULT_DESKTOP_WIDTH : DEFAULT_MOBILE_WIDTH;
-}
-
 /**
- * Measures the content-box width of a container element.
+ * Measures the content-box dimensions of a container element.
  *
  * Strategy:
  * 1. useLayoutEffect reads getBoundingClientRect().width synchronously before
  *    the browser paints so the first render already receives a real width.
- * 2. ResizeObserver keeps the value up to date for layout changes.
- * 3. A safe fallback width is used when the measured width is 0 (e.g. during
- *    the first paint when the flex container hasn't laid out yet).
- * 4. Window resize/orientation change events are also listened to so the
- *    width recalculates when the viewport changes without a container resize.
+ * 2. ResizeObserver keeps both dimensions up to date for layout changes.
+ * 3. Window resize/orientation change events are also listened to so the
+ *    dimensions recalculate when mobile browser chrome changes the layout.
  */
 export function usePdfSize<T extends HTMLElement>() {
   const containerRef = useRef<T | null>(null);
@@ -42,8 +32,6 @@ export function usePdfSize<T extends HTMLElement>() {
         setContainerWidth(nextWidth);
       } else if (lastPositiveWidth.current > 0) {
         setContainerWidth(lastPositiveWidth.current);
-      } else {
-        setContainerWidth(getDefaultWidth());
       }
       if (nextHeight > 0) {
         lastPositiveHeight.current = nextHeight;
@@ -57,10 +45,15 @@ export function usePdfSize<T extends HTMLElement>() {
 
     const observer = new ResizeObserver(([entry]) => {
       if (!entry) return;
-      const next = Math.floor(entry.contentRect.width);
-      if (next > 0) {
-        lastPositiveWidth.current = next;
-        setContainerWidth(next);
+      const nextWidth = Math.floor(entry.contentRect.width);
+      const nextHeight = Math.floor(entry.contentRect.height);
+      if (nextWidth > 0) {
+        lastPositiveWidth.current = nextWidth;
+        setContainerWidth(nextWidth);
+      }
+      if (nextHeight > 0) {
+        lastPositiveHeight.current = nextHeight;
+        setContainerHeight(nextHeight);
       }
     });
 
