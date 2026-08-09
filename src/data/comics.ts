@@ -223,7 +223,6 @@ export const COMICS: Comic[] = [
   },
 
   // ── Komik 5 ──────────────────────────────────────────────────────────────
-  // PDF belum tersedia
   {
     id: 5,
     slug: 'komik-5',
@@ -235,7 +234,7 @@ export const COMICS: Comic[] = [
     characters: [],
     learningTargets: [],
     estimatedMinutes: 25,
-    pdfPath: null,
+    pdfPath: `${BASE}/komik-5/comic.pdf`,
     cover: '/assets/dashboard/home/covers/cover-komik-5.png',
     thumbnail: `${BASE}/komik-5/thumbnail.png`,
     stages: DEFAULT_STAGES,
