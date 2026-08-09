@@ -265,8 +265,8 @@ export default function UnifiedComicViewer({
   }, []);
 
   const pageWidth = useMemo(() => {
-    const base = containerWidth > 0 ? containerWidth : (isDesktop ? 800 : 360);
-    return base;
+    const availableWidth = containerWidth > 0 ? containerWidth - (isDesktop ? 48 : 24) : isDesktop ? 800 : 336;
+    return Math.min(920, Math.max(1, availableWidth));
   }, [containerWidth, isDesktop]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
@@ -290,6 +290,8 @@ export default function UnifiedComicViewer({
     [pageTransition, pageWidth, renderScale, renderWidth]
   );
 
+  const preloadPage = page < numPages ? page + 1 : page > 1 ? page - 1 : null;
+
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
 
@@ -302,17 +304,17 @@ export default function UnifiedComicViewer({
   }
 
   return (
-    <div className="relative flex h-full min-w-0 flex-col bg-white">
+    <div className="relative flex h-full min-w-0 flex-col bg-[#0b1220]">
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-white px-0 py-0"
-        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" } as React.CSSProperties}
+        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-6 sm:py-5"
+        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehaviorY: "contain" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="flex min-h-full w-full flex-col items-center justify-start">
+        <div className="flex w-full flex-col items-center justify-start">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -320,13 +322,13 @@ export default function UnifiedComicViewer({
             loading={<PdfLoading />}
             error={<PdfError onRetry={handleRetry} />}
           >
-            <div className="w-full overflow-hidden bg-white">
+            <div className="w-full overflow-hidden rounded-2xl bg-white shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:rounded-3xl">
               <div className="flex justify-center overflow-hidden">
                 <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
                     <div className="mx-auto w-full overflow-hidden" style={{ maxWidth: `${pageWidth}px` }}>
                       <div
-                        className={pageTransition ? "flex w-[200%]" : "w-full"}
+                        className={pageTransition ? "flex w-[200%]" : "relative w-full"}
                         style={{
                           transform: pageTransition
                             ? transitionPhase === "active"
@@ -340,6 +342,8 @@ export default function UnifiedComicViewer({
                           transition: prefersReducedMotion
                             ? "none"
                             : `transform ${PAGE_TRANSITION_DURATION}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
+                          willChange: pageTransition ? "transform" : "auto",
+                          contain: "layout paint",
                         }}
                         onTransitionEnd={(event) => {
                           if (event.target === event.currentTarget && event.propertyName === "transform") {
@@ -352,6 +356,16 @@ export default function UnifiedComicViewer({
                             ? <>{renderPage(pageTransition.from)}{renderPage(pageTransition.to)}</>
                             : <>{renderPage(pageTransition.to)}{renderPage(pageTransition.from)}</>
                           : renderPage(page)}
+                        {!pageTransition && preloadPage && (
+                          <div className="pointer-events-none absolute left-0 top-0 w-full opacity-0" aria-hidden="true">
+                            <PdfPage
+                              pageNumber={preloadPage}
+                              width={renderWidth}
+                              scale={renderScale}
+                              loading={null}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -377,6 +391,8 @@ export default function UnifiedComicViewer({
         visible={showFloatingControls}
         onPrev={() => goTo(page - 1)}
         onNext={() => goTo(page + 1)}
+        currentPage={page}
+        numPages={numPages}
         isFirstPage={isFirstPage}
         isLastPage={isLastPage}
         showCompleteButton={showCompleteButton}

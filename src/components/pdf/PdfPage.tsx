@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { Page } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -12,7 +12,7 @@ interface PdfPageProps {
   loading?: ReactNode;
 }
 
-export default function PdfPage({ pageNumber, width, scale = 1, loading }: PdfPageProps) {
+function PdfPage({ pageNumber, width, scale = 1, loading }: PdfPageProps) {
   const safeWidth = width > 0 ? width : undefined;
 
   return (
@@ -28,3 +28,5 @@ export default function PdfPage({ pageNumber, width, scale = 1, loading }: PdfPa
     </div>
   );
 }
+
+export default memo(PdfPage);

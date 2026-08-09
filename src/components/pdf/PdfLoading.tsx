@@ -8,9 +8,8 @@ interface PdfLoadingProps {
 export default function PdfLoading({ variant = "full", progress = 0 }: PdfLoadingProps) {
   if (variant === "skeleton") {
     return (
-      <div className="flex flex-col gap-3 p-4">
-        <div className="h-6 w-32 animate-pulse rounded-lg bg-neutral-200" />
-        <div className="aspect-[8.5/11] w-full animate-pulse rounded-lg bg-neutral-200" />
+      <div className="w-full bg-neutral-100 p-2 sm:p-4">
+        <div className="skeleton aspect-[8.5/11] w-full rounded-lg" />
       </div>
     );
   }
