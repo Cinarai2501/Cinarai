@@ -217,7 +217,7 @@ export default function UnifiedComicViewer({
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="flex h-full w-full flex-col items-center justify-center">
+        <div className="flex min-h-full w-full flex-col items-center justify-start">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
