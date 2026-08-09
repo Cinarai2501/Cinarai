@@ -189,7 +189,7 @@ export const COMICS: Comic[] = [
   },
 
   // ── Komik 4 ──────────────────────────────────────────────────────────────
-  // PDF belum tersedia
+  // Sumber: public/comics/komik-4/comic.pdf
   {
     id: 4,
     slug: 'komik-4',
@@ -201,7 +201,21 @@ export const COMICS: Comic[] = [
     characters: [],
     learningTargets: [],
     estimatedMinutes: 30,
-    pdfPath: null,
+    pdfPath: `${BASE}/komik-4/comic.pdf`,
+    asset: {
+      ...buildComicAssetFromComic({
+        id: 4,
+        slug: 'komik-4',
+        title: 'Petualangan di Jembatan Merah',
+        pdfPath: `${BASE}/komik-4/comic.pdf`,
+        thumbnail: `${BASE}/komik-4/thumbnail.png`,
+      }),
+      qrMetadata: [],
+      stageMetadata: [
+        { stage: 'Contextualization', title: 'Membaca Komik' },
+        { stage: 'Navigation', title: 'Navigasi Cerita' },
+      ],
+    },
     cover: '/assets/dashboard/home/covers/cover-komik-4.png',
     thumbnail: `${BASE}/komik-4/thumbnail.png`,
     stages: DEFAULT_STAGES,
