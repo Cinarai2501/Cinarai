@@ -13,6 +13,8 @@ interface PdfNavigationProps {
   onComplete?: () => void;
   isComicCompleted?: boolean;
   completeButtonLabelWhenDone?: string;
+  floating?: boolean;
+  visible?: boolean;
 }
 
 export default function PdfNavigation({
@@ -26,6 +28,8 @@ export default function PdfNavigation({
   onComplete,
   isComicCompleted = false,
   completeButtonLabelWhenDone = "Lanjut ke Identification",
+  floating = false,
+  visible = true,
 }: PdfNavigationProps) {
   const onCompleteRef = useRef(onComplete);
 
@@ -51,6 +55,14 @@ export default function PdfNavigation({
   ) : null;
 
   if (completeButton) {
+    if (floating) {
+      return (
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4">
+          <div className="pointer-events-auto w-full max-w-[min(92vw,560px)]">{completeButton}</div>
+        </div>
+      );
+    }
+
     return (
       <div
         className="flex-shrink-0 border-t border-neutral-200 bg-white px-3 pt-2.5"
@@ -68,6 +80,37 @@ export default function PdfNavigation({
     }
     onNext();
   };
+
+  if (floating) {
+    return (
+      <div className={visible ? "pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4" : "hidden"}>
+        <div className="pointer-events-auto flex w-full max-w-[min(92vw,560px)] items-center gap-3 rounded-full border border-white/70 bg-black/55 p-2 shadow-2xl backdrop-blur-md">
+          <button
+            onClick={onPrev}
+            disabled={isFirstPage}
+            aria-label="Halaman sebelumnya"
+            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-full bg-neutral-900/80 text-sm font-black text-neutral-100 transition-colors hover:bg-neutral-800 active:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Sebelumnya
+          </button>
+          <button
+            onClick={handleNextClick}
+            disabled={isLastPage && !onComplete}
+            aria-label="Halaman berikutnya"
+            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-full bg-primary-600 text-sm font-black text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            Selanjutnya
+            <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

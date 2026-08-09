@@ -47,6 +47,7 @@ export default function PdfReader({
     <PdfViewer
       pdfPath={resolvedPdfPath}
       comicId={comicId}
+      comicTitle={asset?.title ?? undefined}
       onComplete={onComplete}
       showCompleteButton={showCompleteButton}
       completeButtonLabel={completeButtonLabel}
