@@ -11,6 +11,13 @@ import PdfPage from "./PdfPage";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
+const PAGE_TRANSITION_DURATION = 300;
+
+type PageTransition = {
+  from: number;
+  to: number;
+  direction: "next" | "previous";
+};
 
 interface UnifiedComicViewerProps {
   pdfPath: string;
@@ -45,12 +52,19 @@ export default function UnifiedComicViewer({
   const [isDesktop, setIsDesktop] = useState(false);
   const [devicePixelRatio, setDevicePixelRatio] = useState(1);
   const [showFloatingControls, setShowFloatingControls] = useState(false);
+  const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
+  const [transitionPhase, setTransitionPhase] = useState<"idle" | "active">("idle");
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const { containerRef, containerWidth } = usePdfSize<HTMLDivElement>();
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitionFrame = useRef<number | null>(null);
+  const transitionRef = useRef<PageTransition | null>(null);
+  const isTransitioningRef = useRef(false);
   const onCompleteRef = useRef(onComplete);
   const initialLoadRef = useRef(true);
 
@@ -96,9 +110,68 @@ export default function UnifiedComicViewer({
     };
   }, []);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    updateMotionPreference();
+    mediaQuery.addEventListener("change", updateMotionPreference);
+
+    return () => mediaQuery.removeEventListener("change", updateMotionPreference);
+  }, []);
+
+  const finishPageTransition = useCallback(() => {
+    const activeTransition = transitionRef.current;
+    if (!activeTransition) return;
+
+    transitionRef.current = null;
+    isTransitioningRef.current = false;
+    setPage(activeTransition.to);
+    setPageTransition(null);
+    setTransitionPhase("idle");
+  }, []);
+
+  useEffect(() => {
+    if (!pageTransition) return;
+
+    transitionFrame.current = window.requestAnimationFrame(() => {
+      setTransitionPhase("active");
+    });
+
+    transitionTimer.current = setTimeout(
+      finishPageTransition,
+      prefersReducedMotion ? 0 : PAGE_TRANSITION_DURATION + 50
+    );
+
+    return () => {
+      if (transitionFrame.current !== null) {
+        window.cancelAnimationFrame(transitionFrame.current);
+      }
+      if (transitionTimer.current) {
+        clearTimeout(transitionTimer.current);
+      }
+    };
+  }, [finishPageTransition, pageTransition, prefersReducedMotion]);
+
   const goTo = useCallback(
-    (next: number) => setPage(Math.min(Math.max(1, next), numPages || 1)),
-    [numPages]
+    (next: number) => {
+      if (isTransitioningRef.current) return;
+
+      const targetPage = Math.min(Math.max(1, next), numPages || 1);
+      if (targetPage === page) return;
+
+      const nextTransition: PageTransition = {
+        from: page,
+        to: targetPage,
+        direction: targetPage > page ? "next" : "previous",
+      };
+
+      isTransitioningRef.current = true;
+      transitionRef.current = nextTransition;
+      setTransitionPhase("idle");
+      setPageTransition(nextTransition);
+    },
+    [numPages, page]
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -182,6 +255,12 @@ export default function UnifiedComicViewer({
       if (hideControlsTimer.current) {
         clearTimeout(hideControlsTimer.current);
       }
+      if (transitionTimer.current) {
+        clearTimeout(transitionTimer.current);
+      }
+      if (transitionFrame.current !== null) {
+        window.cancelAnimationFrame(transitionFrame.current);
+      }
     };
   }, []);
 
@@ -193,7 +272,23 @@ export default function UnifiedComicViewer({
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
   const renderWidth = useMemo(() => Math.max(1, Math.floor(pageWidth / renderScale)), [pageWidth, renderScale]);
 
-  const pageKey = useMemo(() => `${page}-${Math.round(pageWidth)}-${renderScale}`, [page, pageWidth, renderScale]);
+  const renderPage = useCallback(
+    (pageNumber: number) => (
+      <div
+        key={pageNumber}
+        className={pageTransition ? "w-1/2 min-w-0 shrink-0" : "w-full min-w-0"}
+      >
+        <PdfPage
+          key={`${pageNumber}-${Math.round(pageWidth)}-${renderScale}`}
+          pageNumber={pageNumber}
+          width={renderWidth}
+          scale={renderScale}
+          loading={<PdfLoading variant="skeleton" />}
+        />
+      </div>
+    ),
+    [pageTransition, pageWidth, renderScale, renderWidth]
+  );
 
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
@@ -211,7 +306,7 @@ export default function UnifiedComicViewer({
       <div
         ref={containerRef}
         className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-white px-0 py-0"
-        style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -229,14 +324,35 @@ export default function UnifiedComicViewer({
               <div className="flex justify-center overflow-hidden">
                 <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
-                    <div className="mx-auto w-full" style={{ maxWidth: `${pageWidth}px` }}>
-                      <PdfPage
-                        key={pageKey}
-                        pageNumber={page}
-                        width={renderWidth}
-                        scale={renderScale}
-                        loading={<PdfLoading variant="skeleton" />}
-                      />
+                    <div className="mx-auto w-full overflow-hidden" style={{ maxWidth: `${pageWidth}px` }}>
+                      <div
+                        className={pageTransition ? "flex w-[200%]" : "w-full"}
+                        style={{
+                          transform: pageTransition
+                            ? transitionPhase === "active"
+                              ? pageTransition.direction === "next"
+                                ? "translateX(-50%)"
+                                : "translateX(0)"
+                              : pageTransition.direction === "next"
+                                ? "translateX(0)"
+                                : "translateX(-50%)"
+                            : "translateX(0)",
+                          transition: prefersReducedMotion
+                            ? "none"
+                            : `transform ${PAGE_TRANSITION_DURATION}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
+                        }}
+                        onTransitionEnd={(event) => {
+                          if (event.target === event.currentTarget && event.propertyName === "transform") {
+                            finishPageTransition();
+                          }
+                        }}
+                      >
+                        {pageTransition
+                          ? pageTransition.direction === "next"
+                            ? <>{renderPage(pageTransition.from)}{renderPage(pageTransition.to)}</>
+                            : <>{renderPage(pageTransition.to)}{renderPage(pageTransition.from)}</>
+                          : renderPage(page)}
+                      </div>
                     </div>
                   ) : (
                     <PdfLoading variant="skeleton" />
