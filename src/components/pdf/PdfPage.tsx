@@ -10,9 +10,11 @@ interface PdfPageProps {
   width: number;
   scale?: number;
   loading?: ReactNode;
+  onLoadSuccess?: (page: { width: number; height: number }) => void;
+  onRenderSuccess?: () => void;
 }
 
-function PdfPage({ pageNumber, width, scale = 1, loading }: PdfPageProps) {
+function PdfPage({ pageNumber, width, scale = 1, loading, onLoadSuccess, onRenderSuccess }: PdfPageProps) {
   const safeWidth = width > 0 ? width : undefined;
 
   return (
@@ -22,6 +24,8 @@ function PdfPage({ pageNumber, width, scale = 1, loading }: PdfPageProps) {
         width={safeWidth}
         scale={scale}
         loading={loading}
+        onLoadSuccess={onLoadSuccess}
+        onRenderSuccess={onRenderSuccess}
         renderAnnotationLayer={false}
         renderTextLayer={false}
       />

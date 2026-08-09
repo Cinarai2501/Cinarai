@@ -11,7 +11,8 @@ import PdfPage from "./PdfPage";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
-const PAGE_TRANSITION_DURATION = 300;
+const PAGE_TRANSITION_DURATION = 220;
+const DEFAULT_PDF_ASPECT_RATIO = 8.5 / 11;
 
 type PageTransition = {
   from: number;
@@ -54,9 +55,11 @@ export default function UnifiedComicViewer({
   const [showFloatingControls, setShowFloatingControls] = useState(true);
   const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
   const [transitionPhase, setTransitionPhase] = useState<"idle" | "active">("idle");
+  const [targetPageReady, setTargetPageReady] = useState(false);
+  const [pdfAspectRatio, setPdfAspectRatio] = useState(DEFAULT_PDF_ASPECT_RATIO);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  const { containerRef, containerWidth } = usePdfSize<HTMLDivElement>();
+  const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -132,7 +135,7 @@ export default function UnifiedComicViewer({
   }, []);
 
   useEffect(() => {
-    if (!pageTransition) return;
+    if (!pageTransition || !targetPageReady) return;
 
     transitionFrame.current = window.requestAnimationFrame(() => {
       setTransitionPhase("active");
@@ -151,7 +154,7 @@ export default function UnifiedComicViewer({
         clearTimeout(transitionTimer.current);
       }
     };
-  }, [finishPageTransition, pageTransition, prefersReducedMotion]);
+  }, [finishPageTransition, pageTransition, prefersReducedMotion, targetPageReady]);
 
   const goTo = useCallback(
     (next: number) => {
@@ -168,6 +171,7 @@ export default function UnifiedComicViewer({
 
       isTransitioningRef.current = true;
       transitionRef.current = nextTransition;
+      setTargetPageReady(false);
       setTransitionPhase("idle");
       setPageTransition(nextTransition);
     },
@@ -217,6 +221,16 @@ export default function UnifiedComicViewer({
     [initialPage]
   );
 
+  const handlePageLoadSuccess = useCallback((loadedPage: { width: number; height: number }) => {
+    if (loadedPage.width > 0 && loadedPage.height > 0) {
+      setPdfAspectRatio(loadedPage.width / loadedPage.height);
+    }
+  }, []);
+
+  const handleTargetPageRenderSuccess = useCallback(() => {
+    setTargetPageReady(true);
+  }, []);
+
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
   }, []);
@@ -265,15 +279,16 @@ export default function UnifiedComicViewer({
   }, []);
 
   const pageWidth = useMemo(() => {
-    const availableWidth = containerWidth > 0 ? containerWidth - (isDesktop ? 32 : 8) : isDesktop ? 800 : 352;
-    return Math.min(1100, Math.max(1, availableWidth));
-  }, [containerWidth, isDesktop]);
+    const availableWidth = containerWidth > 0 ? containerWidth : isDesktop ? 800 : 360;
+    const availableHeight = containerHeight > 0 ? containerHeight : isDesktop ? 700 : 600;
+    return Math.max(1, Math.min(1100, availableWidth, availableHeight * pdfAspectRatio));
+  }, [containerHeight, containerWidth, isDesktop, pdfAspectRatio]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
   const renderWidth = useMemo(() => Math.max(1, Math.floor(pageWidth / renderScale)), [pageWidth, renderScale]);
 
   const renderPage = useCallback(
-    (pageNumber: number) => (
+    (pageNumber: number, isTarget = false) => (
       <div
         key={pageNumber}
         className={pageTransition ? "w-1/2 min-w-0 shrink-0" : "w-full min-w-0"}
@@ -284,13 +299,14 @@ export default function UnifiedComicViewer({
           width={renderWidth}
           scale={renderScale}
           loading={<PdfLoading variant="skeleton" />}
+          onLoadSuccess={handlePageLoadSuccess}
+          onRenderSuccess={isTarget ? handleTargetPageRenderSuccess : undefined}
         />
       </div>
     ),
-    [pageTransition, pageWidth, renderScale, renderWidth]
+    [handlePageLoadSuccess, handleTargetPageRenderSuccess, pageTransition, pageWidth, renderScale, renderWidth]
   );
 
-  const preloadPage = page < numPages ? page + 1 : page > 1 ? page - 1 : null;
   const backgroundPage = pageTransition?.to ?? page;
 
   const isFirstPage = page <= 1;
@@ -313,14 +329,14 @@ export default function UnifiedComicViewer({
       )}
       <div
         ref={containerRef}
-        className="pdf-viewer-container relative flex min-h-0 flex-1 items-start justify-center overflow-hidden px-1 py-1 sm:px-4 sm:py-2"
+        className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden"
         style={{ touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleReaderTap}
       >
-        <div className="pdf-viewer-container__content flex w-full items-start justify-center">
+        <div className="pdf-viewer-container__content flex h-full w-full items-center justify-center">
           <Document
             key={`pdf-${retryCount}`}
             file={pdfPath}
@@ -347,8 +363,8 @@ export default function UnifiedComicViewer({
                 />
               </div>
             )}
-            <div className="pdf-page-shell relative z-10 w-full overflow-hidden rounded-md bg-white sm:rounded-xl">
-              <div className="flex justify-center overflow-hidden">
+            <div className="pdf-page-shell relative z-10 flex max-h-full w-full items-center justify-center overflow-hidden rounded-md bg-white sm:rounded-xl">
+              <div className="flex w-full justify-center overflow-hidden">
                 <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
                     <div className="mx-auto w-full overflow-hidden" style={{ maxWidth: `${pageWidth}px` }}>
@@ -378,19 +394,9 @@ export default function UnifiedComicViewer({
                       >
                         {pageTransition
                           ? pageTransition.direction === "next"
-                            ? <>{renderPage(pageTransition.from)}{renderPage(pageTransition.to)}</>
-                            : <>{renderPage(pageTransition.to)}{renderPage(pageTransition.from)}</>
+                            ? <>{renderPage(pageTransition.from)}{renderPage(pageTransition.to, true)}</>
+                            : <>{renderPage(pageTransition.to, true)}{renderPage(pageTransition.from)}</>
                           : renderPage(page)}
-                        {!pageTransition && preloadPage && (
-                          <div className="pointer-events-none absolute left-0 top-0 w-full opacity-0" aria-hidden="true">
-                            <PdfPage
-                              pageNumber={preloadPage}
-                              width={renderWidth}
-                              scale={renderScale}
-                              loading={null}
-                            />
-                          </div>
-                        )}
                       </div>
                     </div>
                   ) : (
