@@ -87,8 +87,8 @@ export default function PdfNavigation({
 
   if (floating) {
     return (
-      <div className={visible ? "pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:px-4" : "hidden"}>
-        <div className="pointer-events-auto flex w-full max-w-[min(92vw,520px)] items-center gap-2 rounded-2xl border border-white/15 bg-[#111827]/90 p-2 shadow-2xl backdrop-blur-md">
+      <div className={visible ? "flex h-[60px] w-full items-center justify-center bg-[#0b1220] px-2 py-2" : "hidden"}>
+        <div className="flex w-full items-center gap-2">
           <button
             onClick={onPrev}
             disabled={isFirstPage}
@@ -121,26 +121,29 @@ export default function PdfNavigation({
 
   return (
     <div
-      className="flex-shrink-0 border-t border-neutral-200 bg-white px-3 pt-2.5"
-      style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
+      className="flex h-[60px] flex-shrink-0 items-center border-t border-white/10 bg-[#0b1220] px-2 py-2"
+      style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-center gap-2">
         <button
           onClick={onPrev}
           disabled={isFirstPage}
           aria-label="Halaman sebelumnya"
-          className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-neutral-700 text-base font-black text-neutral-200 transition-colors hover:bg-neutral-600 active:bg-neutral-500 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/10 text-sm font-bold text-neutral-200 transition-colors hover:bg-white/15 active:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
         >
           <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Sebelumnya
         </button>
+        <div className="min-w-[62px] text-center text-xs font-semibold tabular-nums text-white/75" aria-label={`Halaman ${currentPage} dari ${numPages}`}>
+          {currentPage} <span className="text-white/40">/</span> {numPages || "-"}
+        </div>
         <button
           onClick={handleNextClick}
           disabled={isLastPage && !onComplete}
           aria-label="Halaman berikutnya"
-          className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary-600 text-base font-black text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary-600 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-30"
         >
           Selanjutnya
           <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

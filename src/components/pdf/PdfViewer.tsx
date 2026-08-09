@@ -265,8 +265,8 @@ export default function UnifiedComicViewer({
   }, []);
 
   const pageWidth = useMemo(() => {
-    const availableWidth = containerWidth > 0 ? containerWidth - (isDesktop ? 48 : 24) : isDesktop ? 800 : 336;
-    return Math.min(920, Math.max(1, availableWidth));
+    const availableWidth = containerWidth > 0 ? containerWidth - (isDesktop ? 32 : 8) : isDesktop ? 800 : 352;
+    return Math.min(1100, Math.max(1, availableWidth));
   }, [containerWidth, isDesktop]);
 
   const renderScale = useMemo(() => Math.max(1, Math.min(2, devicePixelRatio || 1)), [devicePixelRatio]);
@@ -304,15 +304,15 @@ export default function UnifiedComicViewer({
   }
 
   return (
-    <div className="comic-reader relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#0b1220]">
+    <div className="comic-reader relative flex h-[100dvh] min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
       {comicTitle && (
-        <header className="comic-reader__header z-20 flex h-11 shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-12 backdrop-blur-md">
+        <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
           <h1 className="max-w-full truncate text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
         </header>
       )}
       <div
         ref={containerRef}
-        className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-3 py-3 pb-20 sm:px-6 sm:py-5 sm:pb-24"
+        className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1 py-1 sm:px-4 sm:py-2"
         style={{ touchAction: "pan-y", overscrollBehavior: "contain" } as React.CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -327,7 +327,7 @@ export default function UnifiedComicViewer({
             loading={<PdfLoading />}
             error={<PdfError onRetry={handleRetry} />}
           >
-            <div className="pdf-page-shell w-full overflow-hidden rounded-2xl bg-white shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:rounded-3xl">
+            <div className="pdf-page-shell w-full overflow-hidden rounded-md bg-white sm:rounded-xl">
               <div className="flex justify-center overflow-hidden">
                 <div className="w-full min-w-0 overflow-hidden">
                   {numPages > 0 ? (
@@ -383,9 +383,8 @@ export default function UnifiedComicViewer({
         </div>
       </div>
 
-      <div className="pdf-viewer-container__navigation">
+      <div className="pdf-viewer-container__navigation shrink-0">
         <PdfNavigation
-          floating
           visible={showFloatingControls}
           onPrev={() => goTo(page - 1)}
           onNext={() => goTo(page + 1)}
