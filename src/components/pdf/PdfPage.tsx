@@ -10,19 +10,19 @@ interface PdfPageProps {
   width: number;
   loading?: ReactNode;
   onLoadSuccess?: (page: { width: number; height: number }) => void;
+  onLoadError?: (error: Error) => void;
   onRenderSuccess?: () => void;
 }
 
-function PdfPage({ pageNumber, width, loading, onLoadSuccess, onRenderSuccess }: PdfPageProps) {
-  const safeWidth = width > 0 ? width : undefined;
-
+function PdfPage({ pageNumber, width, loading, onLoadSuccess, onLoadError, onRenderSuccess }: PdfPageProps) {
   return (
     <div className="flex h-full w-full max-w-full items-center justify-center overflow-hidden">
       <Page
         pageNumber={pageNumber}
-        width={safeWidth}
+        width={width}
         loading={loading}
         onLoadSuccess={onLoadSuccess}
+        onLoadError={onLoadError}
         onRenderSuccess={onRenderSuccess}
         renderAnnotationLayer={false}
         renderTextLayer={false}
