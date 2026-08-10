@@ -12,8 +12,13 @@ import PdfPage from "./PdfPage";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
+const PAGE_TRANSITION_DURATION = 240;
 
 type PdfDimensions = { width: number; height: number };
+type PageTransition = {
+  targetPage: number;
+  direction: "next" | "previous";
+};
 type LoadedPdf = {
   numPages: number;
   getPage: (pageNumber: number) => Promise<{
@@ -55,6 +60,10 @@ export default function UnifiedComicViewer({
   const [pageReady, setPageReady] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
+  const [targetPageReady, setTargetPageReady] = useState(false);
+  const [transitionPhase, setTransitionPhase] = useState<"idle" | "active" | "committing">("idle");
+  const [targetPageError, setTargetPageError] = useState<string | null>(null);
   const [pdfDimensions, setPdfDimensions] = useState<PdfDimensions | null>(null);
   const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
   const touchStartX = useRef<number | null>(null);
@@ -78,18 +87,25 @@ export default function UnifiedComicViewer({
     setPageReady(false);
     setPdfError(null);
     setBackgroundImage(null);
+    setPageTransition(null);
+    setTargetPageReady(false);
+    setTransitionPhase("idle");
+    setTargetPageError(null);
     markNextDocumentLoadAsInitial(initialLoadRef);
   }, [initialPage, pdfPath]);
 
   const goTo = useCallback((next: number) => {
-    setPage((current) => {
-      const targetPage = Math.min(Math.max(1, next), numPages || 1);
-      if (targetPage === current) return current;
-      setPageReady(false);
-      setPdfError(null);
-      return targetPage;
+    if (pageTransition) return;
+    const targetPage = Math.min(Math.max(1, next), numPages || 1);
+    if (targetPage === page) return;
+    setPageTransition({
+      targetPage,
+      direction: targetPage > page ? "next" : "previous",
     });
-  }, [numPages]);
+    setTargetPageReady(false);
+    setTransitionPhase("idle");
+    setTargetPageError(null);
+  }, [numPages, page, pageTransition]);
 
   const handleTouchStart = useCallback((event: React.TouchEvent) => {
     if (event.touches.length === 1) {
@@ -154,12 +170,48 @@ export default function UnifiedComicViewer({
       setBackgroundImage(canvas.toDataURL("image/jpeg", 0.72));
     }
     setPageReady(true);
-  }, []);
+    if (pageTransition && transitionPhase === "committing") {
+      setPageTransition(null);
+      setTargetPageReady(false);
+      setTransitionPhase("idle");
+      setTargetPageError(null);
+    }
+  }, [pageTransition, transitionPhase]);
 
   const handlePageError = useCallback((error: Error) => {
     setPageReady(false);
     setPdfError(error.message || "Halaman PDF tidak dapat dirender.");
   }, []);
+
+  const handleTargetPageRenderSuccess = useCallback(() => {
+    setTargetPageReady(true);
+    setTargetPageError(null);
+  }, []);
+
+  const handleTargetPageError = useCallback((error: Error) => {
+    setTargetPageReady(false);
+    setTargetPageError(error.message || "Halaman tujuan tidak dapat dirender.");
+    setPageTransition(null);
+    setTransitionPhase("idle");
+  }, []);
+
+  useEffect(() => {
+    if (!pageTransition || !targetPageReady) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      setTransitionPhase("active");
+    });
+    const timer = window.setTimeout(() => {
+      setPage(pageTransition.targetPage);
+      setPageReady(false);
+      setTransitionPhase("committing");
+    }, PAGE_TRANSITION_DURATION);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [pageTransition, targetPageReady]);
 
   const showControlsTemporarily = useCallback(() => {
     setShowFloatingControls(true);
@@ -213,10 +265,39 @@ export default function UnifiedComicViewer({
         <div ref={containerRef} className="pdf-viewer-container__content relative flex h-full w-full max-w-[1100px] items-start justify-center px-1 sm:px-2 lg:px-4">
           <Document file={pdfPath} onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
-              PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
+              PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
             </div>
             <div className="pdf-page-shell relative z-10 flex max-h-full w-full items-start justify-center overflow-hidden rounded-md bg-white sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px` } : undefined}>
-              {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? <PdfPage pageNumber={page} width={pageSize.width} loading={<PdfLoading variant="spinner" />} onLoadSuccess={handlePageLoadSuccess} onLoadError={handlePageError} onRenderSuccess={handlePageRenderSuccess} /> : <PdfLoading variant="spinner" />}
+              {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
+                <>
+                  <div className="absolute inset-0 z-10">
+                    <PdfPage pageNumber={page} width={pageSize.width} loading={<PdfLoading variant="spinner" />} onLoadSuccess={handlePageLoadSuccess} onLoadError={handlePageError} onRenderSuccess={handlePageRenderSuccess} />
+                  </div>
+                  {pageTransition && (
+                    <div
+                      className="absolute inset-0 z-20 overflow-hidden"
+                      data-testid="pdf-target-layer"
+                      style={{
+                        opacity: targetPageReady && (transitionPhase === "active" || transitionPhase === "committing") ? 1 : 0,
+                        transform: targetPageReady && (transitionPhase === "active" || transitionPhase === "committing")
+                          ? "translateX(0)"
+                          : pageTransition.direction === "next" ? "translateX(100%)" : "translateX(-100%)",
+                        transition: `opacity ${PAGE_TRANSITION_DURATION}ms ease-out, transform ${PAGE_TRANSITION_DURATION}ms ease-out`,
+                        willChange: "opacity, transform",
+                      }}
+                    >
+                      <PdfPage
+                        pageNumber={pageTransition.targetPage}
+                        width={pageSize.width}
+                        loading={null}
+                        error={null}
+                        onLoadError={handleTargetPageError}
+                        onRenderSuccess={handleTargetPageRenderSuccess}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : <PdfLoading variant="spinner" />}
             </div>
           </Document>
         </div>
