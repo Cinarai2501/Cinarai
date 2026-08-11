@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Document, pdfjs } from "react-pdf";
 import { usePdfSize } from "@/hooks/usePdfSize";
 import { markNextDocumentLoadAsInitial, shouldNotifyPageChange } from "./pdfViewerProgress";
@@ -52,6 +53,8 @@ export default function UnifiedComicViewer({
   completeButtonLabelWhenDone = "Lanjut ke Identification",
   initialPage = 1,
 }: UnifiedComicViewerProps) {
+  const pathname = usePathname();
+  const debug = pathname === "/debug-pdf";
   const [numPages, setNumPages] = useState(0);
   const [page, setPage] = useState(1);
   const [workerReady, setWorkerReady] = useState(false);
@@ -264,9 +267,11 @@ export default function UnifiedComicViewer({
       <div className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
         <div ref={containerRef} className="pdf-viewer-container__content relative flex h-full w-full max-w-[1100px] items-start justify-center px-1 sm:px-2 lg:px-4">
           <Document file={pdfPath} onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
-            <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
-              PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
-            </div>
+            {debug && (
+              <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
+                PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
+              </div>
+            )}
             <div className="pdf-page-shell relative z-10 flex max-h-full w-full items-start justify-center overflow-hidden rounded-md bg-white sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px` } : undefined}>
               {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
                 <>
@@ -301,9 +306,9 @@ export default function UnifiedComicViewer({
             </div>
           </Document>
         </div>
-      </div>
-      <div className="pdf-viewer-container__navigation pointer-events-none absolute inset-0 z-30">
-        <PdfNavigation floating visible={showFloatingControls} onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} currentPage={page} numPages={numPages} isFirstPage={isFirstPage} isLastPage={isLastPage} showCompleteButton={showCompleteButton} completeButtonLabel={completeButtonLabel} completeButtonDisabled={completeButtonDisabled} onComplete={onComplete} isComicCompleted={isComicCompleted} completeButtonLabelWhenDone={completeButtonLabelWhenDone} />
+        <div className="pdf-viewer-container__navigation pointer-events-none absolute inset-0 z-30">
+          <PdfNavigation floating visible={showFloatingControls} onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} currentPage={page} numPages={numPages} isFirstPage={isFirstPage} isLastPage={isLastPage} showCompleteButton={showCompleteButton} completeButtonLabel={completeButtonLabel} completeButtonDisabled={completeButtonDisabled} onComplete={onComplete} isComicCompleted={isComicCompleted} completeButtonLabelWhenDone={completeButtonLabelWhenDone} />
+        </div>
       </div>
     </div>
   );
