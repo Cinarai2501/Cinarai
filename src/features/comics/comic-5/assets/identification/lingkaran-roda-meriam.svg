@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="Roda meriam berbentuk lingkaran">
+  <rect width="320" height="220" fill="#f4f1ec"/>
+  <circle cx="160" cy="110" r="72" fill="#cbd7de" stroke="#3d4d60" stroke-width="5"/>
+  <circle cx="160" cy="110" r="28" fill="#edf3f6" stroke="#3d4d60" stroke-width="4"/>
+  <circle cx="160" cy="110" r="4" fill="#3d4d60"/>
+  <line x1="160" y1="38" x2="160" y2="182" stroke="#3d4d60" stroke-width="3" stroke-dasharray="9 8"/>
+  <line x1="88" y1="110" x2="232" y2="110" stroke="#3d4d60" stroke-width="3" stroke-dasharray="9 8"/>
+  <path d="M118 70 L160 110 L118 150" fill="none" stroke="#7a5b38" stroke-width="4" opacity="0.8"/>
+  <path d="M202 70 L160 110 L202 150" fill="none" stroke="#7a5b38" stroke-width="4" opacity="0.8"/>
+  <text x="160" y="200" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#233844" font-weight="700">Lingkaran</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="Lingkaran roda meriam">
+  <rect width="240" height="180" fill="#F5F3FF"/>
+  <circle cx="120" cy="90" r="56" fill="#D9F99D" stroke="#7C3AED" stroke-width="6"/>
+  <circle cx="120" cy="90" r="18" fill="#F8FAFC" stroke="#7C3AED" stroke-width="4"/>
+  <g stroke="#7C3AED" stroke-width="4" stroke-linecap="round">
+    <path d="M120 34 V52 M120 128 V146 M34 90 H52 M188 90 H206"/>
+    <path d="M60 54 L72 66 M168 114 L180 126 M60 126 L72 114 M168 66 L180 54"/>
+  </g>
+</svg>

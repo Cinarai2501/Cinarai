@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="Jendela persegi panjang">
+  <rect width="240" height="180" fill="#EEF6FF"/>
+  <rect x="36" y="30" width="168" height="110" rx="8" fill="#BEE3F8" stroke="#2563EB" stroke-width="5"/>
+  <path d="M120 30 V140 M36 85 H204" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+</svg>

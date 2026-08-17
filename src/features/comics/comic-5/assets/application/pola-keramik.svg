@@ -1,0 +1,13 @@
+<svg width="400" height="220" viewBox="0 0 400 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#F7F7F5"/>
+  <g opacity="0.95">
+    <path d="M90 80L140 120L90 160L40 120L90 80Z" fill="#C7E9FF" stroke="#4E9CD8" stroke-width="4"/>
+    <path d="M150 80L200 120L150 160L100 120L150 80Z" fill="#FDE3A7" stroke="#D89A2A" stroke-width="4"/>
+    <path d="M210 80L260 120L210 160L160 120L210 80Z" fill="#E0F3C0" stroke="#7AA73A" stroke-width="4"/>
+    <path d="M270 80L320 120L270 160L220 120L270 80Z" fill="#C9C8FF" stroke="#6E68D5" stroke-width="4"/>
+    <path d="M120 20L170 60L120 100L70 60L120 20Z" fill="#F9D9D9" stroke="#D96C6C" stroke-width="4"/>
+    <path d="M180 20L230 60L180 100L130 60L180 20Z" fill="#D9F3E7" stroke="#4D9A7A" stroke-width="4"/>
+    <path d="M240 20L290 60L240 100L190 60L240 20Z" fill="#FBE5D6" stroke="#D28B4F" stroke-width="4"/>
+  </g>
+  <text x="200" y="196" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" fill="#1F2937" font-weight="700">Pola keramik</text>
+</svg>

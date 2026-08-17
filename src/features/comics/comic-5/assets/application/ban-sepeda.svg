@@ -1,0 +1,7 @@
+<svg width="400" height="220" viewBox="0 0 400 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#F7F7F5"/>
+  <circle cx="130" cy="145" r="52" fill="#F1F5F9" stroke="#4FC3F7" stroke-width="6"/>
+  <circle cx="270" cy="145" r="52" fill="#F1F5F9" stroke="#4FC3F7" stroke-width="6"/>
+  <path d="M130 145L175 95L220 145M220 145L270 145M175 95L230 95L270 145" stroke="#4FC3F7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="200" y="196" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" fill="#1F2937" font-weight="700">Ban sepeda</text>
+</svg>

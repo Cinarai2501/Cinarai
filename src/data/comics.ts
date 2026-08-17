@@ -223,19 +223,68 @@ export const COMICS: Comic[] = [
   },
 
   // ── Komik 5 ──────────────────────────────────────────────────────────────
+  // Sumber: public/comics/komik-5/comic.pdf
+  // Tokoh: Pak Atur, Zitur, Vira, Rohman, Nanda
+  // Fokus materi: bangun datar di Keraton Sumenep
   {
     id: 5,
     slug: 'komik-5',
     title: 'Serunya Belajar Bangun Datar di Keraton Sumenep',
     subtitle: 'Etnomatematika Bangun Datar',
     kelas: 'II',
-    lokasi: 'Keraton Sumenep, Madura',
-    synopsis: 'Komik ini sedang dalam persiapan. Data akan diperbarui setelah PDF tersedia.',
-    characters: [],
-    learningTargets: [],
+    lokasi: 'Keraton Sumenep, Madura, Jawa Timur',
+    synopsis:
+      'Di SDN Pajagalan 1, Pak Atur mengajak muridnya Zitur, Vira, Rohman, dan Nanda belajar matematika melalui pengalaman langsung di Keraton Sumenep. Mereka mengamati bangun datar pada benda-benda di sekitar istana bersejarah, seperti atap, jendela, lampu gantung, roda meriam, lantai, gerbang, dan tiang. Dalam perjalanan, mereka berdiskusi, berdebat, dan menguji pemahaman tentang segitiga, persegi panjang, lingkaran, belah ketupat, dan bangun datar lainnya, sambil belajar sikap teliti, sabar, dan percaya diri. Kini mereka memahami bahwa matematika dapat ditemukan di lingkungan budaya sekitar, termasuk di bangunan bersejarah seperti Keraton Sumenep.',
+    characters: [
+      {
+        name: 'Pak Atur',
+        description: 'Guru yang bijaksana, sabar, penyayang, dan mampu mengajak siswa belajar dengan menyenangkan.',
+        avatar: `${BASE_AVATAR}/pak-atur.png`,
+      },
+      {
+        name: 'Zitur',
+        description: 'Siswa yang aktif, cepat tanggap, dan suka berdiskusi serta belajar dengan antusias.',
+        avatar: `${BASE_AVATAR}/zitur.png`,
+      },
+      {
+        name: 'Vira',
+        description: 'Siswa yang percaya diri, cermat, dan teliti dalam mengamati benda di sekitar.',
+        avatar: `${BASE_AVATAR}/vira.png`,
+      },
+      {
+        name: 'Rohman',
+        description: 'Siswa yang ceria, suka berdebat, namun tetap mau belajar dan memperbaiki pemahamannya.',
+        avatar: `${BASE_AVATAR}/rohman.png`,
+      },
+      {
+        name: 'Nanda',
+        description: 'Siswa yang teliti, semangat, dan berani mengemukakan jawaban saat menemukan bentuk bangun datar.',
+        avatar: `${BASE_AVATAR}/nanda.png`,
+      },
+    ],
+    learningTargets: [
+      'Mengenal berbagai bangun datar yang ditemukan pada benda-benda di Keraton Sumenep',
+      'Menjelaskan ciri-ciri bangun datar seperti segitiga, persegi panjang, lingkaran, dan belah ketupat',
+      'Mengamati bentuk geometri pada benda bersejarah dan mengaitkannya dengan konsep matematika',
+      'Menyebutkan dan mengidentifikasi bangun datar dari lingkungan sekitar dengan teliti',
+    ],
     estimatedMinutes: 25,
     pdfPath: `${BASE}/komik-5/comic.pdf`,
-    cover: '/assets/dashboard/home/covers/cover-komik-5.png',
+    asset: {
+      ...buildComicAssetFromComic({
+        id: 5,
+        slug: 'komik-5',
+        title: 'Serunya Belajar Bangun Datar di Keraton Sumenep',
+        pdfPath: `${BASE}/komik-5/comic.pdf`,
+        thumbnail: `${BASE}/komik-5/thumbnail.png`,
+      }),
+      qrMetadata: [],
+      stageMetadata: [
+        { stage: 'Contextualization', title: 'Membaca Komik' },
+        { stage: 'Navigation', title: 'Navigasi Cerita' },
+      ],
+    },
+    cover: `${BASE}/komik-5/cover.png`,
     thumbnail: `${BASE}/komik-5/thumbnail.png`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',

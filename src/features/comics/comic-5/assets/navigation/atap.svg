@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="Atap segitiga">
+  <rect width="240" height="180" fill="#F3F7FF"/>
+  <path d="M20 150 L120 30 L220 150 Z" fill="#FECF8D" stroke="#D97706" stroke-width="6"/>
+  <path d="M60 150 L120 70 L180 150" fill="none" stroke="#7C2D12" stroke-width="4" stroke-linecap="round"/>
+  <path d="M20 150 H220" stroke="#1F2937" stroke-width="4"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="Ubin lantai belah ketupat">
+  <rect width="240" height="180" fill="#F4F4F5"/>
+  <g fill="#E9D5FF" stroke="#7C3AED" stroke-width="4">
+    <path d="M50 90 L120 40 L190 90 L120 140 Z"/>
+    <path d="M90 90 L120 70 L150 90 L120 110 Z" fill="#F5F3FF"/>
+  </g>
+</svg>

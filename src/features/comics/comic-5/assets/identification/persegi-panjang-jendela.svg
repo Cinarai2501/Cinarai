@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="Jendela persegi panjang">
+  <rect width="320" height="220" fill="#edf4f8"/>
+  <rect x="62" y="42" width="196" height="126" rx="6" fill="#cfeaf5" stroke="#2d6b85" stroke-width="4"/>
+  <line x1="160" y1="42" x2="160" y2="168" stroke="#2d6b85" stroke-width="3" stroke-dasharray="8 8"/>
+  <line x1="62" y1="105" x2="258" y2="105" stroke="#2d6b85" stroke-width="3" stroke-dasharray="8 8"/>
+  <circle cx="62" cy="42" r="4" fill="#2d6b85"/>
+  <circle cx="258" cy="42" r="4" fill="#2d6b85"/>
+  <circle cx="62" cy="168" r="4" fill="#2d6b85"/>
+  <circle cx="258" cy="168" r="4" fill="#2d6b85"/>
+  <text x="160" y="200" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#214d5f" font-weight="700">Persegi Panjang</text>
+</svg>

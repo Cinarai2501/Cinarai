@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="Pola lantai berbentuk belah ketupat">
+  <rect width="320" height="220" fill="#f6f0ee"/>
+  <g stroke="#8d3e34" stroke-width="3" fill="#f1d8bf">
+    <path d="M160 28 L258 110 L160 192 L62 110 Z"/>
+    <path d="M160 58 L218 110 L160 162 L102 110 Z" fill="#e9b986"/>
+  </g>
+  <path d="M62 110 L160 28 L258 110 L160 192 Z" fill="none" stroke="#6b2d28" stroke-width="3"/>
+  <circle cx="160" cy="110" r="4" fill="#6b2d28"/>
+  <text x="160" y="206" text-anchor="middle" font-size="20" font-family="Arial, sans-serif" fill="#5c2e28" font-weight="700">Belah Ketupat</text>
+</svg>

@@ -1,0 +1,6 @@
+<svg width="400" height="220" viewBox="0 0 400 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#F7F7F5"/>
+  <rect x="80" y="70" width="240" height="110" rx="8" fill="#D7EEFF" stroke="#5DA7E8" stroke-width="4"/>
+  <path d="M200 70V180M80 125H320" stroke="#5DA7E8" stroke-width="4"/>
+  <text x="200" y="196" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" fill="#1F2937" font-weight="700">Jendela kelas</text>
+</svg>

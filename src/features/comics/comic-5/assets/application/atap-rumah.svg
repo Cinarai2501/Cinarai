@@ -1,0 +1,6 @@
+<svg width="400" height="220" viewBox="0 0 400 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="220" fill="#F7F7F5"/>
+  <path d="M60 150L200 60L340 150H60Z" fill="#FDCB5A" stroke="#D98C00" stroke-width="4"/>
+  <rect x="110" y="150" width="180" height="34" rx="8" fill="#E8F3FF" stroke="#7BAED7" stroke-width="3"/>
+  <text x="200" y="196" text-anchor="middle" font-size="22" font-family="Arial, sans-serif" fill="#1F2937" font-weight="700">Atap rumah</text>
+</svg>
