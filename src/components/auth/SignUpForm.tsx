@@ -16,6 +16,7 @@ export const SignUpForm: React.FC = () => {
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [teacherUnavailableNotification, setTeacherUnavailableNotification] = useState(false);
   const { signUp, error, clearError } = useAuth();
   const router = useRouter();
 
@@ -23,6 +24,7 @@ export const SignUpForm: React.FC = () => {
     e.preventDefault();
     clearError();
     setValidationError('');
+    setTeacherUnavailableNotification(false);
 
     const trimmedDisplayName = displayName.trim();
     const normalizedEmail = email.trim();
@@ -38,6 +40,12 @@ export const SignUpForm: React.FC = () => {
     }
     if (password.length < 6) {
       setValidationError('Password minimal 6 karakter.');
+      return;
+    }
+
+    // Check role before Firebase Authentication
+    if (role === 'teacher') {
+      setTeacherUnavailableNotification(true);
       return;
     }
 
@@ -71,6 +79,16 @@ export const SignUpForm: React.FC = () => {
         <div className="flex items-start gap-3 rounded-2xl bg-error-50 border border-error-200 px-4 py-3">
           <span className="text-lg flex-shrink-0">😕</span>
           <p className="text-sm text-error-700 leading-snug">{error || validationError}</p>
+        </div>
+      )}
+
+      {teacherUnavailableNotification && (
+        <div className="flex items-start gap-3 rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3">
+          <span className="text-lg flex-shrink-0">👨‍🏫</span>
+          <div className="text-sm text-blue-700 leading-snug">
+            <p className="font-semibold">Fitur Guru sedang dalam perbaikan</p>
+            <p className="mt-1">Pendaftaran akun Guru untuk sementara belum tersedia. Silakan gunakan pendaftaran Siswa terlebih dahulu.</p>
+          </div>
         </div>
       )}
 
@@ -209,7 +227,10 @@ export const SignUpForm: React.FC = () => {
                   : 'border-neutral-200 bg-white text-neutral-600'
               } disabled:opacity-60`}
             >
-              Guru
+              <div className="flex flex-col items-center gap-0.5">
+                <span>Guru</span>
+                <span className="text-xs font-normal text-neutral-400">Sedang dalam perbaikan</span>
+              </div>
             </button>
           </div>
         </div>
