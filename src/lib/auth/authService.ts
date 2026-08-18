@@ -7,10 +7,9 @@ export type AuthUser = User;
 
 export interface AuthSignUpDependencies {
   getSignInMethods: (email: string) => Promise<string[]>;
-  queryUserDocumentsByEmail: (email: string) => Promise<UserDocument[]>;
   firebaseSignUp: (email: string, password: string) => Promise<UserCredential>;
   updateUserProfile: (user: User, displayName: string) => Promise<void>;
-  getFirestoreDocument: (collection: 'users', docId: string) => Promise<UserDocument | null>;
+  getFirestoreDocument?: (collection: 'users', docId: string) => Promise<UserDocument | null>;
   upsertUser: (user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
@@ -39,19 +38,16 @@ export async function signUpUser(
     throw new Error('Email ini sudah terdaftar. Silakan login atau gunakan fitur Lupa Password.');
   }
 
-  const existingUserDocs = await deps.queryUserDocumentsByEmail(normalizedEmail);
-  if (existingUserDocs.length > 0) {
-    throw new Error('Email ini sudah terdaftar. Silakan login atau gunakan fitur Lupa Password.');
-  }
-
   const userCredential = await deps.firebaseSignUp(normalizedEmail, password);
   const firebaseUser = userCredential.user;
 
   await deps.updateUserProfile(firebaseUser, displayName);
 
-  const existingUserDocument = await deps.getFirestoreDocument('users', firebaseUser.uid);
-  if (existingUserDocument) {
-    // Existing user document will be merged by upsertUser.
+  if (deps.getFirestoreDocument) {
+    const existingUserDocument = await deps.getFirestoreDocument('users', firebaseUser.uid);
+    if (existingUserDocument) {
+      // Existing user document will be merged by upsertUser.
+    }
   }
 
   const userData: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> = {

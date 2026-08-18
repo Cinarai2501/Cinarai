@@ -92,6 +92,28 @@ test('signUpUser rejects when duplicate user document exists', async () => {
   );
 });
 
+test('signUpUser ignores Firestore permission errors while checking duplicate docs before auth signup', async () => {
+  let upsertedUser: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> | undefined;
+
+  const deps = createSignUpDeps({
+    queryUserDocumentsByEmail: async () => {
+      const error = new Error('Missing or insufficient permissions');
+      (error as Error & { code?: string }).code = 'permission-denied';
+      throw error;
+    },
+    upsertUser: async (user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>) => {
+      upsertedUser = user;
+    },
+  });
+
+  const result = await signUpUser('new@example.com', 'password123', 'Nama Baru', 'teacher', deps);
+
+  assert.equal(result.email, 'new@example.com');
+  assert.ok(upsertedUser);
+  assert.equal(upsertedUser.role, 'teacher');
+  assert.equal(upsertedUser.email, 'new@example.com');
+});
+
 test('signInUser signs in an existing account', async () => {
   const deps = createSignInDeps({
     firebaseSignIn: async (email: string) => ({ user: makeMockEmailUser(email, 'existing-uid') }),

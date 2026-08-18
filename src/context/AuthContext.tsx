@@ -17,7 +17,6 @@ import {
 import { initializeUserProgress } from '@/services/comicProgress';
 import {
   getFirestoreDocument,
-  queryFirestoreCollection,
   upsertUser,
 } from '@/services/firestore';
 import {
@@ -151,10 +150,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const firebaseUser = await signUpUser(email, password, displayName, role, {
           getSignInMethods,
-          queryUserDocumentsByEmail: (normalizedEmail) =>
-            queryFirestoreCollection('users', {
-              filters: [{ field: 'email', operator: '==', value: normalizedEmail }],
-            }),
           firebaseSignUp,
           updateUserProfile: firebaseUpdateUserProfile,
           getFirestoreDocument,

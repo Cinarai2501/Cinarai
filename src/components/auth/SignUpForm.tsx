@@ -11,6 +11,8 @@ export const SignUpForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -21,6 +23,14 @@ export const SignUpForm: React.FC = () => {
     e.preventDefault();
     clearError();
     setValidationError('');
+
+    const trimmedDisplayName = displayName.trim();
+    const normalizedEmail = email.trim();
+
+    if (!trimmedDisplayName) {
+      setValidationError('Nama lengkap wajib diisi.');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setValidationError('Password tidak cocok. Coba lagi ya! 😊');
@@ -33,17 +43,22 @@ export const SignUpForm: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await signUp(email, password, displayName, role);
+      await signUp(normalizedEmail, password, trimmedDisplayName, role);
       router.push(getRoleBasedDashboardPath(role));
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Pendaftaran gagal. Silakan coba lagi.';
+      const normalizedMessage = message.includes('Missing or insufficient permissions')
+        ? 'Pendaftaran belum selesai. Data akun tidak bisa disimpan. Silakan coba lagi.'
+        : message;
       console.error('Sign up error:', err);
+      setValidationError(normalizedMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   const inputClass =
-    'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:opacity-60 transition-colors';
+    'w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 pr-12 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200 disabled:opacity-60 transition-colors';
 
   return (
     <div className="space-y-5">
@@ -96,16 +111,38 @@ export const SignUpForm: React.FC = () => {
           <label htmlFor="password" className="block text-sm font-semibold text-neutral-700">
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            disabled={isLoading}
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              disabled={isLoading}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              {showPassword ? (
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 3l18 18" />
+                  <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42" />
+                  <path d="M9.88 5.5A10.7 10.7 0 0 1 12 5.25c4.66 0 8.44 3.25 10.5 6.75-.9 1.44-2.22 2.78-3.85 3.85" />
+                  <path d="M6.71 6.71A16.2 16.2 0 0 0 1.5 12c2.06 3.5 5.84 6.75 10.5 6.75a11.8 11.8 0 0 0 4.04-.7" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
           <p className="text-xs text-neutral-400">Minimal 6 karakter</p>
         </div>
 
@@ -113,16 +150,38 @@ export const SignUpForm: React.FC = () => {
           <label htmlFor="confirmPassword" className="block text-sm font-semibold text-neutral-700">
             Konfirmasi Password
           </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            disabled={isLoading}
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              disabled={isLoading}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              aria-label={showConfirmPassword ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'}
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            >
+              {showConfirmPassword ? (
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 3l18 18" />
+                  <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42" />
+                  <path d="M9.88 5.5A10.7 10.7 0 0 1 12 5.25c4.66 0 0 3.25 10.5 6.75-.9 1.44-2.22 2.78-3.85 3.85" />
+                  <path d="M6.71 6.71A16.2 16.2 0 0 0 1.5 12c2.06 3.5 5.84 6.75 10.5 6.75a11.8 11.8 0 0 0 4.04-.7" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">
