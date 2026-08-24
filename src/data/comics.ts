@@ -289,4 +289,41 @@ export const COMICS: Comic[] = [
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },
+
+  {
+    id: 6,
+    slug: 'komik-6',
+    title: 'Belajar Bangun Ruang di Masjid Al-Akbar Surabaya',
+    subtitle: 'Etnomatematika Bangun Ruang',
+    kelas: 'II / Fase A Semester 1',
+    lokasi: 'Masjid Al-Akbar Surabaya',
+    synopsis:
+      'Bu Syarla dan siswa kelas II belajar bangun ruang di Masjid Al-Akbar Surabaya. Mereka mengamati menara, kubah, ruang utama, dan tempat duduk wudu untuk mengenali tabung, kerucut, setengah bola, balok, dan kubus.',
+    characters: [],
+    learningTargets: [
+      'Mengenal kubus, balok, tabung, kerucut, dan setengah bola',
+      'Menghubungkan bangun ruang dengan arsitektur Masjid Al-Akbar Surabaya',
+      'Menjelaskan ciri bangun ruang berdasarkan hasil pengamatan',
+    ],
+    estimatedMinutes: 30,
+    pdfPath: `${BASE}/komik-6/comic.pdf`,
+    asset: {
+      ...buildComicAssetFromComic({
+        id: 6,
+        slug: 'komik-6',
+        title: 'Belajar Bangun Ruang di Masjid Al-Akbar Surabaya',
+        pdfPath: `${BASE}/komik-6/comic.pdf`,
+        thumbnail: `${BASE}/komik-6/thumbnail.png`,
+      }),
+      qrMetadata: [],
+      stageMetadata: [
+        { stage: 'Contextualization', title: 'Membaca Komik' },
+        { stage: 'Navigation', title: 'Navigasi Cerita' },
+      ],
+    },
+    cover: `${BASE}/komik-6/cover.png`,
+    thumbnail: `${BASE}/komik-6/thumbnail.png`,
+    stages: DEFAULT_STAGES,
+    availability: 'ACTIVE',
+  },
 ];

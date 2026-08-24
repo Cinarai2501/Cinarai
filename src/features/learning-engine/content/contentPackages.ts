@@ -127,6 +127,7 @@ export interface LearningContentPackage {
 }
 
 import { packageContent as comic2PackageContent } from '@/features/comics/comic-2/content';
+import { packageContent as comic6PackageContent } from '@/features/comics/comic-6/content';
 
 function makeComic1Package(): LearningContentPackage {
   return makeFallbackPackage(1);
@@ -261,5 +262,6 @@ export function getLearningContentPackage(comicId: number): LearningContentPacka
   if (comicId === 1) return makeComic1Package();
   if (comicId === 2) return makeComic2Package();
   if (comicId === 3) return makeComic3Package();
+  if (comicId === 6) return comic6PackageContent;
   return makeFallbackPackage(comicId);
 }
