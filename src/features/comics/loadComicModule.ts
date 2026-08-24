@@ -3,6 +3,7 @@ import { Comic2Module } from './comic-2';
 import { Comic3Module } from './comic-3';
 import { Comic4Module } from './comic-4';
 import { Comic5Module } from './comic-5';
+import { Comic6Module } from './comic-6';
 import type { ComicModule } from './types';
 
 const COMIC_MODULES: Record<number, ComicModule> = {
@@ -11,6 +12,7 @@ const COMIC_MODULES: Record<number, ComicModule> = {
   3: Comic3Module,
   4: Comic4Module,
   5: Comic5Module,
+  6: Comic6Module,
 };
 
 export function loadComicModule(comicId: number): ComicModule {

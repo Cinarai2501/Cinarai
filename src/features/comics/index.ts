@@ -3,6 +3,7 @@ import { Comic2Module } from './comic-2';
 import { Comic3Module } from './comic-3';
 import { Comic4Module } from './comic-4';
 import { Comic5Module } from './comic-5';
+import { Comic6Module } from './comic-6';
 import type { ComicModuleLike } from './types';
 
 export type { ComicModule, ComicModuleLike } from './types';
@@ -13,6 +14,7 @@ export const comicModules = {
   3: Comic3Module,
   4: Comic4Module,
   5: Comic5Module,
+  6: Comic6Module,
 } as const;
 
 export function getComicModule(comicId: number): ComicModuleLike {
