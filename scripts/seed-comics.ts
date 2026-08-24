@@ -242,6 +242,30 @@ const COMICS = [
     order: 5,
     availability: 'COMING_SOON',
   },
+
+  // ── Komik 6 ──────────────────────────────────────────────────────────────
+  {
+    docId: 'comic-6',
+    comicId: 6,
+    slug: 'komik-6',
+    title: 'Belajar Bangun Ruang di Masjid Al-Akbar Surabaya',
+    subtitle: 'Etnomatematika Bangun Ruang',
+    kelas: 'II / Fase A Semester 1',
+    lokasi: 'Masjid Al-Akbar Surabaya',
+    synopsis: 'Bu Syarla dan siswa kelas II belajar bangun ruang di Masjid Al-Akbar Surabaya. Mereka mengamati menara, kubah, ruang utama, dan tempat duduk wudu untuk mengenali tabung, kerucut, setengah bola, balok, dan kubus.',
+    characters: [],
+    learningTargets: [
+      'Mengenal kubus, balok, tabung, kerucut, dan setengah bola',
+      'Menghubungkan bangun ruang dengan arsitektur Masjid Al-Akbar Surabaya',
+      'Menjelaskan ciri bangun ruang berdasarkan hasil pengamatan',
+    ],
+    estimatedMinutes: 30,
+    pdfUrl: `${BASE_COVER}/komik-6/comic.pdf`,
+    coverUrl: `${BASE_COVER}/komik-6/cover.png`,
+    thumbnailUrl: `${BASE_COVER}/komik-6/thumbnail.png`,
+    order: 6,
+    availability: 'ACTIVE',
+  },
 ] as const;
 
 // ─── Firestore REST helpers ───────────────────────────────────────────────────
@@ -305,7 +329,7 @@ async function seed(): Promise<void> {
     console.log(`  ✅  ${docId}  —  ${data.title}`);
   }
 
-  console.log('\n🎉  Seed selesai. Collection `comics` berisi 5 dokumen.');
+  console.log('\n🎉  Seed selesai. Collection `comics` berisi 6 dokumen.');
   console.log('⚠️   Kembalikan Firestore rules: allow write: if false;\n');
   process.exit(0);
 }
