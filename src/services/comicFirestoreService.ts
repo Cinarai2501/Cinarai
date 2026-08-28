@@ -5,11 +5,19 @@ import {
   queryFirestoreCollection,
 } from '@/services/firestore';
 import { buildComicAssetFromComic } from '@/lib/comicAsset';
+import { getTimestampVersion, versionImageUrl } from '@/lib/imageUrl';
 import type { ComicDocument } from '@/types/firestore';
 import type { Comic } from '@/types/comic';
 
 /** Map Firestore ComicDocument → app Comic type */
 function toComic(doc: ComicDocument): Comic {
+  const assetVersion = getTimestampVersion(doc.updatedAt);
+  const coverUrl = versionImageUrl(
+    doc.coverUrl || `/assets/dashboard/home/covers/cover-komik-${doc.comicId}.png`,
+    assetVersion,
+  );
+  const thumbnailUrl = versionImageUrl(doc.thumbnailUrl, assetVersion);
+
   return {
     id: doc.comicId,
     slug: doc.slug,
@@ -26,13 +34,14 @@ function toComic(doc: ComicDocument): Comic {
     learningTargets: doc.learningTargets,
     estimatedMinutes: doc.estimatedMinutes,
     pdfPath: doc.pdfUrl,
+    pdfVersion: assetVersion ?? undefined,
     asset: {
       ...buildComicAssetFromComic({
         id: doc.comicId,
         slug: doc.slug,
         title: doc.title,
         pdfPath: doc.pdfUrl,
-        thumbnail: doc.thumbnailUrl,
+        thumbnail: thumbnailUrl,
       }),
       qrMetadata: [],
       stageMetadata: [
@@ -40,8 +49,8 @@ function toComic(doc: ComicDocument): Comic {
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: doc.coverUrl || `/assets/dashboard/home/covers/cover-komik-${doc.comicId}.png`,
-    thumbnail: doc.thumbnailUrl,
+    cover: coverUrl,
+    thumbnail: thumbnailUrl,
     stages: ['comic', 'quiz', 'ar', 'reflection'],
     availability: doc.availability,
   };

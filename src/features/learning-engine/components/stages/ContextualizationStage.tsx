@@ -55,6 +55,7 @@ export default function ContextualizationStage() {
           <PdfReader
             asset={comicAsset}
             pdfPath={comic.pdfPath}
+            pdfVersion={comic.pdfVersion}
             comicId={comic.id}
             onComplete={handlePdfComplete}
             showCompleteButton={!alreadyCompleted}

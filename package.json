@@ -22,8 +22,6 @@
     "prepare-badges": "npm run trim-badges && npm run optimize-badges && npm run publish-badges"
   },
   "dependencies": {
-    "@google-cloud/firestore": "^8.6.0",
-    "@google-cloud/storage": "^7.21.0",
     "canvas": "^3.2.3",
     "firebase": "^10.12.5",
     "firebase-admin": "^14.1.0",

@@ -3,7 +3,6 @@ export interface ComicObservationImage {
   sourcePdfPath: string | null;
   sourcePage: number;
 }
-
 const GENERATED_IMAGE_BASE = '/comics/generated';
 
 export function resolveComicObservationImage({
@@ -24,7 +23,6 @@ export function resolveComicObservationImage({
     sourcePage: safePage,
   };
 }
-
 export function buildObservationOverlaySvg({
   label,
   description,
@@ -50,37 +48,3 @@ export function buildObservationOverlaySvg({
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-const pdfRenderCache = new Map<string, string>();
-
-export async function renderPdfPageToBlobUrl(pdfPath: string, pageNumber: number): Promise<string> {
-  const cacheKey = `${pdfPath}#page-${pageNumber}`;
-  const cached = pdfRenderCache.get(cacheKey);
-  if (cached) return cached;
-
-  const { pdfjs } = await import('react-pdf');
-  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-
-  const pdf = await pdfjs.getDocument(pdfPath).promise;
-  const page = await pdf.getPage(pageNumber);
-  const viewport = page.getViewport({ scale: 2 });
-
-  const canvas = document.createElement('canvas');
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas context unavailable');
-
-  await page.render({ canvasContext: ctx, canvas, viewport }).promise;
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((result) => {
-      if (result) resolve(result);
-      else reject(new Error('Failed to create blob from PDF page'));
-    }, 'image/png');
-  });
-
-  const objectUrl = URL.createObjectURL(blob);
-  pdfRenderCache.set(cacheKey, objectUrl);
-  return objectUrl;
-}

@@ -7,6 +7,8 @@ import type { Comic, ComicStage } from '@/types/comic';
 
 const BASE = '/comics';
 const BASE_AVATAR = '/assets/avatars';
+const LOCAL_IMAGE_VERSION = '2026-08-28';
+const LOCAL_PDF_VERSION = '2026-08-28';
 
 const DEFAULT_STAGES: ComicStage[] = ['comic', 'quiz', 'ar', 'reflection'];
 
@@ -48,6 +50,7 @@ export const COMICS: Comic[] = [
     ],
     estimatedMinutes: 30,
     pdfPath: `${BASE}/komik-1/comic.pdf`,
+    pdfVersion: LOCAL_PDF_VERSION,
     asset: {
       ...buildComicAssetFromComic({
         id: 1,
@@ -62,8 +65,8 @@ export const COMICS: Comic[] = [
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: '/assets/dashboard/home/covers/cover-komik-1.png',
-    thumbnail: `${BASE}/komik-1/thumbnail.png`,
+    cover: `/assets/dashboard/home/covers/cover-komik-1.png?v=${LOCAL_IMAGE_VERSION}`,
+    thumbnail: `${BASE}/komik-1/thumbnail.png?v=${LOCAL_IMAGE_VERSION}`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },
@@ -105,6 +108,7 @@ export const COMICS: Comic[] = [
     ],
     estimatedMinutes: 30,
     pdfPath: `${BASE}/komik-2/comic.pdf`,
+    pdfVersion: LOCAL_PDF_VERSION,
     asset: {
       ...buildComicAssetFromComic({
         id: 2,
@@ -119,8 +123,8 @@ export const COMICS: Comic[] = [
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: '/assets/dashboard/home/covers/cover-komik-2.png',
-    thumbnail: `${BASE}/komik-2/thumbnail.png`,
+    cover: `/assets/dashboard/home/covers/cover-komik-2.png?v=${LOCAL_IMAGE_VERSION}`,
+    thumbnail: `${BASE}/komik-2/thumbnail.png?v=${LOCAL_IMAGE_VERSION}`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },
@@ -168,6 +172,7 @@ export const COMICS: Comic[] = [
     ],
     estimatedMinutes: 25,
     pdfPath: `${BASE}/komik-3/comic.pdf`,
+    pdfVersion: LOCAL_PDF_VERSION,
     asset: {
       ...buildComicAssetFromComic({
         id: 3,
@@ -182,8 +187,8 @@ export const COMICS: Comic[] = [
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: '/assets/dashboard/home/covers/cover-komik-3.png',
-    thumbnail: `${BASE}/komik-3/thumbnail.png`,
+    cover: `/assets/dashboard/home/covers/cover-komik-3.png?v=${LOCAL_IMAGE_VERSION}`,
+    thumbnail: `${BASE}/komik-3/thumbnail.png?v=${LOCAL_IMAGE_VERSION}`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },
@@ -202,6 +207,7 @@ export const COMICS: Comic[] = [
     learningTargets: [],
     estimatedMinutes: 30,
     pdfPath: `${BASE}/komik-4/comic.pdf`,
+    pdfVersion: LOCAL_PDF_VERSION,
     asset: {
       ...buildComicAssetFromComic({
         id: 4,
@@ -216,8 +222,8 @@ export const COMICS: Comic[] = [
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: '/assets/dashboard/home/covers/cover-komik-4.png',
-    thumbnail: `${BASE}/komik-4/thumbnail.png`,
+    cover: `/assets/dashboard/home/covers/cover-komik-4.png?v=${LOCAL_IMAGE_VERSION}`,
+    thumbnail: `${BASE}/komik-4/thumbnail.png?v=${LOCAL_IMAGE_VERSION}`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },
@@ -270,6 +276,7 @@ export const COMICS: Comic[] = [
     ],
     estimatedMinutes: 25,
     pdfPath: `${BASE}/komik-5/comic.pdf`,
+    pdfVersion: LOCAL_PDF_VERSION,
     asset: {
       ...buildComicAssetFromComic({
         id: 5,
@@ -284,8 +291,8 @@ export const COMICS: Comic[] = [
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: `${BASE}/komik-5/cover.png`,
-    thumbnail: `${BASE}/komik-5/thumbnail.png`,
+    cover: `${BASE}/komik-5/cover.png?v=${LOCAL_IMAGE_VERSION}`,
+    thumbnail: `${BASE}/komik-5/thumbnail.png?v=${LOCAL_IMAGE_VERSION}`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },
@@ -307,6 +314,7 @@ export const COMICS: Comic[] = [
     ],
     estimatedMinutes: 30,
     pdfPath: `${BASE}/komik-6/comic.pdf`,
+    pdfVersion: LOCAL_PDF_VERSION,
     asset: {
       ...buildComicAssetFromComic({
         id: 6,
@@ -321,8 +329,8 @@ export const COMICS: Comic[] = [
         { stage: 'Navigation', title: 'Navigasi Cerita' },
       ],
     },
-    cover: `${BASE}/komik-6/cover.png`,
-    thumbnail: `${BASE}/komik-6/thumbnail.png`,
+    cover: `${BASE}/komik-6/cover.png?v=${LOCAL_IMAGE_VERSION}`,
+    thumbnail: `${BASE}/komik-6/thumbnail.png?v=${LOCAL_IMAGE_VERSION}`,
     stages: DEFAULT_STAGES,
     availability: 'ACTIVE',
   },

@@ -33,9 +33,11 @@ async function exportPage({ slug, pdfPath, page }) {
 
     await pdfPage.render({ canvas, canvasContext: context, viewport }).promise;
     const buffer = canvas.toBuffer('image/png');
-    await fs.writeFile(outputPath, buffer);
-  } catch {
-    await fs.writeFile(outputPath, Buffer.from(''));
+    const temporaryPath = `${outputPath}.tmp`;
+    await fs.writeFile(temporaryPath, buffer);
+    await fs.rename(temporaryPath, outputPath);
+  } catch (error) {
+    throw new Error(`Failed to export ${slug} page ${page}: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

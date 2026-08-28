@@ -4,7 +4,7 @@ import fs from 'fs';
 
 // Copy pdf.worker.min.mjs from pdfjs-dist to public/ so PdfViewer can
 // reference it as a local static asset instead of an external CDN URL.
-// This runs once per build (isServer guard prevents double-copy).
+// This runs once per build so the worker cannot remain stale after dependency updates.
 function copyPdfWorker() {
   const src = path.join(
     path.dirname(require.resolve('pdfjs-dist/package.json')),
@@ -12,9 +12,7 @@ function copyPdfWorker() {
     'pdf.worker.min.mjs',
   );
   const dest = path.join(process.cwd(), 'public', 'pdf.worker.min.mjs');
-  if (!fs.existsSync(dest)) {
-    fs.copyFileSync(src, dest);
-  }
+  fs.copyFileSync(src, dest);
 }
 
 const nextConfig: NextConfig = {
@@ -63,6 +61,18 @@ const nextConfig: NextConfig = {
         hostname: 'upload.wikimedia.org',
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/comics/:slug/comic.pdf',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/comics/generated/:slug/:page.png',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+    ];
   },
   typescript: {
     tsconfigPath: './tsconfig.json',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
 import { useGuruDashboard } from './hooks/useGuruDashboard';
 import { useStudentFilter } from './hooks/useStudentFilter';
@@ -9,9 +10,10 @@ import { useStudentAiInsight } from './hooks/useStudentAiInsight';
 import { GuruHeader } from './components/GuruHeader';
 import { DashboardOverview } from './components/DashboardOverview';
 import { StudentDirectory } from './components/StudentDirectory';
-import { StudentDetail } from './components/StudentDetail';
-import { AiAssistantPanel } from './ai/AiAssistantPanel';
 import { printStudentReport } from './reports/studentReport';
+
+const StudentDetail = dynamic(() => import('./components/StudentDetail').then((module) => module.StudentDetail), { ssr: false });
+const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((module) => module.AiAssistantPanel), { ssr: false });
 
 export default function GuruDashboardPage() {
   const { logout } = useAuth();

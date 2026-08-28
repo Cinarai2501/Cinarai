@@ -1,20 +1,23 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Stage } from '../types';
 import { useLearningEngine } from '../hooks/useLearningEngine';
 import { stopGlobalTts } from '@/lib/tts/globalTts';
-import ContextualizationStage from './stages/ContextualizationStage';
-import CoverStage from './stages/CoverStage';
-import IdentificationStage from './stages/IdentificationStage';
-import NavigationStage from './stages/NavigationStage';
-import Comic2NavigationStage from '@/features/comics/comic-2/components/Comic2NavigationStage';
-import ArgumentationStage from './stages/ArgumentationStage';
-import ResolutionStage from './stages/ResolutionStage';
-import ApplicationStage from './stages/ApplicationStage';
-import IntrospectionStage from './stages/IntrospectionStage';
-import FinishStage from './stages/FinishStage';
+
+const StageLoading = () => null;
+const ContextualizationStage = dynamic(() => import('./stages/ContextualizationStage'), { loading: StageLoading });
+const CoverStage = dynamic(() => import('./stages/CoverStage'), { loading: StageLoading });
+const IdentificationStage = dynamic(() => import('./stages/IdentificationStage'), { loading: StageLoading });
+const NavigationStage = dynamic(() => import('./stages/NavigationStage'), { loading: StageLoading });
+const Comic2NavigationStage = dynamic(() => import('@/features/comics/comic-2/components/Comic2NavigationStage'), { loading: StageLoading });
+const ArgumentationStage = dynamic(() => import('./stages/ArgumentationStage'), { loading: StageLoading });
+const ResolutionStage = dynamic(() => import('./stages/ResolutionStage'), { loading: StageLoading });
+const ApplicationStage = dynamic(() => import('./stages/ApplicationStage'), { loading: StageLoading });
+const IntrospectionStage = dynamic(() => import('./stages/IntrospectionStage'), { loading: StageLoading });
+const FinishStage = dynamic(() => import('./stages/FinishStage'), { loading: StageLoading });
 
 function StageContent() {
   const { currentStage, isLoading, comic } = useLearningEngine();

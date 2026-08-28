@@ -7,6 +7,8 @@ import { pdfjs } from "react-pdf";
 
 /** Module-level cache: pdfPath → blob URL of the rendered cover image */
 const coverCache = new Map<string, string>();
+const coverRenderInFlight = new Map<string, Promise<string>>();
+const coverConsumers = new Map<string, number>();
 
 type CoverState =
   | { phase: "loading" }
@@ -31,11 +33,9 @@ interface PdfCoverCanvasProps {
 export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cover, setCover] = useState<CoverState>({ phase: "loading" });
-  const renderingRef = useRef(false);
-
   const renderCover = useCallback(
     async (containerWidth: number) => {
-      if (!pdfPath || renderingRef.current) return;
+      if (!pdfPath) return;
 
       // Return cached result immediately
       const cached = coverCache.get(pdfPath);
@@ -44,45 +44,57 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
         return;
       }
 
-      renderingRef.current = true;
+      const inFlight = coverRenderInFlight.get(pdfPath);
+      if (inFlight) {
+        setCover({ phase: "ready", src: await inFlight });
+        return;
+      }
 
-      try {
+      const renderPromise = (async () => {
         // Use local worker — copied to public/ by next.config.ts at build time
         pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
         const pdf = await pdfjs.getDocument(pdfPath).promise;
-        const page = await pdf.getPage(1);
+        try {
+          const page = await pdf.getPage(1);
 
-        // Render at devicePixelRatio for sharpness on HiDPI / Android screens
-        const dpr = window.devicePixelRatio || 1;
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = (containerWidth / viewport.width) * dpr;
-        const scaledViewport = page.getViewport({ scale });
+          // Render at devicePixelRatio for sharpness on HiDPI / Android screens
+          const dpr = window.devicePixelRatio || 1;
+          const viewport = page.getViewport({ scale: 1 });
+          const scale = (containerWidth / viewport.width) * dpr;
+          const scaledViewport = page.getViewport({ scale });
 
-        const canvas = document.createElement("canvas");
-        canvas.width = scaledViewport.width;
-        canvas.height = scaledViewport.height;
+          const canvas = document.createElement("canvas");
+          canvas.width = scaledViewport.width;
+          canvas.height = scaledViewport.height;
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("No 2d context");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("No 2d context");
 
-        await page.render({ canvasContext: ctx, canvas, viewport: scaledViewport }).promise;
+          await page.render({ canvasContext: ctx, canvas, viewport: scaledViewport }).promise;
 
-        // Convert to blob URL — avoids large data URIs, GC-friendly
-        const blob = await new Promise<Blob>((resolve, reject) =>
-          canvas.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
-            "image/jpeg",
-            0.92
-          )
-        );
-        const url = URL.createObjectURL(blob);
-        coverCache.set(pdfPath, url);
-        setCover({ phase: "ready", src: url });
+          // Convert to blob URL — avoids large data URIs, GC-friendly
+          const blob = await new Promise<Blob>((resolve, reject) =>
+            canvas.toBlob(
+              (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
+              "image/jpeg",
+              0.92
+            )
+          );
+          const url = URL.createObjectURL(blob);
+          coverCache.set(pdfPath, url);
+          return url;
+        } finally {
+          await pdf.destroy();
+        }
+      })();
+      coverRenderInFlight.set(pdfPath, renderPromise);
+      try {
+        setCover({ phase: "ready", src: await renderPromise });
       } catch {
         setCover({ phase: "error" });
       } finally {
-        renderingRef.current = false;
+        coverRenderInFlight.delete(pdfPath);
       }
     },
     [pdfPath]
@@ -115,6 +127,30 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
     ro.observe(el);
     return () => ro.disconnect();
   }, [pdfPath, renderCover]);
+
+  useEffect(() => {
+    if (!pdfPath) return;
+
+    coverConsumers.set(pdfPath, (coverConsumers.get(pdfPath) ?? 0) + 1);
+    return () => {
+      const remaining = (coverConsumers.get(pdfPath) ?? 1) - 1;
+      if (remaining > 0) {
+        coverConsumers.set(pdfPath, remaining);
+        return;
+      }
+
+      coverConsumers.delete(pdfPath);
+      // Defer revoke so React Strict Mode can re-acquire a cache entry during
+      // its development-only effect replay.
+      window.setTimeout(() => {
+        if (coverConsumers.has(pdfPath)) return;
+        const cached = coverCache.get(pdfPath);
+        if (!cached) return;
+        URL.revokeObjectURL(cached);
+        coverCache.delete(pdfPath);
+      }, 0);
+    };
+  }, [pdfPath]);
 
   return (
     <div

@@ -3,12 +3,14 @@
 import dynamic from "next/dynamic";
 import type { ComicAsset } from "@/lib/comicAsset";
 import { getPdfReaderInitialPage } from '@/components/comic/pdfReaderInitialPage';
+import { versionImageUrl } from '@/lib/imageUrl';
 
 const PdfViewer = dynamic(() => import("@/components/pdf/PdfViewer"), { ssr: false });
 
 interface PdfReaderProps {
   asset?: ComicAsset | null;
   pdfPath?: string | null;
+  pdfVersion?: string | number;
   comicId?: number;
   onComplete?: () => void;
   showCompleteButton?: boolean;
@@ -22,6 +24,7 @@ interface PdfReaderProps {
 export default function PdfReader({
   asset,
   pdfPath,
+  pdfVersion,
   comicId,
   onComplete,
   showCompleteButton = false,
@@ -31,7 +34,7 @@ export default function PdfReader({
   isComicCompleted = false,
   completeButtonLabelWhenDone = "Lanjut ke Identification",
 }: PdfReaderProps) {
-  const resolvedPdfPath = asset?.sourcePdfPath ?? pdfPath ?? "";
+  const resolvedPdfPath = versionImageUrl(asset?.sourcePdfPath ?? pdfPath ?? "", pdfVersion);
   const initialPage = getPdfReaderInitialPage(comicId);
 
   if (!resolvedPdfPath) {

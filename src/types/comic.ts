@@ -22,6 +22,7 @@ export interface Comic {
   learningTargets: string[];
   estimatedMinutes: number;
   pdfPath: string | null;
+  pdfVersion?: string | number;
   asset?: ComicAsset;
   cover: string;
   thumbnail: string;
