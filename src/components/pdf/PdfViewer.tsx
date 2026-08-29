@@ -266,8 +266,8 @@ export default function UnifiedComicViewer({
         <h1 className="min-w-0 flex-1 truncate text-center text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
-      <div className="pdf-viewer-container relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex h-full min-h-0 w-full max-w-[1100px] flex-1 items-center justify-center px-1 sm:px-2 lg:px-4">
+      <div className="pdf-viewer-container relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex h-full min-h-0 w-full max-w-[1100px] flex-1 items-center justify-center overflow-hidden px-1 sm:px-2 lg:px-4">
           <Document key={pdfPath} file={pdfPath} className="flex h-full w-full items-center justify-center bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
@@ -308,8 +308,8 @@ export default function UnifiedComicViewer({
             </div>
           </Document>
         </div>
-        <div className="pdf-viewer-container__navigation pointer-events-none absolute inset-0 z-30">
-          <PdfNavigation floating visible={showFloatingControls} onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} currentPage={page} numPages={numPages} isFirstPage={isFirstPage} isLastPage={isLastPage} showCompleteButton={showCompleteButton} completeButtonLabel={completeButtonLabel} completeButtonDisabled={completeButtonDisabled} onComplete={onComplete} isComicCompleted={isComicCompleted} completeButtonLabelWhenDone={completeButtonLabelWhenDone} />
+        <div className="pdf-viewer-container__navigation pointer-events-none relative z-30 shrink-0">
+          <PdfNavigation floating inFlow visible={showFloatingControls} onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} currentPage={page} numPages={numPages} isFirstPage={isFirstPage} isLastPage={isLastPage} showCompleteButton={showCompleteButton} completeButtonLabel={completeButtonLabel} completeButtonDisabled={completeButtonDisabled} onComplete={onComplete} isComicCompleted={isComicCompleted} completeButtonLabelWhenDone={completeButtonLabelWhenDone} />
         </div>
       </div>
     </div>

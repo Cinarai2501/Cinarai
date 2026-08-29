@@ -14,6 +14,7 @@ interface PdfNavigationProps {
   isComicCompleted?: boolean;
   completeButtonLabelWhenDone?: string;
   floating?: boolean;
+  inFlow?: boolean;
   visible?: boolean;
   currentPage?: number;
   numPages?: number;
@@ -31,6 +32,7 @@ export default function PdfNavigation({
   isComicCompleted = false,
   completeButtonLabelWhenDone = "Lanjut ke Identification",
   floating = false,
+  inFlow = false,
   visible = true,
   currentPage = 1,
   numPages = 0,
@@ -61,7 +63,7 @@ export default function PdfNavigation({
   if (completeButton) {
     if (floating) {
       return (
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:px-4">
+        <div className={inFlow ? "pointer-events-none relative flex shrink-0 justify-center px-3 pb-[env(safe-area-inset-bottom)]" : "pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:px-4"}>
           <div className="pointer-events-auto w-full max-w-[min(92vw,560px)]">{completeButton}</div>
         </div>
       );
@@ -87,7 +89,7 @@ export default function PdfNavigation({
 
   if (floating) {
     return (
-      <div className={visible ? "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:bottom-3 sm:px-4" : "hidden"}>
+      <div className={visible ? (inFlow ? "pointer-events-none relative flex shrink-0 justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:px-4" : "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:bottom-3 sm:px-4") : "hidden"}>
         <div className="pointer-events-auto flex w-full max-w-[1100px] items-center gap-2 rounded-xl border border-white/10 bg-[#0b1220]/95 p-1.5 shadow-lg backdrop-blur-md">
           <button
             onClick={onPrev}
