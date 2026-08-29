@@ -69,8 +69,18 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       {
+        source: '/comics/:slug/comic.pdf',
+        has: [{ type: 'query', key: 'v' }],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
         source: '/comics/generated/:slug/:page.png',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/comics/generated/:slug/:page.png',
+        has: [{ type: 'query', key: 'v' }],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
     ];
   },

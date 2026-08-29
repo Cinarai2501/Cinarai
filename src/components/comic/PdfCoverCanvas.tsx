@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { pdfjs } from "react-pdf";
 
-/** Module-level cache: pdfPath → blob URL of the rendered cover image */
+/** Module-level cache: versioned PDF URL → blob URL of the rendered cover image */
 const coverCache = new Map<string, string>();
 const coverRenderInFlight = new Map<string, Promise<string>>();
 const coverConsumers = new Map<string, number>();
@@ -32,10 +32,12 @@ interface PdfCoverCanvasProps {
  */
 export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const renderGeneration = useRef(0);
   const [cover, setCover] = useState<CoverState>({ phase: "loading" });
   const renderCover = useCallback(
     async (containerWidth: number) => {
       if (!pdfPath) return;
+      const generation = renderGeneration.current;
 
       // Return cached result immediately
       const cached = coverCache.get(pdfPath);
@@ -46,7 +48,8 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
 
       const inFlight = coverRenderInFlight.get(pdfPath);
       if (inFlight) {
-        setCover({ phase: "ready", src: await inFlight });
+        const src = await inFlight;
+        if (generation === renderGeneration.current) setCover({ phase: "ready", src });
         return;
       }
 
@@ -82,6 +85,10 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
             )
           );
           const url = URL.createObjectURL(blob);
+          if (generation !== renderGeneration.current) {
+            URL.revokeObjectURL(url);
+            return url;
+          }
           coverCache.set(pdfPath, url);
           return url;
         } finally {
@@ -90,9 +97,10 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
       })();
       coverRenderInFlight.set(pdfPath, renderPromise);
       try {
-        setCover({ phase: "ready", src: await renderPromise });
+        const src = await renderPromise;
+        if (generation === renderGeneration.current) setCover({ phase: "ready", src });
       } catch {
-        setCover({ phase: "error" });
+        if (generation === renderGeneration.current) setCover({ phase: "error" });
       } finally {
         coverRenderInFlight.delete(pdfPath);
       }
@@ -101,6 +109,7 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
   );
 
   useEffect(() => {
+    renderGeneration.current += 1;
     if (!pdfPath) {
       setCover({ phase: "error" });
       return;
@@ -125,7 +134,10 @@ export default function PdfCoverCanvas({ pdfPath, title }: PdfCoverCanvasProps) 
       }
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      renderGeneration.current += 1;
+      ro.disconnect();
+    };
   }, [pdfPath, renderCover]);
 
   useEffect(() => {

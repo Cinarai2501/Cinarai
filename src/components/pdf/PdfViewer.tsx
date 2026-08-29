@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Document, pdfjs } from "react-pdf";
 import { usePdfSize } from "@/hooks/usePdfSize";
+import { getResponsivePageSize } from "./pdfViewerLayout";
 import { markNextDocumentLoadAsInitial, shouldNotifyPageChange } from "./pdfViewerProgress";
 import PdfError from "./PdfError";
 import PdfLoading from "./PdfLoading";
@@ -62,7 +63,6 @@ export default function UnifiedComicViewer({
   const [documentLoaded, setDocumentLoaded] = useState(false);
   const [pageReady, setPageReady] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [pageTransition, setPageTransition] = useState<PageTransition | null>(null);
   const [targetPageReady, setTargetPageReady] = useState(false);
   const [transitionPhase, setTransitionPhase] = useState<"idle" | "active" | "committing">("idle");
@@ -89,7 +89,6 @@ export default function UnifiedComicViewer({
     setPdfDimensions(null);
     setPageReady(false);
     setPdfError(null);
-    setBackgroundImage(null);
     setPageTransition(null);
     setTargetPageReady(false);
     setTransitionPhase("idle");
@@ -168,10 +167,6 @@ export default function UnifiedComicViewer({
   }, [pdfDimensions]);
 
   const handlePageRenderSuccess = useCallback(() => {
-    const canvas = document.querySelector<HTMLCanvasElement>(".pdf-page-shell canvas");
-    if (canvas && canvas.width > 0 && canvas.height > 0) {
-      setBackgroundImage(canvas.toDataURL("image/jpeg", 0.72));
-    }
     setPageReady(true);
     if (pageTransition && transitionPhase === "committing") {
       setPageTransition(null);
@@ -234,9 +229,21 @@ export default function UnifiedComicViewer({
   }, []);
 
   const pageSize = useMemo(() => {
-    if (!pdfDimensions || containerWidth <= 0 || containerHeight <= 0) return { width: 0, height: 0 };
-    const scale = Math.min(containerWidth / pdfDimensions.width, containerHeight / pdfDimensions.height);
-    return { width: Math.floor(pdfDimensions.width * scale), height: Math.floor(pdfDimensions.height * scale) };
+    if (!pdfDimensions) {
+      return { width: 0, height: 0 };
+    }
+
+    const viewportWidth = containerWidth > 0 ? containerWidth : window.innerWidth * 0.92;
+    const viewportHeight = containerHeight > 0 ? containerHeight : window.innerHeight * 0.72;
+    const availableWidth = Math.max(220, Math.min(viewportWidth, window.innerWidth * 0.96));
+    const availableHeight = Math.max(240, Math.min(viewportHeight, window.innerHeight * 0.82));
+
+    return getResponsivePageSize({
+      pdfWidth: pdfDimensions.width,
+      pdfHeight: pdfDimensions.height,
+      availableWidth,
+      availableHeight,
+    });
   }, [containerHeight, containerWidth, pdfDimensions]);
 
   const hasPageSize = Number.isFinite(pageSize.width) && pageSize.width > 0 && Number.isFinite(pageSize.height) && pageSize.height > 0;
@@ -251,7 +258,7 @@ export default function UnifiedComicViewer({
   if (!workerReady) return <div className="flex h-full flex-col items-center justify-center bg-[#f5f7fa]"><PdfLoading /></div>;
 
   return (
-    <div className="comic-reader relative flex h-[100dvh] min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
+    <div className="comic-reader relative flex min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
       {comicTitle && <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
         <Link href="/dashboard" aria-label="Home" title="Home" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/10">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M5.5 9.5V21h13V9.5M9 21v-6h6v6" /></svg>
@@ -259,20 +266,15 @@ export default function UnifiedComicViewer({
         <h1 className="min-w-0 flex-1 truncate text-center text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[#0b1220] bg-cover bg-center opacity-30 blur-[18px]"
-        style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : undefined}
-      />
-      <div className="pdf-viewer-container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex h-full w-full max-w-[1100px] items-start justify-center px-1 sm:px-2 lg:px-4">
+      <div className="pdf-viewer-container relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex w-full max-w-[1100px] items-center justify-center px-1 sm:px-2 lg:px-4">
           <Document key={pdfPath} file={pdfPath} onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
                 PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
               </div>
             )}
-            <div className="pdf-page-shell relative z-10 flex max-h-full w-full items-start justify-center overflow-hidden rounded-md bg-white sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px` } : undefined}>
+            <div className="pdf-page-shell relative z-10 flex items-center justify-center overflow-hidden rounded-md bg-white shadow-sm sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px`, maxWidth: "100%" } : undefined}>
               {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
                 <>
                   <div className="absolute inset-0 z-10">

@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { createCanvas } from 'canvas';
+import { createCanvas } from '@napi-rs/canvas';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const publicDir = path.join(process.cwd(), 'public');
@@ -24,14 +24,29 @@ async function exportPage({ slug, pdfPath, page }) {
   const outputPath = path.join(outputDir, `page-${page}.png`);
 
   try {
-    const data = await fs.readFile(pdfPath);
+    const data = new Uint8Array(await fs.readFile(pdfPath));
     const pdf = await getDocument({ data }).promise;
     const pdfPage = await pdf.getPage(page);
     const viewport = pdfPage.getViewport({ scale: 2 });
-    const canvas = createCanvas(viewport.width, viewport.height);
-    const context = canvas.getContext('2d');
+    const canvasFactory = {
+      create(width, height) {
+        const canvas = createCanvas(width, height);
+        return { canvas, context: canvas.getContext('2d') };
+      },
+      reset(canvasAndContext, width, height) {
+        canvasAndContext.canvas.width = width;
+        canvasAndContext.canvas.height = height;
+      },
+      destroy(canvasAndContext) {
+        canvasAndContext.canvas.width = 0;
+        canvasAndContext.canvas.height = 0;
+        canvasAndContext.canvas = null;
+        canvasAndContext.context = null;
+      },
+    };
+    const { canvas, context } = canvasFactory.create(viewport.width, viewport.height);
 
-    await pdfPage.render({ canvas, canvasContext: context, viewport }).promise;
+    await pdfPage.render({ canvasContext: context, viewport, canvasFactory }).promise;
     const buffer = canvas.toBuffer('image/png');
     const temporaryPath = `${outputPath}.tmp`;
     await fs.writeFile(temporaryPath, buffer);
