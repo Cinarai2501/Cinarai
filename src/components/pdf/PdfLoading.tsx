@@ -24,7 +24,7 @@ export default function PdfLoading({ variant = "full", progress = 0 }: PdfLoadin
   }
 
   return (
-    <div className="flex h-64 w-full flex-col items-center justify-center gap-4">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center gap-4 bg-[#0b1220]">
       <div className="flex flex-col items-center gap-2">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
         <p className="text-sm font-semibold text-neutral-600">Memuat komik...</p>

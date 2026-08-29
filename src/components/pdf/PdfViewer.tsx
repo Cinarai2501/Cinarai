@@ -255,10 +255,10 @@ export default function UnifiedComicViewer({
   const isFirstPage = page <= 1;
   const isLastPage = numPages > 0 && page === numPages;
 
-  if (!workerReady) return <div className="flex h-full flex-col items-center justify-center bg-[#f5f7fa]"><PdfLoading /></div>;
+  if (!workerReady) return <div className="flex h-full flex-col items-center justify-center bg-[#0b1220]"><PdfLoading /></div>;
 
   return (
-    <div className="comic-reader relative flex min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
+    <div className="comic-reader relative flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
       {comicTitle && <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
         <Link href="/dashboard" aria-label="Home" title="Home" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/10">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M5.5 9.5V21h13V9.5M9 21v-6h6v6" /></svg>
@@ -267,8 +267,8 @@ export default function UnifiedComicViewer({
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
       <div className="pdf-viewer-container relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex w-full max-w-[1100px] items-center justify-center px-1 sm:px-2 lg:px-4">
-          <Document key={pdfPath} file={pdfPath} onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex h-full min-h-0 w-full max-w-[1100px] flex-1 items-center justify-center px-1 sm:px-2 lg:px-4">
+          <Document key={pdfPath} file={pdfPath} className="flex h-full w-full items-center justify-center bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
                 PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}

@@ -51,7 +51,7 @@ export default function ContextualizationStage() {
           <p className="text-base text-neutral-400 md:text-lg">Komik ini belum memiliki file PDF.</p>
         </div>
       ) : (
-        <div className="min-h-0 min-w-0 flex-1 bg-white">
+        <div className="min-h-0 min-w-0 flex-1 bg-neutral-950">
           <PdfReader
             asset={comicAsset}
             pdfPath={comic.pdfPath}
