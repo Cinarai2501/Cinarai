@@ -89,7 +89,7 @@ export default function PdfNavigation({
 
   if (floating) {
     return (
-      <div className={visible ? (inFlow ? "pointer-events-none relative flex shrink-0 justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:px-4" : "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:bottom-3 sm:px-4") : "hidden"}>
+      <div className={visible ? (inFlow ? "pointer-events-none relative flex w-full shrink-0 justify-center px-2 pb-[env(safe-area-inset-bottom)] pt-1 sm:px-4" : "pointer-events-none absolute inset-x-0 bottom-2 flex justify-center px-2 pb-[env(safe-area-inset-bottom)] sm:bottom-3 sm:px-4") : "hidden"}>
         <div className="pointer-events-auto flex w-full max-w-[1100px] items-center gap-2 rounded-xl border border-white/10 bg-[#0b1220]/95 p-1.5 shadow-lg backdrop-blur-md">
           <button
             onClick={onPrev}
