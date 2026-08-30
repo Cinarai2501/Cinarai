@@ -235,8 +235,8 @@ export default function UnifiedComicViewer({
 
     const viewportWidth = containerWidth > 0 ? containerWidth : window.innerWidth * 0.92;
     const viewportHeight = containerHeight > 0 ? containerHeight : window.innerHeight * 0.72;
-    const availableWidth = Math.max(220, Math.min(viewportWidth, window.innerWidth * 0.96));
-    const availableHeight = Math.max(240, Math.min(viewportHeight, window.innerHeight * 0.82));
+    const availableWidth = Math.max(220, Math.min(viewportWidth, window.innerWidth * 0.98));
+    const availableHeight = Math.max(240, Math.min(viewportHeight, window.innerHeight * 0.92));
 
     return getResponsivePageSize({
       pdfWidth: pdfDimensions.width,
@@ -267,14 +267,14 @@ export default function UnifiedComicViewer({
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
       <div className="pdf-viewer-container relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex min-h-0 w-full max-w-[1100px] flex-1 flex-col items-center justify-start overflow-hidden px-1 pt-2 pb-1 sm:px-2 sm:pt-3 sm:pb-2 lg:px-4">
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex min-h-0 w-full max-w-[1100px] flex-1 flex-col items-center justify-center overflow-hidden px-1 pt-1 pb-1 sm:px-2 sm:pt-1.5 sm:pb-1.5 lg:px-4">
           <Document key={pdfPath} file={pdfPath} className="flex w-full items-start justify-center bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
                 PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
               </div>
             )}
-            <div className="pdf-page-shell relative z-10 flex items-center justify-center overflow-hidden rounded-md bg-white shadow-sm sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px`, maxWidth: "100%" } : undefined}>
+            <div className="pdf-page-shell relative z-10 flex items-center justify-center overflow-hidden rounded-md bg-white shadow-sm sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px`, maxWidth: "100%", maxHeight: "100%" } : undefined}>
               {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
                 <>
                   <div className="absolute inset-0 z-10">

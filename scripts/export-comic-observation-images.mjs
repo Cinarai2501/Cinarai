@@ -25,7 +25,7 @@ async function exportPage({ slug, pdfPath, page }) {
 
   try {
     const data = new Uint8Array(await fs.readFile(pdfPath));
-    const pdf = await getDocument({ data }).promise;
+    const pdf = await getDocument({ data, disableFontFace: true, verbosity: 0 }).promise;
     const pdfPage = await pdf.getPage(page);
     const viewport = pdfPage.getViewport({ scale: 2 });
     const canvasFactory = {
