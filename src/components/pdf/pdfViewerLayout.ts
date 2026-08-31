@@ -14,14 +14,22 @@ export function getResponsivePageSize({
   }
 
   const maxWidth = Math.max(1, availableWidth || 1);
-  const maxHeight = Math.max(1, availableHeight || maxWidth * (pdfHeight / pdfWidth));
+  const maxHeight = Number.isFinite(availableHeight) && availableHeight > 0 ? Math.max(1, availableHeight) : Number.POSITIVE_INFINITY;
+  const widthFromAvailable = Math.min(pdfWidth, maxWidth);
+  const heightFromAvailableWidth = (pdfHeight / pdfWidth) * widthFromAvailable;
 
-  const widthScale = maxWidth / pdfWidth;
-  const heightScale = maxHeight / pdfHeight;
-  const scale = Math.min(widthScale, heightScale, 1);
+  if (heightFromAvailableWidth <= maxHeight) {
+    return {
+      width: Math.round(widthFromAvailable),
+      height: Math.max(1, Math.round(heightFromAvailableWidth)),
+    };
+  }
 
-  const width = Math.max(1, Math.round(pdfWidth * scale));
-  const height = Math.max(1, Math.round(pdfHeight * scale));
+  const constrainedHeight = Math.max(1, Math.min(pdfHeight, maxHeight));
+  const widthFromAvailableHeight = (pdfWidth / pdfHeight) * constrainedHeight;
 
-  return { width, height };
+  return {
+    width: Math.max(1, Math.round(widthFromAvailableHeight)),
+    height: Math.round(constrainedHeight),
+  };
 }

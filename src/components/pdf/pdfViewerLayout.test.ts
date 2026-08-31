@@ -38,3 +38,16 @@ test('keeps the page width dominant on portrait layouts without extra whitespace
   assert.ok(result.width >= 360 && result.width <= 380, `expected portrait width to stay near available width, got ${result.width}`);
   assert.equal(result.height, 570);
 });
+
+test('keeps portrait sizing driven by width instead of viewport height', () => {
+  const result = getResponsivePageSize({
+    pdfWidth: 800,
+    pdfHeight: 1200,
+    availableWidth: 360,
+    availableHeight: 600,
+  });
+
+  assert.ok(Math.abs(result.width - 360) <= 2, `expected width to track available width, got ${result.width}`);
+  assert.equal(result.height, 540);
+  assert.ok(result.height > 360, 'expected portrait pages to keep native aspect ratio instead of shrinking to fit viewport height');
+});

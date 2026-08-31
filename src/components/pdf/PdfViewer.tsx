@@ -233,9 +233,10 @@ export default function UnifiedComicViewer({
       return { width: 0, height: 0 };
     }
 
-    const viewportWidth = containerWidth > 0 ? containerWidth : window.innerWidth * 0.95;
-    const availableWidth = Math.max(220, Math.min(viewportWidth - 8, window.innerWidth * 0.995));
-    const availableHeight = Math.max(240, containerHeight > 0 ? containerHeight * 0.95 : window.innerHeight * 0.82);
+    const viewportWidth = containerWidth > 0 ? containerWidth : window.innerWidth;
+    const horizontalPadding = 12;
+    const availableWidth = Math.max(240, Math.min(viewportWidth - horizontalPadding, window.innerWidth - 8));
+    const availableHeight = Math.max(240, containerHeight > 0 ? containerHeight : window.innerHeight * 0.9);
 
     return getResponsivePageSize({
       pdfWidth: pdfDimensions.width,
