@@ -51,3 +51,16 @@ test('keeps portrait sizing driven by width instead of viewport height', () => {
   assert.equal(result.height, 540);
   assert.ok(result.height > 360, 'expected portrait pages to keep native aspect ratio instead of shrinking to fit viewport height');
 });
+
+test('keeps mobile portrait page width near the usable viewport width instead of collapsing to ~300px', () => {
+  const result = getResponsivePageSize({
+    pdfWidth: 800,
+    pdfHeight: 1200,
+    availableWidth: 390,
+    availableHeight: 760,
+  });
+
+  assert.ok(result.width > 350, `expected a wide mobile portrait page, got ${result.width}`);
+  assert.ok(result.width <= 390, `expected width to stay within the mobile viewport, got ${result.width}`);
+  assert.equal(result.height, 585);
+});

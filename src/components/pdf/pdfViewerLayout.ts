@@ -13,10 +13,10 @@ export function getResponsivePageSize({
     return { width: 0, height: 0 };
   }
 
-  const maxWidth = Math.max(1, availableWidth || 1);
-  const maxHeight = Number.isFinite(availableHeight) && availableHeight > 0 ? Math.max(1, availableHeight) : Number.POSITIVE_INFINITY;
-  const widthFromAvailable = Math.min(pdfWidth, maxWidth);
+  const mobileWidthBudget = Math.max(220, availableWidth || 1);
+  const widthFromAvailable = Math.min(pdfWidth, mobileWidthBudget);
   const heightFromAvailableWidth = (pdfHeight / pdfWidth) * widthFromAvailable;
+  const maxHeight = Number.isFinite(availableHeight) && availableHeight > 0 ? Math.max(1, availableHeight) : Number.POSITIVE_INFINITY;
 
   if (heightFromAvailableWidth <= maxHeight) {
     return {
@@ -29,7 +29,7 @@ export function getResponsivePageSize({
   const widthFromAvailableHeight = (pdfWidth / pdfHeight) * constrainedHeight;
 
   return {
-    width: Math.max(1, Math.round(widthFromAvailableHeight)),
+    width: Math.max(1, Math.round(Math.min(widthFromAvailableHeight, widthFromAvailable))),
     height: Math.round(constrainedHeight),
   };
 }

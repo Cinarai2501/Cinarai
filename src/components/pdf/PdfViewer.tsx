@@ -233,11 +233,14 @@ export default function UnifiedComicViewer({
       return { width: 0, height: 0 };
     }
 
-    const viewportWidth = containerWidth > 0 ? containerWidth : window.innerWidth;
-    const viewportHeight = containerHeight > 0 ? containerHeight : window.innerHeight;
+    const viewportWidth = Math.max(1, typeof window !== "undefined" ? window.innerWidth : containerWidth || 0);
+    const viewportHeight = Math.max(1, containerHeight > 0 ? containerHeight : (typeof window !== "undefined" ? window.innerHeight : 0));
     const horizontalPadding = 12;
-    const verticalPadding = 12;
-    const availableWidth = Math.max(240, Math.min(viewportWidth - horizontalPadding, window.innerWidth - 8));
+    const verticalPadding = 28;
+    const isMobilePortrait = viewportWidth <= 480;
+    const availableWidth = isMobilePortrait
+      ? Math.max(260, viewportWidth - horizontalPadding)
+      : Math.max(260, (containerWidth > 0 ? containerWidth : viewportWidth) - horizontalPadding);
     const availableHeight = Math.max(240, viewportHeight - verticalPadding);
 
     return getResponsivePageSize({
@@ -269,7 +272,7 @@ export default function UnifiedComicViewer({
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
       <div className="pdf-viewer-container relative flex w-full min-h-0 flex-1 flex-col bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex w-full flex-1 min-h-0 max-w-[1100px] flex-col items-center justify-center overflow-hidden px-0.5 pt-0 pb-0 sm:px-1 sm:pt-0 sm:pb-0 lg:px-2">
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex w-full flex-1 min-h-0 flex-col items-center justify-center overflow-hidden px-0.5 pt-0 pb-0 sm:px-1 sm:pt-0 sm:pb-0 lg:px-2">
           <Document key={pdfPath} file={pdfPath} className="flex w-full flex-1 items-center justify-center bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
@@ -280,7 +283,7 @@ export default function UnifiedComicViewer({
               {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
                 <>
                   <div className="absolute inset-0 z-10">
-                    <PdfPage pageNumber={page} width={pageSize.width} loading={<PdfLoading variant="spinner" />} onLoadSuccess={handlePageLoadSuccess} onLoadError={handlePageError} onRenderSuccess={handlePageRenderSuccess} />
+                    <PdfPage pageNumber={page} width={Math.max(pageSize.width, Math.min(pageSize.width, Math.max(0, containerWidth || window.innerWidth) - 12))} loading={<PdfLoading variant="spinner" />} onLoadSuccess={handlePageLoadSuccess} onLoadError={handlePageError} onRenderSuccess={handlePageRenderSuccess} />
                   </div>
                   {pageTransition && (
                     <div
