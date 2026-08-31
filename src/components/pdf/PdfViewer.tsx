@@ -234,9 +234,8 @@ export default function UnifiedComicViewer({
     }
 
     const viewportWidth = containerWidth > 0 ? containerWidth : window.innerWidth * 0.95;
-    const viewportHeight = containerHeight > 0 ? containerHeight : window.innerHeight * 0.75;
     const availableWidth = Math.max(220, Math.min(viewportWidth - 8, window.innerWidth * 0.995));
-    const availableHeight = Math.max(240, Math.min(viewportHeight - 10, window.innerHeight * 0.97));
+    const availableHeight = Math.max(240, containerHeight > 0 ? containerHeight * 0.95 : window.innerHeight * 0.82);
 
     return getResponsivePageSize({
       pdfWidth: pdfDimensions.width,
@@ -258,7 +257,7 @@ export default function UnifiedComicViewer({
   if (!workerReady) return <div className="flex h-full flex-col items-center justify-center bg-[#0b1220]"><PdfLoading /></div>;
 
   return (
-    <div className="comic-reader relative flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden bg-[#0b1220]">
+    <div className="comic-reader relative flex w-full min-h-0 min-w-0 flex-col bg-[#0b1220]">
       {comicTitle && <header className="comic-reader__header z-20 flex h-12 shrink-0 items-center border-b border-white/10 bg-[#0b1220]/95 px-2 backdrop-blur-md sm:px-6">
         <Link href="/dashboard" aria-label="Home" title="Home" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/85 transition-colors hover:bg-white/10">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10.5 12 3l9 7.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M5.5 9.5V21h13V9.5M9 21v-6h6v6" /></svg>
@@ -266,15 +265,15 @@ export default function UnifiedComicViewer({
         <h1 className="min-w-0 flex-1 truncate text-center text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
-      <div className="pdf-viewer-container relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex min-h-0 w-full max-w-[1100px] flex-1 flex-col items-stretch justify-start overflow-hidden px-0.5 pt-0 pb-0 sm:px-1 sm:pt-0 sm:pb-0 lg:px-2">
-          <Document key={pdfPath} file={pdfPath} className="flex h-full w-full items-start justify-start bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
+      <div className="pdf-viewer-container relative flex w-full min-h-0 flex-col bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex w-full max-w-[1100px] flex-col items-center justify-start px-0.5 pt-0 pb-0 sm:px-1 sm:pt-0 sm:pb-0 lg:px-2">
+          <Document key={pdfPath} file={pdfPath} className="flex w-full items-start justify-center bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
                 PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | targetPage: {pageTransition?.targetPage ?? "none"} | transition: {pageTransition ? transitionPhase : "idle"} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | targetPageReady: {targetPageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? targetPageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
               </div>
             )}
-            <div className="pdf-page-shell relative z-10 flex self-start items-center justify-center overflow-hidden rounded-md bg-white shadow-sm sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px`, maxWidth: "100%", maxHeight: "100%", marginTop: 0, marginBottom: 0 } : undefined}>
+            <div className="pdf-page-shell relative z-10 flex self-center items-center justify-center overflow-hidden rounded-md bg-white shadow-sm sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px`, maxWidth: "100%", maxHeight: "100%", marginTop: 0, marginBottom: 0 } : undefined}>
               {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
                 <>
                   <div className="absolute inset-0 z-10">
@@ -308,7 +307,7 @@ export default function UnifiedComicViewer({
             </div>
           </Document>
         </div>
-        <div className="pdf-viewer-container__navigation pointer-events-none relative z-30 shrink-0">
+        <div className="pdf-viewer-container__navigation pointer-events-none relative z-30 mt-2 w-full shrink-0 px-2 pb-[env(safe-area-inset-bottom)] sm:px-4">
           <PdfNavigation floating inFlow visible={showFloatingControls} onPrev={() => goTo(page - 1)} onNext={() => goTo(page + 1)} currentPage={page} numPages={numPages} isFirstPage={isFirstPage} isLastPage={isLastPage} showCompleteButton={showCompleteButton} completeButtonLabel={completeButtonLabel} completeButtonDisabled={completeButtonDisabled} onComplete={onComplete} isComicCompleted={isComicCompleted} completeButtonLabelWhenDone={completeButtonLabelWhenDone} />
         </div>
       </div>

@@ -41,17 +41,17 @@ export default function ContextualizationStage() {
 
   return (
     <div
-      className="flex h-dvh min-h-0 w-full flex-col overflow-hidden bg-neutral-950"
+      className="w-full bg-neutral-950"
       style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}
     >
       {!comic.pdfPath ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
           <span className="text-2xl md:text-6xl">📄</span>
           <p className="text-lg font-black text-white md:text-xl">PDF belum tersedia</p>
           <p className="text-base text-neutral-400 md:text-lg">Komik ini belum memiliki file PDF.</p>
         </div>
       ) : (
-        <div className="min-h-0 min-w-0 flex-1 bg-neutral-950">
+        <div className="w-full bg-neutral-950">
           <PdfReader
             asset={comicAsset}
             pdfPath={comic.pdfPath}
