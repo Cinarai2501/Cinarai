@@ -9,8 +9,14 @@ export const packageContent: ComicContentPackageLike = {
     classLevel: 'III',
     cover: '/comics/komik-4/cover.png',
     thumbnail: '/comics/komik-4/thumbnail.png',
-    learningTargets: ['Mengamati pola dan bentuk di sekitar pasar tradisional.', 'Membandingkan bangun datar sederhana dalam kehidupan sehari-hari.', 'Menghubungkan bangun datar dengan pengamatan visual.'],
-    synopsis: 'Pembelajaran untuk bangun datar pada aktivitas pasar tradisional.',
+    learningTargets: [
+      'Mengamati pola dan bentuk bangun datar pada benda di sekitar pasar tradisional.',
+      'Membandingkan ciri-ciri bangun datar seperti persegi, segitiga, dan lingkaran.',
+      'Menghubungkan bentuk geometri dengan aktivitas dan lingkungan sehari-hari.',
+      'Menjelaskan alasan pemilihan bangun datar berdasarkan sisi, sudut, atau pola yang terlihat.',
+    ],
+    synopsis:
+      'Di pasar tradisional, Nisa dan teman-temannya mengamati pola dan bentuk benda di sekitar mereka. Dengan bantuan Pak Seno, mereka mengenali bentuk persegi, segitiga, dan bangun datar lainnya pada keramik, alas dagangan, dan elemen arsitektur pasar. Mereka belajar mengamati pola, membandingkan sisi dan sudut, serta menghubungkan bentuk yang mereka lihat dengan konsep matematika dalam kehidupan sehari-hari.',
   },
   learningObjects: [
     {

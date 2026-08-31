@@ -198,13 +198,35 @@ export const COMICS: Comic[] = [
   {
     id: 4,
     slug: 'komik-4',
-    title: 'Petualangan di Jembatan Merah',
-    subtitle: 'Etnomatematika Pengukuran',
-    kelas: 'IV',
-    lokasi: 'Jembatan Merah, Surabaya',
-    synopsis: 'Komik ini sedang dalam persiapan. Data akan diperbarui setelah PDF tersedia.',
-    characters: [],
-    learningTargets: [],
+    title: 'Petualangan Pola di Pasar Tradisional',
+    subtitle: 'Etnomatematika Bangun Datar',
+    kelas: 'III',
+    lokasi: 'Pasar Tradisional',
+    synopsis:
+      'Di pasar tradisional, Nisa dan teman-temannya mengamati pola dan bentuk benda di sekitar mereka. Dengan bantuan Pak Seno, mereka mengenali bentuk persegi, segitiga, dan bangun datar lainnya pada keramik, alas dagangan, dan elemen arsitektur pasar. Mereka belajar mengamati pola, membandingkan sisi dan sudut, serta menghubungkan bentuk yang mereka lihat dengan konsep matematika dalam kehidupan sehari-hari.',
+    characters: [
+      {
+        name: 'Nisa',
+        description: 'Siswi yang cermat dan aktif dalam mengamati pola benda di sekitar.',
+        avatar: `${BASE_AVATAR}/nisa.png`,
+      },
+      {
+        name: 'Raka',
+        description: 'Siswa yang penasaran dan cepat menemukan bentuk geometri di lingkungan pasar.',
+        avatar: `${BASE_AVATAR}/raka.png`,
+      },
+      {
+        name: 'Pak Seno',
+        description: 'Pedagang pasar yang ramah dan membantu siswa melihat matematika di sekitar mereka.',
+        avatar: `${BASE_AVATAR}/pak-seno.png`,
+      },
+    ],
+    learningTargets: [
+      'Mengamati pola dan bentuk bangun datar pada benda sehari-hari di pasar tradisional',
+      'Membandingkan ciri-ciri bangun datar seperti persegi, segitiga, dan lingkaran',
+      'Menghubungkan bentuk geometri dengan aktivitas dan lingkungan di sekitar siswa',
+      'Menjelaskan alasan pemilihan bangun datar berdasarkan sisi, sudut, atau pola yang terlihat',
+    ],
     estimatedMinutes: 30,
     pdfPath: `${BASE}/komik-4/comic.pdf`,
     pdfVersion: LOCAL_PDF_VERSION,
@@ -212,7 +234,7 @@ export const COMICS: Comic[] = [
       ...buildComicAssetFromComic({
         id: 4,
         slug: 'komik-4',
-        title: 'Petualangan di Jembatan Merah',
+        title: 'Petualangan Pola di Pasar Tradisional',
         pdfPath: `${BASE}/komik-4/comic.pdf`,
         thumbnail: `${BASE}/komik-4/thumbnail.png`,
       }),
@@ -305,12 +327,29 @@ export const COMICS: Comic[] = [
     kelas: 'II / Fase A Semester 1',
     lokasi: 'Masjid Al-Akbar Surabaya',
     synopsis:
-      'Bu Syarla dan siswa kelas II belajar bangun ruang di Masjid Al-Akbar Surabaya. Mereka mengamati menara, kubah, ruang utama, dan tempat duduk wudu untuk mengenali tabung, kerucut, setengah bola, balok, dan kubus.',
-    characters: [],
+      'Bu Syarla dan siswa kelas II belajar bangun ruang di Masjid Al-Akbar Surabaya. Mereka mengamati menara, kubah, ruang utama, dan tempat duduk wudu untuk mengenali tabung, kerucut, setengah bola, balok, dan kubus. Saat mengaitkan bentuk bangun ruang dengan bangunan masjid, mereka belajar bahwa matematika hadir di lingkungan sekitar dan dapat dipelajari sambil menjelajah budaya.',
+    characters: [
+      {
+        name: 'Bu Syarla',
+        description: 'Guru yang ramah membimbing siswa mencari bangun ruang di lingkungan masjid.',
+        avatar: `${BASE_AVATAR}/bu-syarla.png`,
+      },
+      {
+        name: 'Alya',
+        description: 'Siswi yang teliti dan selalu menemukan bentuk benda yang mirip dengan bangun ruang.',
+        avatar: `${BASE_AVATAR}/alya.png`,
+      },
+      {
+        name: 'Rafi',
+        description: 'Siswa yang aktif berdiskusi dan berani menyebutkan bentuk yang diamati.',
+        avatar: `${BASE_AVATAR}/rafi.png`,
+      },
+    ],
     learningTargets: [
       'Mengenal kubus, balok, tabung, kerucut, dan setengah bola',
       'Menghubungkan bangun ruang dengan arsitektur Masjid Al-Akbar Surabaya',
       'Menjelaskan ciri bangun ruang berdasarkan hasil pengamatan',
+      'Membandingkan bentuk bangun ruang berdasarkan sisi, rusuk, titik sudut, dan titik puncak',
     ],
     estimatedMinutes: 30,
     pdfPath: `${BASE}/komik-6/comic.pdf`,
