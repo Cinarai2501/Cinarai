@@ -3,20 +3,20 @@ import type { ComicContentPackageLike } from '../../types';
 export const packageContent: ComicContentPackageLike = {
   metadata: {
     comicId: 4,
-    title: 'Petualangan Pola di Pasar Tradisional',
-    subtitle: 'Etnomatematika Bangun Datar',
-    location: 'Pasar Tradisional',
-    classLevel: 'III',
+    title: 'Petualangan di Jembatan Merah',
+    subtitle: 'Panjang lintasan & Analisis data',
+    location: 'Jembatan Merah Surabaya',
+    classLevel: 'SD/MI',
     cover: '/comics/komik-4/cover.png',
     thumbnail: '/comics/komik-4/thumbnail.png',
     learningTargets: [
-      'Mengamati pola dan bentuk bangun datar pada benda di sekitar pasar tradisional.',
-      'Membandingkan ciri-ciri bangun datar seperti persegi, segitiga, dan lingkaran.',
-      'Menghubungkan bentuk geometri dengan aktivitas dan lingkungan sehari-hari.',
-      'Menjelaskan alasan pemilihan bangun datar berdasarkan sisi, sudut, atau pola yang terlihat.',
+      'Mengukur panjang lintasan menggunakan langkah.',
+      'Menghubungkan jumlah langkah dengan panjang setiap langkah.',
+      'Menganalisis dan membandingkan data hasil pengukuran.',
+      'Menyajikan data dalam grafik batang.',
     ],
     synopsis:
-      'Di pasar tradisional, Nisa dan teman-temannya mengamati pola dan bentuk benda di sekitar mereka. Dengan bantuan Pak Seno, mereka mengenali bentuk persegi, segitiga, dan bangun datar lainnya pada keramik, alas dagangan, dan elemen arsitektur pasar. Mereka belajar mengamati pola, membandingkan sisi dan sudut, serta menghubungkan bentuk yang mereka lihat dengan konsep matematika dalam kehidupan sehari-hari.',
+      'Dito dan teman-temannya berpetualang di Jembatan Merah Surabaya untuk belajar mengukur panjang lintasan menggunakan langkah. Mereka menemukan bahwa hasil pengukuran berbeda karena panjang langkah setiap orang berbeda, lalu menganalisis data dan menyajikannya dalam grafik batang.',
   },
   learningObjects: [
     {
@@ -50,21 +50,21 @@ export const packageContent: ComicContentPackageLike = {
     questions: [
       {
         id: 'komik4-ident-1',
-        question: 'Bangun datar mana yang paling terlihat pada susunan keramik?',
-        image: '/images/navigation/default.svg',
-        imageAlt: 'Susunan keramik pasar',
+        question: 'Dalam petualangan di Jembatan Merah, konsep matematika apa yang digunakan untuk mengetahui panjang jembatan berdasarkan jumlah langkah?',
+        imageAlt: 'Ilustrasi pengukuran panjang Jembatan Merah menggunakan langkah',
         options: [
-          { text: 'Persegi', correct: true },
-          { text: 'Segitiga', correct: false },
-          { text: 'Lingkaran', correct: false },
+          { text: 'Pengukuran panjang', correct: true },
+          { text: 'Bangun datar', correct: false },
+          { text: 'Pecahan', correct: false },
+          { text: 'Simetri', correct: false },
         ],
-        explanation: 'Susunan keramik pada gambar menampilkan bentuk persegi.',
+        explanation: 'Benar! Di Jembatan Merah, kalian belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang setiap langkah.',
       },
     ],
     feedback: {
-      complete: 'Bagus! Kamu mengenali bentuk di pasar tradisional.',
-      partial: 'Coba perhatikan lagi susunan objek di sekitarmu.',
-      incomplete: 'Perhatikan bentuk yang lebih jelas lagi.',
+      complete: 'Benar! Di Jembatan Merah, kalian belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang setiap langkah.',
+      partial: 'Belum tepat. Ingat, petualangan ini mengajak kalian mengukur panjang lintasan. Panjang lintasan dapat dihitung dari jumlah langkah × panjang setiap langkah.',
+      incomplete: 'Belum tepat. Ingat, petualangan ini mengajak kalian mengukur panjang lintasan. Panjang lintasan dapat dihitung dari jumlah langkah × panjang setiap langkah.',
     },
   },
   application: {

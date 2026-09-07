@@ -198,12 +198,12 @@ export const COMICS: Comic[] = [
   {
     id: 4,
     slug: 'komik-4',
-    title: 'Petualangan Pola di Pasar Tradisional',
-    subtitle: 'Etnomatematika Bangun Datar',
-    kelas: 'III',
-    lokasi: 'Pasar Tradisional',
+    title: 'Petualangan di Jembatan Merah',
+    subtitle: 'Panjang lintasan & Analisis data',
+    kelas: 'SD/MI',
+    lokasi: 'Jembatan Merah Surabaya',
     synopsis:
-      'Di pasar tradisional, Nisa dan teman-temannya mengamati pola dan bentuk benda di sekitar mereka. Dengan bantuan Pak Seno, mereka mengenali bentuk persegi, segitiga, dan bangun datar lainnya pada keramik, alas dagangan, dan elemen arsitektur pasar. Mereka belajar mengamati pola, membandingkan sisi dan sudut, serta menghubungkan bentuk yang mereka lihat dengan konsep matematika dalam kehidupan sehari-hari.',
+      'Dito dan teman-temannya berpetualang di Jembatan Merah Surabaya untuk belajar mengukur panjang lintasan menggunakan langkah, menganalisis data, dan menyajikannya dalam grafik batang.',
     characters: [
       {
         name: 'Nisa',
@@ -234,7 +234,7 @@ export const COMICS: Comic[] = [
       ...buildComicAssetFromComic({
         id: 4,
         slug: 'komik-4',
-        title: 'Petualangan Pola di Pasar Tradisional',
+        title: 'Petualangan di Jembatan Merah',
         pdfPath: `${BASE}/komik-4/comic.pdf`,
         thumbnail: `${BASE}/komik-4/thumbnail.png`,
       }),

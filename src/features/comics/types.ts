@@ -60,7 +60,7 @@ export interface ComicContentPackageLike {
     questions: Array<{
       id: string;
       question: string;
-      image: string;
+      image?: string;
       imageAlt: string;
       overlayType?: string;
       crop?: string;
@@ -166,7 +166,7 @@ export interface ComicModuleLike {
     questions: Array<{
       id: string;
       question: string;
-      image: string;
+      image?: string;
       imageAlt: string;
       overlayType?: string;
       crop?: string;

@@ -22,7 +22,7 @@ export interface LearningObjectContent {
 export interface LearningContentQuestion {
   id: string;
   question: string;
-  image: string;
+  image?: string;
   imageAlt: string;
   overlayType?: string;
   crop?: string;

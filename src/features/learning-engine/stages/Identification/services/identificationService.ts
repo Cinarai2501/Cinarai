@@ -25,7 +25,7 @@ type RawOption = { text: string; correct: boolean };
 type RawQuestion = {
   question: string;
   imageAlt: string;
-  image: string;
+  image?: string;
   overlayType?: string;
   crop?: string;
   highlight?: string;
@@ -181,9 +181,11 @@ export function selectAnswer(
 
     const currentSelection = item.selectedOptionIds ?? [];
     const alreadySelected = currentSelection.includes(optionId);
-    const nextSelection = alreadySelected
-      ? currentSelection.filter((id) => id !== optionId)
-      : [...currentSelection, optionId];
+    const nextSelection = state.comicId === 4
+      ? (alreadySelected ? currentSelection : [optionId])
+      : alreadySelected
+        ? currentSelection.filter((id) => id !== optionId)
+        : [...currentSelection, optionId];
 
     return {
       ...item,

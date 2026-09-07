@@ -19,7 +19,7 @@ export default function IdentificationQuestion({
   isChecked,
   onCheck,
 }: IdentificationQuestionProps) {
-  const { selectOption } = useIdentificationContext();
+  const { state, selectOption } = useIdentificationContext();
   const { setCanAdvance, nextStage } = useLearningEngine();
   const [visibleTutorCount, setVisibleTutorCount] = useState(0);
 
@@ -31,7 +31,15 @@ export default function IdentificationQuestion({
     && correctOptionIds.every((optionId) => selectedOptionIds.includes(optionId))
     && selectedOptionIds.every((optionId) => correctOptionIds.includes(optionId));
 
-  const tutorExplanations = useMemo(() => buildIdentificationTutorExplanations(selectedShapes), [selectedShapes]);
+  const tutorExplanations = useMemo(
+    () => state.comicId === 4 ? [] : buildIdentificationTutorExplanations(selectedShapes),
+    [selectedShapes, state.comicId],
+  );
+  const feedbackExplanation = state.comicId === 4
+    ? isCorrect
+      ? 'Benar! Di Jembatan Merah, kalian belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang setiap langkah.'
+      : 'Belum tepat. Ingat, petualangan ini mengajak kalian mengukur panjang lintasan. Panjang lintasan dapat dihitung dari jumlah langkah × panjang setiap langkah.'
+    : item.explanation;
 
   useEffect(() => {
     if (!isChecked) {
@@ -112,8 +120,8 @@ export default function IdentificationQuestion({
           <IdentificationFeedback
             isCorrect={isCorrect}
             selectedOptionText={selectedShapes.join(', ') || 'Belum dijawab'}
-            explanation={item.explanation}
-            showCorrectOption={!isCorrect}
+            explanation={feedbackExplanation}
+            showCorrectOption={state.comicId !== 4 && !isCorrect}
           />
           <div className="rounded-[22px] border border-accent-200 bg-accent-50/80 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-accent-700">AI Tutor</p>

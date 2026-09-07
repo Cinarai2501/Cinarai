@@ -1,9 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-import { useMemo } from 'react';
-import { useIdentificationContext } from '../../context/IdentificationContext';
-import { resolveIdentificationOptionAsset } from '../../services/optionAssetResolver';
+import { getShapeIcon } from './ShapeIcons';
 
 interface ShapeOptionCardProps {
   label: string;
@@ -13,15 +10,14 @@ interface ShapeOptionCardProps {
 }
 
 export default function ShapeOptionCard({ label, selected, disabled = false, onToggle }: ShapeOptionCardProps) {
-  const { state } = useIdentificationContext();
-  const iconSrc = useMemo(() => {
-    const fallbackSrc = '/images/identification/default-option.svg';
-    return resolveIdentificationOptionAsset(state.comicId, label, fallbackSrc);
-  }, [label, state.comicId]);
+  const OptionIcon = getShapeIcon(label);
 
   return (
     <button
       type="button"
+      role="radio"
+      aria-checked={selected}
+      aria-label={label}
       onClick={onToggle}
       disabled={disabled}
       className={[
@@ -36,7 +32,7 @@ export default function ShapeOptionCard({ label, selected, disabled = false, onT
         'flex h-[48px] w-[48px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[16px] p-1 sm:h-[56px] sm:w-[56px]',
         selected ? 'bg-white' : 'bg-primary-50/80',
       ].join(' ')}>
-        <Image src={iconSrc} alt={label} width={56} height={56} className="h-[44px] w-[44px] object-contain sm:h-[52px] sm:w-[52px]" />
+        <OptionIcon className="h-[44px] w-[44px] sm:h-[52px] sm:w-[52px]" />
       </div>
 
       <span className="flex-1 text-[15px] font-black uppercase tracking-[0.14em] text-neutral-800 sm:text-base">
