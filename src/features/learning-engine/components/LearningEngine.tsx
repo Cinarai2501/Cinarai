@@ -20,9 +20,13 @@ function LearningEngineInner() {
     return <StageRouter />;
   }
 
-  // ContextualizationStage manages its own full-height layout (PDF reader)
+  // Keep the page background dark while the PDF reader remains content-sized.
   if (currentStage === Stage.Contextualization) {
-    return <StageRouter />;
+    return (
+      <div className="min-h-dvh bg-neutral-950">
+        <StageRouter />
+      </div>
+    );
   }
 
   return (
