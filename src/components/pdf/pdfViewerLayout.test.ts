@@ -64,3 +64,15 @@ test('keeps mobile portrait page width near the usable viewport width instead of
   assert.ok(result.width <= 390, `expected width to stay within the mobile viewport, got ${result.width}`);
   assert.equal(result.height, 585);
 });
+
+test('does not reduce mobile portrait width to fit the viewport height', () => {
+  const result = getResponsivePageSize({
+    pdfWidth: 800,
+    pdfHeight: 1200,
+    availableWidth: 378,
+    availableHeight: Number.POSITIVE_INFINITY,
+  });
+
+  assert.equal(result.width, 378);
+  assert.equal(result.height, 567);
+});

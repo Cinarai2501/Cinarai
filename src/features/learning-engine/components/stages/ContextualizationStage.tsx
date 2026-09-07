@@ -41,7 +41,7 @@ export default function ContextualizationStage() {
 
   return (
     <div
-      className="flex min-h-[100dvh] w-full flex-col bg-neutral-950"
+      className="w-full bg-neutral-950"
       style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}
     >
       {!comic.pdfPath ? (
@@ -51,7 +51,7 @@ export default function ContextualizationStage() {
           <p className="text-base text-neutral-400 md:text-lg">Komik ini belum memiliki file PDF.</p>
         </div>
       ) : (
-        <div className="flex w-full flex-1 flex-col overflow-hidden bg-neutral-950">
+        <div className="w-full bg-neutral-950">
           <PdfReader
             asset={comicAsset}
             pdfPath={comic.pdfPath}
