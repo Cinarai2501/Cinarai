@@ -208,6 +208,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [syncUserFromFirestore]);
 
+  const authenticateWithGoogleForRegistration = useCallback(async () => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const { user: firebaseUser } = await firebaseSignInWithGoogle();
+      return firebaseUser;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to sign in with Google';
+      setState((prev) => ({ ...prev, loading: false, error: errorMessage }));
+      throw error;
+    }
+  }, []);
+
   const updateUserProfile = useCallback(async (profile: {
     displayName: string;
     photoURL?: string;
@@ -327,6 +340,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUp,
     signIn,
     signInWithGoogle,
+    authenticateWithGoogleForRegistration,
     logout,
     resetPassword,
     updateUserProfile,

@@ -1,4 +1,5 @@
 import type { UserRole } from '@/types/firestore';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 export interface User {
   uid: string;
@@ -26,6 +27,7 @@ export interface AuthContextType extends AuthState {
   signUp: (email: string, password: string, displayName: string, role?: 'student' | 'teacher') => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  authenticateWithGoogleForRegistration: () => Promise<FirebaseUser>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (profile: {
