@@ -55,11 +55,10 @@ export async function signUpUser(
     email: normalizedEmail,
     displayName: firebaseUser.displayName ?? displayName,
     username: normalizedEmail.split('@')[0],
-    photoURL: firebaseUser.photoURL ?? undefined,
     role,
     isActive: true,
     duplicate: false,
-    lastLoginAt: undefined,
+    ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
   };
 
   await deps.upsertUser(userData);

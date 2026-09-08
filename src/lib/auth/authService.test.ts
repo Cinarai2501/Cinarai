@@ -53,11 +53,10 @@ test('signUpUser registers a new email and preserves profile update', async () =
     uid: 'user-123',
     email: 'new@example.com',
     displayName: 'Test User',
-    photoURL: undefined,
+    username: 'new',
     role: 'student',
     isActive: true,
     duplicate: false,
-    lastLoginAt: undefined,
   });
 });
 

@@ -407,9 +407,12 @@ export const subscribeToFirestoreDocument = <
 /** Create or update a user document (upsert). */
 export const upsertUser = async (user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
   try {
+    const userWithoutUndefined = Object.fromEntries(
+      Object.entries(user).filter(([, value]) => value !== undefined)
+    ) as Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>;
     await setDoc(
-      getTypedDoc('users', user.uid),
-      { ...user, updatedAt: serverTimestamp() } as WithFieldValue<Omit<UserDocument, 'id'>>,
+      getTypedDoc('users', userWithoutUndefined.uid),
+      { ...userWithoutUndefined, updatedAt: serverTimestamp() } as WithFieldValue<Omit<UserDocument, 'id'>>,
       { merge: true }
     );
   } catch (error) {

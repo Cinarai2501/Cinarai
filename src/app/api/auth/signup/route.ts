@@ -110,11 +110,9 @@ export async function POST(request: NextRequest) {
       email,
       displayName,
       username: email.split('@')[0],
-      photoURL: undefined,
       role: userRole,
       isActive: true,
       duplicate: false,
-      lastLoginAt: undefined,
     };
 
     await firestore.collection('users').doc(uid).set(

@@ -95,10 +95,10 @@ export const SignUpForm: React.FC = () => {
         uid: googleUser.uid,
         email: googleUser.email ?? '',
         displayName: googleUser.displayName ?? googleUser.email ?? 'Pengguna Google',
-        photoURL: googleUser.photoURL ?? undefined,
         role,
         isActive: true,
         duplicate: false,
+        ...(googleUser.photoURL ? { photoURL: googleUser.photoURL } : {}),
       });
       router.replace(getRoleBasedDashboardPath(role));
     } catch (err) {
