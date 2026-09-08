@@ -26,3 +26,21 @@ test('comic 3 identification uses one multi-select question with all six expecte
   assert.deepEqual(question?.options.map((option) => option.text), expectedLabels);
   assert.equal(question?.options.every((option) => option.correct), true);
 });
+
+test('comic 4 identification uses the bridge measurement concepts and stable multi-select options', () => {
+  const comicModule = getComicModule(4);
+  const question = comicModule.identification.questions[0];
+
+  assert.equal(question?.question, 'Apa saja konsep matematika yang kamu temukan dalam petualangan di Jembatan Merah?');
+  assert.deepEqual(question?.options.map((option) => option.text), [
+    'Pengukuran panjang lintasan',
+    'Menghitung panjang berdasarkan jumlah langkah dan panjang langkah',
+    'Menganalisis dan membandingkan data hasil pengukuran',
+    'Menyajikan data dalam grafik batang',
+    'Bangun datar',
+    'Simetri',
+  ]);
+  assert.equal(question?.options.filter((option) => option.correct).length, 4);
+  assert.match(comicModule.identification.feedback.complete, /grafik batang/);
+  assert.doesNotMatch(comicModule.identification.feedback.complete, /keramik|persegi|simetri/i);
+});

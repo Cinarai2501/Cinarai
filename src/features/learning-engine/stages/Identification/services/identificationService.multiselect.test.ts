@@ -38,3 +38,32 @@ test('selectAnswer keeps previously selected options and toggles only the clicke
 
   assert.deepEqual(selectedIds, [state.items[0].options[0].id]);
 });
+
+test('comic 4 selectAnswer supports selecting all correct options and deselecting one', () => {
+  const state = createIdentificationState(
+    {
+      questions: [{
+        id: 'comic-4-1',
+        question: 'Konsep apa saja?',
+        imageAlt: 'Jembatan Merah',
+        options: [
+          { text: 'Panjang lintasan', correct: true },
+          { text: 'Jumlah langkah', correct: true },
+          { text: 'Bangun datar', correct: false },
+        ],
+        explanation: 'Contoh',
+      }],
+      feedback: { complete: 'Selesai', partial: 'Belum', incomplete: 'Belum' },
+    },
+    { comicId: 4, lokasi: 'Jembatan Merah', cover: '/cover.png', title: 'Identification' },
+  );
+  const item = state.items[0];
+  const correctOptions = item.options.filter((option) => option.correct);
+
+  const afterFirst = selectAnswer(state, item.id, correctOptions[0].id);
+  const afterSecond = selectAnswer(afterFirst, item.id, correctOptions[1].id);
+  const afterDeselect = selectAnswer(afterSecond, item.id, correctOptions[0].id);
+
+  assert.deepEqual(afterSecond.items[0].selectedOptionIds, correctOptions.map((option) => option.id));
+  assert.deepEqual(afterDeselect.items[0].selectedOptionIds, [correctOptions[1].id]);
+});

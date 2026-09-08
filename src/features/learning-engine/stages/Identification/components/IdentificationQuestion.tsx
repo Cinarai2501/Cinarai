@@ -37,8 +37,8 @@ export default function IdentificationQuestion({
   );
   const feedbackExplanation = state.comicId === 4
     ? isCorrect
-      ? 'Benar! Di Jembatan Merah, kalian belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang setiap langkah.'
-      : 'Belum tepat. Ingat, petualangan ini mengajak kalian mengukur panjang lintasan. Panjang lintasan dapat dihitung dari jumlah langkah × panjang setiap langkah.'
+      ? 'Benar! Dalam petualangan di Jembatan Merah, kamu belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang satu langkah, menghitung panjang lintasan, menganalisis data hasil pengukuran, serta menyajikannya dalam grafik batang.'
+      : 'Belum tepat. Ingat kembali petualangan di Jembatan Merah. Mereka menggunakan langkah untuk mengukur panjang lintasan, menghitung panjang berdasarkan panjang langkah, membandingkan hasil pengukuran, dan menyajikan data dalam grafik.'
     : item.explanation;
 
   useEffect(() => {

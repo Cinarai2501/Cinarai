@@ -50,21 +50,23 @@ export const packageContent: ComicContentPackageLike = {
     questions: [
       {
         id: 'komik4-ident-1',
-        question: 'Dalam petualangan di Jembatan Merah, konsep matematika apa yang digunakan untuk mengetahui panjang jembatan berdasarkan jumlah langkah?',
+        question: 'Apa saja konsep matematika yang kamu temukan dalam petualangan di Jembatan Merah?',
         imageAlt: 'Ilustrasi pengukuran panjang Jembatan Merah menggunakan langkah',
         options: [
-          { text: 'Pengukuran panjang', correct: true },
+          { text: 'Pengukuran panjang lintasan', correct: true },
+          { text: 'Menghitung panjang berdasarkan jumlah langkah dan panjang langkah', correct: true },
+          { text: 'Menganalisis dan membandingkan data hasil pengukuran', correct: true },
+          { text: 'Menyajikan data dalam grafik batang', correct: true },
           { text: 'Bangun datar', correct: false },
-          { text: 'Pecahan', correct: false },
           { text: 'Simetri', correct: false },
         ],
-        explanation: 'Benar! Di Jembatan Merah, kalian belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang setiap langkah.',
+        explanation: 'Benar! Dalam petualangan di Jembatan Merah, kamu belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang satu langkah, menghitung panjang lintasan, menganalisis data hasil pengukuran, serta menyajikannya dalam grafik batang.',
       },
     ],
     feedback: {
-      complete: 'Benar! Di Jembatan Merah, kalian belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang setiap langkah.',
-      partial: 'Belum tepat. Ingat, petualangan ini mengajak kalian mengukur panjang lintasan. Panjang lintasan dapat dihitung dari jumlah langkah × panjang setiap langkah.',
-      incomplete: 'Belum tepat. Ingat, petualangan ini mengajak kalian mengukur panjang lintasan. Panjang lintasan dapat dihitung dari jumlah langkah × panjang setiap langkah.',
+      complete: 'Benar! Dalam petualangan di Jembatan Merah, kamu belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang satu langkah, menghitung panjang lintasan, menganalisis data hasil pengukuran, serta menyajikannya dalam grafik batang.',
+      partial: 'Belum tepat. Ingat kembali petualangan di Jembatan Merah. Mereka menggunakan langkah untuk mengukur panjang lintasan, menghitung panjang berdasarkan panjang langkah, membandingkan hasil pengukuran, dan menyajikan data dalam grafik.',
+      incomplete: 'Belum tepat. Ingat kembali petualangan di Jembatan Merah. Mereka menggunakan langkah untuk mengukur panjang lintasan, menghitung panjang berdasarkan panjang langkah, membandingkan hasil pengukuran, dan menyajikan data dalam grafik.',
     },
   },
   application: {

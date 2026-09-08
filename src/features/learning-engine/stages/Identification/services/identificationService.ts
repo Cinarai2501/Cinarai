@@ -68,10 +68,12 @@ function buildQuestionsForIdentification(identificationData: IdentificationData)
   }));
 }
 
-function buildShuffledOptions(itemId: string, rawOptions: RawOption[]): AnswerOption[] {
+function buildShuffledOptions(itemId: string, rawOptions: RawOption[], stableIds = false): AnswerOption[] {
   const shuffled = shuffle(rawOptions);
   return shuffled.map((opt, index) => ({
-    id: `${itemId}-opt-${index}`,
+    id: stableIds
+      ? `${itemId}-opt-${opt.text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+      : `${itemId}-opt-${index}`,
     text: opt.text,
     correct: opt.correct,
   }));
@@ -95,7 +97,7 @@ export function createIdentificationState(
 
   const items: IdentificationItem[] = questions.map((question, index) => {
     const id = `${context.comicId}-identification-${index}`;
-    const options = buildShuffledOptions(id, question.options);
+    const options = buildShuffledOptions(id, question.options, context.comicId === 4);
     const correctOption = options.find((o) => o.correct);
     const imageSrc = question.image || observationImage.imageSrc;
     const hasDedicatedImage = Boolean(question.image);
@@ -182,7 +184,9 @@ export function selectAnswer(
     const currentSelection = item.selectedOptionIds ?? [];
     const alreadySelected = currentSelection.includes(optionId);
     const nextSelection = state.comicId === 4
-      ? (alreadySelected ? currentSelection : [optionId])
+      ? alreadySelected
+        ? currentSelection.filter((id) => id !== optionId)
+        : [...currentSelection, optionId]
       : alreadySelected
         ? currentSelection.filter((id) => id !== optionId)
         : [...currentSelection, optionId];
@@ -247,7 +251,7 @@ export function resetIdentificationState(state: IdentificationState): Identifica
     ...state,
     observe: { note: '', isDone: false },
     items: state.items.map((item) => {
-      const options = buildShuffledOptions(item.id, item.options);
+      const options = buildShuffledOptions(item.id, item.options, state.comicId === 4);
       const correctOption = options.find((o) => o.correct);
       return {
         ...item,
