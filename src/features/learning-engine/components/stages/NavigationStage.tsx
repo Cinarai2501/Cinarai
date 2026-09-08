@@ -81,6 +81,10 @@ export default function NavigationStage() {
     };
   }, [comic.id, user?.uid]);
 
+  if (comic.id === 4) {
+    return <Comic4QrNavigation />;
+  }
+
   return (
     <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-6">
       <div className="space-y-3">
@@ -192,6 +196,56 @@ export default function NavigationStage() {
             </div>
           ))}
         </div>
+      </section>
+    </div>
+  );
+}
+
+function Comic4QrNavigation() {
+  const { comicModule } = useLearningEngine();
+  const qrItems = comicModule.navigation.qrCode;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-6">
+      <div className="space-y-3">
+        <h1 className="text-3xl font-black text-neutral-900">NAVIGASI AR &amp; QR</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">
+          Jelajahi Jembatan Merah Surabaya, hasil pengukuran lintasan, dan kuis pembelajaran melalui QR pada komik.
+        </p>
+      </div>
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="QR Comic 4">
+        {qrItems.map((item) => (
+          <article key={item.id} className="flex h-full flex-col justify-between rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-primary-700">
+                  {item.type ?? 'QR'}
+                </span>
+                <span className="text-xs font-semibold text-neutral-500">Halaman {item.page}</span>
+              </div>
+              {item.imageSrc ? (
+                <div className="flex justify-center rounded-xl border border-neutral-200 bg-white p-3">
+                  <Image src={item.imageSrc} alt={item.alt} width={160} height={160} className="h-40 w-40" />
+                </div>
+              ) : null}
+              <div>
+                <h2 className="text-lg font-black text-neutral-900">{item.label}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600">{item.description}</p>
+              </div>
+            </div>
+            {item.url ? (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-700"
+              >
+                Buka {item.type === 'QUIZ' ? 'Kuis' : 'AR'}
+              </a>
+            ) : null}
+          </article>
+        ))}
       </section>
     </div>
   );

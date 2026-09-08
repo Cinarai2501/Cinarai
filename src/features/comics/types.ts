@@ -33,6 +33,17 @@ export interface ComicNavigationObjectLike {
   symmetryRelation?: string;
 }
 
+export interface ComicQrCodeLike {
+  id: string;
+  imageSrc: string;
+  alt: string;
+  label: string;
+  description: string;
+  url?: string;
+  type?: 'AR' | 'QUIZ';
+  page?: number;
+}
+
 export interface ComicContentPackageLike {
   metadata: {
     comicId: number;
@@ -46,7 +57,7 @@ export interface ComicContentPackageLike {
     synopsis: string;
   };
   learningObjects: ComicNavigationObjectLike[];
-  qrCode: Array<{ id: string; imageSrc: string; alt: string; label: string; description: string }>;
+  qrCode: ComicQrCodeLike[];
   model3D: Array<{ id: string; title: string; arUrl: string; embedUrl?: string; viewerType?: 'embed' | 'url'; page: number; description: string; provider?: string }>;
   aiPrompt: {
     navigation: string;
@@ -153,7 +164,7 @@ export interface ComicModuleLike {
   };
   navigation: {
     learningObjects: ComicNavigationObjectLike[];
-    qrCode: Array<{ id: string; imageSrc: string; alt: string; label: string; description: string }>;
+    qrCode: ComicQrCodeLike[];
     model3D: Array<{ id: string; title: string; arUrl: string; embedUrl?: string; viewerType?: 'embed' | 'url'; page: number; description: string; provider?: string }>;
   };
   navigationAssets?: {

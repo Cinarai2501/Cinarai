@@ -60,6 +60,16 @@ export function resolveNavigationStageContent(comicId: number) {
     : [];
   const objects = comicId === 2 || comicId === 3 ? learningObjects : learningObjects.slice(0, 5);
 
+  if (comicId === 4) {
+    return {
+      comicModule,
+      objects: [],
+      heroModelEntry: undefined,
+      heroQrImage: '',
+      heroIllustration: '',
+    };
+  }
+
   if (comicId === 2) {
     const heroObject = learningObjects[0];
 
