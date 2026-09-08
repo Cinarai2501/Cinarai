@@ -28,7 +28,8 @@ interface Comic2ArgumentationStageProps {
   question: ArgumentationQuestion;
   onSubmitFeedback: (feedback: AiFeedback) => void;
   onAnswerChange: (value: string) => void;
-  onNext: () => void;
+  onNext: () => void | Promise<void>;
+  isAdvancing: boolean;
   feedback: AiFeedback | null;
   comicTitle: string;
   comicLocation: string;
@@ -165,6 +166,7 @@ export default function Comic2ArgumentationStage({
   currentIndex,
   totalItems,
   initialAnswer = '',
+  isAdvancing,
 }: Comic2ArgumentationStageProps) {
   const [answer, setAnswer] = useState(initialAnswer);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -343,12 +345,11 @@ export default function Comic2ArgumentationStage({
           <FeedbackCard feedback={feedback} />
           <button
             type="button"
-            onClick={() => {
-              void onNext();
-            }}
-            className="relative z-10 w-full rounded-[24px] bg-accent-600 px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-accent-700"
+            onClick={() => void onNext()}
+            disabled={isAdvancing}
+            className="relative z-10 w-full rounded-[24px] bg-accent-600 px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Lanjut
+            {isAdvancing ? 'Menyimpan...' : 'Lanjut'}
           </button>
         </div>
       ) : null}

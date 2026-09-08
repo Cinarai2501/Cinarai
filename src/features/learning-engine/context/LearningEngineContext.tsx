@@ -194,9 +194,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     }
 
     if (next) {
-      const nextCurrentSintaks = next.sintaksList.find((item) => item.status === 'CURRENT')?.sintaks;
-      const nextStageFromProgress = nextCurrentSintaks ? sintaksToStage(nextCurrentSintaks) : nextStageEnum;
-      const nextIdx = ALL_STAGES.indexOf(nextStageFromProgress);
+      const nextIdx = ALL_STAGES.indexOf(nextStageEnum);
       if (nextIdx !== -1) {
         setStageIndex(nextIdx);
       }

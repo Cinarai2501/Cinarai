@@ -55,6 +55,8 @@ export default function ArgumentationStage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completedIndices, setCompletedIndices] = useState<number[]>([]);
   const [textAnswer, setTextAnswer] = useState('');
+  const [isAdvancing, setIsAdvancing] = useState(false);
+  const advanceInFlightRef = useRef(false);
   const progressHydratedRef = useRef(false);
   const saveInFlightRef = useRef<Promise<void> | null>(null);
 
@@ -227,7 +229,7 @@ export default function ArgumentationStage() {
 
 
   const handleNext = useCallback(async () => {
-    if (!learningObject) {
+    if (!learningObject || advanceInFlightRef.current) {
       return;
     }
 
@@ -238,6 +240,8 @@ export default function ArgumentationStage() {
       return;
     }
 
+    advanceInFlightRef.current = true;
+    setIsAdvancing(true);
     try {
       await persistArgumentationProgress();
       await completeAndAdvance('Argumentation');
@@ -246,6 +250,9 @@ export default function ArgumentationStage() {
         '[ArgumentationStage] gagal melanjutkan setelah argumentasi selesai',
         error instanceof Error ? error.stack ?? error.message : String(error)
       );
+    } finally {
+      advanceInFlightRef.current = false;
+      setIsAdvancing(false);
     }
   }, [completeAndAdvance, currentIndex, learningObject, orderedLearningObjects.length, persistArgumentationProgress, setCanAdvance]);
 
@@ -319,6 +326,7 @@ export default function ArgumentationStage() {
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}
+        isAdvancing={isAdvancing}
       />
     );
   }
@@ -346,6 +354,7 @@ export default function ArgumentationStage() {
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}
+        isAdvancing={isAdvancing}
       />
     );
   }
@@ -372,6 +381,7 @@ export default function ArgumentationStage() {
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}
+        isAdvancing={isAdvancing}
       />
     );
   }
