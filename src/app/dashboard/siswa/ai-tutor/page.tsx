@@ -118,6 +118,8 @@ export default function DashboardSiswaAiTutorPage() {
       subtitle="Siap membantumu belajar kapan saja!"
       gradientFrom="#623CEA"
       gradientTo="#7550F1"
+      className="flex h-[100dvh] min-h-0 flex-col overflow-hidden pb-[calc(88px+env(safe-area-inset-bottom))]"
+      contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
       rightContent={
         <div className="flex items-center gap-3">
           <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
@@ -152,21 +154,21 @@ export default function DashboardSiswaAiTutorPage() {
       }
     >
 
-      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
-        {/* 2. CHAT AREA */}
-        <div className="space-y-5">
-        <div className="flex justify-center">
-          <span className="rounded-full bg-slate-200/60 px-4 py-1 text-[12px] font-semibold text-slate-500">
-            Hari ini
-          </span>
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0.5 pb-3">
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <span className="rounded-full bg-slate-200/60 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                Hari ini
+              </span>
+            </div>
 
-        {messages.map((msg) => {
+            {messages.map((msg) => {
           if (msg.sender === 'user') {
             return (
               <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="max-w-[75%] rounded-[20px] rounded-br-md bg-[#845EF7] p-3 text-white shadow-[0_4px_12px_rgba(132,94,247,0.25)]">
-                  <p className="text-[15px] font-medium leading-relaxed">{msg.text}</p>
+                <div className="max-w-[88%] rounded-[18px] rounded-br-md bg-[#845EF7] px-3.5 py-2.5 text-white shadow-[0_4px_12px_rgba(132,94,247,0.18)]">
+                  <p className="break-words text-[14px] font-medium leading-relaxed">{msg.text}</p>
                   <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/80">
                     <span>{msg.time}</span>
                     <svg viewBox="0 0 24 24" className="h-[12px] w-[12px]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -180,12 +182,12 @@ export default function DashboardSiswaAiTutorPage() {
 
           return (
             <div key={msg.id} className="flex justify-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_8px_24px_rgba(37,99,235,0.08)]">
+              <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_8px_24px_rgba(37,99,235,0.08)]">
                 <Image
                   src="/images/ai/RobotAI.png"
                   alt=""
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   className="h-full w-full object-cover"
                   onError={(e) => {
                     const target = e.currentTarget;
@@ -195,8 +197,8 @@ export default function DashboardSiswaAiTutorPage() {
                   }}
                 />
               </div>
-              <div className="max-w-[80%] rounded-[20px] rounded-tl-md bg-white p-4 border border-slate-100 shadow-[0_8px_24px_rgba(37,99,235,0.06)] text-neutral-800">
-                <div className="text-[15px] font-medium leading-relaxed whitespace-pre-line text-neutral-800">
+              <div className="max-w-[88%] rounded-[18px] rounded-tl-md border border-slate-100 bg-white px-3.5 py-2.5 text-neutral-800 shadow-[0_8px_24px_rgba(37,99,235,0.06)]">
+                <div className="break-words whitespace-pre-line text-[14px] font-medium leading-relaxed text-neutral-800">
                   {msg.text}
                 </div>
                 
@@ -223,46 +225,40 @@ export default function DashboardSiswaAiTutorPage() {
               </div>
             </div>
           );
-        })}
-        <div ref={messagesEndRef} />
+            })}
+            <div ref={messagesEndRef} />
+            <div className="border-t border-slate-200/70 pt-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {QUICK_QUESTIONS.map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => void handleSend(chip)}
+                    disabled={isResponding}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95 disabled:opacity-50"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-[13px] w-[13px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* 3. PERTANYAAN CEPAT */}
-      <div className="px-5 pt-2 pb-6 animate-in fade-in duration-500">
-        <div className="flex flex-wrap gap-2.5">
-          {QUICK_QUESTIONS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => void handleSend(chip)}
-              disabled={isResponding}
-              className="flex items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95"
-            >
-              <svg viewBox="0 0 24 24" className="h-[14px] w-[14px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              {chip}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. INPUT BAR */}
-      <div 
-        className="fixed left-0 right-0 z-30 mx-auto w-full max-w-[480px] px-5"
-        style={{ bottom: 'calc(84px + env(safe-area-inset-bottom))' }}
-      >
+        <div className="shrink-0 border-t border-slate-200/70 bg-[#f8faff] pt-3">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleSend();
           }}
-          className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)] border border-slate-100"
+          className="box-border flex min-h-[58px] w-full items-center gap-2 rounded-[22px] border border-slate-100 bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)]"
         >
           <button
             type="button"
-            className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full bg-[#F3F0FF] text-[#623CEA] transition-colors hover:bg-indigo-100 active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F3F0FF] text-[#623CEA] transition-colors hover:bg-indigo-100 active:scale-95"
             aria-label="Lampiran"
           >
             <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -276,11 +272,11 @@ export default function DashboardSiswaAiTutorPage() {
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ketik pertanyaanmu di sini..."
             disabled={isResponding}
-            className="flex-1 bg-transparent px-2 text-[14px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
+            className="min-w-0 flex-1 bg-transparent px-1.5 text-[14px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
           />
           <button
             type="submit"
-            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#845EF7] text-white shadow-md transition-transform hover:scale-105 active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#845EF7] text-white shadow-md transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Kirim pesan"
             disabled={isResponding || !inputText.trim()}
           >
@@ -292,6 +288,7 @@ export default function DashboardSiswaAiTutorPage() {
         </form>
         {isResponding ? <p className="mt-2 text-center text-xs font-semibold text-slate-500">AI Tutor sedang berpikir...</p> : null}
         {errorMessage ? <p className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-center text-xs font-semibold text-rose-700">{errorMessage}</p> : null}
+        </div>
       </div>
 
       {/* Info Modal */}

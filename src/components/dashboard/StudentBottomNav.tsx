@@ -63,7 +63,7 @@ export default function StudentBottomNav() {
       style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}
     >
       <div
-        className="mx-auto flex h-[56px] max-w-[440px] items-center justify-between rounded-[22px] border border-slate-100/80 px-[10px] py-[6px]"
+        className="mx-auto flex h-[68px] max-w-[440px] items-center justify-between rounded-[22px] border border-slate-100/80 px-[8px] py-[5px]"
         style={{
           background: 'rgba(255,255,255,0.96)',
           backdropFilter: 'blur(18px)',
@@ -107,7 +107,7 @@ export default function StudentBottomNav() {
               className="flex flex-1 flex-col items-center justify-center gap-[3px] text-center"
             >
               <span
-                className="grid h-[50px] w-[50px] place-items-center rounded-[14px] transition-all duration-200 active:scale-90"
+                  className="grid h-[40px] w-[40px] place-items-center rounded-[13px] transition-all duration-200 active:scale-90"
                 style={
                   active
                     ? {
@@ -121,7 +121,7 @@ export default function StudentBottomNav() {
                 <TabIcon type={tab.icon} active={active} />
               </span>
               <span
-                className="text-[12px] leading-none transition-all duration-200"
+                className="text-[10px] leading-none transition-all duration-200"
                 style={{ fontWeight: active ? 600 : 500, color: active ? activeColor : '#6B7280' }}
               >
                 {tab.label}

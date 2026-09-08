@@ -11,6 +11,7 @@ type DashboardPageProps = {
   rightContent: ReactNode;
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
 };
 
 export default function DashboardPage({
@@ -21,6 +22,7 @@ export default function DashboardPage({
   rightContent,
   children,
   className = '',
+  contentClassName = '',
 }: DashboardPageProps) {
   return (
     <div className={`min-h-0 w-full bg-[linear-gradient(180deg,#F5F8FF_0%,#F8FAFF_100%)] text-neutral-900 ${className}`}>
@@ -32,7 +34,7 @@ export default function DashboardPage({
         rightContent={rightContent}
       />
 
-      <div className="mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6">
+      <div className={`mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6 ${contentClassName}`}>
         {children}
       </div>
     </div>
