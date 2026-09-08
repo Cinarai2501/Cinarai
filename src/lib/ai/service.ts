@@ -1,7 +1,9 @@
 import { AiRouter } from './router';
-import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
 import type { AiProvider, AiRequestPayload, AiResponse } from './provider';
 import { buildTutorSystemPrompt } from './prompts/tutor';
+
+const COMIC3_TITLE = 'Petualangan di Rumah Gajah Mungkur';
+const COMIC3_TUTOR_INSTRUCTION = 'TutorComic3: Bimbing siswa SD, jangan langsung memberi jawaban; gunakan petunjuk singkat dan bahasa sederhana; maksimal 3 kalimat; hubungkan jawaban dengan gambar objek saat ini.';
 
 export interface TutorContext {
   moduleName: string;
@@ -252,9 +254,8 @@ export function buildTutorPrompt(context: TutorContext): string {
     context.knowledgeContext ? `- pengetahuan objek:\n${context.knowledgeContext}` : '',
   ].filter(Boolean).join('\n');
 
-  const comic3Title = comic3Package?.metadata?.title;
-  const useComic3Prompt = comic3Title && context.comicTitle && context.comicTitle.trim() === comic3Title;
-  const comic3Instruction = useComic3Prompt ? (comic3Package.aiPrompt?.objectTutor ?? '') : '';
+  const useComic3Prompt = context.comicTitle?.trim() === COMIC3_TITLE;
+  const comic3Instruction = useComic3Prompt ? COMIC3_TUTOR_INSTRUCTION : '';
 
   const systemPrompt = buildTutorSystemPrompt({
     modul: context.moduleName,
@@ -290,9 +291,8 @@ export async function generateTutorResponse(
   });
 
   const router = AiRouter.createDefault();
-  const comic3Title = comic3Package?.metadata?.title;
-  const useComic3Prompt = comic3Title && context.comicTitle && context.comicTitle.trim() === comic3Title;
-  const comic3Instruction = useComic3Prompt ? (comic3Package.aiPrompt?.objectTutor ?? '') : '';
+  const useComic3Prompt = context.comicTitle?.trim() === COMIC3_TITLE;
+  const comic3Instruction = useComic3Prompt ? COMIC3_TUTOR_INSTRUCTION : '';
 
   const payload: AiRequestPayload = {
     prompt: buildTutorPrompt(context),

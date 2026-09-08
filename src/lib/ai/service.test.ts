@@ -166,6 +166,29 @@ test('buildTutorPrompt includes navigation context and topic boundaries', () => 
   assert.match(prompt, /Candi Penataran/i);
 });
 
+test('buildTutorPrompt preserves multi-turn conversation context', () => {
+  const prompt = buildTutorPrompt({
+    moduleName: 'Numerasi',
+    identification: [],
+    objectInfo: {
+      location: 'Komik CINARAI',
+      classLevel: 'SD',
+      synopsis: 'Belajar pengukuran',
+      learningTargets: ['Menghubungkan langkah dengan panjang'],
+    },
+    observationAnswers: {},
+    question: 'Kalau langkahnya lebih pendek bagaimana?',
+    sessionHistory: [
+      { role: 'user', content: 'Kenapa jumlah langkah bisa digunakan untuk mengetahui panjang?' },
+      { role: 'assistant', content: 'Karena jarak dapat diperkirakan dari jumlah langkah dikali panjang satu langkah.' },
+    ],
+  });
+
+  assert.match(prompt, /Kenapa jumlah langkah bisa digunakan untuk mengetahui panjang/i);
+  assert.match(prompt, /Karena jarak dapat diperkirakan/i);
+  assert.match(prompt, /Kalau langkahnya lebih pendek bagaimana/i);
+});
+
 test('buildTutorPrompt enforces answer-first rule and forbids Socratic-only responses', () => {
   const prompt = buildTutorPrompt({
     moduleName: 'Bangun Ruang',

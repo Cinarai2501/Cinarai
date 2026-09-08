@@ -43,8 +43,6 @@ const DEFAULT_QUICK_QUESTIONS = [
   'Berapa titik sudut?',
 ];
 
-const COMIC2_OUT_OF_SCOPE_PATTERN = /rumus|luas|keliling|kubus|balok|prisma|limas|kerucut|tabung|bangun ruang|rusuk|titik sudut/i;
-
 function createInitialMessage(objectName: string): ChatMessage {
   return {
     id: 1,
@@ -139,16 +137,8 @@ export function ObjectAITutor({
     const trimmed = (rawText ?? draft).trim();
     if (!trimmed || isResponding) return;
 
-    if (isComic2 && COMIC2_OUT_OF_SCOPE_PATTERN.test(trimmed)) {
-      const redirectMessage = 'Kita fokus membahas bangun datar yang ada pada Candi Penataran. Coba tanyakan tentang bentuk, ciri, atau hubungan objek dengan simetri.';
-      const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
-      setMessages((prev) => [...prev, userMessage, { id: Date.now() + 1, role: 'assistant', content: redirectMessage }]);
-      setDraft('');
-      setAiError(null);
-      return;
-    }
-
     const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
+    const history = [...messages, userMessage].slice(-20).map(({ role, content }) => ({ role, content }));
     setMessages((prev) => [...prev, userMessage]);
     setDraft('');
     setAiError(null);
@@ -175,7 +165,7 @@ export function ObjectAITutor({
                 : ['Mengamati bangun datar', 'Menghubungkan bentuk dengan struktur candi'],
             },
             observationAnswers: {},
-            sessionHistory: [],
+            sessionHistory: history,
             comicTitle: comicId === 3 ? (comic3Package?.metadata?.title ?? 'CINARAI') : 'CINARAI',
             pageLabel: comicPage ? `Halaman ${comicPage}` : undefined,
             objectName,
@@ -194,9 +184,9 @@ export function ObjectAITutor({
       });
 
       const payload = (await response.json()) as { answer?: string; error?: string };
-      const assistantAnswer = payload.answer?.trim() || 'Maaf, saya belum bisa memberikan penjelasan untuk objek ini.';
+      const assistantAnswer = payload.answer?.trim();
 
-      if (!response.ok || !payload.answer) {
+      if (!response.ok || !assistantAnswer) {
         throw new Error(payload.error ?? 'AI response was not available.');
       }
 
@@ -204,7 +194,7 @@ export function ObjectAITutor({
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       setAiError(msg);
-      setMessages((prev) => [...prev, { id: Date.now() + 2, role: 'assistant', content: `Maaf, terjadi kesalahan saat menghubungi layanan AI: ${msg}` }]);
+      setMessages((prev) => prev.filter((message) => message.id !== userMessage.id));
     } finally {
       setIsResponding(false);
     }

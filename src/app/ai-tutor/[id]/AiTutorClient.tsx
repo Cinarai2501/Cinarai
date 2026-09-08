@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getFirestoreDocument, queryFirestoreCollection } from '@/services/firestore';
 import { fetchComicById } from '@/services/comicFirestoreService';
-import { generateTutorResponse } from '@/lib/ai';
 import type { Comic } from '@/types/comic';
 import type { IdentificationAnswerDocument, ReflectionDocument } from '@/types/firestore';
 
@@ -43,6 +42,7 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
   const [isResponding, setIsResponding] = useState(false);
   const [sessionMemory, setSessionMemory] = useState<TutorSessionMemory | null>(null);
   const [hasLoadedContext, setHasLoadedContext] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isObservationComplete = useMemo(() => {
     const answers = reflection?.jawaban;
@@ -133,7 +133,7 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
 
   const handleSend = async () => {
     const trimmed = draft.trim();
-    if (!trimmed || !isObservationComplete || isResponding || !comic) return;
+    if (!trimmed || isResponding || !comic) return;
 
     const userMessage: ChatMessage = { id: Date.now(), role: 'user', content: trimmed };
     const nextMessages = [...messages, userMessage];
@@ -141,45 +141,53 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
     setSessionMemory({ moduleId: comicId, messages: nextMessages });
     setDraft('');
     setIsResponding(true);
+    setErrorMessage(null);
 
     try {
-      const response = await generateTutorResponse({
-        moduleName: comic.title,
-        identification: identificationAnswers.map((answer) => ({
-          step: answer.step,
-          selectedAnswer: answer.selectedAnswer,
-          note: answer.note,
-          reason: answer.reason,
-        })),
-        objectInfo: {
-          location: comic.lokasi,
-          classLevel: comic.kelas,
-          synopsis: comic.synopsis,
-          learningTargets: comic.learningTargets,
-        },
-        observationAnswers: reflection?.jawaban ?? {},
-        question: trimmed,
-        sessionHistory: nextMessages.map(({ role, content }) => ({ role, content })),
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: trimmed,
+          context: {
+            moduleName: comic.title,
+            comicTitle: comic.title,
+            identification: identificationAnswers.map((answer) => ({
+              step: answer.step,
+              selectedAnswer: answer.selectedAnswer,
+              note: answer.note,
+              reason: answer.reason,
+            })),
+            objectInfo: {
+              location: comic.lokasi,
+              classLevel: comic.kelas,
+              synopsis: comic.synopsis,
+              learningTargets: comic.learningTargets,
+            },
+            observationAnswers: reflection?.jawaban ?? {},
+            learningStage: 'Tutor',
+            sessionHistory: messages.slice(-20).map(({ role, content }) => ({ role, content })),
+          },
+        }),
       });
+
+      const payload = (await response.json()) as { answer?: string; error?: string };
+      if (!response.ok || !payload.answer?.trim()) {
+        throw new Error(payload.error ?? 'Tutor AI tidak mengembalikan jawaban.');
+      }
 
       const assistantMessage: ChatMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response.answer,
+        content: payload.answer.trim(),
       };
       const updatedMessages = [...nextMessages, assistantMessage];
       setMessages(updatedMessages);
       setSessionMemory({ moduleId: comicId, messages: updatedMessages });
     } catch (error) {
       console.error('[AiTutor] gagal memanggil AI service', error);
-      const fallbackMessage: ChatMessage = {
-        id: Date.now() + 2,
-        role: 'assistant',
-        content: 'Maaf, saya sedang tidak bisa merespons saat ini. Coba lagi sebentar lagi.',
-      };
-      const updatedMessages = [...nextMessages, fallbackMessage];
-      setMessages(updatedMessages);
-      setSessionMemory({ moduleId: comicId, messages: updatedMessages });
+      setDraft(trimmed);
+      setErrorMessage('Maaf, Tutor AI sedang mengalami gangguan. Coba kirim pertanyaan lagi.');
     } finally {
       setIsResponding(false);
     }
@@ -366,19 +374,22 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     rows={3}
-                    placeholder={isObservationComplete ? 'Tuliskan pertanyaanmu...' : 'Selesaikan observasi terlebih dahulu'}
-                    disabled={!isObservationComplete || isLoading || authLoading || isResponding}
+                    placeholder="Tuliskan pertanyaanmu..."
+                    disabled={isLoading || authLoading || isResponding}
                     className="min-h-[96px] flex-1 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-100 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={!isObservationComplete || isLoading || authLoading || isResponding}
+                    disabled={isLoading || authLoading || isResponding}
                     className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
                   >
                     {isResponding ? 'Memproses...' : 'Kirim'}
                   </button>
                 </div>
+                {errorMessage ? (
+                  <p className="mt-3 rounded-2xl bg-error-50 px-3 py-2 text-sm text-error-700">{errorMessage}</p>
+                ) : null}
               </div>
             </div>
 

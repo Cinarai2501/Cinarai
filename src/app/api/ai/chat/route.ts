@@ -9,6 +9,9 @@ type AiChatRequestBody = {
   context?: Partial<TutorContext>;
 };
 
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_MESSAGE_LENGTH = 4_000;
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as AiChatRequestBody;
@@ -22,6 +25,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const history = Array.isArray(context.sessionHistory)
+      ? context.sessionHistory
+        .filter((message) => (message.role === 'user' || message.role === 'assistant') && typeof message.content === 'string')
+        .slice(-MAX_HISTORY_MESSAGES)
+        .map((message) => ({ role: message.role, content: message.content.trim().slice(0, MAX_MESSAGE_LENGTH) }))
+        .filter((message) => message.content.length > 0)
+      : [];
+
     const response = await generateTutorResponse({
       moduleName: context.moduleName ?? 'Navigation',
       identification: context.identification ?? [],
@@ -33,20 +44,23 @@ export async function POST(request: NextRequest) {
       },
       observationAnswers: context.observationAnswers ?? {},
       question,
-      sessionHistory: context.sessionHistory ?? [],
+      sessionHistory: history,
       comicTitle: context.comicTitle,
       pageLabel: context.pageLabel,
       objectName: context.objectName,
       learningStage: context.learningStage,
       knowledgeContext: context.knowledgeContext,
-    });
+    }, undefined, { throwOnError: true });
 
     return NextResponse.json({
       answer: response.answer,
       provider: response.provider,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown AI error';
-    return NextResponse.json({ error: message }, { status: 502 });
+    console.error('[ai/chat] AI Tutor request failed', error);
+    return NextResponse.json(
+      { error: 'Maaf, Tutor AI sedang mengalami gangguan. Coba kirim pertanyaan lagi.' },
+      { status: 502 },
+    );
   }
 }

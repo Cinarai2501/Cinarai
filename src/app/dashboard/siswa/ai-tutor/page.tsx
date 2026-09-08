@@ -13,6 +13,11 @@ type Message = {
   time: string;
 };
 
+type AiChatResponse = {
+  answer?: string;
+  error?: string;
+};
+
 const QUICK_QUESTIONS = [
   'Apa itu kubus?',
   'Rumus balok?',
@@ -27,30 +32,14 @@ const INITIAL_MESSAGES: Message[] = [
     text: 'Halo! 👋\nAku AI Tutor CINARAI.\nAku siap membantumu belajar tentang bangun ruang, bangun datar, rumus, ciri-ciri, dan materi komik CINARAI.\nAda yang ingin kamu tanyakan?',
     time: '09:30',
   },
-  {
-    id: '2',
-    sender: 'user',
-    text: 'Apa itu kubus?',
-    time: '09:31',
-  },
-  {
-    id: '3',
-    sender: 'bot',
-    text: 'Kubus adalah bangun ruang yang memiliki 6 sisi berbentuk persegi yang kongruen.\n\nCiri-ciri kubus:',
-    listItems: [
-      '6 sisi berbentuk persegi',
-      '12 rusuk yang sama panjang',
-      '8 titik sudut',
-      'Semua sudutnya siku-siku (90°)',
-    ],
-    time: '09:31',
-  },
 ];
 
 export default function DashboardSiswaAiTutorPage() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -61,9 +50,9 @@ export default function DashboardSiswaAiTutorPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend ?? inputText;
-    if (!text.trim()) return;
+    if (!text.trim() || isResponding) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -74,36 +63,53 @@ export default function DashboardSiswaAiTutorPage() {
 
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInputText('');
+    setErrorMessage(null);
+    setIsResponding(true);
 
-    // Simulate AI Tutor response
-    setTimeout(() => {
-      let botResponseText = 'Aku siap membantu! Mari kita bahas konsep geometris dan matematika dari materi komik CINARAI.';
-      let items: string[] | undefined = undefined;
-      const followUp: string | undefined = undefined;
-
-      const lower = text.toLowerCase();
-      if (lower.includes('kubus')) {
-        botResponseText = 'Rumus volume kubus adalah:\n\nV = s × s × s\n\nKeterangan:\nV = Volume\ns = Panjang rusuk kubus';
-      } else if (lower.includes('persegi') && !lower.includes('panjang')) {
-        botResponseText = 'Persegi adalah bangun datar yang memiliki:';
-        items = ['4 sisi sama panjang', '4 sudut siku-siku (90°)', '2 diagonal sama panjang dan tegak lurus'];
-      } else if (lower.includes('lingkaran')) {
-        botResponseText = 'Ciri-ciri lingkaran meliputi:';
-        items = ['Memiliki 1 titik pusat', 'Memiliki simetri lipat dan putar tak terhingga', 'Jarak dari titik pusat ke semua tepi selalu sama (jari-jari)'];
-      } else if (lower.includes('luar topik') || lower.includes('game') || lower.includes('film')) {
-        botResponseText = 'Maaf, AI Tutor CINARAI hanya membantu pembelajaran materi yang tersedia pada aplikasi.';
+    try {
+      const history = [...messages, userMsg].slice(-20).map((message) => ({
+        role: message.sender === 'user' ? 'user' as const : 'assistant' as const,
+        content: message.text,
+      }));
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: text.trim(),
+          context: {
+            moduleName: 'CINARAI',
+            comicTitle: 'CINARAI',
+            learningStage: 'Tutor',
+            objectInfo: {
+              location: 'Materi pembelajaran CINARAI',
+              classLevel: 'SD',
+              synopsis: 'Tutor matematika dan critical numeracy untuk materi pembelajaran CINARAI.',
+              learningTargets: ['Numerasi', 'Geometri', 'Pemecahan masalah'],
+            },
+            identification: [],
+            observationAnswers: {},
+            sessionHistory: history,
+          },
+        }),
+      });
+      const payload = (await response.json()) as AiChatResponse;
+      const answer = payload.answer?.trim();
+      if (!response.ok || !answer) {
+        throw new Error(payload.error ?? 'Tutor AI tidak mengembalikan jawaban.');
       }
-
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
+      setMessages((prev) => [...prev, {
+        id: `${Date.now()}-assistant`,
         sender: 'bot',
-        text: botResponseText,
-        listItems: items,
-        followUp: followUp,
+        text: answer,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, botMsg]);
-    }, 600);
+      }]);
+    } catch (error) {
+      console.error('[DashboardAiTutor] request failed', error);
+      setInputText(text.trim());
+      setErrorMessage('Maaf, Tutor AI sedang mengalami gangguan. Coba kirim pertanyaan lagi.');
+    } finally {
+      setIsResponding(false);
+    }
   };
 
   return (
@@ -229,7 +235,8 @@ export default function DashboardSiswaAiTutorPage() {
             <button
               key={chip}
               type="button"
-              onClick={() => handleSend(chip)}
+              onClick={() => void handleSend(chip)}
+              disabled={isResponding}
               className="flex items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95"
             >
               <svg viewBox="0 0 24 24" className="h-[14px] w-[14px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -249,7 +256,7 @@ export default function DashboardSiswaAiTutorPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSend();
+            void handleSend();
           }}
           className="flex h-[56px] w-full items-center gap-3 rounded-full bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)] border border-slate-100"
         >
@@ -268,12 +275,14 @@ export default function DashboardSiswaAiTutorPage() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ketik pertanyaanmu di sini..."
+            disabled={isResponding}
             className="flex-1 bg-transparent px-2 text-[14px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
           />
           <button
             type="submit"
             className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-[#845EF7] text-white shadow-md transition-transform hover:scale-105 active:scale-95"
             aria-label="Kirim pesan"
+            disabled={isResponding || !inputText.trim()}
           >
             <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" />
@@ -281,6 +290,8 @@ export default function DashboardSiswaAiTutorPage() {
             </svg>
           </button>
         </form>
+        {isResponding ? <p className="mt-2 text-center text-xs font-semibold text-slate-500">AI Tutor sedang berpikir...</p> : null}
+        {errorMessage ? <p className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-center text-xs font-semibold text-rose-700">{errorMessage}</p> : null}
       </div>
 
       {/* Info Modal */}
