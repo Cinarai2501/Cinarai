@@ -8,6 +8,7 @@ import { firestore } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
+import { isApplicationAnswerCorrect } from './applicationAnswer';
 
 type CoachSummary = {
   mastered: string[];
@@ -191,7 +192,7 @@ export default function ApplicationStage() {
 
     const currentAttempt = attemptCount + 1;
     const expectedAnswer = currentCard?.correctAnswer ?? applicationConfig.correctAnswer;
-    const answerIsCorrect = Boolean(expectedAnswer && selectedAnswer.length === 1 && selectedAnswer[0] === expectedAnswer);
+    const answerIsCorrect = isApplicationAnswerCorrect(selectedAnswer, expectedAnswer);
     const localFeedback = answerIsCorrect
       ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
       : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
