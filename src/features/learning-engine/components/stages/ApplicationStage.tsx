@@ -81,6 +81,7 @@ export default function ApplicationStage() {
   const [hasHydratedProgress, setHasHydratedProgress] = useState(false);
   const options = useMemo(() => shuffle(applicationConfig.options.map((option) => option.value)), [applicationConfig.options]);
   const currentCard = useMemo(() => applicationConfig.cards?.find((card) => card.id === selectedCardId) ?? applicationConfig.cards?.[0] ?? null, [applicationConfig.cards, selectedCardId]);
+  const isComic1Application = comic.id === 1;
 
   const minReasonLength = studentReason.trim().length;
   const canSubmit = selectedAnswer.length > 0 && minReasonLength >= 20 && !isThinking;
@@ -191,13 +192,21 @@ export default function ApplicationStage() {
     setCoachSummary(null);
 
     const currentAttempt = attemptCount + 1;
-    const expectedAnswer = currentCard?.correctAnswer ?? applicationConfig.correctAnswer;
-    const answerIsCorrect = isApplicationAnswerCorrect(selectedAnswer, expectedAnswer);
-    const localFeedback = answerIsCorrect
-      ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
-      : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
     const arViewedFlag = false;
     const explorationCompletedFlag = false;
+
+    if (isComic1Application) {
+      setAnswerFeedback(null);
+    } else {
+      const expectedAnswer = currentCard?.correctAnswer ?? applicationConfig.correctAnswer;
+      const answerIsCorrect = isApplicationAnswerCorrect(selectedAnswer, expectedAnswer);
+      const localFeedback = answerIsCorrect
+        ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
+        : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
+      setIsAnswerCorrect(answerIsCorrect);
+      setAnswerSubmitted(answerIsCorrect);
+      setAnswerFeedback(localFeedback);
+    }
 
     const payloadBody = {
       soal: applicationConfig.prompt,
@@ -205,13 +214,9 @@ export default function ApplicationStage() {
       gambar: applicationConfig.images.map((image) => image.src),
       jawabanSiswa: selectedAnswer,
       jawabanAlasan: studentReason,
-      correctAnswer: currentCard?.correctAnswer ?? null,
       attempt: currentAttempt,
     };
 
-    setIsAnswerCorrect(answerIsCorrect);
-    setAnswerSubmitted(answerIsCorrect);
-    setAnswerFeedback(localFeedback);
     setAttemptCount(currentAttempt);
 
     try {
@@ -233,6 +238,9 @@ export default function ApplicationStage() {
 
       setCoachMessage(message);
       setCoachSummary(summary);
+      if (isComic1Application) {
+        setAnswerSubmitted(true);
+      }
 
       const activityPayload = {
         userId: user?.uid ?? 'anonymous',
@@ -251,8 +259,18 @@ export default function ApplicationStage() {
     } catch (error) {
       console.error('[ApplicationStage] AI Coach request failed', error);
       setAiError('AI Coach sedang tidak tersedia. Coba lagi nanti.');
-      setCoachMessage(null);
-      setCoachSummary(null);
+      if (isComic1Application) {
+        setAnswerSubmitted(true);
+        setCoachMessage('Jawabanmu sudah diterima. Sambil menunggu AI Tutor tersedia kembali, coba jelaskan bentuk yang kamu lihat dengan memperhatikan jumlah sisi, rusuk, atau titik sudutnya.');
+        setCoachSummary({
+          mastered: ['Berani menyampaikan pengamatan dan alasan'],
+          needsImprovement: ['Menghubungkan ciri bentuk dengan objek yang diamati'],
+          nextPractice: ['Amati kembali gambar dan sebutkan ciri bentuk yang paling terlihat'],
+        });
+      } else {
+        setCoachMessage(null);
+        setCoachSummary(null);
+      }
     } finally {
       setIsThinking(false);
     }
@@ -415,10 +433,10 @@ export default function ApplicationStage() {
               canSubmit ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-neutral-200 text-neutral-500',
             ].join(' ')}
           >
-            {isThinking ? 'Memeriksa jawaban…' : 'Periksa Jawaban'}
+            {isThinking ? 'Meminta bantuan AI Tutor...' : isComic1Application ? 'Kirim ke AI Tutor' : 'Periksa Jawaban'}
           </button>
 
-          {answerFeedback && (
+          {answerFeedback && !isComic1Application && (
             <div className={['rounded-[20px] border px-4 py-3 text-sm font-semibold', isAnswerCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'].join(' ')}>
               {answerFeedback}
             </div>
