@@ -3,11 +3,12 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { debug } from '@/lib/debug';
+import { useAuth } from '@/hooks/useAuth';
+import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import type { ResolutionMission } from './resolutionStage.helpers';
 import RobotMascot from '@/components/ai/RobotMascot';
 import { stopGlobalTts, useGlobalTts } from '@/lib/tts/globalTts';
-import Comic3ResolutionSummary from './Comic3ResolutionSummary';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (isCorrect) {
@@ -79,12 +80,13 @@ export default function ResolutionStage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completedUpToIndex, setCompletedUpToIndex] = useState(-1); // Track progress yang ditampilkan
   const [selected, setSelected] = useState<string | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
-  const { comic, comicModule, setCanAdvance, nextStage, registerSlideNav, unregisterSlideNav } = useLearningEngine();
+  const { comic, comicModule, setCanAdvance, completeAndAdvance, registerSlideNav, unregisterSlideNav } = useLearningEngine();
+  const { user } = useAuth();
   const missions = comicModule.resolution.missions;
   const currentMission = missions[currentIndex];
+  const progressHydratedRef = useRef(false);
   const displayedProgress = useMemo(
     () => `${Math.min(completedUpToIndex + 2, missions.length)}/${missions.length}`,
     [completedUpToIndex, missions.length]
@@ -93,6 +95,45 @@ export default function ResolutionStage() {
   useEffect(() => {
     setCanAdvance(false);
   }, [misiStarted, setCanAdvance]);
+
+  useEffect(() => {
+    if (!user?.uid || progressHydratedRef.current || missions.length === 0) return;
+    progressHydratedRef.current = true;
+
+    void (async () => {
+      try {
+        const document = await loadComicProgress(user.uid, comic.id);
+        const resolution = document?.stageData?.resolution;
+        if (!resolution) return;
+
+        const savedIndex = typeof resolution.currentIndex === 'number'
+          ? Math.min(Math.max(resolution.currentIndex, 0), missions.length - 1)
+          : 0;
+        setCurrentIndex(savedIndex);
+        setSelected(typeof resolution.selected === 'string' ? resolution.selected : null);
+        if (Array.isArray(resolution.completedMissions)) {
+          setCompletedUpToIndex(Math.max(...resolution.completedMissions, -1));
+        }
+      } catch (error) {
+        console.error('[ResolutionStage] gagal memuat progress resolution', error);
+      }
+    })();
+  }, [comic.id, missions.length, user?.uid]);
+
+  const persistResolutionProgress = useCallback(async (data: {
+    currentIndex?: number;
+    selected?: string | null;
+    completedMissions?: number[];
+    isFinished?: boolean;
+  }) => {
+    if (!user?.uid) return;
+
+    await saveComicProgress(user.uid, comic.id, {
+      stageData: {
+        resolution: data,
+      },
+    });
+  }, [comic.id, user?.uid]);
 
   useEffect(() => {
     return () => {
@@ -133,39 +174,50 @@ export default function ResolutionStage() {
     setSelected(null);
   }, [currentIndex, misiStarted]);
 
-  const handleAdvanceToNextMission = () => {
+  const handleAdvanceToNextMission = async () => {
+    if (isAdvancing || !currentMission) return;
+
     // Logging for audit: measure advance timing
     debug('[Resolution] Advance to next mission clicked', { currentIndex, missionsLength: missions.length, timestamp: new Date().toISOString() });
+    setIsAdvancing(true);
+
     if (currentIndex === missions.length - 1) {
-      // Ini soal terakhir, mark sebagai finished
-      setIsFinished(true);
-      setCompletedUpToIndex(currentIndex);
-      setCanAdvance(true);
-      debug('[Resolution] Marking finished and enabling global advance', { currentIndex, timestamp: new Date().toISOString() });
+      try {
+        await persistResolutionProgress({
+          currentIndex,
+          selected,
+          completedMissions: Array.from({ length: currentIndex + 1 }, (_, index) => index),
+          isFinished: true,
+        });
+        await completeAndAdvance('Resolution');
+      } catch (error) {
+        console.error('[ResolutionStage] gagal menyelesaikan resolution', error);
+      } finally {
+        setIsAdvancing(false);
+      }
       return;
     }
 
     // Bukan soal terakhir, lanjut ke soal berikutnya
     setCompletedUpToIndex(currentIndex);
     debug('[Resolution] Advancing internally to next mission', { from: currentIndex, to: currentIndex + 1, timestamp: new Date().toISOString() });
-    setIsTransitioning(true);
-    window.setTimeout(() => {
+    try {
+      await persistResolutionProgress({
+        currentIndex: currentIndex + 1,
+        selected: null,
+        completedMissions: Array.from({ length: currentIndex + 1 }, (_, index) => index),
+      });
       setCurrentIndex((prev) => prev + 1);
-      setIsTransitioning(false);
-    }, 220);
+      setSelected(null);
+    } catch (error) {
+      console.error('[ResolutionStage] gagal menyimpan progress resolution', error);
+    } finally {
+      setIsAdvancing(false);
+    }
   };
 
   if (!misiStarted) {
     return <ResolutionCover comic={comic} onStart={() => setMisiStarted(true)} />;
-  }
-
-  if (isFinished) {
-    // Jika Comic 3: tampilkan ringkasan pembelajaran khusus dari Comic3
-    if (comic?.id === 3) {
-      return <Comic3ResolutionSummary comic={comic} onContinue={() => void nextStage()} />;
-    }
-
-    return <CompletionPage comic={comic} onContinue={() => void nextStage()} />;
   }
 
   return (
@@ -210,34 +262,18 @@ export default function ResolutionStage() {
           missionIndex={currentIndex}
           totalMissions={missions.length}
           selected={selected}
-          onSelect={setSelected}
+          onSelect={(value) => {
+            setSelected(value);
+            void persistResolutionProgress({
+              currentIndex,
+              selected: value,
+              completedMissions: Array.from({ length: completedUpToIndex + 1 }, (_, index) => index),
+            });
+          }}
           onReadyToAdvance={handleAdvanceToNextMission}
-          isTransitioning={isTransitioning}
+          isAdvancing={isAdvancing}
         />
       </div>
-    </div>
-  );
-}
-
-function CompletionPage({ comic, onContinue }: { comic: { lokasi: string }; onContinue: () => void }) {
-  return (
-    <div className="overflow-hidden rounded-[24px] bg-white px-5 py-6 shadow-sm">
-      <div className="flex justify-center text-5xl">🎉</div>
-      <h3 className="mt-4 text-center text-xl font-black text-neutral-900">Selamat!</h3>
-      <p className="mt-2 text-center text-sm leading-relaxed text-neutral-700">
-        Kamu telah menyelesaikan seluruh tantangan numerasi {comic.lokasi}.
-      </p>
-      <div className="mt-6 rounded-[20px] border border-accent-200 bg-accent-50 px-4 py-4 text-sm text-accent-700">
-        Kamu telah menemukan pola bangun datar, luas, dan simetri yang ada pada bagian-bagian {comic.lokasi}.
-      </div>
-      <button
-        type="button"
-        onClick={onContinue}
-        className="mt-6 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700"
-      >
-        <span>🎉</span>
-        Saya Sudah Menyelesaikan Resolution
-      </button>
     </div>
   );
 }
@@ -250,7 +286,7 @@ function MissionCard({
   selected,
   onSelect,
   onReadyToAdvance,
-  isTransitioning,
+  isAdvancing,
 }: {
   comic: { id: number; lokasi: string };
   mission: ResolutionMission;
@@ -259,7 +295,7 @@ function MissionCard({
   selected: string | null;
   onSelect: (key: string) => void;
   onReadyToAdvance: () => void;
-  isTransitioning: boolean;
+  isAdvancing: boolean;
 }) {
   const { setCanAdvance } = useLearningEngine();
   const { isSpeaking: globalIsSpeaking, toggle, stop } = useGlobalTts();
@@ -379,7 +415,7 @@ function MissionCard({
   const isReadyToAdvance = isSolved && !isTyping && tutorMessage !== null;
 
   return (
-    <div className={['transition-all duration-200', isTransitioning ? 'translate-x-4 opacity-0' : 'translate-x-0 opacity-100'].join(' ')}>
+    <div>
       <div className="flex flex-col gap-4 px-5 py-5 relative z-20">
         <div className="rounded-[20px] border border-primary-100 bg-primary-50 px-4 py-4">
           <p className="text-sm leading-relaxed text-neutral-700 sm:text-base">
@@ -444,7 +480,7 @@ function MissionCard({
           disabled={!selected || isSolved || isSubmitting}
           className="inline-flex min-h-[46px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
         >
-          {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
+          {isSubmitting ? 'Memeriksa...' : 'Periksa Jawaban'}
         </button>
 
         {/* Feedback untuk jawaban */}
@@ -521,10 +557,13 @@ function MissionCard({
             onClick={() => {
               void onReadyToAdvance();
             }}
+            disabled={isAdvancing}
             style={{ zIndex: 40, position: 'relative', pointerEvents: 'auto' }}
-            className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent-500 to-accent-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:from-accent-600 hover:to-accent-700 active:scale-[0.98] animate-pulse"
+            className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent-500 to-accent-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:from-accent-600 hover:to-accent-700 active:scale-[0.98] animate-pulse disabled:cursor-wait disabled:opacity-60"
           >
-            {missionIndex === totalMissions - 1 ? (
+            {isAdvancing ? (
+              'Menyimpan...'
+            ) : missionIndex === totalMissions - 1 ? (
               <>
                 <span>🎉</span>
                 Saya Sudah Menyelesaikan Resolution

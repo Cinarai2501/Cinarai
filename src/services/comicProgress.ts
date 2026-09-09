@@ -57,7 +57,13 @@ export interface ComicProgressStageData {
     rating?: number | null;
     saved?: boolean;
   };
-  resolution?: { completed?: boolean; currentIndex?: number; selected?: string | null; isFinished?: boolean };
+  resolution?: {
+    completed?: boolean;
+    currentIndex?: number;
+    selected?: string | null;
+    completedMissions?: number[];
+    isFinished?: boolean;
+  };
 }
 
 // New minimal Firestore shape (Progress Engine V2)
