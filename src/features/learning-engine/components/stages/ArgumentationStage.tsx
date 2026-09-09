@@ -8,6 +8,7 @@ import { getOrderedArgumentationLearningObjects } from '../../stages/Argumentati
 import Comic1ArgumentationStage from './Comic1ArgumentationStage';
 import Comic2ArgumentationStage from './Comic2ArgumentationStage';
 import Comic3ArgumentationStage from './Comic3ArgumentationStage';
+import Comic4ArgumentationStage from './Comic4ArgumentationStage';
 import type { Comic1ArgumentationQuestion } from '@/features/comics/comic-1/content/types';
 import type { ArgumentationQuestion } from '@/features/learning-engine/stages/Argumentation/data/argumentationQuestions';
 
@@ -378,6 +379,28 @@ export default function ArgumentationStage() {
         comicTitle={comic.title}
         comicLocation={comic.lokasi ?? 'Lokasi'}
         classLevel={comic.kelas ?? 'Kelas II'}
+        currentIndex={currentIndex}
+        totalItems={orderedLearningObjects.length}
+        initialAnswer={textAnswer}
+        isAdvancing={isAdvancing}
+      />
+    );
+  }
+
+  if (comic.id === 4) {
+    const argQuestion = comicModule.argumentation?.questions?.[currentIndex] ?? null;
+
+    if (!argQuestion) {
+      return <div className="rounded-[20px] bg-white p-5 text-sm text-neutral-600 shadow-sm">Data pertanyaan tidak tersedia.</div>;
+    }
+
+    return (
+      <Comic4ArgumentationStage
+        question={argQuestion}
+        onSubmitFeedback={handleFeedback}
+        onAnswerChange={setTextAnswer}
+        onNext={handleNext}
+        feedback={feedback}
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}

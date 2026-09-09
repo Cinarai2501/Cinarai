@@ -44,3 +44,38 @@ test('comic 4 identification uses the bridge measurement concepts and stable mul
   assert.match(comicModule.identification.feedback.complete, /grafik batang/);
   assert.doesNotMatch(comicModule.identification.feedback.complete, /keramik|persegi|simetri/i);
 });
+
+test('comic 4 argumentation uses eight ordered bridge measurement and vehicle data questions', () => {
+  const comicModule = getComicModule(4);
+  const questions = comicModule.argumentation.questions;
+  const argumentationText = questions
+    .map((question) => `${question.context ?? ''} ${question.question} ${question.explanation ?? ''}`)
+    .join(' ')
+    .toLowerCase();
+
+  assert.equal(questions.length, 8);
+  assert.deepEqual(questions.map((question) => question.id), [
+    'komik4-arg-1',
+    'komik4-arg-2',
+    'komik4-arg-3',
+    'komik4-arg-4',
+    'komik4-arg-5',
+    'komik4-arg-6',
+    'komik4-arg-7',
+    'komik4-arg-8',
+  ]);
+  assert.match(argumentationText, /60 langkah/);
+  assert.match(argumentationText, /76 langkah/);
+  assert.match(argumentationText, /83 langkah/);
+  assert.match(argumentationText, /120.*0,75|0,75.*120/);
+  assert.match(argumentationText, /18\.450/);
+  assert.match(argumentationText, /6\.230/);
+  assert.match(argumentationText, /890/);
+  assert.match(argumentationText, /310/);
+  assert.match(argumentationText, /25\.880/);
+  assert.match(argumentationText, /grafik batang/);
+  assert.doesNotMatch(argumentationText, /bangun datar|simetri|pecahan|luas|keliling/);
+  assert.equal(questions.filter((question) => question.answerType === 'choice').length, 3);
+  assert.equal(questions.filter((question) => question.answerType === 'text').length, 5);
+  assert.ok(questions.every((question) => question.explanation && question.explanation.length > 0));
+});

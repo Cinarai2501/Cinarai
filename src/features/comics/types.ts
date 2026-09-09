@@ -119,6 +119,13 @@ export interface ComicContentPackageLike {
       aiContext?: string;
       feedback?: string;
       highlightColor: string;
+      context?: string;
+      answerType?: 'text' | 'choice';
+      options?: Array<{ label: string; value: string; correct?: boolean }>;
+      expectedAnswer?: string;
+      expectedKeywords?: string[];
+      partialKeywords?: string[];
+      explanation?: string;
     }>;
   };
   resolution: {
@@ -225,6 +232,13 @@ export interface ComicModuleLike {
       aiContext?: string;
       feedback?: string;
       highlightColor: string;
+      context?: string;
+      answerType?: 'text' | 'choice';
+      options?: Array<{ label: string; value: string; correct?: boolean }>;
+      expectedAnswer?: string;
+      expectedKeywords?: string[];
+      partialKeywords?: string[];
+      explanation?: string;
     }>;
   };
   resolution: {
