@@ -7,6 +7,18 @@ export interface ResolutionTutorMission {
 function getVariableLegend(mission: ResolutionTutorMission): string[] {
   const shape = mission.shape.toLowerCase();
 
+  if (shape === 'panjang lintasan') {
+    return ['Panjang lintasan = jumlah langkah × panjang langkah'];
+  }
+
+  if (shape === 'jumlah langkah') {
+    return ['Bandingkan jumlah langkah dari yang terbesar ke yang terkecil'];
+  }
+
+  if (shape === 'membandingkan data') {
+    return ['Angka terbesar menunjukkan jumlah terbanyak', 'Angka terkecil menunjukkan jumlah tersedikit'];
+  }
+
   if (shape === 'kubus') {
     return ['V = Volume', 's = panjang rusuk kubus'];
   }
@@ -32,6 +44,24 @@ function getVariableLegend(mission: ResolutionTutorMission): string[] {
 
 export function buildResolutionTutorExplanation(mission: ResolutionTutorMission, isCorrect: boolean): string {
   const formula = mission.formula || 'V = ...';
+  const isBridgeMeasurement = ['panjang lintasan', 'jumlah langkah', 'membandingkan data'].includes(mission.shape.toLowerCase());
+  if (isBridgeMeasurement) {
+    const variableLegend = getVariableLegend(mission);
+    return [
+      isCorrect ? '✨ Jawabanmu benar. Bagus sekali!' : '💡 Jawabanmu belum tepat. Mari kita periksa datanya.',
+      '',
+      `Materi Jembatan Merah: ${mission.shape}`,
+      '',
+      `Rumus/perbandingan: ${formula}`,
+      '',
+      'Petunjuk:',
+      ...variableLegend,
+      '',
+      isCorrect
+        ? 'Kamu sudah menggunakan data Jembatan Merah dengan tepat. Lanjutkan ke misi berikutnya.'
+        : 'Baca kembali angka dan hubungan antar data, lalu coba pilih jawaban lagi.',
+    ].join('\n');
+  }
   const candiConnection = mission.context.includes('Candi Jawi')
     ? 'Hubungkan pemahamanmu dengan bentuk bangun ruang yang sering terlihat pada struktur arsitektur Candi Jawi.'
     : 'Hubungkan pemahamanmu dengan sifat bangun ruang yang sedang dipelajari.';

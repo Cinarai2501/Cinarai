@@ -238,6 +238,114 @@ const KOMIK_2_RESOLUTION_MISSIONS: ResolutionMission[] = [
   },
 ];
 
+const KOMIK_4_RESOLUTION_MISSIONS: ResolutionMission[] = [
+  {
+    id: 1,
+    title: 'Misi 1 · Perbedaan Langkah',
+    part: 'Pengukuran Jembatan Merah',
+    shape: 'Panjang lintasan',
+    prompt: 'Mengapa jumlah langkah Hanan, Hilya, dan Aisyah berbeda saat mengukur Jembatan Merah yang sama? Perhatikan perbedaan panjang langkah mereka.',
+    options: [
+      { key: 'A', label: 'Karena panjang langkah setiap anak berbeda.' },
+      { key: 'B', label: 'Karena panjang Jembatan Merah berubah-ubah.' },
+      { key: 'C', label: 'Karena jumlah langkah tidak dapat digunakan untuk mengukur lintasan.' },
+      { key: 'D', label: 'Karena semua anak berjalan di jembatan yang berbeda.' },
+    ],
+    correctKey: 'A',
+    answer: 'Jumlah langkah berbeda karena panjang langkah setiap anak berbeda.',
+    formula: 'Panjang lintasan = jumlah langkah × panjang langkah',
+    explanation: 'Mereka mengukur lintasan yang sama. Anak dengan langkah lebih panjang membutuhkan lebih sedikit langkah, sedangkan langkah lebih pendek membutuhkan lebih banyak langkah.',
+    aiHint: 'Bandingkan panjang langkah setiap anak, bukan panjang jembatannya.',
+    context: 'Hanan, Hilya, dan Aisyah mengukur Jembatan Merah dengan langkah kaki.',
+    accent: 'from-primary-600 to-primary-700',
+    illustration: '/images/navigation/default.svg',
+  },
+  {
+    id: 2,
+    title: 'Misi 2 · Membandingkan Langkah',
+    part: 'Data pengukuran',
+    shape: 'Jumlah langkah',
+    prompt: 'Data pengukuran menunjukkan Hanan 83 langkah, Hilya 76 langkah, dan Aisyah 60 langkah. Siapa yang menggunakan langkah paling banyak?',
+    options: [
+      { key: 'A', label: 'Hanan, yaitu 83 langkah.' },
+      { key: 'B', label: 'Hilya, yaitu 76 langkah.' },
+      { key: 'C', label: 'Aisyah, yaitu 60 langkah.' },
+      { key: 'D', label: 'Ketiganya sama banyak.' },
+    ],
+    correctKey: 'A',
+    answer: 'Hanan menggunakan 83 langkah, jumlah paling banyak.',
+    formula: '83 > 76 > 60',
+    explanation: 'Dengan membandingkan ketiga angka, 83 adalah jumlah terbesar. Jadi Hanan menggunakan langkah paling banyak.',
+    aiHint: 'Bandingkan angka 83, 76, dan 60 dari yang terbesar.',
+    context: 'Hasil pengukuran langkah kaki di Jembatan Merah.',
+    accent: 'from-secondary-500 to-secondary-600',
+    illustration: '/images/navigation/default.svg',
+  },
+  {
+    id: 3,
+    title: 'Misi 3 · Rumus Panjang Lintasan',
+    part: 'Perhitungan lintasan',
+    shape: 'Panjang lintasan',
+    prompt: 'Hilya menempuh 76 langkah. Jika panjang setiap langkah Hilya 0,75 meter, berapa panjang lintasannya?',
+    options: [
+      { key: 'A', label: '56 meter' },
+      { key: 'B', label: '57 meter' },
+      { key: 'C', label: '57,75 meter' },
+      { key: 'D', label: '76,75 meter' },
+    ],
+    correctKey: 'B',
+    answer: '57 meter',
+    formula: 'Panjang lintasan = 76 × 0,75 = 57 meter',
+    explanation: 'Gunakan rumus panjang lintasan = jumlah langkah × panjang langkah. Jadi 76 × 0,75 = 57 meter.',
+    aiHint: 'Kalikan jumlah langkah dengan panjang satu langkah.',
+    context: 'Rumus pengukuran panjang lintasan pada Jembatan Merah.',
+    accent: 'from-amber-500 to-orange-500',
+    illustration: '/images/navigation/default.svg',
+  },
+  {
+    id: 4,
+    title: 'Misi 4 · Kendaraan Terbanyak',
+    part: 'Grafik kendaraan',
+    shape: 'Membandingkan data',
+    prompt: 'Data kendaraan di Jembatan Merah adalah sepeda motor 18.450, mobil pribadi 6.230, angkutan umum 890, dan truk/bus besar 310. Kendaraan apa yang paling banyak?',
+    options: [
+      { key: 'A', label: 'Sepeda motor, 18.450 kendaraan.' },
+      { key: 'B', label: 'Mobil pribadi, 6.230 kendaraan.' },
+      { key: 'C', label: 'Angkutan umum, 890 kendaraan.' },
+      { key: 'D', label: 'Truk/bus besar, 310 kendaraan.' },
+    ],
+    correctKey: 'A',
+    answer: 'Sepeda motor, yaitu 18.450 kendaraan.',
+    formula: '18.450 > 6.230 > 890 > 310',
+    explanation: 'Sepeda motor memiliki angka paling besar, yaitu 18.450 kendaraan.',
+    aiHint: 'Cari angka terbesar pada data kendaraan.',
+    context: 'Data kendaraan yang melewati Jembatan Merah.',
+    accent: 'from-emerald-500 to-emerald-600',
+    illustration: '/images/navigation/default.svg',
+  },
+  {
+    id: 5,
+    title: 'Misi 5 · Kendaraan Tersedikit',
+    part: 'Grafik kendaraan',
+    shape: 'Membandingkan data',
+    prompt: 'Dari data kendaraan di Jembatan Merah, kendaraan apa yang jumlahnya paling sedikit?',
+    options: [
+      { key: 'A', label: 'Sepeda motor, 18.450 kendaraan.' },
+      { key: 'B', label: 'Mobil pribadi, 6.230 kendaraan.' },
+      { key: 'C', label: 'Angkutan umum, 890 kendaraan.' },
+      { key: 'D', label: 'Truk/bus besar, 310 kendaraan.' },
+    ],
+    correctKey: 'D',
+    answer: 'Truk/bus besar, yaitu 310 kendaraan.',
+    formula: '310 < 890 < 6.230 < 18.450',
+    explanation: 'Truk/bus besar memiliki angka paling kecil, yaitu 310 kendaraan.',
+    aiHint: 'Cari angka terkecil pada data kendaraan.',
+    context: 'Data kendaraan yang melewati Jembatan Merah.',
+    accent: 'from-sky-500 to-sky-600',
+    illustration: '/images/navigation/default.svg',
+  },
+];
+
 export function getResolutionMissions(comicId: number, lokasi: string): ResolutionMission[] {
   if (comicId === 1) {
     return COMIC_1_RESOLUTION_MISSIONS.map((mission) => ({
@@ -248,6 +356,13 @@ export function getResolutionMissions(comicId: number, lokasi: string): Resoluti
 
   if (comicId === 2) {
     return KOMIK_2_RESOLUTION_MISSIONS.map((mission) => ({
+      ...mission,
+      context: `${mission.context} (${lokasi})`,
+    }));
+  }
+
+  if (comicId === 4) {
+    return KOMIK_4_RESOLUTION_MISSIONS.map((mission) => ({
       ...mission,
       context: `${mission.context} (${lokasi})`,
     }));

@@ -40,6 +40,7 @@ export interface ComicProgressStageData {
     feedback?: Record<string, unknown> | null;
   };
   application?: {
+    selectedCardId?: string | null;
     selectedChoice?: string[];
     explanation?: string;
     score?: number | null;

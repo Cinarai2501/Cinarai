@@ -93,6 +93,7 @@ export default function ApplicationStage() {
     void saveComicProgress(user.uid, comic.id, {
       stageData: {
         application: {
+          selectedCardId,
           selectedChoice: selectedAnswer,
           explanation: studentReason,
           score: answerSubmitted ? 1 : 0,
@@ -106,7 +107,7 @@ export default function ApplicationStage() {
         },
       },
     });
-  }, [answerFeedback, answerSubmitted, attemptCount, coachMessage, coachSummary, comic.id, hasHydratedProgress, selectedAnswer, studentReason, user?.uid]);
+  }, [answerFeedback, answerSubmitted, attemptCount, coachMessage, coachSummary, comic.id, hasHydratedProgress, selectedAnswer, selectedCardId, studentReason, user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -117,6 +118,9 @@ export default function ApplicationStage() {
         if (!active) return;
         const stageData = document?.stageData?.application;
         if (stageData) {
+          if (typeof stageData.selectedCardId === 'string') {
+            setSelectedCardId(stageData.selectedCardId);
+          }
           if (Array.isArray(stageData.selectedChoice)) {
             setSelectedAnswer(stageData.selectedChoice);
           }
@@ -300,13 +304,13 @@ export default function ApplicationStage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-primary-500">Pertanyaan Aplikasi</p>
-            <h2 className="mt-1 text-lg font-black text-neutral-900">Pilih bangun datar yang paling sesuai</h2>
+            <h2 className="mt-1 text-lg font-black text-neutral-900">Tantangan Penerapan</h2>
           </div>
           <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">Siap menjawab</div>
         </div>
 
         <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-          Perhatikan gambar objek, pilih bangun datar yang paling cocok, lalu jelaskan alasanmu secara singkat.
+          {applicationConfig.prompt}
         </p>
 
         {applicationConfig.cards && applicationConfig.cards.length > 0 && (

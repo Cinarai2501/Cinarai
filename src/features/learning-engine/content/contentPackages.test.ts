@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getLearningContentPackage } from './contentPackages';
 import { createIdentificationState } from '../stages/Identification/services/identificationService';
+import { packageContent as comic4PackageContent } from '@/features/comics/comic-4/content';
 
 test('getLearningContentPackage returns different content for different comic ids', () => {
   const comic1 = getLearningContentPackage(1);
@@ -133,4 +134,18 @@ test('comic 2 application uses the same structure as comic 1 and does not expose
   assert.ok(application.options.every((option) => typeof option.value === 'string'));
   assert.ok(application.options.every((option) => typeof option.label === 'string'));
   assert.equal('cards' in application, false);
+});
+
+test('comic 4 application uses only Jembatan Merah application situations', () => {
+  const application = comic4PackageContent.application;
+
+  assert.match(application.intro, /langkah|lintasan|kendaraan/i);
+  assert.match(application.prompt, /data|konsep|situasi/i);
+  assert.equal(application.cards?.length, 3);
+  assert.deepEqual(
+    application.cards?.map((card) => card.correctAnswer),
+    ['28,8 meter', 'Hasil dapat berbeda karena panjang langkah berbeda', 'Sepeda motor paling banyak'],
+  );
+  assert.ok(application.cards?.every((card) => /langkah|kendaraan|data|lintasan/i.test(`${card.title} ${card.description}`)));
+  assert.doesNotMatch(`${application.intro} ${application.prompt} ${application.context}`, /bangun ruang|simetri|pecahan/i);
 });

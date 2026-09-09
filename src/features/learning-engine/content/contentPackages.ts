@@ -45,6 +45,14 @@ export interface LearningContentApplication {
   context: string;
   images: LearningContentApplicationImage[];
   options: Array<{ value: string; label: string }>;
+  cards?: Array<{
+    id: string;
+    title: string;
+    image: string;
+    description: string;
+    options: string[];
+    correctAnswer: string;
+  }>;
 }
 
 export interface LearningContentArgumentationQuestion {

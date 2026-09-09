@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RESOLUTION_MISSIONS, buildResolutionTutorExplanation, getMissionHint, isCorrectSelection } from './resolutionStage.helpers';
+import { RESOLUTION_MISSIONS, buildResolutionTutorExplanation, getMissionHint, getResolutionMissions, isCorrectSelection } from './resolutionStage.helpers';
 
 test('resolution missions include five sequential numeracy missions', () => {
   assert.equal(RESOLUTION_MISSIONS.length, 5);
@@ -34,4 +34,19 @@ test('mission hints use the scaffolded tutor guidance', () => {
 
   assert.match(hint, /Bangun ruang:/i);
   assert.match(hint, /Masukkan nilai yang ada pada soal/i);
+});
+
+test('comic 4 resolution uses Jembatan Merah measurement and vehicle data', () => {
+  const missions = getResolutionMissions(4, 'Jembatan Merah Surabaya');
+
+  assert.equal(missions.length, 5);
+  assert.deepEqual(missions.map((mission) => mission.correctKey), ['A', 'A', 'B', 'A', 'D']);
+  assert.match(missions[0].prompt, /panjang langkah/i);
+  assert.match(missions[1].prompt, /83 langkah.*76 langkah.*60 langkah/i);
+  assert.match(missions[2].formula, /76 × 0,75 = 57 meter/);
+  assert.match(missions[3].prompt, /18\.450.*6\.230.*890.*310/);
+  assert.match(missions[4].answer, /310/);
+  assert.doesNotMatch(buildResolutionTutorExplanation(missions[3], false), /bangun ruang|volume/i);
+  assert.equal(isCorrectSelection(missions[4], 'C'), false);
+  assert.equal(isCorrectSelection(missions[4], 'D'), true);
 });
