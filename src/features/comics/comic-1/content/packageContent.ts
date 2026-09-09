@@ -221,6 +221,7 @@ export const packageContent: Comic1PackageContent = {
     intro: 'Amati objek dari sudut berbeda dan pilih bangun ruang yang paling cocok.',
     prompt: 'Pilih bangun ruang yang paling cocok untuk menjelaskan objek yang kamu lihat dan jelaskan alasanmu.',
     context: 'Objek baru yang menyimpan bentuk serupa dengan bangun ruang yang dipelajari di candi.',
+    correctAnswer: 'Limas Segi Empat',
     images: [
       { src: appAtap.src, alt: 'Tampak depan', label: 'Tampak Depan', description: 'Perhatikan bentuk utama dari depan.' },
       { src: appOrnament.src, alt: 'Detail ornamen', label: 'Detail Ornamen', description: 'Perhatikan ornamen dan detailnya.' },

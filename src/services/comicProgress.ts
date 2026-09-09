@@ -46,6 +46,7 @@ export interface ComicProgressStageData {
     selectedAnswer?: string[];
     studentReason?: string;
     answerSubmitted?: boolean;
+    answerFeedback?: string;
     attemptCount?: number;
     coachMessage?: string | null;
     coachSummary?: Record<string, unknown> | null;

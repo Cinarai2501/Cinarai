@@ -210,6 +210,7 @@ export const packageContent: ComicContentPackageLike = {
     intro: 'Amati benda di sekitar dan pilih bangun datar yang paling sesuai.',
     prompt: 'Pilih salah satu bangun datar dari daftar dan jelaskan mengapa bangun tersebut cocok untuk bagian yang kamu amati.',
     context: 'Benda-benda di sekitar Rumah Gajah Mungkur dan bagian-bagian bangunan yang terlihat di komik.',
+    correctAnswer: 'Persegi',
     images: [
       { src: persegiNav.src, alt: 'Persegi', label: 'Persegi', description: 'Perhatikan sisi sama panjang dan sudut siku-siku.' },
       { src: persegiPanjangNav.src, alt: 'Persegi Panjang', label: 'Persegi Panjang', description: 'Perhatikan pasangan sisi panjang dan pendek.' },

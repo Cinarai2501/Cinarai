@@ -52,13 +52,14 @@ function saveLocalApplicationActivity(comicId: number, payload: Record<string, u
 }
 
 export default function ApplicationStage() {
-  const { comic, comicModule, setCanAdvance, completeCurrentStage } = useLearningEngine();
+  const { comic, comicModule, setCanAdvance, completeAndAdvance } = useLearningEngine();
   const { user } = useAuth();
   const applicationConfig = comicModule.application as {
     title: string;
     intro: string;
     prompt: string;
     context: string;
+    correctAnswer?: string;
     images: ApplicationImage[];
     options: ApplicationOption[];
     cards?: ApplicationCard[];
@@ -67,6 +68,8 @@ export default function ApplicationStage() {
   const [studentReason, setStudentReason] = useState('');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(applicationConfig.cards?.[0]?.id ?? null);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
+  const [answerFeedback, setAnswerFeedback] = useState<string | null>(null);
   
   const [isThinking, setIsThinking] = useState(false);
   const [coachMessage, setCoachMessage] = useState<string | null>(null);
@@ -92,17 +95,18 @@ export default function ApplicationStage() {
         application: {
           selectedChoice: selectedAnswer,
           explanation: studentReason,
-          score: answerSubmitted ? (coachSummary ? 1 : null) : null,
+          score: answerSubmitted ? 1 : 0,
           selectedAnswer,
           studentReason,
           answerSubmitted,
+          answerFeedback,
           attemptCount,
           coachMessage,
           coachSummary,
         },
       },
     });
-  }, [answerSubmitted, attemptCount, coachMessage, coachSummary, comic.id, hasHydratedProgress, selectedAnswer, studentReason, user?.uid]);
+  }, [answerFeedback, answerSubmitted, attemptCount, coachMessage, coachSummary, comic.id, hasHydratedProgress, selectedAnswer, studentReason, user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -121,6 +125,7 @@ export default function ApplicationStage() {
           }
           if (typeof stageData.answerSubmitted === 'boolean') {
             setAnswerSubmitted(stageData.answerSubmitted);
+            setIsAnswerCorrect(stageData.answerSubmitted);
           }
           if (typeof stageData.attemptCount === 'number') {
             setAttemptCount(stageData.attemptCount);
@@ -130,6 +135,9 @@ export default function ApplicationStage() {
           }
           if (stageData.coachSummary && typeof stageData.coachSummary === 'object') {
             setCoachSummary(stageData.coachSummary as CoachSummary);
+          }
+          if (typeof stageData.answerFeedback === 'string') {
+            setAnswerFeedback(stageData.answerFeedback);
           }
         }
         setHasHydratedProgress(true);
@@ -178,6 +186,11 @@ export default function ApplicationStage() {
     setCoachSummary(null);
 
     const currentAttempt = attemptCount + 1;
+    const expectedAnswer = currentCard?.correctAnswer ?? applicationConfig.correctAnswer;
+    const answerIsCorrect = Boolean(expectedAnswer && selectedAnswer.length === 1 && selectedAnswer[0] === expectedAnswer);
+    const localFeedback = answerIsCorrect
+      ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
+      : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
     const arViewedFlag = false;
     const explorationCompletedFlag = false;
 
@@ -190,6 +203,11 @@ export default function ApplicationStage() {
       correctAnswer: currentCard?.correctAnswer ?? null,
       attempt: currentAttempt,
     };
+
+    setIsAnswerCorrect(answerIsCorrect);
+    setAnswerSubmitted(answerIsCorrect);
+    setAnswerFeedback(localFeedback);
+    setAttemptCount(currentAttempt);
 
     try {
       const response = await fetch('/api/ai/application', {
@@ -210,8 +228,6 @@ export default function ApplicationStage() {
 
       setCoachMessage(message);
       setCoachSummary(summary);
-      setAnswerSubmitted(true);
-      setAttemptCount(currentAttempt);
 
       const activityPayload = {
         userId: user?.uid ?? 'anonymous',
@@ -238,7 +254,7 @@ export default function ApplicationStage() {
   };
 
   const handleFinishStage = async () => {
-    await completeCurrentStage();
+    await completeAndAdvance('Application');
   };
 
   return (
@@ -306,6 +322,8 @@ export default function ApplicationStage() {
                     setSelectedAnswer([]);
                     setStudentReason('');
                     setAnswerSubmitted(false);
+                    setIsAnswerCorrect(false);
+                    setAnswerFeedback(null);
                     setCoachMessage(null);
                     setCoachSummary(null);
                     setAiError(null);
@@ -366,11 +384,6 @@ export default function ApplicationStage() {
               <label htmlFor="application-reason" className="block text-sm font-black text-neutral-700">
                 ✏️ Jelaskan pilihanmu
               </label>
-              {currentCard && (
-                <span className="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-700">
-                  Jawaban benar: {currentCard.correctAnswer}
-                </span>
-              )}
             </div>
             <textarea
               id="application-reason"
@@ -397,8 +410,14 @@ export default function ApplicationStage() {
               canSubmit ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-neutral-200 text-neutral-500',
             ].join(' ')}
           >
-            {isThinking ? 'AI Coach sedang berpikir…' : answerSubmitted ? 'Perbarui bimbingan AI Coach' : 'Minta bimbingan AI Coach'}
+            {isThinking ? 'Memeriksa jawaban…' : 'Periksa Jawaban'}
           </button>
+
+          {answerFeedback && (
+            <div className={['rounded-[20px] border px-4 py-3 text-sm font-semibold', isAnswerCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'].join(' ')}>
+              {answerFeedback}
+            </div>
+          )}
 
           {aiError && (
             <div className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
@@ -408,7 +427,7 @@ export default function ApplicationStage() {
         </div>
       </div>
 
-      {coachMessage && coachSummary && (
+      {answerSubmitted && (
         <div className="rounded-[24px] bg-white px-5 py-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -418,11 +437,9 @@ export default function ApplicationStage() {
             <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-secondary-700">Attempt ke-{attemptCount}</span>
           </div>
 
-          <div className="mt-4 rounded-[20px] border border-neutral-200 bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-700">
-            <p>{coachMessage}</p>
-          </div>
+          {coachMessage && <div className="mt-4 rounded-[20px] border border-neutral-200 bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-700"><p>{coachMessage}</p></div>}
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          {coachSummary && <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <div className="rounded-[20px] border border-primary-100 bg-primary-50 p-4">
               <p className="text-sm font-black text-primary-700">Yang sudah dikuasai</p>
               <ul className="mt-3 space-y-2 text-sm text-neutral-700">
@@ -458,7 +475,7 @@ export default function ApplicationStage() {
                 ))}
               </ul>
             </div>
-          </div>
+          </div>}
 
           <button
             type="button"

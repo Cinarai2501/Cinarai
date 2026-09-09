@@ -88,6 +88,7 @@ export const packageContent: ComicContentPackageLike = {
     intro: 'Amati benda yang sering kamu lihat di sekitar pasar.',
     prompt: 'Pilih bangun datar yang paling cocok dengan benda yang kamu amati.',
     context: 'Benda dan kerajinan di pasar tradisional.',
+    correctAnswer: 'Persegi',
     images: [{ src: '/images/navigation/default.svg', alt: 'Bentuk persegi', label: 'Persegi', description: 'Perhatikan sisi dan sudutnya.' }],
     options: [{ value: 'Persegi', label: 'Persegi' }, { value: 'Segitiga', label: 'Segitiga' }],
   },

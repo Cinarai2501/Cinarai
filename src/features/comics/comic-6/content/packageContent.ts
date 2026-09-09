@@ -97,6 +97,7 @@ export const packageContent: ComicContentPackageLike = {
     intro: 'Setelah mengamati Masjid Al-Akbar, carilah benda di sekitar yang memiliki bentuk bangun ruang serupa.',
     prompt: 'Pilih bangun ruang yang paling sesuai dan jelaskan ciri yang membuatmu yakin.',
     context: 'Benda di rumah dan sekolah dapat membantu kita mengingat bentuk kubus, balok, tabung, kerucut, dan setengah bola.',
+    correctAnswer: 'Kubus',
     images: [],
     options: [
       { value: 'Kubus', label: 'Kubus' }, { value: 'Balok', label: 'Balok' }, { value: 'Tabung', label: 'Tabung' },

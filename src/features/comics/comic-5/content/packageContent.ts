@@ -189,6 +189,7 @@ export const packageContent: ComicContentPackageLike = {
     intro: 'Perhatikan benda-benda di sekitar rumah, sekolah, dan lingkungan budaya. Pilih bangun datar yang paling cocok untuk masing-masing benda.',
     prompt: 'Pilih bangun datar yang paling tepat untuk setiap benda dan jelaskan alasanmu dengan menghubungkan ciri bentuknya dengan aktivitas sehari-hari.',
     context: 'Dalam kehidupan sehari-hari, siswa sering melihat atap rumah, jendela kelas, ban sepeda, dan pola keramik. Bentuk-bentuk itu memuat konsep bangun datar yang sama dengan yang dipelajari di Keraton Sumenep.',
+    correctAnswer: 'Segitiga',
     images: [
       { src: atapRumahApp.src, alt: 'Atap rumah berbentuk segitiga', label: 'Atap Rumah', description: 'Bentuk atap rumah mirip dengan bentuk segitiga pada bangunan keraton.' },
       { src: jendelaKelasApp.src, alt: 'Jendela kelas berbentuk persegi panjang', label: 'Jendela Kelas', description: 'Jendela kelas biasanya memiliki sisi panjang dan lebar yang berbeda, seperti persegi panjang.' },

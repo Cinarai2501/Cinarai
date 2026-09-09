@@ -90,6 +90,7 @@ export interface ComicContentPackageLike {
     intro: string;
     prompt: string;
     context: string;
+    correctAnswer?: string;
     images: Array<{ src: string; alt: string; label: string; description: string }>;
     options: Array<{ value: string; label: string }>;
     cards?: Array<{

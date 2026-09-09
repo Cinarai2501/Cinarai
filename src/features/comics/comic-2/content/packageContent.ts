@@ -307,6 +307,7 @@ export const packageContent: ComicContentPackageLike = {
     intro: 'Amati pola relief, ornamen, dan bentuk bangun datar pada Candi Penataran, lalu pilih bangun datar yang paling cocok.',
     prompt: 'Perhatikan Relief Candi, Umpang, Atap Candi, Relief Belah Ketupat, Ornamen Persegi, dan Ornamen Segitiga Sama Sisi. Pilih bangun datar yang paling cocok untuk menjelaskan salah satu bagian tersebut dan jelaskan alasanmu.',
     context: 'Materi Komik 2 menampilkan berbagai bentuk bangun datar pada relief dan ornamen Candi Penataran.',
+    correctAnswer: 'Lingkaran',
     images: [
       { src: navReliefCandi.src, alt: 'Relief Candi', label: 'Relief Candi', description: 'Amati pola berulang yang seimbang pada relief candi.' },
       { src: navUmpang.src, alt: 'Umpang', label: 'Umpang', description: 'Perhatikan sisi panjang dan pendek pada Umpang.' },
