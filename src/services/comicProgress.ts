@@ -53,6 +53,10 @@ export interface ComicProgressStageData {
   };
   introspection?: {
     reflection?: string;
+    understood?: string[];
+    interesting?: string;
+    dailyUse?: string;
+    difficult?: string;
     aiFeedback?: Record<string, unknown> | null;
     checked?: boolean[];
     rating?: number | null;
