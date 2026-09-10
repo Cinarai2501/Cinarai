@@ -409,6 +409,31 @@ export default function ArgumentationStage() {
     );
   }
 
+  if (comic.id === 5) {
+    const argObj = orderedLearningObjects[currentIndex] ?? null;
+
+    if (!argObj) {
+      return <div className="rounded-[20px] bg-white p-5 text-sm text-neutral-600 shadow-sm">Data pertanyaan tidak tersedia.</div>;
+    }
+
+    return (
+      <Comic3ArgumentationStage
+        question={argObj}
+        onSubmitFeedback={handleFeedback}
+        onAnswerChange={setTextAnswer}
+        onNext={handleNext}
+        feedback={feedback}
+        comicTitle={comic.title}
+        comicLocation={comic.lokasi ?? 'Keraton Sumenep'}
+        classLevel={comic.kelas ?? 'II'}
+        currentIndex={currentIndex}
+        totalItems={orderedLearningObjects.length}
+        initialAnswer={textAnswer}
+        isAdvancing={isAdvancing}
+      />
+    );
+  }
+
   // Other comics: Placeholder for future implementation
   return (
     <div className="flex flex-col gap-4">

@@ -166,6 +166,57 @@ function buildFallbackFeedback(body: ArgumentationRequestBody): ArgumentationRes
   };
 }
 
+function isComic5Argumentation(body: ArgumentationRequestBody): boolean {
+  return body.comicTitle.toLowerCase().includes('keraton sumenep');
+}
+
+function buildComic5FallbackFeedback(body: ArgumentationRequestBody): ArgumentationResponse {
+  const answer = normalizeAnswer(body.studentAnswer);
+  const namesCorrect = /segitiga sama kaki/.test(answer);
+  const namesIncorrect = /segitiga sama sisi/.test(answer);
+  const equalSides = /(dua|2) sisi (kanan dan kiri|sama|sejajar)|kanan dan kiri sama/.test(answer);
+  const longerBase = /(sisi )?(bawah|dasar).{0,20}(lebih panjang|panjang)/.test(answer);
+
+  if (namesCorrect && equalSides && longerBase) {
+    return {
+      level: 'SANGAT_BAIK',
+      score: 5,
+      feedback: 'Jawabanmu sangat baik. Kamu menghubungkan atap Keraton Sumenep dengan dua sisi kanan dan kiri yang sama panjang serta sisi bawah yang lebih panjang. Itulah ciri segitiga sama kaki.',
+      strength: 'Kamu menyebutkan nama bangun dan dua ciri pentingnya.',
+      improvement: 'Pertahankan kebiasaan menghubungkan nama bangun dengan ciri yang kamu amati.',
+      suggestion: 'Segitiga sama sisi berbeda karena ketiga sisinya sama panjang.',
+    };
+  }
+
+  if (namesIncorrect) {
+    return {
+      level: 'PERLU_PERBAIKAN',
+      score: 2,
+      feedback: 'Coba periksa lagi jawabannya. Segitiga sama sisi memiliki tiga sisi sama panjang, sedangkan atap pada komik menunjukkan dua sisi kanan dan kiri yang sama panjang dan sisi bawah lebih panjang.',
+      improvement: 'Bandingkan panjang ketiga sisi atap dengan teliti.',
+      suggestion: 'Gunakan hasil pengamatan itu untuk menjelaskan mengapa bentuknya segitiga sama kaki.',
+    };
+  }
+
+  if (namesCorrect || equalSides || longerBase) {
+    return {
+      level: 'HAMPIR_BENAR',
+      score: 4,
+      feedback: 'Kamu sudah mengarah dengan benar. Lengkapi alasanmu dengan menyebutkan bahwa dua sisi kanan dan kiri sama panjang, sedangkan sisi bawah lebih panjang.',
+      improvement: 'Tambahkan ciri panjang sisi yang kamu amati.',
+      suggestion: 'Ingat, segitiga sama kaki memiliki tepat dua sisi yang sama panjang.',
+    };
+  }
+
+  return {
+    level: 'PERLU_PERBAIKAN',
+    score: 2,
+    feedback: 'Perhatikan kembali atap Keraton Sumenep. Bandingkan panjang sisi kanan, sisi kiri, dan sisi bawah sebelum menentukan jenis segitiganya.',
+    improvement: 'Alasanmu perlu menghubungkan jawaban dengan panjang sisi.',
+    suggestion: 'Cari dua sisi yang sama panjang, lalu bandingkan dengan sisi bawah.',
+  };
+}
+
 function isComic2Argumentation(body: ArgumentationRequestBody): boolean {
   const title = body.comicTitle?.toLowerCase() ?? '';
   const lokasi = body.lokasi?.toLowerCase() ?? '';
@@ -217,6 +268,21 @@ function buildComic2ArgumentationPrompt(body: ArgumentationRequestBody): string 
   ].join('\n');
 }
 
+function buildComic5ArgumentationPrompt(body: ArgumentationRequestBody): string {
+  return [
+    'Kamu adalah guru SD yang ramah untuk siswa kelas II.',
+    'Evaluasi alasan siswa tentang atap Keraton Sumenep pada Komik 5.',
+    'Fokuskan feedback pada pengamatan panjang sisi, bukan pada kecocokan kalimat persis.',
+    'Atap tersebut termasuk segitiga sama kaki karena dua sisi kanan dan kiri sama panjang, sedangkan sisi bawah lebih panjang.',
+    'Segitiga sama sisi berbeda karena ketiga sisinya sama panjang.',
+    'Jika jawaban kurang lengkap, beri petunjuk agar siswa membandingkan panjang ketiga sisi.',
+    'Jika siswa menyebut segitiga sama sisi, jelaskan perbedaannya dengan lembut, bukan hanya mengatakan salah.',
+    'Berikan JSON dengan field level, score, feedback, strength, improvement, suggestion.',
+    `Pertanyaan: ${body.question}`,
+    `Jawaban siswa: ${body.studentAnswer}`,
+  ].join('\n');
+}
+
 function buildGenericArgumentationPrompt(body: ArgumentationRequestBody): string {
   return [
     'Kamu adalah AI Evaluator CINARAI untuk siswa Sekolah Dasar Indonesia.',
@@ -258,7 +324,9 @@ function buildGenericArgumentationPrompt(body: ArgumentationRequestBody): string
 }
 
 function buildArgumentationPrompt(body: ArgumentationRequestBody): string {
-  return isComic2Argumentation(body) ? buildComic2ArgumentationPrompt(body) : buildGenericArgumentationPrompt(body);
+  if (isComic2Argumentation(body)) return buildComic2ArgumentationPrompt(body);
+  if (isComic5Argumentation(body)) return buildComic5ArgumentationPrompt(body);
+  return buildGenericArgumentationPrompt(body);
 }
 
 function parseArgumentationResponse(raw: string): ArgumentationResponse | null {
@@ -324,7 +392,9 @@ export async function POST(request: NextRequest) {
     const response = await router.generate(payload);
     const raw = typeof response?.content === 'string' ? response.content.trim() : '';
     const parsed = parseArgumentationResponse(raw);
-    const feedback = parsed ?? buildFallbackFeedback(body);
+    const feedback = parsed ?? (isComic5Argumentation(body)
+      ? buildComic5FallbackFeedback(body)
+      : buildFallbackFeedback(body));
 
     return NextResponse.json({
       level: feedback.level,
