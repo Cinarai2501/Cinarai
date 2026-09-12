@@ -1,15 +1,17 @@
 'use client';
 
+import Image from 'next/image';
 import { getShapeIcon } from './ShapeIcons';
 
 interface ShapeOptionCardProps {
   label: string;
+  iconSrc?: string;
   selected: boolean;
   disabled?: boolean;
   onToggle: () => void;
 }
 
-export default function ShapeOptionCard({ label, selected, disabled = false, onToggle }: ShapeOptionCardProps) {
+export default function ShapeOptionCard({ label, iconSrc, selected, disabled = false, onToggle }: ShapeOptionCardProps) {
   const OptionIcon = getShapeIcon(label);
 
   return (
@@ -32,7 +34,11 @@ export default function ShapeOptionCard({ label, selected, disabled = false, onT
         'flex h-[48px] w-[48px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[16px] p-1 sm:h-[56px] sm:w-[56px]',
         selected ? 'bg-white' : 'bg-primary-50/80',
       ].join(' ')}>
-        <OptionIcon className="h-[44px] w-[44px] sm:h-[52px] sm:w-[52px]" />
+        {iconSrc ? (
+          <Image src={iconSrc} alt="" width={52} height={52} className="h-[44px] w-[44px] object-contain sm:h-[52px] sm:w-[52px]" />
+        ) : (
+          <OptionIcon className="h-[44px] w-[44px] sm:h-[52px] sm:w-[52px]" />
+        )}
       </div>
 
       <span className="flex-1 text-[15px] font-black uppercase tracking-[0.14em] text-neutral-800 sm:text-base">

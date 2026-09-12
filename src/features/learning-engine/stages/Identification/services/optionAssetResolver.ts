@@ -5,6 +5,10 @@ import segitigaSamaSisiIcon from '@/features/comics/comic-2/assets/identificatio
 import segitigaSamaKakiIcon from '@/features/comics/comic-2/assets/identification/segitiga-sama-kaki.svg';
 import lingkaranIcon from '@/features/comics/comic-2/assets/identification/lingkaran.svg';
 import belahKetupatIcon from '@/features/comics/comic-2/assets/identification/belah-ketupat.svg';
+import segitigaComic5Icon from '@/features/comics/comic-5/assets/identification/segitiga.svg';
+import persegiPanjangComic5Icon from '@/features/comics/comic-5/assets/identification/persegi-panjang.svg';
+import lingkaranComic5Icon from '@/features/comics/comic-5/assets/identification/lingkaran.svg';
+import belahKetupatComic5Icon from '@/features/comics/comic-5/assets/identification/belah-ketupat.svg';
 
 const COMIC2_ICON_MAP: Record<string, string> = {
   persegi: persegiIcon.src,
@@ -38,9 +42,10 @@ const COMIC4_ICON_MAP: Record<string, string> = {
 };
 
 const COMIC5_ICON_MAP: Record<string, string> = {
-  lingkaran: '/images/identification/comic-5/lingkaran.svg',
-  persegi: '/images/identification/comic-5/persegi.svg',
-  segitiga: '/images/identification/comic-5/segitiga.svg',
+  segitiga: segitigaComic5Icon.src,
+  'persegi panjang': persegiPanjangComic5Icon.src,
+  lingkaran: lingkaranComic5Icon.src,
+  'belah ketupat': belahKetupatComic5Icon.src,
 };
 
 export function resolveIdentificationOptionAsset(comicId: number, label: string, fallbackSrc: string): string {

@@ -3,6 +3,10 @@ import atapSegitigaSvg from '@/features/comics/comic-5/assets/identification/seg
 import jendelaPersegiPanjangSvg from '@/features/comics/comic-5/assets/identification/persegi-panjang-jendela.svg';
 import rodaMeriamLingkaranSvg from '@/features/comics/comic-5/assets/identification/lingkaran-roda-meriam.svg';
 import lantaiBelahKetupatSvg from '@/features/comics/comic-5/assets/identification/belah-ketupat-lantai.svg';
+import segitigaIcon from '@/features/comics/comic-5/assets/identification/segitiga.svg';
+import persegiPanjangIcon from '@/features/comics/comic-5/assets/identification/persegi-panjang.svg';
+import lingkaranIcon from '@/features/comics/comic-5/assets/identification/lingkaran.svg';
+import belahKetupatIcon from '@/features/comics/comic-5/assets/identification/belah-ketupat.svg';
 import atapRumahApp from '@/features/comics/comic-5/assets/application/atap-rumah.svg';
 import jendelaKelasApp from '@/features/comics/comic-5/assets/application/jendela-kelas.svg';
 import banSepedaApp from '@/features/comics/comic-5/assets/application/ban-sepeda.svg';
@@ -131,10 +135,10 @@ export const packageContent: ComicContentPackageLike = {
         image: atapSegitigaSvg.src,
         imageAlt: 'Ilustrasi atap Keraton Sumenep berbentuk segitiga.',
         options: [
-          { text: 'Segitiga', correct: true },
-          { text: 'Lingkaran', correct: false },
-          { text: 'Persegi Panjang', correct: false },
-          { text: 'Belah Ketupat', correct: false },
+          { text: 'Segitiga', correct: true, icon: segitigaIcon.src },
+          { text: 'Lingkaran', correct: false, icon: lingkaranIcon.src },
+          { text: 'Persegi Panjang', correct: false, icon: persegiPanjangIcon.src },
+          { text: 'Belah Ketupat', correct: false, icon: belahKetupatIcon.src },
         ],
         explanation: 'Atap bernilai tiga sisi dan tiga sudut, sehingga bentuknya paling mirip dengan segitiga.',
       },
@@ -144,23 +148,23 @@ export const packageContent: ComicContentPackageLike = {
         image: jendelaPersegiPanjangSvg.src,
         imageAlt: 'Ilustrasi jendela di ruangan Keraton Sumenep berbentuk persegi panjang.',
         options: [
-          { text: 'Persegi Panjang', correct: true },
-          { text: 'Segitiga', correct: false },
-          { text: 'Lingkaran', correct: false },
-          { text: 'Trapesium', correct: false },
+          { text: 'Persegi Panjang', correct: true, icon: persegiPanjangIcon.src },
+          { text: 'Segitiga', correct: false, icon: segitigaIcon.src },
+          { text: 'Lingkaran', correct: false, icon: lingkaranIcon.src },
+          { text: 'Belah Ketupat', correct: false, icon: belahKetupatIcon.src },
         ],
         explanation: 'Jendela memiliki empat sisi dengan dua pasang sisi yang sama panjang dan empat sudut siku-siku, jadi bentuknya adalah persegi panjang.',
       },
       {
         id: 'komik5-ident-3',
-        question: 'Benda yang Vira temukan berbentuk lingkaran adalah apa?',
+        question: 'Roda meriam di Keraton Sumenep paling cocok dengan bangun datar apa?',
         image: rodaMeriamLingkaranSvg.src,
         imageAlt: 'Ilustrasi roda meriam berbentuk lingkaran.',
         options: [
-          { text: 'Roda meriam', correct: true },
-          { text: 'Atap', correct: false },
-          { text: 'Jendela', correct: false },
-          { text: 'Lantai', correct: false },
+          { text: 'Lingkaran', correct: true, icon: lingkaranIcon.src },
+          { text: 'Segitiga', correct: false, icon: segitigaIcon.src },
+          { text: 'Persegi Panjang', correct: false, icon: persegiPanjangIcon.src },
+          { text: 'Belah Ketupat', correct: false, icon: belahKetupatIcon.src },
         ],
         explanation: 'Roda meriam tampak bundar dan semua titik pada tepinya berjarak sama dari pusat, sehingga termasuk lingkaran.',
       },
@@ -170,10 +174,10 @@ export const packageContent: ComicContentPackageLike = {
         image: lantaiBelahKetupatSvg.src,
         imageAlt: 'Ilustrasi motif lantai berbentuk belah ketupat.',
         options: [
-          { text: 'Belah Ketupat', correct: true },
-          { text: 'Segitiga', correct: false },
-          { text: 'Lingkaran', correct: false },
-          { text: 'Persegi', correct: false },
+          { text: 'Belah Ketupat', correct: true, icon: belahKetupatIcon.src },
+          { text: 'Segitiga', correct: false, icon: segitigaIcon.src },
+          { text: 'Lingkaran', correct: false, icon: lingkaranIcon.src },
+          { text: 'Persegi Panjang', correct: false, icon: persegiPanjangIcon.src },
         ],
         explanation: 'Motif lantai itu memiliki empat sisi sama panjang dan bentuknya menyerupai wajik, jadi paling cocok dengan belah ketupat.',
       },

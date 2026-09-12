@@ -76,7 +76,7 @@ export interface ComicContentPackageLike {
       overlayType?: string;
       crop?: string;
       highlight?: string;
-      options: Array<{ text: string; correct: boolean }>;
+      options: Array<{ text: string; correct: boolean; icon?: string }>;
       explanation: string;
     }>;
     feedback: {
@@ -190,7 +190,7 @@ export interface ComicModuleLike {
       overlayType?: string;
       crop?: string;
       highlight?: string;
-      options: Array<{ text: string; correct: boolean }>;
+      options: Array<{ text: string; correct: boolean; icon?: string }>;
       explanation: string;
     }>;
     feedback: {

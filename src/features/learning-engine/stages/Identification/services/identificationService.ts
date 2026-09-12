@@ -20,7 +20,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-type RawOption = { text: string; correct: boolean };
+type RawOption = { text: string; correct: boolean; icon?: string };
 
 type RawQuestion = {
   question: string;
@@ -63,7 +63,7 @@ function buildQuestionsForIdentification(identificationData: IdentificationData)
     overlayType: question.overlayType,
     crop: question.crop,
     highlight: question.highlight,
-    options: question.options.map((option) => ({ text: option.text, correct: option.correct })),
+    options: question.options.map((option) => ({ text: option.text, correct: option.correct, icon: option.icon })),
     explanation: question.explanation,
   }));
 }
@@ -76,6 +76,7 @@ function buildShuffledOptions(itemId: string, rawOptions: RawOption[], stableIds
       : `${itemId}-opt-${index}`,
     text: opt.text,
     correct: opt.correct,
+    icon: opt.icon,
   }));
 }
 

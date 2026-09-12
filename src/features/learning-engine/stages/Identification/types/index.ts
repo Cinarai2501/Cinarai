@@ -15,6 +15,7 @@ export interface AnswerOption {
   readonly id: string;
   readonly text: string;
   readonly correct: boolean;
+  readonly icon?: string;
 }
 
 /** Satu item identifikasi — merepresentasikan satu learning target */

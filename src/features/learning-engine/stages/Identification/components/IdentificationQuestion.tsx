@@ -92,6 +92,7 @@ export default function IdentificationQuestion({
             <ShapeOptionCard
               key={option.id}
               label={option.text}
+              iconSrc={option.icon}
               selected={selected}
               onToggle={() => selectOption(item.id, option.id)}
             />
