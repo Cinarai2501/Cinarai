@@ -23,15 +23,14 @@ type SyntaxCard = {
   color: string;
   accent: string;
   icon: string;
-  href?: string;
 };
 
 const syntaxCards: SyntaxCard[] = [
-  { number: 1, title: 'Orientasi Masalah', description: 'Mengamati dan memahami masalah', color: '#DCEEFF', accent: '#2D83E8', icon: '⌕' },
-  { number: 2, title: 'Eksplorasi dengan AR', description: 'Mengamati dan mengeksplorasi melalui teknologi AR', color: '#FFE0EF', accent: '#E04786', icon: '◇', href: '/dashboard/siswa/komik' },
-  { number: 3, title: 'Penggalian Informasi dengan AI', description: 'Bertanya, mencari informasi, dan menganalisis data', color: '#FFF1BE', accent: '#D99D00', icon: '✦', href: '/dashboard/siswa/ai-tutor' },
+  { number: 1, title: 'Orientasi Masalah', description: 'Mengamati dan memahami konteks masalah', color: '#DCEEFF', accent: '#2D83E8', icon: '⌕' },
+  { number: 2, title: 'Eksplorasi dengan AR', description: 'Mengamati dan mengeksplorasi melalui teknologi AR', color: '#FFE0EF', accent: '#E04786', icon: '◇' },
+  { number: 3, title: 'Penggalian Informasi dengan AI', description: 'Bertanya, mencari informasi, dan menganalisis data', color: '#FFF1BE', accent: '#D99D00', icon: '✦' },
   { number: 4, title: 'Analisis & Pemecahan Masalah', description: 'Menyelesaikan masalah secara kritis dan logis', color: '#DDF5E6', accent: '#42A66A', icon: '▤' },
-  { number: 5, title: 'Kreasi Solusi', description: 'Membuat produk atau hasil karya sebagai solusi masalah', color: '#EAE1FF', accent: '#7548D8', icon: '✧' },
+  { number: 5, title: 'Kreasi Solusi', description: 'Membuat produk atau karya sebagai solusi masalah', color: '#EAE1FF', accent: '#7548D8', icon: '✧' },
   { number: 6, title: 'Refleksi', description: 'Meninjau kembali proses dan hasil pembelajaran', color: '#FFE4D6', accent: '#E7622A', icon: '◌' },
   { number: 7, title: 'Evaluasi', description: 'Menilai pemahaman dan ketercapaian tujuan', color: '#FFDDEB', accent: '#D83272', icon: '✓' },
 ] as const;
@@ -75,9 +74,9 @@ export default function StudentHome() {
               <h2 id="syntax-heading" className="text-[21px] font-extrabold leading-tight tracking-[-0.03em] text-[#102F5B]">Sintaks Model CINARAI</h2>
               <p className="mt-1 text-[12px] leading-snug text-[#667895]">Ikuti 7 langkah pembelajaran untuk mengembangkan numerasi kritis Anda.</p>
             </div>
-            <a href="#progress" className="shrink-0 pb-0.5 text-[12px] font-bold text-[#1685EE]">Lihat Panduan ›</a>
+            <a href="#syntax-cards" className="shrink-0 pb-0.5 text-[12px] font-bold text-[#1685EE]">Lihat Panduan ›</a>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
+          <div id="syntax-cards" className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
             {syntaxCards.map((card) => {
               const content = (
                 <div className="flex h-full min-h-[176px] flex-col rounded-[17px] p-3" style={{ backgroundColor: card.color }}>
@@ -89,7 +88,7 @@ export default function StudentHome() {
                   <p className="mt-1.5 text-[10px] leading-[1.3] text-[#536782]">{card.description}</p>
                 </div>
               );
-              return card.href ? <Link key={card.number} href={card.href} className="block transition-transform active:scale-[0.98]" aria-label={`${card.title}, buka halaman terkait`}>{content}</Link> : <div key={card.number}>{content}</div>;
+              return <div key={card.number}>{content}</div>;
             })}
           </div>
         </section>
@@ -102,7 +101,7 @@ export default function StudentHome() {
           <div className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
             <div className="flex min-h-[88px] items-center gap-3 rounded-[18px] bg-white px-3 shadow-[0_6px_18px_rgba(32,83,143,0.08)] ring-1 ring-[#E8F0F8]">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#FFF0E4] text-[27px]" aria-hidden="true">🔥</span>
-              <span><strong className="block text-[22px] leading-none text-[#102F5B]">{completedComics > 0 ? Math.min(14, 3 + completedComics) : 3}</strong><span className="mt-1 block text-[10px] leading-tight text-[#71819A]">Hari Berturut-turut</span></span>
+              <span><strong className="block text-[22px] leading-none text-[#102F5B]">{completedComics > 0 ? Math.min(14, 3 + completedComics) : 0}</strong><span className="mt-1 block text-[10px] leading-tight text-[#71819A]">Hari Berturut-turut</span></span>
             </div>
             <div className="flex min-h-[88px] items-center gap-3 rounded-[18px] bg-white px-3 shadow-[0_6px_18px_rgba(32,83,143,0.08)] ring-1 ring-[#E8F0F8]">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#FFF0E4] text-[27px]" aria-hidden="true">🎯</span>
