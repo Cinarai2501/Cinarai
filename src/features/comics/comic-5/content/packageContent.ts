@@ -4,7 +4,12 @@ import jendelaPersegiPanjangSvg from '@/features/comics/comic-5/assets/identific
 import rodaMeriamLingkaranSvg from '@/features/comics/comic-5/assets/identification/lingkaran-roda-meriam.svg';
 import lantaiBelahKetupatSvg from '@/features/comics/comic-5/assets/identification/belah-ketupat-lantai.svg';
 import segitigaIcon from '@/features/comics/comic-5/assets/identification/segitiga.svg';
+import segitigaSamaKakiIcon from '@/features/comics/comic-5/assets/identification/segitiga-sama-kaki.svg';
+import segitigaSamaSisiIcon from '@/features/comics/comic-5/assets/identification/segitiga-sama-sisi.svg';
+import segitigaSikuSikuIcon from '@/features/comics/comic-5/assets/identification/segitiga-siku-siku.svg';
+import persegiIcon from '@/features/comics/comic-5/assets/identification/persegi.svg';
 import persegiPanjangIcon from '@/features/comics/comic-5/assets/identification/persegi-panjang.svg';
+import trapesiumIcon from '@/features/comics/comic-5/assets/identification/trapesium.svg';
 import lingkaranIcon from '@/features/comics/comic-5/assets/identification/lingkaran.svg';
 import belahKetupatIcon from '@/features/comics/comic-5/assets/identification/belah-ketupat.svg';
 import atapRumahApp from '@/features/comics/comic-5/assets/application/atap-rumah.svg';
@@ -131,55 +136,21 @@ export const packageContent: ComicContentPackageLike = {
     questions: [
       {
         id: 'komik5-ident-1',
-        question: 'Atap bangunan Keraton Sumenep paling cocok dengan bangun datar apa?',
+        question: 'Bangun datar apa saja yang kamu temukan dalam Komik Keraton Sumenep?',
         image: atapSegitigaSvg.src,
-        imageAlt: 'Ilustrasi atap Keraton Sumenep berbentuk segitiga.',
+        imageAlt: 'Ilustrasi atap Keraton Sumenep yang diamati sebagai bangun datar.',
         options: [
           { text: 'Segitiga', correct: true, icon: segitigaIcon.src },
-          { text: 'Lingkaran', correct: false, icon: lingkaranIcon.src },
-          { text: 'Persegi Panjang', correct: false, icon: persegiPanjangIcon.src },
-          { text: 'Belah Ketupat', correct: false, icon: belahKetupatIcon.src },
-        ],
-        explanation: 'Atap bernilai tiga sisi dan tiga sudut, sehingga bentuknya paling mirip dengan segitiga.',
-      },
-      {
-        id: 'komik5-ident-2',
-        question: 'Jendela di ruangan Keraton Sumenep paling cocok dengan bangun datar apa?',
-        image: jendelaPersegiPanjangSvg.src,
-        imageAlt: 'Ilustrasi jendela di ruangan Keraton Sumenep berbentuk persegi panjang.',
-        options: [
+          { text: 'Segitiga Sama Kaki', correct: true, icon: segitigaSamaKakiIcon.src },
+          { text: 'Segitiga Sama Sisi', correct: true, icon: segitigaSamaSisiIcon.src },
+          { text: 'Segitiga Siku-Siku', correct: true, icon: segitigaSikuSikuIcon.src },
+          { text: 'Persegi', correct: true, icon: persegiIcon.src },
           { text: 'Persegi Panjang', correct: true, icon: persegiPanjangIcon.src },
-          { text: 'Segitiga', correct: false, icon: segitigaIcon.src },
-          { text: 'Lingkaran', correct: false, icon: lingkaranIcon.src },
-          { text: 'Belah Ketupat', correct: false, icon: belahKetupatIcon.src },
-        ],
-        explanation: 'Jendela memiliki empat sisi dengan dua pasang sisi yang sama panjang dan empat sudut siku-siku, jadi bentuknya adalah persegi panjang.',
-      },
-      {
-        id: 'komik5-ident-3',
-        question: 'Roda meriam di Keraton Sumenep paling cocok dengan bangun datar apa?',
-        image: rodaMeriamLingkaranSvg.src,
-        imageAlt: 'Ilustrasi roda meriam berbentuk lingkaran.',
-        options: [
-          { text: 'Lingkaran', correct: true, icon: lingkaranIcon.src },
-          { text: 'Segitiga', correct: false, icon: segitigaIcon.src },
-          { text: 'Persegi Panjang', correct: false, icon: persegiPanjangIcon.src },
-          { text: 'Belah Ketupat', correct: false, icon: belahKetupatIcon.src },
-        ],
-        explanation: 'Roda meriam tampak bundar dan semua titik pada tepinya berjarak sama dari pusat, sehingga termasuk lingkaran.',
-      },
-      {
-        id: 'komik5-ident-4',
-        question: 'Motif lantai di Keraton Sumenep paling cocok dengan bangun datar apa?',
-        image: lantaiBelahKetupatSvg.src,
-        imageAlt: 'Ilustrasi motif lantai berbentuk belah ketupat.',
-        options: [
+          { text: 'Trapesium', correct: true, icon: trapesiumIcon.src },
           { text: 'Belah Ketupat', correct: true, icon: belahKetupatIcon.src },
-          { text: 'Segitiga', correct: false, icon: segitigaIcon.src },
-          { text: 'Lingkaran', correct: false, icon: lingkaranIcon.src },
-          { text: 'Persegi Panjang', correct: false, icon: persegiPanjangIcon.src },
+          { text: 'Lingkaran', correct: true, icon: lingkaranIcon.src },
         ],
-        explanation: 'Motif lantai itu memiliki empat sisi sama panjang dan bentuknya menyerupai wajik, jadi paling cocok dengan belah ketupat.',
+        explanation: 'Pilih semua bentuk yang muncul dalam komik. Segitiga memiliki 3 sisi dan 3 sudut. Segitiga sama kaki memiliki dua sisi sama panjang, segitiga sama sisi memiliki tiga sisi sama panjang, dan segitiga siku-siku memiliki satu sudut seperti huruf L. Persegi memiliki empat sisi sama panjang, persegi panjang memiliki sisi berhadapan sama panjang, trapesium memiliki sepasang sisi sejajar, belah ketupat memiliki empat sisi sama panjang, dan lingkaran tidak memiliki titik sudut. Bentuk-bentuk itu ditemukan pada atap, gerbang, jendela, pintu kaca, roda meriam, lampu, lantai, tiang, foto figura, dan bagian bangunan Keraton Sumenep.',
       },
     ],
     feedback: {

@@ -9,6 +9,11 @@ import segitigaComic5Icon from '@/features/comics/comic-5/assets/identification/
 import persegiPanjangComic5Icon from '@/features/comics/comic-5/assets/identification/persegi-panjang.svg';
 import lingkaranComic5Icon from '@/features/comics/comic-5/assets/identification/lingkaran.svg';
 import belahKetupatComic5Icon from '@/features/comics/comic-5/assets/identification/belah-ketupat.svg';
+import segitigaSamaKakiComic5Icon from '@/features/comics/comic-5/assets/identification/segitiga-sama-kaki.svg';
+import segitigaSamaSisiComic5Icon from '@/features/comics/comic-5/assets/identification/segitiga-sama-sisi.svg';
+import segitigaSikuSikuComic5Icon from '@/features/comics/comic-5/assets/identification/segitiga-siku-siku.svg';
+import persegiComic5Icon from '@/features/comics/comic-5/assets/identification/persegi.svg';
+import trapesiumComic5Icon from '@/features/comics/comic-5/assets/identification/trapesium.svg';
 
 const COMIC2_ICON_MAP: Record<string, string> = {
   persegi: persegiIcon.src,
@@ -43,7 +48,12 @@ const COMIC4_ICON_MAP: Record<string, string> = {
 
 const COMIC5_ICON_MAP: Record<string, string> = {
   segitiga: segitigaComic5Icon.src,
+  'segitiga sama kaki': segitigaSamaKakiComic5Icon.src,
+  'segitiga sama sisi': segitigaSamaSisiComic5Icon.src,
+  'segitiga siku-siku': segitigaSikuSikuComic5Icon.src,
+  persegi: persegiComic5Icon.src,
   'persegi panjang': persegiPanjangComic5Icon.src,
+  trapesium: trapesiumComic5Icon.src,
   lingkaran: lingkaranComic5Icon.src,
   'belah ketupat': belahKetupatComic5Icon.src,
 };
