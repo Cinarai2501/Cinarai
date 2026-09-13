@@ -172,48 +172,51 @@ function isComic5Argumentation(body: ArgumentationRequestBody): boolean {
 
 function buildComic5FallbackFeedback(body: ArgumentationRequestBody): ArgumentationResponse {
   const answer = normalizeAnswer(body.studentAnswer);
-  const namesCorrect = /segitiga sama kaki/.test(answer);
-  const namesIncorrect = /segitiga sama sisi/.test(answer);
-  const equalSides = /(dua|2) sisi (kanan dan kiri|sama|sejajar)|kanan dan kiri sama/.test(answer);
-  const longerBase = /(sisi )?(bawah|dasar).{0,20}(lebih panjang|panjang)/.test(answer);
+  const rule = getComic5ArgumentationRule(body);
+  const shapeMatch = rule.shapeNames.some((name) => answer.includes(name));
+  const conceptMatches = rule.keywords.filter((keyword) => answer.includes(keyword)).length;
+  const objectMatch = answer.includes(body.templePart.toLowerCase().split(' ')[0]);
 
-  if (namesCorrect && equalSides && longerBase) {
+  if (shapeMatch && conceptMatches >= 2 && objectMatch) {
     return {
       level: 'SANGAT_BAIK',
       score: 5,
-      feedback: 'Jawabanmu sangat baik. Kamu menghubungkan atap Keraton Sumenep dengan dua sisi kanan dan kiri yang sama panjang serta sisi bawah yang lebih panjang. Itulah ciri segitiga sama kaki.',
-      strength: 'Kamu menyebutkan nama bangun dan dua ciri pentingnya.',
-      improvement: 'Pertahankan kebiasaan menghubungkan nama bangun dengan ciri yang kamu amati.',
-      suggestion: 'Segitiga sama sisi berbeda karena ketiga sisinya sama panjang.',
+      feedback: 'Hebat! Kamu menghubungkan objek dengan bentuk dan menyebutkan ciri-ciri yang kamu amati.',
+      strength: 'Kamu dapat menghubungkan objek dengan ciri bangun datarnya.',
+      improvement: '',
+      suggestion: 'Coba gunakan alasan yang sama untuk menemukan bentuk pada benda lain.',
     };
   }
 
-  if (namesIncorrect) {
-    return {
-      level: 'PERLU_PERBAIKAN',
-      score: 2,
-      feedback: 'Coba periksa lagi jawabannya. Segitiga sama sisi memiliki tiga sisi sama panjang, sedangkan atap pada komik menunjukkan dua sisi kanan dan kiri yang sama panjang dan sisi bawah lebih panjang.',
-      improvement: 'Bandingkan panjang ketiga sisi atap dengan teliti.',
-      suggestion: 'Gunakan hasil pengamatan itu untuk menjelaskan mengapa bentuknya segitiga sama kaki.',
-    };
-  }
-
-  if (namesCorrect || equalSides || longerBase) {
+  if (shapeMatch && conceptMatches >= 1) {
     return {
       level: 'HAMPIR_BENAR',
       score: 4,
-      feedback: 'Kamu sudah mengarah dengan benar. Lengkapi alasanmu dengan menyebutkan bahwa dua sisi kanan dan kiri sama panjang, sedangkan sisi bawah lebih panjang.',
-      improvement: 'Tambahkan ciri panjang sisi yang kamu amati.',
-      suggestion: 'Ingat, segitiga sama kaki memiliki tepat dua sisi yang sama panjang.',
+      feedback: 'Pilihan bentukmu sudah tepat. Coba tambahkan satu ciri lagi dan hubungkan dengan objek yang kamu amati.',
+      strength: 'Kamu sudah mengenali bentuk objek dengan benar.',
+      improvement: 'Alasanmu masih perlu dilengkapi dengan ciri bangun datar.',
+      suggestion: rule.hint,
+    };
+  }
+
+  if (conceptMatches >= 1 || objectMatch) {
+    return {
+      level: 'HAMPIR_BENAR',
+      score: 3,
+      feedback: 'Kamu sudah mulai mengamati objek. Pilih bentuk yang sesuai lalu hubungkan dengan cirinya.',
+      strength: 'Kamu sudah mencoba memberikan alasan.',
+      improvement: 'Hubungan antara objek, bentuk, dan cirinya belum lengkap.',
+      suggestion: rule.hint,
     };
   }
 
   return {
     level: 'PERLU_PERBAIKAN',
     score: 2,
-    feedback: 'Perhatikan kembali atap Keraton Sumenep. Bandingkan panjang sisi kanan, sisi kiri, dan sisi bawah sebelum menentukan jenis segitiganya.',
-    improvement: 'Alasanmu perlu menghubungkan jawaban dengan panjang sisi.',
-    suggestion: 'Cari dua sisi yang sama panjang, lalu bandingkan dengan sisi bawah.',
+    feedback: 'Coba amati kembali gambar objek tersebut. Hitung sisi dan sudutnya sebelum memilih bentuk.',
+    strength: 'Kamu sudah mencoba memberikan alasan.',
+    improvement: 'Bentuk yang dipilih atau ciri yang disebutkan belum sesuai.',
+    suggestion: rule.hint,
   };
 }
 
@@ -268,17 +271,73 @@ function buildComic2ArgumentationPrompt(body: ArgumentationRequestBody): string 
   ].join('\n');
 }
 
+type Comic5ArgumentationRule = {
+  shapeNames: string[];
+  keywords: string[];
+  hint: string;
+};
+
+const COMIC5_ARGUMENTATION_RULES: Array<{ objectNames: string[]; rule: Comic5ArgumentationRule }> = [
+  {
+    objectNames: ['atap'],
+    rule: {
+      shapeNames: ['segitiga'],
+      keywords: ['tiga sisi', '3 sisi', 'tiga sudut', '3 sudut', 'runcing', 'menyerupai segitiga'],
+      hint: 'Hitung jumlah sisi dan sudut atap. Perhatikan juga mengapa bagian atasnya terlihat runcing.',
+    },
+  },
+  {
+    objectNames: ['jendela'],
+    rule: {
+      shapeNames: ['persegi panjang'],
+      keywords: ['empat sisi', '4 sisi', 'empat sudut siku siku', '4 sudut siku siku', 'berhadapan sama panjang', 'panjang dan lebar'],
+      hint: 'Hitung sisi dan sudut jendela. Bandingkan sisi yang berhadapan serta panjang dan lebarnya.',
+    },
+  },
+  {
+    objectNames: ['roda meriam', 'roda'],
+    rule: {
+      shapeNames: ['lingkaran'],
+      keywords: ['bundar', 'tidak memiliki sudut', 'tanpa sudut', 'garis lengkung tertutup', 'jarak sama dari pusat', 'sama jauh dari pusat'],
+      hint: 'Perhatikan apakah roda memiliki sudut. Cari pusatnya dan amati jarak tepinya dari pusat.',
+    },
+  },
+  {
+    objectNames: ['pola lantai', 'lantai'],
+    rule: {
+      shapeNames: ['belah ketupat'],
+      keywords: ['empat sisi', '4 sisi', 'semua sisi sama panjang', 'empat sudut', '4 sudut', 'wajik', 'berlian'],
+      hint: 'Hitung sisi dan sudut pola lantai. Bandingkan panjang keempat sisinya dan perhatikan bentuk seperti wajik.',
+    },
+  },
+];
+
+function getComic5ArgumentationRule(body: ArgumentationRequestBody): Comic5ArgumentationRule {
+  const objectName = body.templePart.toLowerCase();
+  return COMIC5_ARGUMENTATION_RULES.find((entry) => entry.objectNames.some((name) => objectName.includes(name)))?.rule
+    ?? {
+      shapeNames: [body.shapeName.toLowerCase()],
+      keywords: [],
+      hint: 'Amati jumlah sisi, jumlah sudut, dan bentuk keseluruhan objek pada gambar.',
+    };
+}
+
 function buildComic5ArgumentationPrompt(body: ArgumentationRequestBody): string {
+  const rule = getComic5ArgumentationRule(body);
+
   return [
     'Kamu adalah guru SD yang ramah untuk siswa kelas II.',
-    'Evaluasi alasan siswa tentang atap Keraton Sumenep pada Komik 5.',
-    'Fokuskan feedback pada pengamatan panjang sisi, bukan pada kecocokan kalimat persis.',
-    'Atap tersebut termasuk segitiga sama kaki karena dua sisi kanan dan kiri sama panjang, sedangkan sisi bawah lebih panjang.',
-    'Segitiga sama sisi berbeda karena ketiga sisinya sama panjang.',
-    'Jika jawaban kurang lengkap, beri petunjuk agar siswa membandingkan panjang ketiga sisi.',
-    'Jika siswa menyebut segitiga sama sisi, jelaskan perbedaannya dengan lembut, bukan hanya mengatakan salah.',
-    'Berikan JSON dengan field level, score, feedback, strength, improvement, suggestion.',
+    'Evaluasi alasan siswa tentang objek budaya Keraton Sumenep pada Komik 5.',
+    'Nilai ketepatan bentuk, ciri yang disebutkan, hubungan objek dengan bentuk, dan kejelasan alasan.',
+    'SANGAT_BAIK bernilai 5 jika bentuk tepat, sedikitnya dua ciri relevan disebutkan, objek dihubungkan dengan bentuk, dan alasan jelas.',
+    'HAMPIR_BENAR bernilai 3 atau 4 jika bentuk tepat tetapi ciri atau hubungan objek masih kurang lengkap.',
+    'PERLU_PERBAIKAN bernilai 1 atau 2 jika bentuk atau alasan belum sesuai.',
+    'Jangan memberikan jawaban langsung. Jika kurang lengkap atau salah, berikan petunjuk pengamatan agar siswa menemukan jawabannya sendiri.',
+    `Petunjuk yang boleh digunakan: ${rule.hint}`,
+    'Berikan JSON ketat dengan field level, score, feedback, strength, improvement, suggestion.',
     `Pertanyaan: ${body.question}`,
+    `Objek: ${body.templePart}`,
+    `Bentuk yang sedang diperiksa: ${body.shapeName}`,
     `Jawaban siswa: ${body.studentAnswer}`,
   ].join('\n');
 }

@@ -50,3 +50,22 @@ test('Komik 5 navigation is observation-only without AR or QR actions', () => {
   assert.equal(detail.qrImage, '');
   assert.equal(detail.modelUrl, '');
 });
+
+test('Komik 5 argumentation asks for reasons about all four observed objects', () => {
+  const questions = packageContent.argumentation.questions;
+
+  assert.deepEqual(questions.map((question) => question.templePart), [
+    'atap Keraton Sumenep',
+    'jendela Keraton Sumenep',
+    'roda meriam Keraton Sumenep',
+    'pola lantai Keraton Sumenep',
+  ]);
+  assert.deepEqual(questions.map((question) => question.shapeName), [
+    'Segitiga',
+    'Persegi Panjang',
+    'Lingkaran',
+    'Belah Ketupat',
+  ]);
+  assert.ok(questions.every((question) => question.question.includes('mengapa') || question.question.includes('Mengapa')));
+  assert.ok(questions.every((question) => !question.options && !question.answerType));
+});
