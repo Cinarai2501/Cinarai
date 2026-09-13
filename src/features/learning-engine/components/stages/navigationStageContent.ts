@@ -70,6 +70,16 @@ export function resolveNavigationStageContent(comicId: number) {
     };
   }
 
+  if (comicId === 5) {
+    return {
+      comicModule,
+      objects: learningObjects,
+      heroModelEntry: undefined,
+      heroQrImage: '',
+      heroIllustration: '',
+    };
+  }
+
   if (comicId === 2) {
     const heroObject = learningObjects[0];
 
@@ -129,7 +139,7 @@ export function resolveObjectDetailContent(comicId: number, objectId: string): {
         modelId: bundle.modelEntry?.id ?? null,
       });
     }
-  } else if (comicId === 3) {
+  } else if (comicId === 3 || comicId === 5) {
     qrImage = '';
     modelUrl = '';
   } else {

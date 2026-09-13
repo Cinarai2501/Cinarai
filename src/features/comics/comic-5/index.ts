@@ -26,4 +26,10 @@ export const Comic5Module = {
   ai,
   assets,
   objects,
+  navigationAssets: {
+    has3DModel: false,
+    hasQRCode: false,
+    hasExplore: true,
+    hasAITutor: true,
+  },
 };

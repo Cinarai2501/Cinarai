@@ -16,6 +16,7 @@ export default function NavigationStage() {
 
   const navigationContent = useMemo(() => resolveNavigationStageContent(comic.id), [comic.id]);
   const { objects, heroModelEntry, heroQrImage } = navigationContent;
+  const isComic5ObservationNavigation = comic.id === 5;
 
   const navigationAssets = comicModule.navigationAssets ?? {
     has3DModel: true,
@@ -25,7 +26,9 @@ export default function NavigationStage() {
   };
 
   const isComic3FallbackNavigation = comicModule.navigationAssets?.has3DModel === false && comicModule.navigationAssets?.hasQRCode === false;
-  const navigationDescription = isComic3FallbackNavigation
+  const navigationDescription = isComic5ObservationNavigation
+    ? 'Amati bentuk atap, jendela, roda meriam, dan lantai Keraton Sumenep melalui gambar dan penjelasan setiap objek.'
+    : isComic3FallbackNavigation
     ? 'Pelajari setiap bangun datar melalui menu Explore. Gunakan AI Tutor untuk memahami ciri-ciri setiap bentuk sebelum melanjutkan ke tahap Argumentasi.'
     : 'Gunakan tampilan ini untuk menavigasi objek pembelajaran yang sesuai dengan komik yang sedang dibuka. Tekan Explore untuk membuka halaman detail objek yang berisi AI Tutor dan opsi model/QR.';
 
@@ -88,11 +91,11 @@ export default function NavigationStage() {
   return (
     <div className="flex min-w-0 flex-col gap-4 px-4 py-4 sm:gap-6 sm:py-6">
       <div className="space-y-3">
-        <h1 className="text-3xl font-black text-neutral-900">NAVIGASI AR & AI</h1>
+        <h1 className="text-3xl font-black text-neutral-900">{isComic5ObservationNavigation ? 'NAVIGASI OBSERVASI' : 'NAVIGASI AR & AI'}</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-neutral-600">{navigationDescription}</p>
       </div>
 
-      {isComic3FallbackNavigation ? (
+      {isComic5ObservationNavigation ? null : isComic3FallbackNavigation ? (
         <section className="overflow-hidden rounded-[20px] border border-neutral-200 bg-white p-5 shadow-sm">
           <div className="space-y-4">
             <div className="space-y-3">
