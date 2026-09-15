@@ -203,6 +203,20 @@ export default function Comic6NavigationStage() {
                 isActive ? 'border-primary-500 bg-primary-50 shadow-md shadow-primary-100' : 'border-neutral-200 bg-white hover:border-primary-300',
               ].join(' ')}
             >
+              <span className="relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                <Image
+                  src={object.navImage!}
+                  alt={object.title}
+                  fill
+                  className="object-contain"
+                  sizes="80px"
+                  onError={() => {
+                    if (process.env.NODE_ENV !== 'production') {
+                      console.error(`Navigation asset Komik 6 tidak ditemukan: ${object.navImage}`);
+                    }
+                  }}
+                />
+              </span>
               <span className={['flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-lg font-black', isComplete ? 'bg-accent-500 text-white' : 'bg-neutral-100 text-neutral-600'].join(' ')}>
                 {isComplete ? '✓' : index + 1}
               </span>
@@ -217,7 +231,18 @@ export default function Comic6NavigationStage() {
 
       <section className="overflow-hidden rounded-[22px] border border-neutral-200 bg-white shadow-sm">
         <div className="relative aspect-[16/9] bg-neutral-100">
-          <Image src={selectedObject.navImage ?? comic.cover} alt={selectedObject.title} fill className="object-contain" sizes="(max-width: 640px) 100vw, 720px" />
+          <Image
+            src={selectedObject.navImage!}
+            alt={selectedObject.title}
+            fill
+            className="object-contain"
+            sizes="(max-width: 640px) 100vw, 720px"
+            onError={() => {
+              if (process.env.NODE_ENV !== 'production') {
+                console.error(`Navigation asset Komik 6 tidak ditemukan: ${selectedObject.navImage}`);
+              }
+            }}
+          />
           <span className="absolute left-3 top-3 rounded-full bg-neutral-950/75 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white">Lihat</span>
         </div>
         <div className="space-y-4 p-4 sm:p-5">

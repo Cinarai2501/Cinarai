@@ -89,7 +89,19 @@ export default function Comic6ArgumentationStage({
 
       <section className="overflow-hidden rounded-[22px] border border-primary-100 bg-white shadow-sm">
         <div className="relative aspect-[16/9] bg-neutral-100">
-          <Image src={question.image} alt={question.objectName} fill priority className="object-cover" sizes="(max-width: 640px) 100vw, 720px" />
+          <Image
+            src={question.image}
+            alt={question.objectName}
+            fill
+            priority
+            className="object-contain"
+            sizes="(max-width: 640px) 100vw, 720px"
+            onError={() => {
+              if (process.env.NODE_ENV !== 'production') {
+                console.error(`Argumentation asset Komik 6 tidak ditemukan: ${question.image}`);
+              }
+            }}
+          />
           <div className="absolute inset-x-3 bottom-3 rounded-xl bg-neutral-950/75 px-3 py-2 text-center text-sm font-black text-white">
             {question.objectName}
           </div>

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import test from 'node:test';
 
 import { packageContent } from './packageContent';
@@ -57,5 +58,11 @@ test('Komik 6 argumentation connects every object to its supporting characterist
     ['a', 'b', 'c'],
   ]);
   assert.ok(questions.every((question) => question.argumentationAnswer && question.argumentationHint));
-  assert.ok(questions.every((question) => question.photoSrc.startsWith('/comics/generated/komik-6/')));
+  assert.deepEqual(questions.map((question) => question.photoSrc), [
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'menaramasjid.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'kubahmasjid.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'kubahmasjid.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'ruangutama.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'tempatwudhu.png'),
+  ]);
 });
