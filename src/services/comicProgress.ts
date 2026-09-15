@@ -28,6 +28,7 @@ export interface ComicProgressStageData {
   navigation?: {
     objectVisited?: string[];
     openedObjects?: string[];
+    completedObjects?: string[];
     aiConversation?: unknown[];
   };
   argumentation?: {

@@ -80,6 +80,16 @@ export function resolveNavigationStageContent(comicId: number) {
     };
   }
 
+  if (comicId === 6) {
+    return {
+      comicModule,
+      objects: learningObjects,
+      heroModelEntry: undefined,
+      heroQrImage: '',
+      heroIllustration: comicModule.metadata.cover,
+    };
+  }
+
   if (comicId === 2) {
     const heroObject = learningObjects[0];
 

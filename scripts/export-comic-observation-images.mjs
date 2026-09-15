@@ -9,6 +9,7 @@ const comics = [
   { slug: 'komik-1', pdfPath: path.join(publicDir, 'comics', 'komik-1', 'comic.pdf'), page: 1 },
   { slug: 'komik-2', pdfPath: path.join(publicDir, 'comics', 'komik-2', 'comic.pdf'), page: 7 },
   { slug: 'komik-3', pdfPath: path.join(publicDir, 'comics', 'komik-3', 'comic.pdf'), page: 1 },
+  { slug: 'komik-6', pdfPath: path.join(publicDir, 'comics', 'komik-6', 'comic.pdf'), pages: [11, 12, 13, 14] },
 ];
 
 const workerPath = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.mjs');
@@ -56,9 +57,14 @@ async function exportPage({ slug, pdfPath, page }) {
   }
 }
 
+async function exportEntry(entry) {
+  const pages = entry.pages ?? [entry.page];
+  await Promise.all(pages.map((page) => exportPage({ ...entry, page })));
+}
+
 async function main() {
   await ensureDirectory(generationRoot);
-  await Promise.all(comics.map((entry) => exportPage(entry)));
+  await Promise.all(comics.map((entry) => exportEntry(entry)));
 }
 
 void main();

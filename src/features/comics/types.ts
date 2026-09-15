@@ -31,6 +31,7 @@ export interface ComicNavigationObjectLike {
   shape?: string;
   symmetryConnection?: string;
   symmetryRelation?: string;
+  shapes?: string[];
 }
 
 export interface ComicQrCodeLike {

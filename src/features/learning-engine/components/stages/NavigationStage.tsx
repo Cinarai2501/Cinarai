@@ -8,6 +8,7 @@ import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { resolveNavigationStageContent } from './navigationStageContent';
 import { QrModal } from './QrModal';
+import Comic6NavigationStage from './Comic6NavigationStage';
 
 export default function NavigationStage() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function NavigationStage() {
   const [hasHydratedProgress, setHasHydratedProgress] = useState(false);
 
   useEffect(() => {
-    if (!user?.uid || !hasHydratedProgress) return;
+    if (comic.id === 6 || !user?.uid || !hasHydratedProgress) return;
     void saveComicProgress(user.uid, comic.id, {
       stageData: {
         navigation: {
@@ -59,7 +60,7 @@ export default function NavigationStage() {
   }, [comic.id, hasHydratedProgress, objectVisited, openedObjects, user?.uid]);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (comic.id === 6 || !user?.uid) return;
     let active = true;
     void (async () => {
       try {
@@ -83,6 +84,10 @@ export default function NavigationStage() {
       active = false;
     };
   }, [comic.id, user?.uid]);
+
+  if (comic.id === 6) {
+    return <Comic6NavigationStage />;
+  }
 
   if (comic.id === 4) {
     return <Comic4QrNavigation />;
