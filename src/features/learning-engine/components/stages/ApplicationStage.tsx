@@ -85,6 +85,7 @@ export default function ApplicationStage() {
   const options = useMemo(() => shuffle(applicationConfig.options.map((option) => option.value)), [applicationConfig.options]);
   const currentCard = useMemo(() => applicationConfig.cards?.find((card) => card.id === selectedCardId) ?? applicationConfig.cards?.[0] ?? null, [applicationConfig.cards, selectedCardId]);
   const isComic1Application = comic.id === 1;
+  const isComic5Application = comic.id === 5;
   const hasCards = Boolean(applicationConfig.cards?.length);
 
   const minReasonLength = studentReason.trim().length;
@@ -134,7 +135,7 @@ export default function ApplicationStage() {
             setSelectedCardId(stageData.selectedCardId);
           }
           if (Array.isArray(stageData.selectedChoice)) {
-            setSelectedAnswer(stageData.selectedChoice);
+            setSelectedAnswer(stageData.selectedChoice.length === 1 ? stageData.selectedChoice : []);
           }
           if (stageData.cardAnswers && typeof stageData.cardAnswers === 'object') {
             setCardAnswers(stageData.cardAnswers);
@@ -222,18 +223,46 @@ export default function ApplicationStage() {
       const localFeedback = answerIsCorrect
         ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
         : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
+      const fallbackMessage = answerIsCorrect
+        ? `Bagus! ${currentCard?.title ?? 'Pilihanmu'} cocok dengan ${expectedAnswer ?? 'bentuk yang dipelajari'}. Coba sebutkan ciri bentuk yang membuatmu yakin.`
+        : `Perhatikan kembali ${currentCard?.title ?? 'benda ini'}. Bandingkan jumlah sisi, sudut, dan panjang sisi dengan ${expectedAnswer ?? 'bentuk yang dipelajari'}, lalu coba pilih bentuk yang paling sesuai.`;
+      const fallbackSummary: CoachSummary = {
+        mastered: answerIsCorrect ? ['Menghubungkan benda sehari-hari dengan bangun datar'] : ['Mau mencoba menjelaskan pilihan dengan alasan'],
+        needsImprovement: answerIsCorrect ? ['Menjelaskan ciri bentuk dengan lebih lengkap'] : ['Membandingkan ciri bentuk sebelum memilih jawaban'],
+        nextPractice: answerIsCorrect ? ['Sebutkan sisi atau sudut yang kamu amati'] : ['Amati sisi, sudut, dan bentuk benda sekali lagi'],
+      };
       setIsAnswerCorrect(answerIsCorrect);
+      setCoachMessage(fallbackMessage);
+      setCoachSummary(fallbackSummary);
       if (currentCard) {
         setCardAnswers((previous) => ({ ...previous, [currentCard.id]: selectedAnswer }));
         setCardExplanations((previous) => ({ ...previous, [currentCard.id]: studentReason }));
-        setCardResults((previous) => ({ ...previous, [currentCard.id]: answerIsCorrect }));
+        setCardResults((previous) => {
+          const nextResults = { ...previous, [currentCard.id]: answerIsCorrect };
+          if (isComic5Application) {
+            debug('[KOMIK5 APPLICATION]', {
+              cardId: currentCard.id,
+              question: currentCard.description,
+              selectedAnswer,
+              expectedAnswer,
+              acceptableAnswers: currentCard.acceptableAnswers ?? [],
+              explanation: studentReason,
+              explanationLength: studentReason.trim().length,
+              isCorrect: answerIsCorrect,
+              cardResults: nextResults,
+            });
+          }
+          return nextResults;
+        });
       }
       setAnswerSubmitted(answerIsCorrect);
       setAnswerFeedback(localFeedback);
     }
 
     const payloadBody = {
-      soal: applicationConfig.prompt,
+      soal: currentCard
+        ? `${applicationConfig.prompt}\nSituasi: ${currentCard.title}. ${currentCard.description}`
+        : applicationConfig.prompt,
       konteks: applicationConfig.context,
       gambar: applicationConfig.images.map((image) => image.src),
       jawabanSiswa: selectedAnswer,
@@ -242,13 +271,28 @@ export default function ApplicationStage() {
     };
 
     setAttemptCount(currentAttempt);
+    if (isComic5Application) {
+      debug('[KOMIK5 APPLICATION] tutor request', {
+        cardId: currentCard?.id ?? null,
+        payload: payloadBody,
+      });
+    }
 
+    let aiTimeout: number | undefined;
     try {
+      const controller = new AbortController();
+      aiTimeout = window.setTimeout(() => controller.abort(), 15_000);
       const response = await fetch('/api/ai/application', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payloadBody),
+        signal: controller.signal,
       });
+      window.clearTimeout(aiTimeout);
+
+      if (!response.ok) {
+        throw new Error(`AI Coach request failed with status ${response.status}`);
+      }
 
       const data = (await response.json()) as Partial<CoachResponse>;
       const message = typeof data.message === 'string'
@@ -262,6 +306,12 @@ export default function ApplicationStage() {
 
       setCoachMessage(message);
       setCoachSummary(summary);
+      if (isComic5Application) {
+        debug('[KOMIK5 APPLICATION] tutor response', {
+          cardId: currentCard?.id ?? null,
+          response: data,
+        });
+      }
       if (isComic1Application) {
         setAnswerSubmitted(true);
       }
@@ -291,11 +341,9 @@ export default function ApplicationStage() {
           needsImprovement: ['Menghubungkan ciri bentuk dengan objek yang diamati'],
           nextPractice: ['Amati kembali gambar dan sebutkan ciri bentuk yang paling terlihat'],
         });
-      } else {
-        setCoachMessage(null);
-        setCoachSummary(null);
       }
     } finally {
+      if (aiTimeout !== undefined) window.clearTimeout(aiTimeout);
       setIsThinking(false);
     }
   };
@@ -366,7 +414,8 @@ export default function ApplicationStage() {
                   type="button"
                   onClick={() => {
                     setSelectedCardId(card.id);
-                    setSelectedAnswer(cardAnswers[card.id] ?? []);
+                    const savedAnswer = cardAnswers[card.id] ?? [];
+                    setSelectedAnswer(savedAnswer.length === 1 ? savedAnswer : []);
                     setStudentReason(cardExplanations[card.id] ?? '');
                     setAnswerSubmitted(false);
                     setIsAnswerCorrect(false);
@@ -409,12 +458,14 @@ export default function ApplicationStage() {
                   key={option}
                   type="button"
                   onClick={() => {
-                    setSelectedAnswer((prev) =>
-                      prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option],
-                    );
+                      setSelectedAnswer([option]);
                     if (currentCard) {
                       setCardResults((previous) => ({ ...previous, [currentCard.id]: false }));
                     }
+                    setAnswerFeedback(null);
+                    setCoachMessage(null);
+                    setCoachSummary(null);
+                    setAiError(null);
                   }}
                   className={['inline-flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition',
                     checked ? 'border-primary-600 bg-primary-50 text-primary-900' : 'border-neutral-200 bg-white text-neutral-800 hover:border-primary-200 hover:bg-primary-50/50',
@@ -443,6 +494,10 @@ export default function ApplicationStage() {
                 if (currentCard) {
                   setCardResults((previous) => ({ ...previous, [currentCard.id]: false }));
                 }
+                setAnswerFeedback(null);
+                setCoachMessage(null);
+                setCoachSummary(null);
+                setAiError(null);
               }}
               rows={5}
               placeholder="Tuliskan alasanmu di sini..."
@@ -482,7 +537,7 @@ export default function ApplicationStage() {
         </div>
       </div>
 
-      {isStageCompleted && (
+      {(isStageCompleted || coachMessage || coachSummary) && (
         <div className="rounded-[24px] bg-white px-5 py-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -532,13 +587,15 @@ export default function ApplicationStage() {
             </div>
           </div>}
 
-          <button
-            type="button"
-            onClick={handleFinishStage}
-            className="mt-5 inline-flex h-14 w-full items-center justify-center rounded-2xl bg-secondary-500 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-secondary-600"
-          >
-            Selesai dan lanjut ke Introspection
-          </button>
+          {isStageCompleted && (
+            <button
+              type="button"
+              onClick={handleFinishStage}
+              className="mt-5 inline-flex h-14 w-full items-center justify-center rounded-2xl bg-secondary-500 px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-white transition hover:bg-secondary-600"
+            >
+              Selesai dan lanjut ke Introspection
+            </button>
+          )}
         </div>
       )}
 

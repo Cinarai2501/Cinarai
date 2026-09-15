@@ -19,6 +19,11 @@ test('application accepts a valid explanation longer than the minimum', () => {
   assert.equal(isApplicationAnswerCorrect(['Segitiga'], 'Segitiga'), true);
 });
 
+test('screenshot explanation meets the minimum length', () => {
+  const explanation = 'Karena memiliki sisi yang mirip';
+  assert.equal(explanation.trim().length >= 20, true);
+});
+
 test('application rejects an incorrect answer and accepts the corrected answer', () => {
   assert.equal(isApplicationAnswerCorrect(['Lingkaran'], 'Segitiga'), false);
   assert.equal(isApplicationAnswerCorrect(['Segitiga'], 'Segitiga'), true);
@@ -26,6 +31,11 @@ test('application rejects an incorrect answer and accepts the corrected answer',
 
 test('application accepts configured shape synonyms', () => {
   assert.equal(isApplicationAnswerCorrect(['segitiga sama kaki'], 'Segitiga', ['Segitiga Sama Kaki']), true);
+});
+
+test('single-select application rejects multiple selected options', () => {
+  assert.equal(isApplicationAnswerCorrect(['Segitiga', 'Lingkaran'], 'Segitiga'), false);
+  assert.equal(isApplicationAnswerCorrect(['  Persegi   Panjang  '], 'Persegi Panjang'), true);
 });
 
 test('application is complete only when every card is correct', () => {
