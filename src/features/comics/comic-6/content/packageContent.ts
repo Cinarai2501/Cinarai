@@ -80,11 +80,20 @@ export const packageContent: ComicContentPackageLike = {
   },
   identification: {
     questions: [
-      { id: 'komik6-ident-1', question: 'Menara Masjid Al-Akbar paling mirip dengan bangun ruang apa?', image: '', imageAlt: 'Menara Masjid Al-Akbar yang diamati sebagai tabung.', options: [{ text: 'Tabung', correct: true }, { text: 'Kubus', correct: false }, { text: 'Kerucut', correct: false }, { text: 'Balok', correct: false }], explanation: 'Menara diamati seperti tabung. Tabung memiliki sisi atas dan alas berbentuk lingkaran serta sisi selimut.' },
-      { id: 'komik6-ident-2', question: 'Bagian atas kubah paling mirip dengan bangun ruang apa?', image: '', imageAlt: 'Bagian atas kubah Masjid Al-Akbar yang diamati sebagai kerucut.', options: [{ text: 'Kerucut', correct: true }, { text: 'Bola', correct: false }, { text: 'Balok', correct: false }, { text: 'Kubus', correct: false }], explanation: 'Bagian atas kubah seperti kerucut karena memiliki titik puncak.' },
-      { id: 'komik6-ident-3', question: 'Bagian bawah kubah diamati seperti bangun ruang apa?', image: '', imageAlt: 'Bagian bawah kubah yang diamati sebagai setengah bola.', options: [{ text: 'Setengah bola', correct: true }, { text: 'Tabung', correct: false }, { text: 'Kubus', correct: false }, { text: 'Kerucut', correct: false }], explanation: 'Bagian bawah kubah tampak seperti setengah bola, memiliki sisi lengkung, dan tidak memiliki titik sudut.' },
-      { id: 'komik6-ident-4', question: 'Ruang utama masjid paling cocok disebut bangun ruang apa?', image: '', imageAlt: 'Ruang utama Masjid Al-Akbar yang diamati sebagai balok.', options: [{ text: 'Balok', correct: true }, { text: 'Kerucut', correct: false }, { text: 'Tabung', correct: false }, { text: 'Bola', correct: false }], explanation: 'Ruang utama seperti balok karena memiliki enam sisi berbentuk persegi panjang.' },
-      { id: 'komik6-ident-5', question: 'Tempat duduk wudu berwarna cokelat paling mirip dengan bangun ruang apa?', image: '', imageAlt: 'Tempat duduk wudu yang diamati sebagai kubus.', options: [{ text: 'Kubus', correct: true }, { text: 'Balok', correct: false }, { text: 'Tabung', correct: false }, { text: 'Setengah bola', correct: false }], explanation: 'Tempat duduk wudu diamati sebagai kubus dengan enam sisi berbentuk persegi.' },
+      {
+        id: 'komik6-identifikasi-bangun-ruang',
+        question: 'Perhatikan bangunan Masjid Al-Akbar. Bangun ruang apa saja yang dapat kamu temukan?',
+        image: '',
+        imageAlt: 'Bangunan Masjid Al-Akbar dengan menara, kubah, ruang utama, dan tempat duduk wudu.',
+        options: [
+          { text: 'Kubus', correct: true, example: 'Tempat duduk/tempat wudhu', properties: ['6 sisi berbentuk persegi', '12 rusuk sama panjang', '8 titik sudut'], feedback: 'Benar! Tempat duduk wudu menyerupai kubus.' },
+          { text: 'Balok', correct: true, example: 'Bagian utama/interior masjid', properties: ['6 sisi berbentuk persegi panjang', '12 rusuk', '8 titik sudut'], feedback: 'Benar! Bagian utama masjid memiliki bentuk yang menyerupai balok.' },
+          { text: 'Tabung', correct: true, example: 'Menara masjid', properties: ['3 sisi', '2 rusuk', '2 sisi berbentuk lingkaran', '1 sisi selimut'], feedback: 'Benar! Menara Masjid Al-Akbar menyerupai tabung.' },
+          { text: 'Kerucut', correct: true, example: 'Bagian atas kubah', properties: ['2 sisi', '1 rusuk', '1 titik puncak', 'Tidak memiliki titik sudut'], feedback: 'Benar! Bagian atas kubah menyerupai kerucut.' },
+          { text: 'Setengah bola', correct: true, example: 'Bagian bawah kubah', properties: ['Sisi lengkung', 'Bagian bola yang tertutup', 'Tidak memiliki titik sudut'], feedback: 'Benar! Bagian bawah kubah menyerupai setengah bola.' },
+        ],
+        explanation: 'Pilih lima bangun ruang yang ditemukan pada objek Masjid Al-Akbar. Amati hubungan setiap bangun dengan menara, kubah, ruang utama, dan tempat duduk wudu.',
+      },
     ],
     feedback: {
       complete: 'Hebat! Kamu berhasil mengenali bangun ruang pada arsitektur Masjid Al-Akbar.',

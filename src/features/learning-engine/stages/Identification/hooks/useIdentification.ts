@@ -140,7 +140,12 @@ export function useIdentification({
         };
       }
       const observedCount = next.items.filter((i) => i.status === 'OBSERVED').length;
-      return { ...next, observedCount, isComplete: next.items.every((i) => i.reasonStatus === 'SAVED') };
+      const isComplete = next.items.every((item) => {
+        const selected = item.selectedOptionIds ?? [];
+        const correct = item.options.filter((option) => option.correct).map((option) => option.id);
+        return selected.length === correct.length && correct.every((id) => selected.includes(id));
+      });
+      return { ...next, observedCount, isComplete };
     });
   }, []);
 

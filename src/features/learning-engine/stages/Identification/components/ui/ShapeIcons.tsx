@@ -297,6 +297,16 @@ export function BolaIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
   );
 }
 
+export function SetengahBolaIcon({ className = 'w-12 h-12' }: ShapeIconProps) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 28C10 18.1 16.3 10 24 10C31.7 10 38 18.1 38 28Z" fill="#F9A8D4" stroke="#BE185D" strokeWidth="1.4" />
+      <path d="M10 28H38" stroke="#BE185D" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M24 10C27.5 15 27.5 23 24 28" stroke="#F472B6" strokeWidth="2" opacity="0.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // === Get icon component based on shape name ===
 // PENTING: Explicit mapping untuk 7 bangun ruang saja
 // Kubus, Balok, Limas, Prisma, Kerucut, Tabung, Bola
@@ -326,6 +336,7 @@ export function getShapeIcon(shape: string) {
   
   // BOLA
   if (shapeNormalized === 'bola') return BolaIcon;
+  if (shapeNormalized === 'setengah bola' || shapeNormalized === 'setengah-bola') return SetengahBolaIcon;
 
   // === Comic 2 / symmetry shapes ===
   if (shapeNormalized === 'persegi' || shapeNormalized.includes('persegi')) return PersegiIcon;

@@ -5,7 +5,7 @@ import { useLearningEngine } from '../../../hooks/useLearningEngine';
 import { LEARNING_STAGES } from '../../../types';
 
 export default function IdentificationHeader() {
-  const { currentStage } = useLearningEngine();
+  const { currentStage, comic } = useLearningEngine();
 
   const { stageNumber, totalStages } = useMemo(() => {
     const index = LEARNING_STAGES.indexOf(currentStage);
@@ -20,8 +20,13 @@ export default function IdentificationHeader() {
       <div>
         <p className="text-[11px] font-black uppercase tracking-[0.35em] text-primary-600">Stage</p>
         <h1 className="text-2xl font-black uppercase tracking-[0.3em] text-neutral-900 sm:text-3xl">
-          IDENTIFICATION
+          {comic.id === 6 ? 'IDENTIFIKASI BANGUN RUANG' : 'IDENTIFICATION'}
         </h1>
+        {comic.id === 6 && (
+          <p className="mt-2 text-sm font-semibold text-neutral-600">
+            Ayo temukan bangun ruang pada Masjid Al-Akbar!
+          </p>
+        )}
       </div>
       <span className="text-sm font-semibold uppercase tracking-[0.2em] text-neutral-400 whitespace-nowrap">
         Tahap {stageNumber} dari {totalStages}

@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import type { ComicModuleLike } from '@/features/comics/types';
 import { getShapeKnowledgeEntry } from './shapeKnowledge';
+import { resolveIdentificationOptionAsset } from './optionAssetResolver';
 
 /** Fisher-Yates shuffle — urutan berbeda setiap kali dipanggil */
 function shuffle<T>(arr: T[]): T[] {
@@ -20,7 +21,14 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-type RawOption = { text: string; correct: boolean; icon?: string };
+type RawOption = {
+  text: string;
+  correct: boolean;
+  icon?: string;
+  example?: string;
+  properties?: readonly string[];
+  feedback?: string;
+};
 
 type RawQuestion = {
   question: string;
@@ -63,7 +71,14 @@ function buildQuestionsForIdentification(identificationData: IdentificationData)
     overlayType: question.overlayType,
     crop: question.crop,
     highlight: question.highlight,
-    options: question.options.map((option) => ({ text: option.text, correct: option.correct, icon: option.icon })),
+    options: question.options.map((option) => ({
+      text: option.text,
+      correct: option.correct,
+      icon: option.icon,
+      example: option.example,
+      properties: option.properties,
+      feedback: option.feedback,
+    })),
     explanation: question.explanation,
   }));
 }
@@ -77,6 +92,9 @@ function buildShuffledOptions(itemId: string, rawOptions: RawOption[], stableIds
     text: opt.text,
     correct: opt.correct,
     icon: opt.icon,
+    example: opt.example,
+    properties: opt.properties,
+    feedback: opt.feedback,
   }));
 }
 
@@ -98,7 +116,10 @@ export function createIdentificationState(
 
   const items: IdentificationItem[] = questions.map((question, index) => {
     const id = `${context.comicId}-identification-${index}`;
-    const options = buildShuffledOptions(id, question.options, context.comicId === 4);
+    const options = buildShuffledOptions(id, question.options, context.comicId === 4).map((option) => ({
+      ...option,
+      icon: option.icon ?? (resolveIdentificationOptionAsset(context.comicId, option.text, '') || undefined),
+    }));
     const correctOption = options.find((o) => o.correct);
     const imageSrc = question.image || observationImage.imageSrc;
     const hasDedicatedImage = Boolean(question.image);
@@ -205,7 +226,11 @@ export function selectAnswer(
     ...state,
     items: updatedItems,
     observedCount,
-    isComplete: updatedItems.every((item) => (item.selectedOptionIds ?? []).length > 0),
+    isComplete: updatedItems.every((item) => {
+      const selected = item.selectedOptionIds ?? [];
+      const correct = item.options.filter((option) => option.correct).map((option) => option.id);
+      return selected.length === correct.length && correct.every((id) => selected.includes(id));
+    }),
   };
 }
 
@@ -243,7 +268,11 @@ export function saveReason(state: IdentificationState, itemId: string): Identifi
     ...state,
     items: updatedItems,
     observedCount,
-    isComplete: updatedItems.every((item) => (item.selectedOptionIds ?? []).length > 0),
+    isComplete: updatedItems.every((item) => {
+      const selected = item.selectedOptionIds ?? [];
+      const correct = item.options.filter((option) => option.correct).map((option) => option.id);
+      return selected.length === correct.length && correct.every((id) => selected.includes(id));
+    }),
   };
 }
 

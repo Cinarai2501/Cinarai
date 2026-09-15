@@ -36,7 +36,7 @@ export default function IdentificationFeedback({
 
       {!isCorrect && showCorrectOption && (
         <p className="text-sm font-semibold text-neutral-700">
-          Coba amati lagi bagian komik dan kaitkan dengan ciri-ciri bangun datar yang paling terlihat.
+          Coba amati lagi bagian komik dan kaitkan dengan ciri-ciri bangun ruang yang paling terlihat.
         </p>
       )}
     </div>

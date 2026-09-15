@@ -14,6 +14,9 @@ import segitigaSamaSisiComic5Icon from '@/features/comics/comic-5/assets/identif
 import segitigaSikuSikuComic5Icon from '@/features/comics/comic-5/assets/identification/segitiga-siku-siku.svg';
 import persegiComic5Icon from '@/features/comics/comic-5/assets/identification/persegi.svg';
 import trapesiumComic5Icon from '@/features/comics/comic-5/assets/identification/trapesium.svg';
+import balokComic6Icon from '@/features/comics/comic-1/assets/identification/Balok.png';
+import kubusComic6Icon from '@/features/comics/comic-1/assets/identification/Kubus.png';
+import kerucutComic6Icon from '@/features/comics/comic-1/assets/identification/Kerucut.png';
 
 const COMIC2_ICON_MAP: Record<string, string> = {
   persegi: persegiIcon.src,
@@ -58,6 +61,12 @@ const COMIC5_ICON_MAP: Record<string, string> = {
   'belah ketupat': belahKetupatComic5Icon.src,
 };
 
+const COMIC6_ICON_MAP: Record<string, string> = {
+  kubus: kubusComic6Icon.src,
+  balok: balokComic6Icon.src,
+  kerucut: kerucutComic6Icon.src,
+};
+
 export function resolveIdentificationOptionAsset(comicId: number, label: string, fallbackSrc: string): string {
   const normalizedLabel = label.trim().toLowerCase();
 
@@ -80,6 +89,10 @@ export function resolveIdentificationOptionAsset(comicId: number, label: string,
 
   if (comicId === 5) {
     return COMIC5_ICON_MAP[normalizedLabel] ?? fallbackSrc;
+  }
+
+  if (comicId === 6) {
+    return COMIC6_ICON_MAP[normalizedLabel] ?? fallbackSrc;
   }
 
   return fallbackSrc;
