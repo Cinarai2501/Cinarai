@@ -136,6 +136,9 @@ export interface ComicContentPackageLike {
       expectedKeywords?: string[];
       partialKeywords?: string[];
       explanation?: string;
+      characteristics?: Array<{ id: string; label: string; correct: boolean }>;
+      argumentationAnswer?: string;
+      argumentationHint?: string;
     }>;
   };
   resolution: {

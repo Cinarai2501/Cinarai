@@ -9,6 +9,9 @@ export interface ArgumentationLearningObject {
   question: string;
   explanation: string;
   aiFeedback: string;
+  characteristics?: Array<{ id: string; label: string; correct: boolean }>;
+  argumentationAnswer?: string;
+  argumentationHint?: string;
 }
 
 export interface ArgumentationQuestion {
@@ -28,6 +31,9 @@ export interface ArgumentationQuestion {
   aiContext?: string;
   feedback?: string;
   highlightColor: string;
+  characteristics?: Array<{ id: string; label: string; correct: boolean }>;
+  argumentationAnswer?: string;
+  argumentationHint?: string;
 }
 
 const ARGUMENTATION_OBJECTS: ArgumentationLearningObject[] = [
@@ -148,6 +154,9 @@ function mapPackageQuestionsToLearningObjects(questions: ArgumentationQuestion[]
     question: question.question,
     explanation: question.feedback ?? question.question,
     aiFeedback: question.feedback ?? buildAiFeedback(question.title ?? buildObjectName(question.templePart), question.shapeName),
+    characteristics: question.characteristics,
+    argumentationAnswer: question.argumentationAnswer,
+    argumentationHint: question.argumentationHint,
   }));
 }
 

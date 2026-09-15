@@ -9,6 +9,7 @@ import Comic1ArgumentationStage from './Comic1ArgumentationStage';
 import Comic2ArgumentationStage from './Comic2ArgumentationStage';
 import Comic3ArgumentationStage from './Comic3ArgumentationStage';
 import Comic4ArgumentationStage from './Comic4ArgumentationStage';
+import Comic6ArgumentationStage from './Comic6ArgumentationStage';
 import type { Comic1ArgumentationQuestion } from '@/features/comics/comic-1/content/types';
 import type { ArgumentationQuestion } from '@/features/learning-engine/stages/Argumentation/data/argumentationQuestions';
 
@@ -235,6 +236,17 @@ export default function ArgumentationStage() {
     }
 
     if (currentIndex < orderedLearningObjects.length - 1) {
+      try {
+        await persistArgumentationProgress({
+          currentIndex: currentIndex + 1,
+          feedback: null,
+        });
+      } catch (error) {
+        console.error(
+          '[ArgumentationStage] gagal menyimpan posisi argumentasi berikutnya',
+          error instanceof Error ? error.stack ?? error.message : String(error)
+        );
+      }
       setCurrentIndex((prev) => prev + 1);
       setFeedback(null);
       setCanAdvance(false);
@@ -426,6 +438,28 @@ export default function ArgumentationStage() {
         comicTitle={comic.title}
         comicLocation={comic.lokasi ?? 'Keraton Sumenep'}
         classLevel={comic.kelas ?? 'II'}
+        currentIndex={currentIndex}
+        totalItems={orderedLearningObjects.length}
+        initialAnswer={textAnswer}
+        isAdvancing={isAdvancing}
+      />
+    );
+  }
+
+  if (comic.id === 6) {
+    const argObj = orderedLearningObjects[currentIndex] ?? null;
+
+    if (!argObj || !argObj.characteristics?.length) {
+      return <div className="rounded-[20px] bg-white p-5 text-sm text-neutral-600 shadow-sm">Data ciri argumentasi tidak tersedia.</div>;
+    }
+
+    return (
+      <Comic6ArgumentationStage
+        question={argObj}
+        onSubmitFeedback={handleFeedback}
+        onAnswerChange={setTextAnswer}
+        onNext={handleNext}
+        feedback={feedback}
         currentIndex={currentIndex}
         totalItems={orderedLearningObjects.length}
         initialAnswer={textAnswer}

@@ -38,3 +38,24 @@ test('Komik 6 identification completes only after every shape is selected', () =
     assert.equal(next.isComplete, index === item.options.length - 1);
   }
 });
+
+test('Komik 6 argumentation connects every object to its supporting characteristics', () => {
+  const questions = packageContent.argumentation.questions;
+
+  assert.deepEqual(questions.map((question) => question.shapeName), [
+    'Tabung',
+    'Kerucut',
+    'Setengah bola',
+    'Balok',
+    'Kubus',
+  ]);
+  assert.deepEqual(questions.map((question) => question.characteristics?.filter((item) => item.correct).map((item) => item.id)), [
+    ['a', 'b', 'c'],
+    ['a', 'b', 'c'],
+    ['a', 'b'],
+    ['a', 'b', 'c', 'd'],
+    ['a', 'b', 'c'],
+  ]);
+  assert.ok(questions.every((question) => question.argumentationAnswer && question.argumentationHint));
+  assert.ok(questions.every((question) => question.photoSrc.startsWith('/comics/generated/komik-6/')));
+});
