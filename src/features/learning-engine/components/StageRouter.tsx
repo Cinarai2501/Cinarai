@@ -17,6 +17,7 @@ const ArgumentationStage = dynamic(() => import('./stages/ArgumentationStage'), 
 const ResolutionStage = dynamic(() => import('./stages/ResolutionStage'), { loading: StageLoading });
 const ApplicationStage = dynamic(() => import('./stages/ApplicationStage'), { loading: StageLoading });
 const IntrospectionStage = dynamic(() => import('./stages/IntrospectionStage'), { loading: StageLoading });
+const Comic6IntrospectionStage = dynamic(() => import('./stages/Comic6IntrospectionStage'), { loading: StageLoading });
 const FinishStage = dynamic(() => import('./stages/FinishStage'), { loading: StageLoading });
 
 function StageContent() {
@@ -30,7 +31,7 @@ function StageContent() {
     case Stage.Argumentation:     return <ArgumentationStage />;
     case Stage.Resolution:        return <ResolutionStage />;
     case Stage.Application:       return <ApplicationStage />;
-    case Stage.Introspection:     return <IntrospectionStage />;
+    case Stage.Introspection:     return comic.id === 6 ? <Comic6IntrospectionStage /> : <IntrospectionStage />;
     case Stage.Finish:            return <FinishStage />;
     default:                      return null;
   }

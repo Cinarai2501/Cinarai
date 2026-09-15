@@ -62,6 +62,12 @@ export interface ComicProgressStageData {
     interesting?: string;
     dailyUse?: string;
     difficult?: string;
+    favoriteShape?: string;
+    rememberedCharacteristics?: string[];
+    masjidConnections?: string[];
+    feeling?: string;
+    difficultShape?: string;
+    reflectionText?: string;
     aiFeedback?: Record<string, unknown> | null;
     checked?: boolean[];
     rating?: number | null;
