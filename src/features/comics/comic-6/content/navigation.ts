@@ -1,12 +1,20 @@
 import type { ComicContentPackageLike } from '../../types';
+import menaraImage from '../assets/navigation/menaramasjid.png';
+import kubahImage from '../assets/navigation/kubahmasjid.png';
+import ruangUtamaImage from '../assets/navigation/ruangutama.png';
+import tempatWudhuImage from '../assets/navigation/tempatwudhu.png';
+
+function assetSrc(asset: { src: string } | string): string {
+  return typeof asset === 'string' ? asset : asset.src;
+}
 
 const navigationObjects: ComicContentPackageLike['learningObjects'] = [
   {
     id: 'komik6-navigation-menara',
     title: 'Menara Masjid',
-    description: 'Amati menara Masjid Al-Akbar yang menyerupai tabung.',
+    description: 'Amati menara Masjid Al-Akbar. Bentuknya menyerupai tabung.',
     page: 11,
-    navImage: '/comics/generated/komik-6/page-11.png',
+    navImage: assetSrc(menaraImage),
     observationQuestion: 'Menara Masjid Al-Akbar menyerupai bangun ruang apa?',
     question: 'Menara Masjid Al-Akbar menyerupai bangun ruang apa?',
     answer: 'Tabung',
@@ -19,21 +27,21 @@ const navigationObjects: ComicContentPackageLike['learningObjects'] = [
   {
     id: 'komik6-navigation-kubah',
     title: 'Kubah Masjid',
-    description: 'Amati kubah sebagai gabungan kerucut di atas dan setengah bola di bawah.',
+    description: 'Amati bagian atas dan bawah kubah. Keduanya memiliki bentuk bangun ruang yang berbeda.',
     page: 12,
-    navImage: '/comics/generated/komik-6/page-12.png',
+    navImage: assetSrc(kubahImage),
     observationQuestion: 'Bagian atas dan bawah kubah menyerupai bangun ruang apa?',
     shapes: ['Kerucut', 'Setengah bola'],
     shapeKey: 'kerucut-setengah-bola',
-    shapeName: 'Kerucut + Setengah bola',
+    shapeName: 'Kerucut & Setengah Bola',
     characteristics: ['Atas: 2 sisi, 1 rusuk, 1 titik puncak', 'Bawah: sisi lengkung', 'Setengah bola tidak memiliki titik sudut'],
   },
   {
     id: 'komik6-navigation-ruang-utama',
     title: 'Ruang Utama',
-    description: 'Amati bagian utama atau interior masjid yang menyerupai balok.',
+    description: 'Amati bagian utama Masjid Al-Akbar dan perhatikan bentuk ruangnya.',
     page: 13,
-    navImage: '/comics/generated/komik-6/page-13.png',
+    navImage: assetSrc(ruangUtamaImage),
     observationQuestion: 'Bagian utama masjid menyerupai bangun ruang apa?',
     question: 'Bagian utama masjid menyerupai bangun ruang apa?',
     answer: 'Balok',
@@ -46,9 +54,9 @@ const navigationObjects: ComicContentPackageLike['learningObjects'] = [
   {
     id: 'komik6-navigation-tempat-wudhu',
     title: 'Tempat Wudhu',
-    description: 'Amati tempat duduk atau tempat wudhu yang menyerupai kubus.',
+    description: 'Amati tempat duduk wudhu dan perhatikan bentuknya.',
     page: 14,
-    navImage: '/comics/generated/komik-6/page-14.png',
+    navImage: assetSrc(tempatWudhuImage),
     observationQuestion: 'Tempat duduk wudhu menyerupai bangun ruang apa?',
     question: 'Tempat duduk wudhu menyerupai bangun ruang apa?',
     answer: 'Kubus',

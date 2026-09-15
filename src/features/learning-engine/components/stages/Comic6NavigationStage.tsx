@@ -217,7 +217,7 @@ export default function Comic6NavigationStage() {
 
       <section className="overflow-hidden rounded-[22px] border border-neutral-200 bg-white shadow-sm">
         <div className="relative aspect-[16/9] bg-neutral-100">
-          <Image src={selectedObject.navImage ?? comic.cover} alt={selectedObject.title} fill className="object-cover" sizes="(max-width: 640px) 100vw, 720px" />
+          <Image src={selectedObject.navImage ?? comic.cover} alt={selectedObject.title} fill className="object-contain" sizes="(max-width: 640px) 100vw, 720px" />
           <span className="absolute left-3 top-3 rounded-full bg-neutral-950/75 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white">Lihat</span>
         </div>
         <div className="space-y-4 p-4 sm:p-5">

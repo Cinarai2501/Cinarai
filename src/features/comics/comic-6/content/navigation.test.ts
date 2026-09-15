@@ -15,23 +15,23 @@ test('Komik 6 navigation contains exactly the four observed Masjid Al-Akbar loca
   ]);
   assert.deepEqual(navigation.learningObjects.map((object) => object.shapeName), [
     'Tabung',
-    'Kerucut + Setengah bola',
+    'Kerucut & Setengah Bola',
     'Balok',
     'Kubus',
   ]);
   assert.equal(navigation.qrCode.length, 0);
   assert.equal(navigation.model3D.length, 0);
   assert.deepEqual(navigation.learningObjects.map((object) => object.navImage), [
-    '/comics/generated/komik-6/page-11.png',
-    '/comics/generated/komik-6/page-12.png',
-    '/comics/generated/komik-6/page-13.png',
-    '/comics/generated/komik-6/page-14.png',
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'navigation', 'menaramasjid.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'navigation', 'kubahmasjid.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'navigation', 'ruangutama.png'),
+    path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'navigation', 'tempatwudhu.png'),
   ]);
 });
 
 test('Komik 6 navigation assets exist and shared resolver exposes no QR or model', () => {
-  for (const page of [11, 12, 13, 14]) {
-    assert.equal(fs.existsSync(path.join(process.cwd(), 'public', 'comics', 'generated', 'komik-6', `page-${page}.png`)), true);
+  for (const asset of ['menaramasjid.png', 'kubahmasjid.png', 'ruangutama.png', 'tempatwudhu.png']) {
+    assert.equal(fs.existsSync(path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'navigation', asset)), true);
   }
 
   const content = resolveNavigationStageContent(6);
