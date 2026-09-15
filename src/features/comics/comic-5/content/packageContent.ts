@@ -157,6 +157,41 @@ export const packageContent: ComicContentPackageLike = {
       { value: 'Lingkaran', label: 'Lingkaran' },
       { value: 'Belah Ketupat', label: 'Belah Ketupat' },
     ],
+    cards: [
+      {
+        id: 'komik5-application-atap-rumah',
+        title: 'Atap Rumah',
+        image: atapRumahApp.src,
+        description: 'Atap rumah biasanya tampak runcing seperti segitiga.',
+        options: ['Segitiga', 'Persegi Panjang', 'Lingkaran'],
+        correctAnswer: 'Segitiga',
+        acceptableAnswers: ['Segitiga Sama Kaki', 'Segitiga Sama Sisi'],
+      },
+      {
+        id: 'komik5-application-jendela-kelas',
+        title: 'Jendela Kelas',
+        image: jendelaKelasApp.src,
+        description: 'Jendela kelas memiliki sisi panjang dan lebar seperti persegi panjang.',
+        options: ['Persegi Panjang', 'Segitiga', 'Lingkaran'],
+        correctAnswer: 'Persegi Panjang',
+      },
+      {
+        id: 'komik5-application-ban-sepeda',
+        title: 'Ban Sepeda',
+        image: banSepedaApp.src,
+        description: 'Ban sepeda berbentuk bundar dan tidak memiliki sudut.',
+        options: ['Lingkaran', 'Segitiga', 'Belah Ketupat'],
+        correctAnswer: 'Lingkaran',
+      },
+      {
+        id: 'komik5-application-pola-keramik',
+        title: 'Pola Keramik',
+        image: polaKeramikApp.src,
+        description: 'Pola keramik dapat membentuk wajik dengan empat sisi sama panjang.',
+        options: ['Belah Ketupat', 'Persegi Panjang', 'Lingkaran'],
+        correctAnswer: 'Belah Ketupat',
+      },
+    ],
   },
   argumentation: {
     questions: [

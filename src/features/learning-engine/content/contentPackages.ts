@@ -52,6 +52,7 @@ export interface LearningContentApplication {
     description: string;
     options: string[];
     correctAnswer: string;
+    acceptableAnswers?: string[];
   }>;
 }
 

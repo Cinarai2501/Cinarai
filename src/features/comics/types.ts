@@ -100,6 +100,7 @@ export interface ComicContentPackageLike {
       description: string;
       options: string[];
       correctAnswer: string;
+      acceptableAnswers?: string[];
     }>;
   };
   argumentation: {
@@ -213,6 +214,7 @@ export interface ComicModuleLike {
       description: string;
       options: string[];
       correctAnswer: string;
+      acceptableAnswers?: string[];
     }>;
   };
   argumentation: {

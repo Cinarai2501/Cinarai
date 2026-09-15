@@ -149,3 +149,14 @@ test('comic 4 application uses only Jembatan Merah application situations', () =
   assert.ok(application.cards?.every((card) => /langkah|kendaraan|data|lintasan/i.test(`${card.title} ${card.description}`)));
   assert.doesNotMatch(`${application.intro} ${application.prompt} ${application.context}`, /bangun ruang|simetri|pecahan/i);
 });
+
+test('comic 5 application maps every real-life object to its own answer card', async () => {
+  const { packageContent } = await import('@/features/comics/comic-5/content');
+  const application = packageContent.application;
+
+  assert.equal(application.cards?.length, 4);
+  assert.deepEqual(application.cards?.map((card) => card.title), ['Atap Rumah', 'Jendela Kelas', 'Ban Sepeda', 'Pola Keramik']);
+  assert.deepEqual(application.cards?.map((card) => card.correctAnswer), ['Segitiga', 'Persegi Panjang', 'Lingkaran', 'Belah Ketupat']);
+  assert.equal(new Set(application.cards?.map((card) => card.id)).size, 4);
+  assert.ok(application.cards?.every((card) => card.options.includes(card.correctAnswer)));
+});

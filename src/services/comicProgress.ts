@@ -42,6 +42,9 @@ export interface ComicProgressStageData {
   application?: {
     selectedCardId?: string | null;
     selectedChoice?: string[];
+    cardAnswers?: Record<string, string[]>;
+    cardExplanations?: Record<string, string>;
+    cardResults?: Record<string, boolean>;
     explanation?: string;
     score?: number | null;
     selectedAnswer?: string[];

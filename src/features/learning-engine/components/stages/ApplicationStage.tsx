@@ -8,7 +8,7 @@ import { firestore } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
-import { isApplicationAnswerCorrect } from './applicationAnswer';
+import { areApplicationCardsCompleted, isApplicationAnswerCorrect } from './applicationAnswer';
 
 type CoachSummary = {
   mastered: string[];
@@ -24,7 +24,7 @@ type CoachResponse = {
 
 type ApplicationOption = { value: string; label: string };
 type ApplicationImage = { src: string; alt: string; label: string; description: string };
-type ApplicationCard = { id: string; title: string; image: string; description: string; options: string[]; correctAnswer: string };
+type ApplicationCard = { id: string; title: string; image: string; description: string; options: string[]; correctAnswer: string; acceptableAnswers?: string[] };
 
 function shuffle<T>(array: ReadonlyArray<T>): T[] {
   const result = [...array];
@@ -68,6 +68,9 @@ export default function ApplicationStage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string[]>([]);
   const [studentReason, setStudentReason] = useState('');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(applicationConfig.cards?.[0]?.id ?? null);
+  const [cardAnswers, setCardAnswers] = useState<Record<string, string[]>>({});
+  const [cardExplanations, setCardExplanations] = useState<Record<string, string>>({});
+  const [cardResults, setCardResults] = useState<Record<string, boolean>>({});
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
   const [answerFeedback, setAnswerFeedback] = useState<string | null>(null);
@@ -82,13 +85,17 @@ export default function ApplicationStage() {
   const options = useMemo(() => shuffle(applicationConfig.options.map((option) => option.value)), [applicationConfig.options]);
   const currentCard = useMemo(() => applicationConfig.cards?.find((card) => card.id === selectedCardId) ?? applicationConfig.cards?.[0] ?? null, [applicationConfig.cards, selectedCardId]);
   const isComic1Application = comic.id === 1;
+  const hasCards = Boolean(applicationConfig.cards?.length);
 
   const minReasonLength = studentReason.trim().length;
   const canSubmit = selectedAnswer.length > 0 && minReasonLength >= 20 && !isThinking;
+  const isStageCompleted = hasCards
+    ? areApplicationCardsCompleted(applicationConfig.cards!.map((card) => card.id), cardResults)
+    : answerSubmitted;
 
   useEffect(() => {
-    setCanAdvance(answerSubmitted);
-  }, [answerSubmitted, setCanAdvance]);
+    setCanAdvance(isStageCompleted);
+  }, [isStageCompleted, setCanAdvance]);
 
   useEffect(() => {
     if (!user?.uid || !hasHydratedProgress) return;
@@ -97,6 +104,9 @@ export default function ApplicationStage() {
         application: {
           selectedCardId,
           selectedChoice: selectedAnswer,
+          cardAnswers,
+          cardExplanations,
+          cardResults,
           explanation: studentReason,
           score: answerSubmitted ? 1 : 0,
           selectedAnswer,
@@ -109,7 +119,7 @@ export default function ApplicationStage() {
         },
       },
     });
-  }, [answerFeedback, answerSubmitted, attemptCount, coachMessage, coachSummary, comic.id, hasHydratedProgress, selectedAnswer, selectedCardId, studentReason, user?.uid]);
+  }, [answerFeedback, answerSubmitted, attemptCount, cardAnswers, cardExplanations, cardResults, coachMessage, coachSummary, comic.id, hasHydratedProgress, selectedAnswer, selectedCardId, studentReason, user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -125,6 +135,15 @@ export default function ApplicationStage() {
           }
           if (Array.isArray(stageData.selectedChoice)) {
             setSelectedAnswer(stageData.selectedChoice);
+          }
+          if (stageData.cardAnswers && typeof stageData.cardAnswers === 'object') {
+            setCardAnswers(stageData.cardAnswers);
+          }
+          if (stageData.cardExplanations && typeof stageData.cardExplanations === 'object') {
+            setCardExplanations(stageData.cardExplanations);
+          }
+          if (stageData.cardResults && typeof stageData.cardResults === 'object') {
+            setCardResults(stageData.cardResults);
           }
           if (typeof stageData.explanation === 'string') {
             setStudentReason(stageData.explanation);
@@ -199,11 +218,16 @@ export default function ApplicationStage() {
       setAnswerFeedback(null);
     } else {
       const expectedAnswer = currentCard?.correctAnswer ?? applicationConfig.correctAnswer;
-      const answerIsCorrect = isApplicationAnswerCorrect(selectedAnswer, expectedAnswer);
+      const answerIsCorrect = isApplicationAnswerCorrect(selectedAnswer, expectedAnswer, currentCard?.acceptableAnswers);
       const localFeedback = answerIsCorrect
         ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
         : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
       setIsAnswerCorrect(answerIsCorrect);
+      if (currentCard) {
+        setCardAnswers((previous) => ({ ...previous, [currentCard.id]: selectedAnswer }));
+        setCardExplanations((previous) => ({ ...previous, [currentCard.id]: studentReason }));
+        setCardResults((previous) => ({ ...previous, [currentCard.id]: answerIsCorrect }));
+      }
       setAnswerSubmitted(answerIsCorrect);
       setAnswerFeedback(localFeedback);
     }
@@ -342,8 +366,8 @@ export default function ApplicationStage() {
                   type="button"
                   onClick={() => {
                     setSelectedCardId(card.id);
-                    setSelectedAnswer([]);
-                    setStudentReason('');
+                    setSelectedAnswer(cardAnswers[card.id] ?? []);
+                    setStudentReason(cardExplanations[card.id] ?? '');
                     setAnswerSubmitted(false);
                     setIsAnswerCorrect(false);
                     setAnswerFeedback(null);
@@ -388,6 +412,9 @@ export default function ApplicationStage() {
                     setSelectedAnswer((prev) =>
                       prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option],
                     );
+                    if (currentCard) {
+                      setCardResults((previous) => ({ ...previous, [currentCard.id]: false }));
+                    }
                   }}
                   className={['inline-flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition',
                     checked ? 'border-primary-600 bg-primary-50 text-primary-900' : 'border-neutral-200 bg-white text-neutral-800 hover:border-primary-200 hover:bg-primary-50/50',
@@ -411,7 +438,12 @@ export default function ApplicationStage() {
             <textarea
               id="application-reason"
               value={studentReason}
-              onChange={(event) => setStudentReason(event.target.value)}
+              onChange={(event) => {
+                setStudentReason(event.target.value);
+                if (currentCard) {
+                  setCardResults((previous) => ({ ...previous, [currentCard.id]: false }));
+                }
+              }}
               rows={5}
               placeholder="Tuliskan alasanmu di sini..."
               disabled={isThinking}
@@ -450,7 +482,7 @@ export default function ApplicationStage() {
         </div>
       </div>
 
-      {answerSubmitted && (
+      {isStageCompleted && (
         <div className="rounded-[24px] bg-white px-5 py-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
