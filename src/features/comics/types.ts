@@ -109,6 +109,9 @@ export interface ComicContentPackageLike {
       options: string[];
       correctAnswer: string;
       acceptableAnswers?: string[];
+      explanation?: string;
+      hint?: string;
+      masjidContext?: string;
     }>;
   };
   argumentation: {

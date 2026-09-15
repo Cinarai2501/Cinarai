@@ -24,7 +24,18 @@ type CoachResponse = {
 
 type ApplicationOption = { value: string; label: string };
 type ApplicationImage = { src: string; alt: string; label: string; description: string };
-type ApplicationCard = { id: string; title: string; image: string; description: string; options: string[]; correctAnswer: string; acceptableAnswers?: string[] };
+type ApplicationCard = {
+  id: string;
+  title: string;
+  image: string;
+  description: string;
+  options: string[];
+  correctAnswer: string;
+  acceptableAnswers?: string[];
+  explanation?: string;
+  hint?: string;
+  masjidContext?: string;
+};
 
 function shuffle<T>(array: ReadonlyArray<T>): T[] {
   const result = [...array];
@@ -86,10 +97,12 @@ export default function ApplicationStage() {
   const currentCard = useMemo(() => applicationConfig.cards?.find((card) => card.id === selectedCardId) ?? applicationConfig.cards?.[0] ?? null, [applicationConfig.cards, selectedCardId]);
   const isComic1Application = comic.id === 1;
   const isComic5Application = comic.id === 5;
+  const isComic6Application = comic.id === 6;
   const hasCards = Boolean(applicationConfig.cards?.length);
+  const completedCardCount = applicationConfig.cards?.filter((card) => cardResults[card.id]).length ?? 0;
 
   const minReasonLength = studentReason.trim().length;
-  const canSubmit = selectedAnswer.length > 0 && minReasonLength >= 20 && !isThinking;
+  const canSubmit = selectedAnswer.length > 0 && (isComic6Application || minReasonLength >= 20) && !isThinking;
   const isStageCompleted = hasCards
     ? areApplicationCardsCompleted(applicationConfig.cards!.map((card) => card.id), cardResults)
     : answerSubmitted;
@@ -363,6 +376,7 @@ export default function ApplicationStage() {
               <h1 className="text-2xl font-black leading-snug text-neutral-900 sm:text-3xl">{applicationConfig.title}</h1>
             </div>
           </div>
+          {isComic6Application ? <span className="rounded-full bg-primary-50 px-3 py-2 text-sm font-black text-primary-700">{completedCardCount}/5</span> : null}
         </div>
 
         <p className="mt-4 text-sm leading-relaxed text-neutral-600 sm:text-base">{applicationConfig.intro}</p>
@@ -417,9 +431,10 @@ export default function ApplicationStage() {
                     const savedAnswer = cardAnswers[card.id] ?? [];
                     setSelectedAnswer(savedAnswer.length === 1 ? savedAnswer : []);
                     setStudentReason(cardExplanations[card.id] ?? '');
-                    setAnswerSubmitted(false);
-                    setIsAnswerCorrect(false);
-                    setAnswerFeedback(null);
+                    const cardCompleted = Boolean(cardResults[card.id]);
+                    setAnswerSubmitted(cardCompleted);
+                    setIsAnswerCorrect(cardCompleted);
+                    setAnswerFeedback(cardCompleted ? 'Jawabanmu benar.' : null);
                     setCoachMessage(null);
                     setCoachSummary(null);
                     setAiError(null);
@@ -436,9 +451,21 @@ export default function ApplicationStage() {
         {currentCard && (
           <div className="mt-4 rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="relative h-24 w-full max-w-[140px] overflow-hidden rounded-[16px] border border-neutral-200 bg-white">
-                <Image src={currentCard.image} alt={currentCard.title} fill className="object-cover" />
-              </div>
+              {currentCard.image ? (
+                <div className="relative h-24 w-full max-w-[140px] overflow-hidden rounded-[16px] border border-neutral-200 bg-white">
+                  <Image
+                    src={currentCard.image}
+                    alt={currentCard.title}
+                    fill
+                    className="object-contain"
+                    onError={() => {
+                      if (process.env.NODE_ENV !== 'production') {
+                        console.error(`Application asset Komik ${comic.id} tidak ditemukan: ${currentCard.image}`);
+                      }
+                    }}
+                  />
+                </div>
+              ) : null}
               <div className="flex-1">
                 <p className="text-sm font-black text-neutral-900">{currentCard.title}</p>
                 <p className="mt-1 text-sm leading-relaxed text-neutral-600">{currentCard.description}</p>
@@ -480,7 +507,7 @@ export default function ApplicationStage() {
             })}
           </div>
 
-          <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
+          {!isComic6Application ? <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
             <div className="mb-2 flex items-center justify-between gap-2">
               <label htmlFor="application-reason" className="block text-sm font-black text-neutral-700">
                 ✏️ Jelaskan pilihanmu
@@ -508,7 +535,7 @@ export default function ApplicationStage() {
               <span>{minReasonLength} / 20 karakter</span>
               <span>{selectedAnswer.length} pilihan dipilih</span>
             </div>
-          </div>
+          </div> : null}
 
           {/* simplified stage: no observation/exploration requirement */}
 
@@ -525,9 +552,17 @@ export default function ApplicationStage() {
 
           {answerFeedback && !isComic1Application && (
             <div className={['rounded-[20px] border px-4 py-3 text-sm font-semibold', isAnswerCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'].join(' ')}>
-              {answerFeedback}
+              <p>{isAnswerCorrect ? '✓ Hebat! Jawabanmu benar.' : 'Belum tepat. Coba perhatikan bentuk benda tersebut.'}</p>
+              <p className="mt-1 font-normal">{isAnswerCorrect ? currentCard?.explanation ?? answerFeedback : currentCard?.hint ?? answerFeedback}</p>
             </div>
           )}
+
+          {isComic6Application && currentCard?.masjidContext && isAnswerCorrect ? (
+            <div className="rounded-[20px] border border-primary-100 bg-primary-50 px-4 py-3 text-sm leading-relaxed text-primary-900">
+              <p className="font-black">Contoh di Masjid Al-Akbar</p>
+              <p className="mt-1">{currentCard.masjidContext}</p>
+            </div>
+          ) : null}
 
           {aiError && (
             <div className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
