@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
@@ -42,6 +43,7 @@ test('Komik 6 identification completes only after every shape is selected', () =
 
 test('Komik 6 argumentation connects every object to its supporting characteristics', () => {
   const questions = packageContent.argumentation.questions;
+  const argumentationAssetDirectory = path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation');
 
   assert.deepEqual(questions.map((question) => question.shapeName), [
     'Tabung',
@@ -65,4 +67,8 @@ test('Komik 6 argumentation connects every object to its supporting characterist
     path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'ruangutama.png'),
     path.join(process.cwd(), 'src', 'features', 'comics', 'comic-6', 'assets', 'argumentation', 'tempatwudhu.png'),
   ]);
+  assert.deepEqual(questions.map((question) => question.image), questions.map((question) => question.photoSrc));
+  for (const assetName of ['menaramasjid.png', 'kubahmasjid.png', 'ruangutama.png', 'tempatwudhu.png']) {
+    assert.equal(fs.existsSync(path.join(argumentationAssetDirectory, assetName)), true);
+  }
 });
