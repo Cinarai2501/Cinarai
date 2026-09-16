@@ -1,4 +1,5 @@
 import { buildResolutionTutorExplanation as buildTutorTextExplanation } from './resolutionTutorText';
+import { packageContent as comic6PackageContent } from '../../../comics/comic-6/content/packageContent';
 
 export interface ResolutionMission {
   id: number;
@@ -19,6 +20,7 @@ export interface ResolutionMission {
   context: string;
   accent: string;
   illustration: string;
+  comicId?: number;
 }
 
 const COMIC_1_RESOLUTION_MISSIONS: ResolutionMission[] = [
@@ -368,6 +370,14 @@ export function getResolutionMissions(comicId: number, lokasi: string): Resoluti
     }));
   }
 
+  if (comicId === 6) {
+    return comic6PackageContent.resolution.missions.map((mission) => ({
+      ...mission,
+      comicId: 6,
+      context: `${mission.context} (${lokasi})`,
+    }));
+  }
+
   return COMIC_1_RESOLUTION_MISSIONS;
 }
 
@@ -376,6 +386,15 @@ export function isCorrectSelection(mission: ResolutionMission, selected: string 
 }
 
 export function buildResolutionTutorExplanation(mission: ResolutionMission, isCorrect: boolean): string {
+  if (mission.comicId === 6) {
+    return buildTutorTextExplanation({
+      shape: mission.shape,
+      context: mission.context,
+      object: mission.part,
+      comicId: 6,
+    }, isCorrect);
+  }
+
   return buildTutorTextExplanation(
     {
       shape: mission.shape,

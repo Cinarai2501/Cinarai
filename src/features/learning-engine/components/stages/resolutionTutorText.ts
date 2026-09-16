@@ -2,6 +2,33 @@ export interface ResolutionTutorMission {
   shape: string;
   formula?: string;
   context: string;
+  object?: string;
+  comicId?: number;
+}
+
+export const COMIC_6_RESOLUTION_TUTOR_SYSTEM_PROMPT = 'Kamu adalah AI Tutor untuk Komik 6 tentang bangun ruang di Masjid Al-Akbar Surabaya. Jawablah hanya berdasarkan materi Komik 6 dan konteks soal yang sedang dikerjakan. Jangan mengganti bangun ruang yang sedang dibahas. Jangan memberikan rumus volume atau luas jika tidak diminta dan tidak terdapat dalam materi. Jika siswa meminta materi di luar konteks Komik 6, arahkan kembali ke materi bangun ruang Komik 6.';
+
+function buildComic6Explanation(mission: ResolutionTutorMission, isCorrect: boolean): string {
+  const shapeFacts: Record<string, string> = {
+    tabung: 'Tabung memiliki sisi atas dan alas berbentuk lingkaran, sisi selimut, dan 2 rusuk.',
+    kerucut: 'Kerucut memiliki 2 sisi, 1 rusuk, dan 1 titik puncak.',
+    balok: 'Balok memiliki 6 sisi berbentuk persegi panjang, 12 rusuk, dan 8 titik sudut.',
+    kubus: 'Kubus memiliki 6 sisi berbentuk persegi, 12 rusuk sama panjang, dan 8 titik sudut.',
+    'setengah bola': 'Setengah bola memiliki sisi lengkung, bagian yang tertutup, dan tidak memiliki titik sudut.',
+  };
+  const facts = shapeFacts[mission.shape.toLowerCase()] ?? `Perhatikan ciri ${mission.shape} pada materi Komik 6.`;
+  const object = mission.object ? `${mission.object} menyerupai ${mission.shape}.` : `Soal ini membahas ${mission.shape}.`;
+
+  return [
+    isCorrect ? 'Jawabanmu benar.' : 'Belum tepat. Mari kita perhatikan ciri bangunnya.',
+    '',
+    object,
+    facts,
+    '',
+    isCorrect
+      ? 'Ciri tersebut sesuai dengan jawaban pada soal.'
+      : `Bandingkan ciri itu dengan pilihanmu. ${mission.shape} bukan bangun ruang lain.`,
+  ].join('\n');
 }
 
 function getVariableLegend(mission: ResolutionTutorMission): string[] {
@@ -43,6 +70,10 @@ function getVariableLegend(mission: ResolutionTutorMission): string[] {
 }
 
 export function buildResolutionTutorExplanation(mission: ResolutionTutorMission, isCorrect: boolean): string {
+  if (mission.comicId === 6) {
+    return buildComic6Explanation(mission, isCorrect);
+  }
+
   const formula = mission.formula || 'V = ...';
   const isBridgeMeasurement = ['panjang lintasan', 'jumlah langkah', 'membandingkan data'].includes(mission.shape.toLowerCase());
   if (isBridgeMeasurement) {

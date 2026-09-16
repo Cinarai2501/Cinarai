@@ -160,6 +160,7 @@ export interface ComicContentPackageLike {
       context: string;
       accent: string;
       illustration: string;
+      comicId?: number;
     }>;
   };
   introspection: {

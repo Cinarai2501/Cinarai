@@ -6,11 +6,15 @@ import { debug } from '@/lib/debug';
 import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
-import type { ResolutionMission } from './resolutionStage.helpers';
+import { buildResolutionTutorExplanation, type ResolutionMission } from './resolutionStage.helpers';
 import RobotMascot from '@/components/ai/RobotMascot';
 import { stopGlobalTts, useGlobalTts } from '@/lib/tts/globalTts';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
+  if (mission.comicId === 6) {
+    return buildResolutionTutorExplanation(mission, isCorrect);
+  }
+
   if (isCorrect) {
     return [
       '✨ Selamat! Jawabanmu benar!',
@@ -307,6 +311,7 @@ function MissionCard({
   const [tutorMessage, setTutorMessage] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [answerFeedback, setAnswerFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
   const aiPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -316,6 +321,7 @@ function MissionCard({
     setIsSolved(false);
     setAttempts(0);
     setAnswerFeedback(null);
+    setImageFailed(false);
     stop();
   }, [mission.id, stop]);
 
@@ -332,7 +338,19 @@ function MissionCard({
       const response = await fetch('/api/ai/resolution', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selected, attempt: attempts, missionId: mission.id, comicId: comic.id }),
+        body: JSON.stringify({
+          selected,
+          attempt: attempts,
+          missionId: mission.id,
+          comicId: comic.id,
+          context: {
+            questionIndex: missionIndex,
+            question: mission.prompt,
+            shape: mission.shape,
+            object: mission.part,
+            choices: mission.options,
+          },
+        }),
       });
       const data = await response.json();
       const answerIsCorrect = Boolean(data.correct);
@@ -429,12 +447,19 @@ function MissionCard({
 
         <div className="rounded-[20px] border border-neutral-200 bg-neutral-50 p-4">
           <div className="flex items-center justify-center overflow-hidden rounded-[16px] border border-neutral-200 bg-white p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={mission.illustration}
-              alt={`Ilustrasi ${mission.shape}`}
-              className="h-44 w-full max-w-[240px] object-contain"
-            />
+            {mission.illustration && !imageFailed ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={mission.illustration}
+                alt={`Ilustrasi ${mission.shape}`}
+                className="h-44 w-full max-w-[240px] object-contain"
+                onError={() => setImageFailed(true)}
+              />
+            ) : (
+              <p className="flex h-44 items-center justify-center text-center text-sm font-semibold text-neutral-500">
+                Ilustrasi {mission.shape} tidak tersedia.
+              </p>
+            )}
           </div>
           <p className="mt-3 text-center text-sm font-black text-neutral-700">{mission.shape}</p>
         </div>

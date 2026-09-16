@@ -8,6 +8,13 @@ type ReqBody = {
   attempt?: number;
   missionId?: number;
   comicId?: number;
+  context?: {
+    questionIndex?: number;
+    question?: string;
+    shape?: string;
+    object?: string;
+    choices?: Array<{ key: string; label: string }>;
+  };
 };
 
 function buildCorrectExplanation(mission: ResolutionMission): string {
@@ -23,22 +30,33 @@ export async function POST(request: NextRequest) {
     const comicId = Number(body.comicId) || 1;
     const missions = getResolutionMissions(comicId, 'lokasi');
     const mission = missions.find((item) => item.id === missionId) ?? missions[0];
+    const activeContext = body.context;
+    const contextualMission = comicId === 6 && activeContext
+      ? {
+          ...mission,
+          shape: activeContext.shape || mission.shape,
+          part: activeContext.object || mission.part,
+          prompt: activeContext.question || mission.prompt,
+          options: activeContext.choices?.length === 4 ? activeContext.choices : mission.options,
+          comicId: 6,
+        }
+      : mission;
 
     if (!selected) {
       return NextResponse.json({ error: 'selected is required' }, { status: 400 });
     }
 
-    if (selected === mission.correctKey) {
+    if (selected === contextualMission.correctKey) {
       return NextResponse.json({
         correct: true,
-        explanation: buildCorrectExplanation(mission),
-        answer: mission.answer,
+        explanation: buildCorrectExplanation(contextualMission),
+        answer: contextualMission.answer,
       });
     }
 
     return NextResponse.json({
       correct: false,
-      explanation: buildResolutionTutorExplanation(mission, false),
+      explanation: buildResolutionTutorExplanation(contextualMission, false),
       attempts: attempt,
     });
   } catch (error) {
