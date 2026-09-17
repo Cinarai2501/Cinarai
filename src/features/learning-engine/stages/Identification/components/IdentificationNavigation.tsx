@@ -5,25 +5,32 @@ import { useLearningEngine } from '../../../hooks/useLearningEngine';
 import { useIdentificationContext } from '../context/IdentificationContext';
 
 export default function IdentificationNavigation() {
-  const { checkedItems } = useIdentificationContext();
+  const { state, currentQuestionIndex, setCurrentQuestionIndex, checkedItems } = useIdentificationContext();
   const { registerSlideNav, unregisterSlideNav } = useLearningEngine();
 
-  const currentItem = checkedItems ? Object.keys(checkedItems).length > 0 : false;
-  const canGoNext = Boolean(currentItem);
+  const currentItem = state.items[currentQuestionIndex];
+  const canGoNext = Boolean(currentItem && checkedItems[currentItem.id]);
+  const canGoPrev = currentQuestionIndex > 0;
 
-  const goNext = useCallback(() => undefined, []);
-  const goPrev = useCallback(() => undefined, []);
+  const goNext = useCallback(() => {
+    if (canGoNext && currentQuestionIndex < state.items.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  }, [canGoNext, currentQuestionIndex, setCurrentQuestionIndex, state.items.length]);
+  const goPrev = useCallback(() => {
+    if (canGoPrev) setCurrentQuestionIndex(currentQuestionIndex - 1);
+  }, [canGoPrev, currentQuestionIndex, setCurrentQuestionIndex]);
 
   useEffect(() => {
     registerSlideNav({
       slideIndex: 0,
-      totalSlides: 1,
+      totalSlides: state.items.length,
       canGoNext,
-      canGoPrev: false,
+      canGoPrev,
       goNext,
       goPrev,
     });
-  }, [canGoNext, goNext, goPrev, registerSlideNav]);
+  }, [canGoNext, canGoPrev, goNext, goPrev, registerSlideNav, state.items.length]);
 
   useEffect(() => () => unregisterSlideNav(), [unregisterSlideNav]);
 

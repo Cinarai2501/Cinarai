@@ -27,22 +27,35 @@ test('comic 3 identification uses one multi-select question with all six expecte
   assert.equal(question?.options.every((option) => option.correct), true);
 });
 
-test('comic 4 identification uses the bridge measurement concepts and stable multi-select options', () => {
+test('comic 4 identification follows the bridge story in seven ordered items', () => {
   const comicModule = getComicModule(4);
-  const question = comicModule.identification.questions[0];
+  const questions = comicModule.identification.questions;
+  const identificationText = questions
+    .map((question) => `${question.title ?? ''} ${question.description ?? ''} ${question.question} ${question.explanation}`)
+    .join(' ')
+    .toLowerCase();
 
-  assert.equal(question?.question, 'Apa saja konsep matematika yang kamu temukan dalam petualangan di Jembatan Merah?');
-  assert.deepEqual(question?.options.map((option) => option.text), [
-    'Pengukuran panjang lintasan',
-    'Menghitung panjang berdasarkan jumlah langkah dan panjang langkah',
-    'Menganalisis dan membandingkan data hasil pengukuran',
-    'Menyajikan data dalam grafik batang',
-    'Bangun datar',
-    'Simetri',
+  assert.equal(questions.length, 7);
+  assert.deepEqual(questions.map((question) => question.title), [
+    'Mengidentifikasi Masalah Pengukuran Jembatan',
+    'Mengidentifikasi Perbedaan Panjang Langkah',
+    'Menentukan Data yang Dibutuhkan',
+    'Mengidentifikasi Cara Menghitung Panjang Lintasan',
+    'Mengidentifikasi Data Hasil Pengukuran',
+    'Mengidentifikasi Penyajian Data dalam Grafik Batang',
+    'Mengidentifikasi Data Kendaraan di Jembatan Merah',
   ]);
-  assert.equal(question?.options.filter((option) => option.correct).length, 4);
-  assert.match(comicModule.identification.feedback.complete, /grafik batang/);
-  assert.doesNotMatch(comicModule.identification.feedback.complete, /keramik|persegi|simetri/i);
+  assert.match(identificationText, /60 langkah/);
+  assert.match(identificationText, /76 langkah/);
+  assert.match(identificationText, /83 langkah/);
+  assert.match(identificationText, /18\.450/);
+  assert.match(identificationText, /6\.230/);
+  assert.match(identificationText, /890/);
+  assert.match(identificationText, /310/);
+  assert.match(identificationText, /25\.880/);
+  assert.match(identificationText, /grafik batang/);
+  assert.doesNotMatch(identificationText, /bangun datar|bangun ruang|simetri|luas|keliling/);
+  assert.doesNotMatch(comicModule.identification.feedback.complete, /bangun datar|simetri/i);
 });
 
 test('comic 4 argumentation uses eight ordered bridge measurement and vehicle data questions', () => {

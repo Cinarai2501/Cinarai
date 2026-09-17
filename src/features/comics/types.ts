@@ -71,6 +71,9 @@ export interface ComicContentPackageLike {
   identification: {
     questions: Array<{
       id: string;
+      title?: string;
+      description?: string;
+      prompt?: string;
       question: string;
       image?: string;
       imageAlt: string;
@@ -200,6 +203,9 @@ export interface ComicModuleLike {
   identification: {
     questions: Array<{
       id: string;
+      title?: string;
+      description?: string;
+      prompt?: string;
       question: string;
       image?: string;
       imageAlt: string;

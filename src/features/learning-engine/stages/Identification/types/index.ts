@@ -26,6 +26,9 @@ export interface IdentificationItem {
   readonly id: string;
   readonly targetIndex: number;
   readonly targetText: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly prompt?: string;
   readonly question: string;
   readonly image: string;
   readonly imageAlt: string;

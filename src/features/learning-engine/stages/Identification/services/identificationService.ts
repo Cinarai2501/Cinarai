@@ -31,6 +31,9 @@ type RawOption = {
 };
 
 type RawQuestion = {
+  title?: string;
+  description?: string;
+  prompt?: string;
   question: string;
   imageAlt: string;
   image?: string;
@@ -65,6 +68,9 @@ interface IdentificationStateContext {
 
 function buildQuestionsForIdentification(identificationData: IdentificationData): RawQuestion[] {
   return identificationData.questions.map((question) => ({
+    title: question.title,
+    description: question.description,
+    prompt: question.prompt,
     question: question.question,
     imageAlt: question.imageAlt,
     image: question.image,
@@ -131,6 +137,9 @@ export function createIdentificationState(
       id,
       targetIndex: index,
       targetText: question.question,
+      title: question.title,
+      description: question.description,
+      prompt: question.prompt,
       question: question.question,
       image: imageSrc,
       imageAlt: question.imageAlt,
