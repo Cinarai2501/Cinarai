@@ -62,6 +62,11 @@ export interface IdentificationState {
   readonly lokasi: string;
   readonly cover: string;
   readonly title: string;
+  readonly feedback: {
+    readonly complete: string;
+    readonly partial: string;
+    readonly incomplete: string;
+  };
   observe: ObserveState;
   items: IdentificationItem[];
   /** Jumlah item yang sudah SAVED */

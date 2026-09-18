@@ -165,6 +165,7 @@ export function createIdentificationState(
     lokasi: context.lokasi,
     cover: context.cover,
     title: context.title,
+    feedback: identificationData.feedback,
     observe: { note: '', isDone: false },
     items,
     observedCount: 0,

@@ -43,9 +43,7 @@ export default function IdentificationQuestion({
         .map((option) => `${option.feedback} Ciri: ${option.properties?.join(', ')}.`)
         .join(' ')}${isCorrect ? ' Hebat! Semua bangun ruang yang wajib sudah kamu temukan.' : ' Belum semua bangun ruang dipilih. Perhatikan lagi objek Masjid Al-Akbar.'}`
     : state.comicId === 4
-    ? isCorrect
-      ? 'Benar! Dalam petualangan di Jembatan Merah, kamu belajar mengukur panjang lintasan menggunakan jumlah langkah dan panjang satu langkah, menghitung panjang lintasan, menganalisis data hasil pengukuran, serta menyajikannya dalam grafik batang.'
-      : 'Belum tepat. Ingat kembali petualangan di Jembatan Merah. Mereka menggunakan langkah untuk mengukur panjang lintasan, menghitung panjang berdasarkan panjang langkah, membandingkan hasil pengukuran, dan menyajikan data dalam grafik.'
+    ? isCorrect ? state.feedback.complete : state.feedback.partial
     : item.explanation;
 
   useEffect(() => {
