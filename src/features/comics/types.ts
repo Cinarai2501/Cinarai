@@ -69,6 +69,7 @@ export interface ComicContentPackageLike {
     introspection: string;
   };
   identification: {
+    mode?: 'assessment' | 'self-identification';
     questions: Array<{
       id: string;
       title?: string;
@@ -82,7 +83,7 @@ export interface ComicContentPackageLike {
       highlight?: string;
       options: Array<{
         text: string;
-        correct: boolean;
+        correct?: boolean;
         icon?: string;
         example?: string;
         properties?: string[];
@@ -201,6 +202,7 @@ export interface ComicModuleLike {
     hasAITutor: boolean;
   };
   identification: {
+    mode?: 'assessment' | 'self-identification';
     questions: Array<{
       id: string;
       title?: string;
@@ -214,7 +216,7 @@ export interface ComicModuleLike {
       highlight?: string;
       options: Array<{
         text: string;
-        correct: boolean;
+        correct?: boolean;
         icon?: string;
         example?: string;
         properties?: string[];

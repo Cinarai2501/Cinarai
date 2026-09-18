@@ -149,6 +149,7 @@ export function IdentificationProvider({
       stageData: {
         identification: {
           selectedShapes: Array.from(new Set(selectedShapes)),
+          identifiedTopics: stateRef.current.mode === 'self-identification' ? Array.from(new Set(selectedShapes)) : undefined,
           answers,
         },
       },
@@ -167,10 +168,12 @@ export function IdentificationProvider({
         .filter((option) => selectedOptionIds.includes(option.id))
         .map((option) => option.text);
       const selectedAnswer = selectedShapeTexts.join(', ') || null;
-      const correctAnswer = item.options
-        .filter((option) => option.correct)
-        .map((option) => option.text)
-        .join(', ');
+      const correctAnswer = stateRef.current.mode === 'self-identification'
+        ? null
+        : item.options
+          .filter((option) => option.correct === true)
+          .map((option) => option.text)
+          .join(', ');
 
       await saveIdentificationAnswer(currentUser.uid, comicId, item.targetIndex, {
         selectedAnswer,

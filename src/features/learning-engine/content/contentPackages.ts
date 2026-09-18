@@ -27,7 +27,7 @@ export interface LearningContentQuestion {
   overlayType?: string;
   crop?: string;
   highlight?: string;
-  options: Array<{ text: string; correct: boolean }>;
+  options: Array<{ text: string; correct?: boolean }>;
   explanation: string;
 }
 

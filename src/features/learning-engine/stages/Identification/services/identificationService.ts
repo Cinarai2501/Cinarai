@@ -23,7 +23,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 type RawOption = {
   text: string;
-  correct: boolean;
+  correct?: boolean;
   icon?: string;
   example?: string;
   properties?: readonly string[];
@@ -96,7 +96,7 @@ function buildShuffledOptions(itemId: string, rawOptions: RawOption[], stableIds
       ? `${itemId}-opt-${opt.text.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
       : `${itemId}-opt-${index}`,
     text: opt.text,
-    correct: opt.correct,
+    ...(opt.correct === undefined ? {} : { correct: opt.correct }),
     icon: opt.icon,
     example: opt.example,
     properties: opt.properties,
@@ -126,7 +126,7 @@ export function createIdentificationState(
       ...option,
       icon: option.icon ?? (resolveIdentificationOptionAsset(context.comicId, option.text, '') || undefined),
     }));
-    const correctOption = options.find((o) => o.correct);
+    const correctOption = options.find((o) => o.correct === true);
     const imageSrc = question.image || observationImage.imageSrc;
     const hasDedicatedImage = Boolean(question.image);
     const overlaySrc = question.highlight ?? (hasDedicatedImage ? undefined : buildObservationOverlaySvg({
@@ -149,7 +149,7 @@ export function createIdentificationState(
       crop: question.crop ?? imageSrc,
       highlight: overlaySrc,
       options,
-      correctOptionId: correctOption?.id ?? options[0].id,
+      correctOptionId: correctOption?.id,
       explanation: question.explanation,
       status: 'PENDING',
       selectedOptionIds: [],
@@ -165,6 +165,7 @@ export function createIdentificationState(
     lokasi: context.lokasi,
     cover: context.cover,
     title: context.title,
+    mode: identificationData.mode ?? 'assessment',
     feedback: identificationData.feedback,
     observe: { note: '', isDone: false },
     items,
@@ -238,7 +239,8 @@ export function selectAnswer(
     observedCount,
     isComplete: updatedItems.every((item) => {
       const selected = item.selectedOptionIds ?? [];
-      const correct = item.options.filter((option) => option.correct).map((option) => option.id);
+      if (state.mode === 'self-identification') return selected.length > 0;
+      const correct = item.options.filter((option) => option.correct === true).map((option) => option.id);
       return selected.length === correct.length && correct.every((id) => selected.includes(id));
     }),
   };
@@ -280,7 +282,8 @@ export function saveReason(state: IdentificationState, itemId: string): Identifi
     observedCount,
     isComplete: updatedItems.every((item) => {
       const selected = item.selectedOptionIds ?? [];
-      const correct = item.options.filter((option) => option.correct).map((option) => option.id);
+      if (state.mode === 'self-identification') return selected.length > 0;
+      const correct = item.options.filter((option) => option.correct === true).map((option) => option.id);
       return selected.length === correct.length && correct.every((id) => selected.includes(id));
     }),
   };
@@ -292,11 +295,11 @@ export function resetIdentificationState(state: IdentificationState): Identifica
     observe: { note: '', isDone: false },
     items: state.items.map((item) => {
       const options = buildShuffledOptions(item.id, item.options, state.comicId === 4);
-      const correctOption = options.find((o) => o.correct);
+      const correctOption = options.find((o) => o.correct === true);
       return {
         ...item,
         options,
-        correctOptionId: correctOption?.id ?? options[0].id,
+        correctOptionId: correctOption?.id,
         status: 'PENDING',
         selectedOptionIds: [],
         note: '',

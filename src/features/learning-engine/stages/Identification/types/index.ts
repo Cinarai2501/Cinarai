@@ -14,7 +14,7 @@ export type ReasonStatus = 'EMPTY' | 'DRAFT' | 'SAVED';
 export interface AnswerOption {
   readonly id: string;
   readonly text: string;
-  readonly correct: boolean;
+  readonly correct?: boolean;
   readonly icon?: string;
   readonly example?: string;
   readonly properties?: readonly string[];
@@ -35,7 +35,7 @@ export interface IdentificationItem {
   readonly sourcePdfPath?: string | null;
   readonly sourcePage?: number;
   readonly options: AnswerOption[];
-  readonly correctOptionId: string;
+  readonly correctOptionId?: string;
   readonly overlayType?: string;
   readonly crop?: string;
   readonly highlight?: string;
@@ -62,6 +62,7 @@ export interface IdentificationState {
   readonly lokasi: string;
   readonly cover: string;
   readonly title: string;
+  readonly mode: 'assessment' | 'self-identification';
   readonly feedback: {
     readonly complete: string;
     readonly partial: string;

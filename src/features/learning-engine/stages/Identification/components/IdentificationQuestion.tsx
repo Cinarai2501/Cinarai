@@ -25,9 +25,10 @@ export default function IdentificationQuestion({
 
   const selectedOptionIds = useMemo(() => item.selectedOptionIds ?? [], [item.selectedOptionIds]);
   const selectedShapes = useMemo(() => item.options.filter((option) => selectedOptionIds.includes(option.id)).map((option) => option.text), [item.options, selectedOptionIds]);
-  const correctOptionIds = useMemo(() => item.options.filter((option) => option.correct).map((option) => option.id), [item.options]);
+  const isSelfIdentification = state.mode === 'self-identification';
+  const correctOptionIds = useMemo(() => item.options.filter((option) => option.correct === true).map((option) => option.id), [item.options]);
   const hasSelection = selectedOptionIds.length > 0;
-  const isCorrect = selectedOptionIds.length === correctOptionIds.length
+  const isCorrect = !isSelfIdentification && selectedOptionIds.length === correctOptionIds.length
     && correctOptionIds.every((optionId) => selectedOptionIds.includes(optionId))
     && selectedOptionIds.every((optionId) => correctOptionIds.includes(optionId));
 
@@ -90,6 +91,11 @@ export default function IdentificationQuestion({
         <p id={`question-${item.id}`} className="mt-3 text-base font-black leading-relaxed text-neutral-900">
           {item.prompt ?? item.question}
         </p>
+        {isSelfIdentification && (
+          <p className="mt-3 text-sm font-semibold leading-relaxed text-primary-800">
+            Pilih semua materi yang kamu temukan. Kamu boleh memilih lebih dari satu.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -119,19 +125,30 @@ export default function IdentificationQuestion({
               : 'bg-neutral-100 text-neutral-400 cursor-not-allowed',
           ].join(' ')}
         >
-          CEK JAWABAN
+            {isSelfIdentification ? 'LANJUT' : 'CEK JAWABAN'}
         </button>
       )}
 
       {isChecked && (
         <div className="space-y-3">
-          <IdentificationFeedback
-            isCorrect={isCorrect}
-            selectedOptionText={selectedShapes.join(', ') || 'Belum dijawab'}
-            explanation={feedbackExplanation}
-            showCorrectOption={state.comicId !== 4 && !isCorrect}
-          />
-          <div className="rounded-[22px] border border-accent-200 bg-accent-50/80 p-4">
+          {isSelfIdentification ? (
+            <div className="rounded-[22px] border border-accent-200 bg-accent-50/80 p-4">
+              <p className="text-lg font-black text-accent-800">Materi yang Kamu Temukan</p>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-700">{state.feedback.complete}</p>
+              <p className="mt-4 text-sm font-black text-neutral-900">Materi yang kamu pilih:</p>
+              <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700">
+                {selectedShapes.map((shape) => <li key={shape}>☑ {shape}</li>)}
+              </ul>
+            </div>
+          ) : (
+            <IdentificationFeedback
+              isCorrect={isCorrect}
+              selectedOptionText={selectedShapes.join(', ') || 'Belum dijawab'}
+              explanation={feedbackExplanation}
+              showCorrectOption={state.comicId !== 4 && !isCorrect}
+            />
+          )}
+          {!isSelfIdentification && <div className="rounded-[22px] border border-accent-200 bg-accent-50/80 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.3em] text-accent-700">AI Tutor</p>
             <div className="mt-3 space-y-3">
               {tutorExplanations.slice(0, visibleTutorCount).map((entry, index) => (
@@ -185,7 +202,7 @@ export default function IdentificationQuestion({
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
           {isTutorComplete && (
             <button
               type="button"
