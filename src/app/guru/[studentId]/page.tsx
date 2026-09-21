@@ -293,6 +293,11 @@ export default function StudentDetailPage() {
 
   const value = useMemo(() => calculateStudentValue(progressDocuments, reflections), [progressDocuments, reflections]);
 
+  const comic3Quiz = useMemo(
+    () => progressDocuments.find((document) => document.comicId === 3)?.stageData?.quiz,
+    [progressDocuments]
+  );
+
   const firstActivity = activities[0];
   const lastActivity = activities[activities.length - 1];
   const activeSince = student?.createdAt ?? firstActivity?.occurredAt;
@@ -427,6 +432,35 @@ export default function StudentDetailPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="rounded-3xl bg-white p-5 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">Jawaban kuis</p>
+                <h2 className="text-lg font-black text-neutral-900">Kuis Komik 3</h2>
+                {!comic3Quiz ? (
+                  <div className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">Belum ada jawaban kuis yang tersimpan.</div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-sm font-semibold text-neutral-600">
+                      Status: {comic3Quiz.completed ? 'Sudah dikirim' : 'Draft'}
+                    </p>
+                    {Object.entries(comic3Quiz.answers).map(([questionId, answer]) => (
+                      <div key={questionId} className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
+                        <p className="text-sm font-black text-neutral-900">{questionId}</p>
+                        {typeof answer === 'string' ? (
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{answer || 'Belum diisi'}</p>
+                        ) : (
+                          <div className="mt-2 space-y-1 text-sm text-neutral-700">
+                            {Object.entries(answer).map(([shapeId, shapeAnswer]) => (
+                              <p key={shapeId}><span className="font-semibold">{shapeId}:</span> {shapeAnswer || 'Belum diisi'}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {!comic3Quiz.completed && <p className="text-xs font-semibold text-amber-700">Jawaban uraian menunggu penilaian guru.</p>}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">

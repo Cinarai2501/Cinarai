@@ -11,6 +11,13 @@ import type { FirestoreTimestamp } from '@/types/firestore';
 import { SINTAKS } from '@/types/progress';
 
 export interface ComicProgressStageData {
+  quiz?: {
+    quizId: string;
+    answers: Record<string, string | Record<string, string>>;
+    completed: boolean;
+    submittedAt?: unknown;
+    score?: number | null;
+  };
   cover?: { completed?: boolean };
   identification?: {
     selectedShapes?: string[];

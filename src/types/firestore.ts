@@ -74,6 +74,15 @@ export interface ComicProgressDocument {
   status: 'not_started' | 'in_progress' | 'completed';
   sintaksList: SintaksProgress[];
   introspection?: IntrospectionProgressMetadata;
+  stageData?: {
+    quiz?: {
+      quizId: string;
+      answers: Record<string, string | Record<string, string>>;
+      completed: boolean;
+      submittedAt?: FirestoreTimestamp | FieldValue;
+      score?: number | null;
+    };
+  };
   completedAt?: FirestoreTimestamp;
   updatedAt: FirestoreTimestamp | FieldValue;
 }
