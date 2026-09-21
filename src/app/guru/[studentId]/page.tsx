@@ -2,6 +2,7 @@
 
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { queryFirestoreCollection } from '@/services/firestore';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -297,6 +298,14 @@ export default function StudentDetailPage() {
     () => progressDocuments.find((document) => document.comicId === 3)?.stageData?.quiz,
     [progressDocuments]
   );
+  const comic5Quiz = useMemo(
+    () => progressDocuments.find((document) => document.comicId === 5)?.stageData?.quiz,
+    [progressDocuments]
+  );
+  const comic6Quiz = useMemo(
+    () => progressDocuments.find((document) => document.comicId === 6)?.stageData?.quiz,
+    [progressDocuments]
+  );
 
   const firstActivity = activities[0];
   const lastActivity = activities[activities.length - 1];
@@ -436,31 +445,52 @@ export default function StudentDetailPage() {
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">Jawaban kuis</p>
-                <h2 className="text-lg font-black text-neutral-900">Kuis Komik 3</h2>
-                {!comic3Quiz ? (
-                  <div className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">Belum ada jawaban kuis yang tersimpan.</div>
-                ) : (
-                  <div className="mt-4 space-y-3">
-                    <p className="text-sm font-semibold text-neutral-600">
-                      Status: {comic3Quiz.completed ? 'Sudah dikirim' : 'Draft'}
-                    </p>
-                    {Object.entries(comic3Quiz.answers).map(([questionId, answer]) => (
-                      <div key={questionId} className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
-                        <p className="text-sm font-black text-neutral-900">{questionId}</p>
-                        {typeof answer === 'string' ? (
-                          <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{answer || 'Belum diisi'}</p>
-                        ) : (
-                          <div className="mt-2 space-y-1 text-sm text-neutral-700">
-                            {Object.entries(answer).map(([shapeId, shapeAnswer]) => (
-                              <p key={shapeId}><span className="font-semibold">{shapeId}:</span> {shapeAnswer || 'Belum diisi'}</p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {!comic3Quiz.completed && <p className="text-xs font-semibold text-amber-700">Jawaban uraian menunggu penilaian guru.</p>}
-                  </div>
-                )}
+                <div className="mt-4 space-y-5">
+                  {[
+                    { title: 'Kuis Komik 3', quiz: comic3Quiz },
+                    { title: 'Kuis Komik 5', quiz: comic5Quiz },
+                    { title: 'Kuis Komik 6', quiz: comic6Quiz },
+                  ].map(({ title, quiz }) => (
+                    <div key={title}>
+                      <h2 className="text-lg font-black text-neutral-900">{title}</h2>
+                      {!quiz ? (
+                        <div className="mt-3 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">Belum ada jawaban kuis yang tersimpan.</div>
+                      ) : (
+                        <div className="mt-3 space-y-3">
+                          <p className="text-sm font-semibold text-neutral-600">
+                            Status: {quiz.completed ? 'Sudah dikirim' : 'Draft'}
+                          </p>
+                          {Object.entries(quiz.answers).map(([questionId, answer]) => {
+                            const requiresManualGrading = quiz.manualGradingQuestionIds?.includes(questionId) ?? false;
+                            return (
+                              <div key={questionId} className="rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
+                                <p className="text-sm font-black text-neutral-900">{questionId}</p>
+                                {typeof answer === 'string' ? (
+                                  <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{answer || 'Belum diisi'}</p>
+                                ) : 'type' in answer && answer.type === 'drawing' ? (
+                                  answer.downloadUrl ? (
+                                    <Image src={answer.downloadUrl} alt="Gambar jawaban siswa" width={900} height={520} unoptimized className="mt-2 h-auto max-h-96 w-full rounded-xl border border-neutral-200 bg-white object-contain" />
+                                  ) : (
+                                    <p className="mt-2 text-sm text-neutral-500">Gambar belum tersedia.</p>
+                                  )
+                                ) : (
+                                  <div className="mt-2 space-y-1 text-sm text-neutral-700">
+                                    {Object.entries(answer).map(([shapeId, shapeAnswer]) => (
+                                      <p key={shapeId}><span className="font-semibold">{shapeId}:</span> {shapeAnswer || 'Belum diisi'}</p>
+                                    ))}
+                                  </div>
+                                )}
+                                <p className="mt-2 text-xs font-semibold text-amber-700">
+                                  {requiresManualGrading ? 'Menunggu penilaian' : 'Dapat dinilai otomatis'}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">

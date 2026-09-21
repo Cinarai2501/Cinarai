@@ -45,7 +45,11 @@ export default function QuizCard({ quiz }: QuizCardProps) {
         </div>
         <p className="mt-4 text-sm text-slate-600">{quiz.description}</p>
           {quiz.questionCount > 0 && <p className="mt-2 text-xs font-medium text-slate-400">{quiz.questionCount} soal</p>}
-        {quiz.platform && <p className="mt-2 text-xs font-medium text-slate-400">{quiz.platform === 'wayground' ? 'Wayground' : quiz.platform}</p>}
+        {quiz.platform && (
+          <p className="mt-2 text-xs font-medium text-slate-400">
+            {quiz.platform === 'wayground' ? 'Wayground' : 'QuizWhizzer'}
+          </p>
+        )}
       </div>
 
       <div className="mt-5">

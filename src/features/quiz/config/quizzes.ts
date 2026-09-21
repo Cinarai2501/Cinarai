@@ -2,13 +2,13 @@ export type QuizStatus = 'available' | 'not_configured' | 'pending_audit';
 export type QuizType = 'internal' | 'external';
 
 export type QuizConfig = {
-  id: `komik-${1 | 2 | 3 | 4 | 5}`;
-  comicId: 1 | 2 | 3 | 4 | 5;
+  id: `komik-${1 | 2 | 3 | 4 | 5 | 6}`;
+  comicId: 1 | 2 | 3 | 4 | 5 | 6;
   title: string;
   description: string;
   status: QuizStatus;
   type: QuizType;
-  platform: 'wayground' | null;
+  platform: 'wayground' | 'quizwhizzer' | null;
   quizUrl: string | null;
   quizCode: string | null;
   questionCount: number;
@@ -55,24 +55,36 @@ export const QUIZ_CONFIGS: readonly QuizConfig[] = [
     id: 'komik-4',
     comicId: 4,
     title: 'Kuis Komik 4',
-    description: 'Kuis menunggu audit.',
-    status: 'pending_audit',
-    type: 'internal',
-    platform: null,
-    quizUrl: null,
-    quizCode: null,
+    description: 'Petualangan di Jembatan Merah',
+    status: 'available',
+    type: 'external',
+    platform: 'quizwhizzer',
+    quizUrl: 'https://app.quizwhizzer.com/play?code=35733',
+    quizCode: '35733',
     questionCount: 0,
   },
   {
     id: 'komik-5',
     comicId: 5,
     title: 'Kuis Komik 5',
-    description: 'Kuis menunggu audit.',
-    status: 'pending_audit',
+    description: 'Bangun Datar di Keraton Sumenep',
+    status: 'available',
     type: 'internal',
     platform: null,
     quizUrl: null,
     quizCode: null,
-    questionCount: 0,
+    questionCount: 5,
+  },
+  {
+    id: 'komik-6',
+    comicId: 6,
+    title: 'Kuis Komik 6',
+    description: 'Bangun Ruang di Masjid Al-Akbar Surabaya',
+    status: 'available',
+    type: 'internal',
+    platform: null,
+    quizUrl: null,
+    quizCode: null,
+    questionCount: 5,
   },
 ] as const;

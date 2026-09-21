@@ -1,6 +1,13 @@
-# Kuis Komik 4
+# Komik 4 Quiz
 
-Komik 4 belum diaudit.
-Jangan mengisi URL atau konfigurasi kuis sebelum audit PDF selesai.
+Quiz type: External
 
-Folder `assets/` disiapkan untuk aset kuis setelah audit selesai.
+Platform: QuizWhizzer
+
+Quiz code: 35733
+
+Quiz URL: https://app.quizwhizzer.com/play?code=35733
+
+Status: Available
+
+Catatan: URL berasal dari QR kuis pada PDF Komik 4. QR AR tidak digunakan sebagai quiz URL.

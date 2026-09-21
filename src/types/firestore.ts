@@ -77,10 +77,12 @@ export interface ComicProgressDocument {
   stageData?: {
     quiz?: {
       quizId: string;
-      answers: Record<string, string | Record<string, string>>;
+      answers: Record<string, string | Record<string, string> | { type: 'drawing'; storagePath: string; downloadUrl: string; submitted: boolean }>;
       completed: boolean;
       submittedAt?: FirestoreTimestamp | FieldValue;
       score?: number | null;
+      requiresManualGrading?: boolean;
+      manualGradingQuestionIds?: string[];
     };
   };
   completedAt?: FirestoreTimestamp;

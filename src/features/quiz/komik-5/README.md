@@ -1,6 +1,10 @@
 # Kuis Komik 5
 
-Komik 5 belum diaudit.
-Jangan mengisi URL atau konfigurasi kuis sebelum audit PDF selesai.
+Quiz type: Internal
 
-Folder `assets/` disiapkan untuk aset kuis setelah audit selesai.
+Status: Available
+
+Tema: Bangun Datar di Keraton Sumenep
+
+Kuis ini berisi tepat lima soal dari halaman `WAKTUNYA MENJAWAB` pada Komik 5.
+Jawaban disimpan pada progress siswa yang sudah digunakan aplikasi.

@@ -13,10 +13,12 @@ import { SINTAKS } from '@/types/progress';
 export interface ComicProgressStageData {
   quiz?: {
     quizId: string;
-    answers: Record<string, string | Record<string, string>>;
+    answers: Record<string, string | Record<string, string> | { type: 'drawing'; storagePath: string; downloadUrl: string; submitted: boolean }>;
     completed: boolean;
     submittedAt?: unknown;
     score?: number | null;
+    requiresManualGrading?: boolean;
+    manualGradingQuestionIds?: string[];
   };
   cover?: { completed?: boolean };
   identification?: {
