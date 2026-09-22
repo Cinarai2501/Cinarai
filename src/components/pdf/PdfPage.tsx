@@ -7,7 +7,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 
 interface PdfPageProps {
   pageNumber: number;
-  width: number;
+  scale: number;
   devicePixelRatio?: number;
   loading?: ReactNode;
   error?: ReactNode;
@@ -16,13 +16,13 @@ interface PdfPageProps {
   onRenderSuccess?: () => void;
 }
 
-function PdfPage({ pageNumber, width, devicePixelRatio, loading, error, onLoadSuccess, onLoadError, onRenderSuccess }: PdfPageProps) {
+function PdfPage({ pageNumber, scale, devicePixelRatio, loading, error, onLoadSuccess, onLoadError, onRenderSuccess }: PdfPageProps) {
   return (
     <div className="flex h-full w-full max-w-full items-center justify-center overflow-hidden">
       <Page
         key={pageNumber}
         pageNumber={pageNumber}
-        width={width}
+        scale={scale}
         devicePixelRatio={devicePixelRatio}
         loading={loading}
         error={error}

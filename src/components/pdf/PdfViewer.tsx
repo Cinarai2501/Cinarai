@@ -11,6 +11,8 @@ import PdfError from "./PdfError";
 import PdfLoading from "./PdfLoading";
 import PdfNavigation from "./PdfNavigation";
 import PdfPage from "./PdfPage";
+import { DEFAULT_ZOOM, MAX_ZOOM, MIN_ZOOM, stepZoom } from "./pdfViewerZoom";
+import { hasSeenZoomHint, markZoomHintSeen } from "./pdfViewerZoomHint";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_VERTICAL_LIMIT = 80;
@@ -59,6 +61,8 @@ export default function UnifiedComicViewer({
   const [pageReady, setPageReady] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfDimensions, setPdfDimensions] = useState<PdfDimensions | null>(null);
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const [showZoomHint, setShowZoomHint] = useState(false);
   const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -69,6 +73,24 @@ export default function UnifiedComicViewer({
     pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
     setWorkerReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!hasSeenZoomHint()) setShowZoomHint(true);
+  }, []);
+
+  useEffect(() => {
+    if (!showZoomHint) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        markZoomHintSeen();
+        setShowZoomHint(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [showZoomHint]);
 
   useEffect(() => {
     if (shouldNotifyPageChange({ numPages, initialLoadRef })) onPageChange?.(page, numPages);
@@ -156,6 +178,14 @@ export default function UnifiedComicViewer({
     setPdfError(error.message || "Halaman PDF tidak dapat dirender.");
   }, []);
 
+  const zoomIn = useCallback(() => setZoom((currentZoom) => stepZoom(currentZoom, 1)), []);
+  const zoomOut = useCallback(() => setZoom((currentZoom) => stepZoom(currentZoom, -1)), []);
+  const resetZoom = useCallback(() => setZoom(DEFAULT_ZOOM), []);
+  const dismissZoomHint = useCallback(() => {
+    markZoomHintSeen();
+    setShowZoomHint(false);
+  }, []);
+
   const showControlsTemporarily = useCallback(() => {
     setShowFloatingControls(true);
     if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
@@ -201,6 +231,10 @@ export default function UnifiedComicViewer({
   }, [containerWidth]);
 
   const hasPageSize = Number.isFinite(pageSize.width) && pageSize.width > 0 && Number.isFinite(pageSize.height) && pageSize.height > 0;
+  const renderScale = pdfDimensions && hasPageSize ? (pageSize.width / pdfDimensions.width) * zoom : 0;
+  const renderedPageSize = hasPageSize
+    ? { width: Math.round(pageSize.width * zoom), height: Math.round(pageSize.height * zoom) }
+    : { width: 0, height: 0 };
   const isLoading = !documentLoaded || !pageReady;
   const containerError = documentLoaded && (containerWidth <= 0 || containerHeight <= 0)
     ? "Container PDF tidak memiliki ukuran yang valid."
@@ -220,17 +254,37 @@ export default function UnifiedComicViewer({
         <h1 className="min-w-0 flex-1 truncate text-center text-xs font-semibold tracking-wide text-white/85 sm:text-sm">{comicTitle}</h1>
         <div className="h-11 w-11 shrink-0" aria-hidden="true" />
       </header>}
-      <div className="pdf-viewer-container relative flex min-h-[calc(100dvh-3rem)] min-w-0 flex-1 flex-col bg-[#0b1220]" style={{ touchAction: "pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
-        <div ref={containerRef} className="pdf-viewer-container__content relative flex min-h-[calc(100dvh-3rem)] w-full flex-1 items-center justify-center overflow-auto px-0.5 py-4 sm:px-1 sm:py-6 lg:px-2">
-          <Document key={pdfPath} file={pdfPath} className="flex w-full items-start justify-center bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
+      <div className="pdf-viewer-container relative flex min-h-[calc(100dvh-3rem)] min-w-0 flex-1 flex-col bg-[#0b1220]" style={{ touchAction: "pan-x pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
+        <div className="sticky top-0 z-40 flex min-h-[52px] shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-2 py-1.5 backdrop-blur-md" aria-label="Kontrol pembaca PDF">
+          <div className="flex items-center gap-1 rounded-xl bg-white/10 p-1">
+            <button type="button" onClick={zoomOut} disabled={zoom <= MIN_ZOOM} aria-label="Perkecil PDF" className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35">−</button>
+            <button type="button" onClick={resetZoom} aria-label={`Atur ulang zoom ke 100%, saat ini ${Math.round(zoom * 100)}%`} className="min-w-[68px] rounded-lg px-2 py-2 text-sm font-bold tabular-nums text-white hover:bg-white/10">{Math.round(zoom * 100)}%</button>
+            <button type="button" onClick={zoomIn} disabled={zoom >= MAX_ZOOM} aria-label="Perbesar PDF" className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35">+</button>
+            <div className="mx-1 h-7 w-px bg-white/15" aria-hidden="true" />
+            <span className="min-w-[58px] text-center text-sm font-semibold tabular-nums text-white/80" aria-label={`Halaman ${page} dari ${numPages || 0}`}>{page} / {numPages || "-"}</span>
+          </div>
+        </div>
+        {showZoomHint && <div className="pointer-events-none absolute inset-x-0 top-[60px] z-50 flex justify-center px-3 sm:top-[64px]" role="dialog" aria-labelledby="pdf-zoom-hint-title">
+          <div className="pointer-events-auto w-full max-w-[360px] rounded-2xl border border-primary-100 bg-white p-4 text-center shadow-[0_16px_40px_rgba(15,23,42,0.24)] animate-fade-in-up sm:p-5">
+            <h2 id="pdf-zoom-hint-title" className="text-lg font-black text-neutral-800">👆 Cara membaca komik</h2>
+            <div className="mt-3 space-y-2.5 text-sm leading-5 text-neutral-700">
+              <p><span className="mr-1.5 text-lg" aria-hidden="true">➕</span> Tekan <strong>+</strong> untuk memperbesar komik</p>
+              <p><span className="mr-1.5 text-lg" aria-hidden="true">➖</span> Tekan <strong>−</strong> untuk memperkecil komik</p>
+              <p><span className="mr-1.5 text-lg" aria-hidden="true">👆</span> Geser dengan satu jari untuk melihat bagian komik yang diperbesar</p>
+            </div>
+            <button type="button" onClick={dismissZoomHint} className="mt-4 min-h-[44px] w-full rounded-xl bg-primary-600 px-4 py-2.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800">Mengerti</button>
+          </div>
+        </div>}
+        <div ref={containerRef} className="pdf-viewer-container__content relative flex min-h-[calc(100dvh-6.25rem)] w-full flex-1 items-start justify-start overflow-auto px-0.5 py-4 [-webkit-overflow-scrolling:touch] sm:px-1 sm:py-6 lg:px-2">
+          <Document key={pdfPath} file={pdfPath} className="flex min-h-full min-w-full items-start justify-start bg-[#0b1220]" onLoadSuccess={handleDocumentLoadSuccess} onLoadError={handlePdfError} loading={<PdfLoading />} error={<PdfError message={pdfError ?? undefined} />}>
             {debug && (
               <div className="pdf-diagnostic absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 font-mono text-[10px] text-white" data-testid="pdf-diagnostic">
                 PDF DEBUG | Container: {containerWidth} x {containerHeight} | PDF: {pdfDimensions ? `${pdfDimensions.width} x ${pdfDimensions.height}` : "—"} | Render: {pageSize.width} x {pageSize.height} | numPages: {numPages} | currentPage: {page} | documentLoaded: {documentLoaded ? "READY" : "LOADING"} | pageReady: {pageReady ? "READY" : "LOADING"} | pageError: {visiblePageError ?? "none"} | isLoading: {isLoading ? "true" : "false"}
               </div>
             )}
-            <div className="pdf-page-shell relative z-10 flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-white shadow-sm transition-opacity duration-150 sm:rounded-xl" style={hasPageSize ? { width: `${pageSize.width}px`, height: `${pageSize.height}px`, maxWidth: "100%", opacity: pageReady ? 1 : 0.82 } : undefined}>
+            <div className="pdf-page-shell relative z-10 flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-white shadow-sm transition-opacity duration-150 sm:rounded-xl" style={hasPageSize ? { width: `${renderedPageSize.width}px`, height: `${renderedPageSize.height}px`, marginInline: "auto", opacity: pageReady ? 1 : 0.82 } : undefined}>
               {visiblePageError ? <PdfError message={visiblePageError} /> : documentLoaded && numPages > 0 && hasPageSize ? (
-                <PdfPage pageNumber={page} width={pageSize.width} devicePixelRatio={devicePixelRatio} loading={<PdfLoading variant="spinner" />} onLoadSuccess={handlePageLoadSuccess} onLoadError={handlePageError} onRenderSuccess={handlePageRenderSuccess} />
+                <PdfPage pageNumber={page} scale={renderScale} devicePixelRatio={devicePixelRatio} loading={<PdfLoading variant="spinner" />} onLoadSuccess={handlePageLoadSuccess} onLoadError={handlePageError} onRenderSuccess={handlePageRenderSuccess} />
               ) : <PdfLoading variant="spinner" />}
             </div>
           </Document>
