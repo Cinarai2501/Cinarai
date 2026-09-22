@@ -1,8 +1,8 @@
-export const MIN_ZOOM = 0.8;
+export const MIN_ZOOM = 1;
 export const DEFAULT_ZOOM = 1;
 export const MAX_ZOOM = 3;
 export const ZOOM_STEP = 0.25;
-export const ZOOM_LEVELS = [MIN_ZOOM, DEFAULT_ZOOM, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, MAX_ZOOM];
+export const ZOOM_LEVELS = [MIN_ZOOM, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, MAX_ZOOM];
 
 export function clampZoom(value: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Number(value.toFixed(2))));

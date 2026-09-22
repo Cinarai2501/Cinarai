@@ -11,7 +11,7 @@ import PdfError from "./PdfError";
 import PdfLoading from "./PdfLoading";
 import PdfNavigation from "./PdfNavigation";
 import PdfPage from "./PdfPage";
-import { DEFAULT_ZOOM, MAX_ZOOM, MIN_ZOOM, stepZoom } from "./pdfViewerZoom";
+import { clampZoom, DEFAULT_ZOOM, MAX_ZOOM, MIN_ZOOM, stepZoom } from "./pdfViewerZoom";
 import { hasSeenZoomHint, markZoomHintSeen } from "./pdfViewerZoomHint";
 
 const SWIPE_THRESHOLD = 50;
@@ -61,11 +61,13 @@ export default function UnifiedComicViewer({
   const [pageReady, setPageReady] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfDimensions, setPdfDimensions] = useState<PdfDimensions | null>(null);
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const [scale, setScale] = useState(DEFAULT_ZOOM);
   const [showZoomHint, setShowZoomHint] = useState(false);
   const { containerRef, containerWidth, containerHeight } = usePdfSize<HTMLDivElement>();
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const pinchStartDistance = useRef<number | null>(null);
+  const pinchStartScale = useRef(DEFAULT_ZOOM);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadRef = useRef(true);
 
@@ -113,30 +115,45 @@ export default function UnifiedComicViewer({
   }, [numPages, page]);
 
   const handleTouchStart = useCallback((event: React.TouchEvent) => {
-    if (event.touches.length === 1) {
+    if (event.touches.length === 2) {
+      const [firstTouch, secondTouch] = Array.from(event.touches);
+      pinchStartDistance.current = Math.hypot(secondTouch.clientX - firstTouch.clientX, secondTouch.clientY - firstTouch.clientY);
+      pinchStartScale.current = scale;
+      touchStartX.current = null;
+      touchStartY.current = null;
+    } else if (event.touches.length === 1 && pinchStartDistance.current === null) {
       touchStartX.current = event.touches[0].clientX;
       touchStartY.current = event.touches[0].clientY;
     } else {
       touchStartX.current = null;
       touchStartY.current = null;
     }
-  }, []);
+  }, [scale]);
 
   const handleTouchMove = useCallback((event: React.TouchEvent) => {
-    if (event.touches.length > 1) {
+    if (event.touches.length >= 2 && pinchStartDistance.current !== null) {
+      const [firstTouch, secondTouch] = Array.from(event.touches);
+      const distance = Math.hypot(secondTouch.clientX - firstTouch.clientX, secondTouch.clientY - firstTouch.clientY);
+      setScale(clampZoom(pinchStartScale.current * (distance / pinchStartDistance.current)));
       touchStartX.current = null;
       touchStartY.current = null;
     }
   }, []);
 
   const handleTouchEnd = useCallback((event: React.TouchEvent) => {
+    if (event.touches.length < 2) pinchStartDistance.current = null;
+    if (scale > DEFAULT_ZOOM) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
     if (touchStartX.current === null || touchStartY.current === null || event.changedTouches.length !== 1) return;
     const dx = event.changedTouches[0].clientX - touchStartX.current;
     const dy = event.changedTouches[0].clientY - touchStartY.current;
     touchStartX.current = null;
     touchStartY.current = null;
     if (Math.abs(dy) <= SWIPE_VERTICAL_LIMIT && Math.abs(dx) >= SWIPE_THRESHOLD) goTo(page + (dx < 0 ? 1 : -1));
-  }, [goTo, page]);
+  }, [goTo, page, scale]);
 
   const handleDocumentLoadSuccess = useCallback(async (document: LoadedPdf) => {
     setNumPages(document.numPages);
@@ -178,9 +195,9 @@ export default function UnifiedComicViewer({
     setPdfError(error.message || "Halaman PDF tidak dapat dirender.");
   }, []);
 
-  const zoomIn = useCallback(() => setZoom((currentZoom) => stepZoom(currentZoom, 1)), []);
-  const zoomOut = useCallback(() => setZoom((currentZoom) => stepZoom(currentZoom, -1)), []);
-  const resetZoom = useCallback(() => setZoom(DEFAULT_ZOOM), []);
+  const zoomIn = useCallback(() => setScale((currentScale) => stepZoom(currentScale, 1)), []);
+  const zoomOut = useCallback(() => setScale((currentScale) => stepZoom(currentScale, -1)), []);
+  const resetZoom = useCallback(() => setScale(DEFAULT_ZOOM), []);
   const dismissZoomHint = useCallback(() => {
     markZoomHintSeen();
     setShowZoomHint(false);
@@ -231,9 +248,9 @@ export default function UnifiedComicViewer({
   }, [containerWidth]);
 
   const hasPageSize = Number.isFinite(pageSize.width) && pageSize.width > 0 && Number.isFinite(pageSize.height) && pageSize.height > 0;
-  const renderScale = pdfDimensions && hasPageSize ? (pageSize.width / pdfDimensions.width) * zoom : 0;
+  const renderScale = pdfDimensions && hasPageSize ? (pageSize.width / pdfDimensions.width) * scale : 0;
   const renderedPageSize = hasPageSize
-    ? { width: Math.round(pageSize.width * zoom), height: Math.round(pageSize.height * zoom) }
+    ? { width: Math.round(pageSize.width * scale), height: Math.round(pageSize.height * scale) }
     : { width: 0, height: 0 };
   const isLoading = !documentLoaded || !pageReady;
   const containerError = documentLoaded && (containerWidth <= 0 || containerHeight <= 0)
@@ -257,20 +274,20 @@ export default function UnifiedComicViewer({
       <div className="pdf-viewer-container relative flex min-h-[calc(100dvh-3rem)] min-w-0 flex-1 flex-col bg-[#0b1220]" style={{ touchAction: "pan-x pan-y", overscrollBehavior: "contain" }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onClick={handleReaderTap}>
         <div className="sticky top-0 z-40 flex min-h-[52px] shrink-0 items-center justify-center border-b border-white/10 bg-[#0b1220]/95 px-2 py-1.5 backdrop-blur-md" aria-label="Kontrol pembaca PDF">
           <div className="flex items-center gap-1 rounded-xl bg-white/10 p-1">
-            <button type="button" onClick={zoomOut} disabled={zoom <= MIN_ZOOM} aria-label="Perkecil PDF" className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35">−</button>
-            <button type="button" onClick={resetZoom} aria-label={`Atur ulang zoom ke 100%, saat ini ${Math.round(zoom * 100)}%`} className="min-w-[68px] rounded-lg px-2 py-2 text-sm font-bold tabular-nums text-white hover:bg-white/10">{Math.round(zoom * 100)}%</button>
-            <button type="button" onClick={zoomIn} disabled={zoom >= MAX_ZOOM} aria-label="Perbesar PDF" className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35">+</button>
+            <button type="button" onClick={zoomOut} disabled={scale <= MIN_ZOOM} aria-label="Perkecil PDF" className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35">−</button>
+            <button type="button" onClick={resetZoom} aria-label={`Atur ulang zoom ke 100%, saat ini ${Math.round(scale * 100)}%`} className="min-w-[68px] rounded-lg px-2 py-2 text-sm font-bold tabular-nums text-white hover:bg-white/10">{Math.round(scale * 100)}%</button>
+            <button type="button" onClick={zoomIn} disabled={scale >= MAX_ZOOM} aria-label="Perbesar PDF" className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl font-semibold text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35">+</button>
             <div className="mx-1 h-7 w-px bg-white/15" aria-hidden="true" />
             <span className="min-w-[58px] text-center text-sm font-semibold tabular-nums text-white/80" aria-label={`Halaman ${page} dari ${numPages || 0}`}>{page} / {numPages || "-"}</span>
           </div>
         </div>
         {showZoomHint && <div className="pointer-events-none absolute inset-x-0 top-[60px] z-50 flex justify-center px-3 sm:top-[64px]" role="dialog" aria-labelledby="pdf-zoom-hint-title">
           <div className="pointer-events-auto w-full max-w-[360px] rounded-2xl border border-primary-100 bg-white p-4 text-center shadow-[0_16px_40px_rgba(15,23,42,0.24)] animate-fade-in-up sm:p-5">
-            <h2 id="pdf-zoom-hint-title" className="text-lg font-black text-neutral-800">👆 Cara membaca komik</h2>
+            <h2 id="pdf-zoom-hint-title" className="text-lg font-black text-neutral-800">👆 Tips membaca komik</h2>
             <div className="mt-3 space-y-2.5 text-sm leading-5 text-neutral-700">
-              <p><span className="mr-1.5 text-lg" aria-hidden="true">➕</span> Tekan <strong>+</strong> untuk memperbesar komik</p>
-              <p><span className="mr-1.5 text-lg" aria-hidden="true">➖</span> Tekan <strong>−</strong> untuk memperkecil komik</p>
-              <p><span className="mr-1.5 text-lg" aria-hidden="true">👆</span> Geser dengan satu jari untuk melihat bagian komik yang diperbesar</p>
+              <p>🤏 Cubit keluar untuk memperbesar</p>
+              <p>🤌 Cubit masuk untuk memperkecil</p>
+              <p>👆 Geser untuk melihat bagian komik</p>
             </div>
             <button type="button" onClick={dismissZoomHint} className="mt-4 min-h-[44px] w-full rounded-xl bg-primary-600 px-4 py-2.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-primary-700 active:bg-primary-800">Mengerti</button>
           </div>
