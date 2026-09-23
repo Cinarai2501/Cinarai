@@ -38,6 +38,64 @@ const syntaxCards: SyntaxCard[] = [
   { number: 7, title: 'Evaluasi', description: 'Kerjakan kuis untuk mengevaluasi pemahaman', color: '#FFDDEB', accent: '#D83272', icon: '✓', href: '/dashboard/siswa/kuis', ariaLabel: 'Kerjakan evaluasi dan kuis', cta: 'Kerjakan ›' },
 ] as const;
 
+const syntaxGuides = {
+  1: {
+    title: 'Orientasi Masalah',
+    goal: 'Memahami cerita, situasi, dan masalah yang terdapat dalam komik.',
+    actions: [
+      '👀 Amati cerita dan gambar pada komik.',
+      '💭 Pahami situasi yang sedang terjadi.',
+      '🔍 Temukan masalah yang perlu diselesaikan.',
+      '📌 Catat informasi penting yang kamu temukan.',
+    ],
+    result: 'Kamu memahami masalah sebelum mulai mencari solusinya.',
+  },
+  4: {
+    title: 'Analisis & Pemecahan Masalah',
+    goal: 'Menggunakan informasi yang sudah ditemukan untuk memahami dan menyelesaikan masalah.',
+    actions: [
+      '🔎 Periksa informasi yang tersedia.',
+      '🧩 Hubungkan informasi dengan konsep yang dipelajari.',
+      '💡 Tentukan cara menyelesaikan masalah.',
+      '✅ Periksa kembali jawabanmu.',
+    ],
+    result: 'Kamu dapat menyelesaikan masalah dengan alasan yang logis.',
+  },
+  5: {
+    title: 'Kreasi Solusi',
+    goal: 'Membuat atau menentukan solusi berdasarkan hasil pembelajaran.',
+    actions: [
+      '💭 Gunakan ide yang kamu miliki.',
+      '🧩 Hubungkan dengan hasil pengamatan.',
+      '🛠️ Buat atau pilih solusi yang sesuai.',
+      '💬 Jelaskan alasanmu.',
+    ],
+    result: 'Kamu dapat menghasilkan solusi berdasarkan apa yang sudah dipelajari.',
+  },
+  6: {
+    title: 'Refleksi',
+    goal: 'Melihat kembali proses dan pengalaman belajar yang sudah kamu lakukan.',
+    actions: [
+      '💭 Ingat kembali apa yang sudah dipelajari.',
+      '⭐ Temukan hal yang paling kamu pahami.',
+      '🤔 Pikirkan bagian yang masih sulit.',
+      '🌱 Tentukan apa yang ingin kamu pelajari lagi.',
+    ],
+    result: 'Kamu mengetahui apa yang sudah dipahami dan apa yang masih perlu dipelajari.',
+  },
+  7: {
+    title: 'Evaluasi',
+    goal: 'Mengetahui sejauh mana pemahamanmu setelah mengikuti pembelajaran.',
+    actions: [
+      '📝 Kerjakan soal evaluasi.',
+      '🧠 Gunakan pengetahuan yang sudah dipelajari.',
+      '🔍 Periksa kembali jawabanmu.',
+      '📊 Lihat hasil belajarmu.',
+    ],
+    result: 'Kamu dapat mengetahui tingkat pemahamanmu setelah menyelesaikan pembelajaran.',
+  },
+} as const;
+
 export default function StudentHome() {
   const { user } = useAuth();
   const { getProgress } = useAllComicProgress();
@@ -57,6 +115,8 @@ export default function StudentHome() {
     }
     return { completedComics: completedComicCount, completedSyntax: totalCompletedSyntax };
   }, [comics, getProgress]);
+
+  const activeGuide = selectedCard ? syntaxGuides[selectedCard.number as keyof typeof syntaxGuides] : null;
 
   useEffect(() => {
     if (!selectedCard) return;
@@ -160,7 +220,7 @@ export default function StudentHome() {
           </div>
         </section>
 
-        {selectedCard && (
+        {selectedCard && activeGuide && (
           <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4" onClick={() => setSelectedCard(null)}>
             <div
               role="dialog"
@@ -173,7 +233,7 @@ export default function StudentHome() {
                 <div className="flex items-center gap-3">
                   <span className="grid h-9 w-9 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ backgroundColor: selectedCard.accent }}>{selectedCard.number}</span>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sintaks</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">SINTAKS {selectedCard.number}</p>
                     <h3 id="syntax-modal-title" className="text-lg font-extrabold text-[#102F5B]">{selectedCard.title}</h3>
                   </div>
                 </div>
@@ -189,27 +249,37 @@ export default function StudentHome() {
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
                 <div className="space-y-4 px-4 py-4">
-                  <div className="rounded-[18px] p-3" style={{ backgroundColor: selectedCard.color }}>
+                  <div className="rounded-[18px] p-4" style={{ backgroundColor: selectedCard.color }}>
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">Tujuan tahap</p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{selectedCard.description}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{activeGuide.goal}</p>
+                  </div>
+
+                  <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4 text-left">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#102F5B]">Apa yang kamu lakukan?</p>
+                    <ul className="mt-2 space-y-2 text-sm leading-relaxed text-slate-700">
+                      {activeGuide.actions.map((action) => (
+                        <li key={action} className="flex gap-2">
+                          <span className="shrink-0">•</span>
+                          <span>{action}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
                   <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#102F5B]">Catatan</p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                      Aktivitas ini disesuaikan dengan alur pembelajaran yang sudah tersedia di aplikasi. Silakan lanjutkan ke tahapan yang relevan untuk melanjutkan proses belajar.
-                    </p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#102F5B]">Hasil yang diharapkan</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{activeGuide.result}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="shrink-0 border-t border-slate-200 bg-white pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-4">
+              <div className="shrink-0 border-t border-slate-200 bg-white px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
                 <button
                   type="button"
                   onClick={() => setSelectedCard(null)}
                   className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-[#1685EE] px-4 py-3 text-base font-bold text-white shadow-[0_8px_18px_rgba(22,133,238,0.2)] transition hover:bg-[#1479d4] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30"
                 >
-                  Mengerti
+                  MENGERTI
                 </button>
               </div>
             </div>
