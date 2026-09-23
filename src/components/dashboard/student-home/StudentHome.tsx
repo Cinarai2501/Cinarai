@@ -194,7 +194,7 @@ export default function StudentHome() {
 
         {isOrientationGuideOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
             role="presentation"
             onClick={() => setIsOrientationGuideOpen(false)}
           >
@@ -202,7 +202,7 @@ export default function StudentHome() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="orientation-guide-title"
-              className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+              className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[#DCEEFF] sm:hidden" aria-hidden="true" />
@@ -239,7 +239,7 @@ export default function StudentHome() {
               <button
                 type="button"
                 onClick={() => setIsOrientationGuideOpen(false)}
-                className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#2D83E8] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(45,131,232,0.25)] transition-transform hover:bg-[#1F72D1] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30 active:scale-[0.98]"
+                className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#2D83E8] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(45,131,232,0.25)] transition-transform hover:bg-[#1F72D1] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30 active:scale-[0.98]"
               >
                 Mengerti
               </button>
@@ -250,7 +250,7 @@ export default function StudentHome() {
         <AnimatePresence>
           {isArExplorationGuideOpen && (
           <motion.div
-            className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+            className="fixed inset-0 z-[100] flex animate-fade-in items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
             role="presentation"
             onClick={() => setIsArExplorationGuideOpen(false)}
             initial={{ opacity: 0 }}
@@ -262,7 +262,7 @@ export default function StudentHome() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="ar-exploration-guide-title"
-              className="max-h-[92dvh] w-full animate-card-enter overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+              className="relative flex max-h-[92dvh] w-full animate-card-enter flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
               onClick={(event) => event.stopPropagation()}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
@@ -301,7 +301,7 @@ export default function StudentHome() {
               <button
                 type="button"
                 onClick={() => setIsArExplorationGuideOpen(false)}
-                className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#E04786] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(224,71,134,0.25)] transition-transform hover:bg-[#C93673] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E04786]/30 active:scale-[0.98]"
+                className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#E04786] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(224,71,134,0.25)] transition-transform hover:bg-[#C93673] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E04786]/30 active:scale-[0.98]"
               >
                 Mengerti
               </button>
@@ -313,7 +313,7 @@ export default function StudentHome() {
         <AnimatePresence>
           {isAiInformationGuideOpen && (
             <motion.div
-              className="fixed inset-0 z-50 flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="presentation"
               onClick={() => setIsAiInformationGuideOpen(false)}
               initial={{ opacity: 0 }}
@@ -325,7 +325,7 @@ export default function StudentHome() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="ai-information-guide-title"
-                className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
                 onClick={(event) => event.stopPropagation()}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -364,7 +364,7 @@ export default function StudentHome() {
                 <button
                   type="button"
                   onClick={() => setIsAiInformationGuideOpen(false)}
-                  className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#D99D00] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(217,157,0,0.25)] transition-transform hover:bg-[#B98400] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D99D00]/30 active:scale-[0.98]"
+                  className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#D99D00] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(217,157,0,0.25)] transition-transform hover:bg-[#B98400] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D99D00]/30 active:scale-[0.98]"
                 >
                   Mengerti
                 </button>
@@ -376,7 +376,7 @@ export default function StudentHome() {
         <AnimatePresence>
           {isProblemSolvingGuideOpen && (
             <motion.div
-              className="fixed inset-0 z-50 flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="presentation"
               onClick={() => setIsProblemSolvingGuideOpen(false)}
               initial={{ opacity: 0 }}
@@ -388,7 +388,7 @@ export default function StudentHome() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="problem-solving-guide-title"
-                className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
                 onClick={(event) => event.stopPropagation()}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -428,7 +428,7 @@ export default function StudentHome() {
                 <button
                   type="button"
                   onClick={() => setIsProblemSolvingGuideOpen(false)}
-                  className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#42A66A] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(66,166,106,0.25)] transition-transform hover:bg-[#358D58] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#42A66A]/30 active:scale-[0.98]"
+                  className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#42A66A] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(66,166,106,0.25)] transition-transform hover:bg-[#358D58] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#42A66A]/30 active:scale-[0.98]"
                 >
                   Mengerti
                 </button>
@@ -440,7 +440,7 @@ export default function StudentHome() {
         <AnimatePresence>
           {isSolutionCreationGuideOpen && (
             <motion.div
-              className="fixed inset-0 z-50 flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="presentation"
               onClick={() => setIsSolutionCreationGuideOpen(false)}
               initial={{ opacity: 0 }}
@@ -452,7 +452,7 @@ export default function StudentHome() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="solution-creation-guide-title"
-                className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
                 onClick={(event) => event.stopPropagation()}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -491,7 +491,7 @@ export default function StudentHome() {
                 <button
                   type="button"
                   onClick={() => setIsSolutionCreationGuideOpen(false)}
-                  className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#7548D8] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(117,72,216,0.25)] transition-transform hover:bg-[#6238BB] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7548D8]/30 active:scale-[0.98]"
+                  className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#7548D8] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(117,72,216,0.25)] transition-transform hover:bg-[#6238BB] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7548D8]/30 active:scale-[0.98]"
                 >
                   Mengerti
                 </button>
@@ -503,7 +503,7 @@ export default function StudentHome() {
         <AnimatePresence>
           {isReflectionGuideOpen && (
             <motion.div
-              className="fixed inset-0 z-50 flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="presentation"
               onClick={() => setIsReflectionGuideOpen(false)}
               initial={{ opacity: 0 }}
@@ -515,7 +515,7 @@ export default function StudentHome() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="reflection-guide-title"
-                className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
                 onClick={(event) => event.stopPropagation()}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -558,7 +558,7 @@ export default function StudentHome() {
                 <button
                   type="button"
                   onClick={() => setIsReflectionGuideOpen(false)}
-                  className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#E7622A] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(231,98,42,0.25)] transition-transform hover:bg-[#D15220] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E7622A]/30 active:scale-[0.98]"
+                  className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#E7622A] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(231,98,42,0.25)] transition-transform hover:bg-[#D15220] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E7622A]/30 active:scale-[0.98]"
                 >
                   Mengerti
                 </button>
@@ -570,7 +570,7 @@ export default function StudentHome() {
         <AnimatePresence>
           {isEvaluationGuideOpen && (
             <motion.div
-              className="fixed inset-0 z-50 flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-[#102F5B]/35 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
               role="presentation"
               onClick={() => setIsEvaluationGuideOpen(false)}
               initial={{ opacity: 0 }}
@@ -582,7 +582,7 @@ export default function StudentHome() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="evaluation-guide-title"
-                className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-5 pb-6 shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
+                className="relative flex max-h-[92dvh] w-full flex-col overflow-y-auto rounded-t-[28px] bg-white p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(16,47,91,0.2)] sm:max-w-[440px] sm:rounded-[28px] sm:shadow-[0_20px_60px_rgba(16,47,91,0.2)]"
                 onClick={(event) => event.stopPropagation()}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -621,7 +621,7 @@ export default function StudentHome() {
                 <button
                   type="button"
                   onClick={() => setIsEvaluationGuideOpen(false)}
-                  className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#D83272] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(216,50,114,0.25)] transition-transform hover:bg-[#BF2861] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D83272]/30 active:scale-[0.98]"
+                  className="mt-6 inline-flex min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-[#D83272] px-4 text-[15px] font-extrabold text-white shadow-[0_8px_18px_rgba(216,50,114,0.25)] transition-transform hover:bg-[#BF2861] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D83272]/30 active:scale-[0.98]"
                 >
                   Mengerti
                 </button>
