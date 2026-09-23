@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllComics } from '@/lib/comicRepository';
@@ -38,12 +38,15 @@ const syntaxCards: SyntaxCard[] = [
   { number: 7, title: 'Evaluasi', description: 'Kerjakan kuis untuk mengevaluasi pemahaman', color: '#FFDDEB', accent: '#D83272', icon: '✓', href: '/dashboard/siswa/kuis', ariaLabel: 'Kerjakan evaluasi dan kuis', cta: 'Kerjakan ›' },
 ] as const;
 
+const MODAL_SINTAKS = new Set([1, 4, 5, 6, 7]);
+
 export default function StudentHome() {
   const { user } = useAuth();
   const { getProgress } = useAllComicProgress();
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Siswa';
   const avatarAsset = getAvatarAsset(firstName);
   const comics = useMemo(() => getAllComics(), []);
+  const [selectedCard, setSelectedCard] = useState<SyntaxCard | null>(null);
 
   const { completedComics, completedSyntax } = useMemo(() => {
     let totalCompletedSyntax = 0;
@@ -56,6 +59,20 @@ export default function StudentHome() {
     }
     return { completedComics: completedComicCount, completedSyntax: totalCompletedSyntax };
   }, [comics, getProgress]);
+
+  useEffect(() => {
+    if (!selectedCard) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+    };
+  }, [selectedCard]);
 
   return (
     <main className="min-h-[calc(100dvh-88px)] overflow-hidden bg-[#F5F9FF] pb-5 text-[#102F5B]">
@@ -80,36 +97,126 @@ export default function StudentHome() {
             <a href="#syntax-cards" className="shrink-0 pb-0.5 text-[12px] font-bold text-[#1685EE]">Lihat Tahap ›</a>
           </div>
           <div id="syntax-cards" className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
-            {syntaxCards.map((card) => (
-              <Link
-                key={card.number}
-                href={card.href}
-                aria-label={card.ariaLabel}
-                className="group block h-full w-full cursor-pointer rounded-[17px] text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(16,47,91,0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30 active:scale-[0.98]"
-              >
-                <div className="flex h-full min-h-[176px] flex-col rounded-[17px] p-3" style={{ backgroundColor: card.color }}>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ backgroundColor: card.accent }}>{card.number}</span>
-                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/65 text-[31px] font-bold leading-none" style={{ color: card.accent }}>{card.icon}</span>
-                  </div>
+            {syntaxCards.map((card) => {
+              const isModalCard = MODAL_SINTAKS.has(card.number);
 
-                  <div className="mt-2 flex-1">
-                    <h3 className="text-[13px] font-extrabold leading-[1.12] text-[#102F5B]">{card.title}</h3>
-                    <p className="mt-1.5 text-[10px] leading-[1.3] text-[#536782]">{card.description}</p>
-                  </div>
+              if (isModalCard) {
+                return (
+                  <button
+                    key={card.number}
+                    type="button"
+                    onClick={() => setSelectedCard(card)}
+                    aria-label={card.ariaLabel}
+                    className="group block h-full w-full cursor-pointer rounded-[17px] text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(16,47,91,0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30 active:scale-[0.98]"
+                  >
+                    <div className="flex h-full min-h-[176px] flex-col rounded-[17px] p-3" style={{ backgroundColor: card.color }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ backgroundColor: card.accent }}>{card.number}</span>
+                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/65 text-[31px] font-bold leading-none" style={{ color: card.accent }}>{card.icon}</span>
+                      </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center rounded-full bg-white/70 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#102F5B]">
-                      {card.cta}
-                    </span>
-                    <span aria-hidden="true" className="text-[18px] font-bold text-[#102F5B]">›</span>
+                      <div className="mt-2 flex-1">
+                        <h3 className="text-[13px] font-extrabold leading-[1.12] text-[#102F5B]">{card.title}</h3>
+                        <p className="mt-1.5 text-[10px] leading-[1.3] text-[#536782]">{card.description}</p>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center rounded-full bg-white/70 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#102F5B]">
+                          {card.cta}
+                        </span>
+                        <span aria-hidden="true" className="text-[18px] font-bold text-[#102F5B]">›</span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              }
+
+              return (
+                <Link
+                  key={card.number}
+                  href={card.href}
+                  aria-label={card.ariaLabel}
+                  className="group block h-full w-full cursor-pointer rounded-[17px] text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(16,47,91,0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30 active:scale-[0.98]"
+                >
+                  <div className="flex h-full min-h-[176px] flex-col rounded-[17px] p-3" style={{ backgroundColor: card.color }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ backgroundColor: card.accent }}>{card.number}</span>
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/65 text-[31px] font-bold leading-none" style={{ color: card.accent }}>{card.icon}</span>
+                    </div>
+
+                    <div className="mt-2 flex-1">
+                      <h3 className="text-[13px] font-extrabold leading-[1.12] text-[#102F5B]">{card.title}</h3>
+                      <p className="mt-1.5 text-[10px] leading-[1.3] text-[#536782]">{card.description}</p>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center rounded-full bg-white/70 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#102F5B]">
+                        {card.cta}
+                      </span>
+                      <span aria-hidden="true" className="text-[18px] font-bold text-[#102F5B]">›</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
 
+        {selectedCard && (
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4" onClick={() => setSelectedCard(null)}>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="syntax-modal-title"
+              className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:rounded-[28px]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-slate-200 px-4 pb-3 pt-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ backgroundColor: selectedCard.accent }}>{selectedCard.number}</span>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sintaks</p>
+                    <h3 id="syntax-modal-title" className="text-lg font-extrabold text-[#102F5B]">{selectedCard.title}</h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCard(null)}
+                  aria-label="Tutup modal sintaks"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xl font-bold text-slate-600 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
+                <div className="space-y-4 px-4 py-4">
+                  <div className="rounded-[18px] p-3" style={{ backgroundColor: selectedCard.color }}>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">Tujuan tahap</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{selectedCard.description}</p>
+                  </div>
+
+                  <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#102F5B]">Catatan</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                      Aktivitas ini disesuaikan dengan alur pembelajaran yang sudah tersedia di aplikasi. Silakan lanjutkan ke tahapan yang relevan untuk melanjutkan proses belajar.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="shrink-0 border-t border-slate-200 bg-white pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] px-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCard(null)}
+                  className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-[#1685EE] px-4 py-3 text-base font-bold text-white shadow-[0_8px_18px_rgba(22,133,238,0.2)] transition hover:bg-[#1479d4] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30"
+                >
+                  Mengerti
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <section id="progress" aria-labelledby="progress-heading">
           <div className="flex items-center justify-between px-1">
