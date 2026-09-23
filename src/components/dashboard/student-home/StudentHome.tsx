@@ -38,8 +38,6 @@ const syntaxCards: SyntaxCard[] = [
   { number: 7, title: 'Evaluasi', description: 'Kerjakan kuis untuk mengevaluasi pemahaman', color: '#FFDDEB', accent: '#D83272', icon: '✓', href: '/dashboard/siswa/kuis', ariaLabel: 'Kerjakan evaluasi dan kuis', cta: 'Kerjakan ›' },
 ] as const;
 
-const MODAL_SINTAKS = new Set([1, 4, 5, 6, 7]);
-
 export default function StudentHome() {
   const { user } = useAuth();
   const { getProgress } = useAllComicProgress();
@@ -98,7 +96,7 @@ export default function StudentHome() {
           </div>
           <div id="syntax-cards" className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
             {syntaxCards.map((card) => {
-              const isModalCard = MODAL_SINTAKS.has(card.number);
+              const isModalCard = [1, 4, 5, 6, 7].includes(card.number);
 
               if (isModalCard) {
                 return (
