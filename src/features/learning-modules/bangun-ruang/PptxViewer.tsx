@@ -8,6 +8,7 @@ type PptxViewerProps = {
   initialSlide: number;
   onSlideRead: (slideNumber: number, totalSlides: number) => void;
   onComplete: (totalSlides: number) => void;
+  onResetProgress: (totalSlides: number) => void;
 };
 
 function removeRenderedSlides(container: HTMLDivElement | null) {
@@ -15,12 +16,12 @@ function removeRenderedSlides(container: HTMLDivElement | null) {
 }
 
 function renderActiveSlide(previewer: ReturnType<typeof init>, container: HTMLDivElement | null, slideIndex: number) {
+  if (!container) return;
   removeRenderedSlides(container);
   previewer.renderSingleSlide(slideIndex);
-  removeRenderedSlides(container);
 }
 
-export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: PptxViewerProps) {
+export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onResetProgress }: PptxViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previewerRef = useRef<ReturnType<typeof init> | null>(null);
@@ -36,6 +37,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
   const [showLearningPrompt, setShowLearningPrompt] = useState(true);
   const [orientationFallback, setOrientationFallback] = useState(false);
   const [fullscreenError, setFullscreenError] = useState(false);
+  const [showResetPrompt, setShowResetPrompt] = useState(false);
 
   const getViewerOptions = useCallback((slideAspectRatio = 16 / 9) => {
     const width = Math.max(containerRef.current?.clientWidth ?? 1, 1);
@@ -153,13 +155,19 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     };
   }, [renderPresentation]);
 
-  const renderSlide = (nextSlide: number) => {
+  const renderSlide = (nextSlide: number, notifyProgress = true) => {
     const previewer = previewerRef.current;
     if (!previewer || nextSlide < 0 || nextSlide >= totalSlides) return;
     currentSlideRef.current = nextSlide;
     renderActiveSlide(previewer, containerRef.current, nextSlide);
     setCurrentSlide(nextSlide);
-    onSlideRead(nextSlide + 1, totalSlides);
+    if (notifyProgress) onSlideRead(nextSlide + 1, totalSlides);
+  };
+
+  const resetLearning = () => {
+    renderSlide(0, false);
+    onResetProgress(totalSlides);
+    setShowResetPrompt(false);
   };
 
   const enterFullscreen = async () => {
@@ -218,12 +226,27 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
         <button type="button" onClick={() => onComplete(totalSlides)} disabled={loading || !totalSlides || currentSlide + 1 !== totalSlides} className="rounded-full bg-white px-5 py-2 text-sm font-extrabold text-[#102F5B] disabled:cursor-not-allowed disabled:opacity-40">Selesai</button>
       </div>
 
+      <div className="mt-3 flex justify-start">
+        <button type="button" onClick={() => setShowResetPrompt(true)} disabled={loading || !totalSlides} className="min-h-11 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40">↻ Reset Pembelajaran</button>
+      </div>
+
       {showLearningPrompt && !isFullscreen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#102F5B]/70 p-5" role="dialog" aria-modal="true" aria-labelledby="ppt-learning-mode-title">
         <div className="w-full max-w-sm rounded-[20px] bg-white p-6 text-center shadow-2xl">
           <p id="ppt-learning-mode-title" className="text-lg font-extrabold text-[#102F5B]">📘 Mode Belajar</p>
           <p className="mt-3 text-sm leading-6 text-[#536782]">Agar materi terlihat jelas, gunakan layar penuh dalam posisi lanskap.</p>
           <button type="button" onClick={() => void enterFullscreen()} disabled={loading} className="mt-5 inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-5 py-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">🔄 Layar Penuh</button>
           {fullscreenError && <p role="alert" className="mt-3 text-xs font-semibold text-[#A52A2A]">Layar penuh belum tersedia. Anda tetap dapat membaca materi di sini.</p>}
+        </div>
+      </div>}
+
+      {showResetPrompt && <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#102F5B]/70 p-5" role="dialog" aria-modal="true" aria-labelledby="ppt-reset-title">
+        <div className="w-full max-w-sm rounded-[20px] bg-white p-6 text-center shadow-2xl">
+          <p id="ppt-reset-title" className="text-lg font-extrabold text-[#102F5B]">Reset Pembelajaran?</p>
+          <p className="mt-3 text-sm leading-6 text-[#536782]">Progress belajar akan kembali ke slide pertama.</p>
+          <div className="mt-5 flex justify-center gap-3">
+            <button type="button" onClick={() => setShowResetPrompt(false)} className="min-h-11 rounded-full border border-[#B8C6D9] px-5 py-2 text-sm font-extrabold text-[#365576]">Batal</button>
+            <button type="button" onClick={resetLearning} className="min-h-11 rounded-full bg-[#0DBF7E] px-5 py-2 text-sm font-extrabold text-white">Reset</button>
+          </div>
         </div>
       </div>}
     </section>

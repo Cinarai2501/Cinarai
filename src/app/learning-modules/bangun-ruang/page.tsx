@@ -54,6 +54,17 @@ export default function BangunRuangModulePage() {
     setView('detail');
   }, [user?.uid]);
 
+  const handleResetProgress = useCallback((slideCount: number) => {
+    statusRef.current = 'not_started';
+    maxCompletedItemsRef.current = 0;
+    setStatus('not_started');
+    setCompletedItems(0);
+    setTotalItems(slideCount);
+    if (user?.uid) {
+      void saveLearningModuleProgress(user.uid, { completedItems: 0, totalItems: slideCount, status: 'not_started' });
+    }
+  }, [user?.uid]);
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#F5F9FF] px-4 py-5 text-[#102F5B] sm:px-6">
       <div className="mx-auto w-full max-w-3xl">
@@ -80,7 +91,10 @@ export default function BangunRuangModulePage() {
               <h1 className="text-xl font-extrabold">{BANGUN_RUANG_MODULE.title}</h1>
               <button type="button" onClick={() => setView('detail')} className="text-sm font-bold text-[#1685EE]">Kembali</button>
             </div>
-            <PptxViewer initialSlide={Math.max(completedItems - 1, 0)} onSlideRead={handleSlideRead} onComplete={handleComplete} />
+            <PptxViewer initialSlide={Math.max(completedItems - 1, 0)} onSlideRead={handleSlideRead} onComplete={handleComplete} onResetProgress={handleResetProgress} />
+            <p className="mt-3 text-center text-sm font-bold text-[#536782]">
+              Progress: {totalItems ? `${Math.round((completedItems / totalItems) * 100)}% / ${status === 'not_started' ? 'Belum Mulai' : status === 'completed' ? 'Selesai' : 'Sedang Berjalan'}` : '0% / Belum Mulai'}
+            </p>
           </section>
         )}
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import type { ProgressDocument } from '@/types/firestore';
 import { BANGUN_RUANG_MODULE } from './module';
@@ -39,7 +39,7 @@ export async function saveLearningModuleProgress(
       isCompleted: progress.status === 'completed',
       status: progress.status,
       updatedAt: serverTimestamp(),
-      ...(progress.status === 'completed' ? { completedAt: serverTimestamp() } : {}),
+      completedAt: progress.status === 'completed' ? serverTimestamp() : deleteField(),
     },
     { merge: true }
   );
