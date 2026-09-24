@@ -227,24 +227,25 @@ export default function DashboardSiswaAiTutorPage() {
           );
             })}
             <div ref={messagesEndRef} />
-            <div className="border-t border-slate-200/70 pt-3">
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                {QUICK_QUESTIONS.map((chip) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => void handleSend(chip)}
-                    disabled={isResponding}
-                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95 disabled:opacity-50"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-[13px] w-[13px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    {chip}
-                  </button>
-                ))}
-              </div>
-            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 pt-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {QUICK_QUESTIONS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => void handleSend(chip)}
+                disabled={isResponding}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95 disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" className="h-[13px] w-[13px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2 2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                {chip}
+              </button>
+            ))}
           </div>
         </div>
 

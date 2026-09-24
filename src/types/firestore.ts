@@ -48,6 +48,7 @@ export interface ProgressDocument extends FirestoreBaseDocument {
   totalItems: number;
   isCompleted: boolean;
   completedAt?: FirestoreTimestamp;
+  status?: 'not_started' | 'in_progress' | 'completed';
 }
 
 export interface IntrospectionProgressMetadata {
@@ -205,6 +206,7 @@ export interface ComicDocument extends FirestoreBaseDocument {
 export interface FirestoreCollectionMap {
   users: UserDocument;
   progress: ProgressDocument;
+  learning_module_progress: ProgressDocument;
   reflection: ReflectionDocument;
   leaderboard: LeaderboardDocument;
   badge: BadgeDocument;

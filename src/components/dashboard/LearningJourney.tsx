@@ -8,6 +8,9 @@ import { useAllComicProgress } from '@/hooks/useAllComicProgress';
 import { getAllUnlockStatuses } from '@/lib/unlockEngine';
 import { useSnackbar } from '@/context/SnackbarContext';
 import type { Comic } from '@/types/comic';
+import { useAuth } from '@/hooks/useAuth';
+import { BANGUN_RUANG_MODULE } from '@/features/learning-modules/bangun-ruang/module';
+import { getLearningModuleProgress, type LearningModuleStatus } from '@/features/learning-modules/bangun-ruang/progress';
 
 const COMIC_DIFFICULTY: Record<number, string> = {
   1: 'Menengah',
@@ -18,6 +21,7 @@ const COMIC_DIFFICULTY: Record<number, string> = {
 };
 
 export default function LearningJourney() {
+  const { user } = useAuth();
   const { states, getProgress, resetProgressForComic, isLoading } = useAllComicProgress();
   const { showSnackbar } = useSnackbar();
   const [comics, setComics] = useState<Comic[]>([]);
@@ -27,6 +31,8 @@ export default function LearningJourney() {
   const [statusFilter, setStatusFilter] = useState<string>('Semua');
   const [pendingResetComicId, setPendingResetComicId] = useState<number | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [moduleStatus, setModuleStatus] = useState<LearningModuleStatus>('not_started');
+  const [moduleProgress, setModuleProgress] = useState({ completedItems: 0, totalItems: 0 });
 
   const unlockStatuses = useMemo(() => getAllUnlockStatuses(states), [states]);
 
@@ -36,6 +42,15 @@ export default function LearningJourney() {
       .catch(() => setComics([]))
       .finally(() => setComicsLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    void getLearningModuleProgress(user.uid).then((progress) => {
+      if (!progress) return;
+      setModuleStatus(progress.status);
+      setModuleProgress({ completedItems: progress.completedItems, totalItems: progress.totalItems });
+    });
+  }, [user?.uid]);
 
   const handleRequestReset = useCallback((id: number) => {
     setPendingResetComicId(id);
@@ -193,6 +208,12 @@ export default function LearningJourney() {
             />
           );
         })}
+        <LearningModuleCard
+          sequenceNumber={7}
+          status={moduleStatus}
+          completedItems={moduleProgress.completedItems}
+          totalItems={moduleProgress.totalItems}
+        />
       </div>
 
       {/* Reset confirmation modal */}
@@ -237,6 +258,31 @@ export default function LearningJourney() {
         </div>
       )}
     </div>
+  );
+}
+
+function LearningModuleCard({ sequenceNumber, status, completedItems, totalItems }: { sequenceNumber: number; status: LearningModuleStatus; completedItems: number; totalItems: number }) {
+  const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  const statusLabel = status === 'completed' ? 'Selesai' : status === 'in_progress' ? 'Berlangsung' : 'Belum Mulai';
+  return (
+    <article className="overflow-hidden rounded-[24px] border border-slate-100 bg-white p-3 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+      <div className="flex items-start gap-3">
+        <div className="relative grid h-[122px] w-[92px] shrink-0 place-items-center rounded-[20px] bg-[#DCEEFF] text-4xl shadow-[0_8px_20px_rgba(0,0,0,0.08)]">
+          <span className="absolute -left-1 -top-1 grid h-6 w-6 place-items-center rounded-full bg-[#1D93FF] text-xs font-bold text-white">{sequenceNumber}</span>
+          <span aria-hidden="true">📘</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[15px] font-bold leading-tight text-[#1E293B]">{BANGUN_RUANG_MODULE.title}</h3>
+            <span className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-bold ${status === 'completed' ? 'bg-[#DCFCE7] text-[#16A34A]' : status === 'in_progress' ? 'bg-[#E0F2FE] text-[#1D93FF]' : 'bg-[#F1F5F9] text-[#64748B]'}`}>{statusLabel}</span>
+          </div>
+          <p className="mt-1.5 text-[11px] font-semibold text-[#0DBF7E]">{BANGUN_RUANG_MODULE.label}</p>
+          <div className="mt-3 flex items-center justify-between text-xs"><span className="font-medium text-[#64748B]">Progress</span><span className="font-bold text-[#0DBF7E]">{percentage}%</span></div>
+          <div className="mt-1 h-[7px] w-full overflow-hidden rounded-full bg-[#EEF4FB]"><div className="h-full rounded-full bg-[#0DBF7E]" style={{ width: `${percentage}%` }} /></div>
+          <div className="mt-3 flex justify-end"><Link href={BANGUN_RUANG_MODULE.route} className="inline-flex rounded-full bg-[#0DBF7E] px-4 py-1.5 text-[13px] font-bold text-white">{status === 'not_started' ? 'Mulai' : 'Lanjutkan'}</Link></div>
+        </div>
+      </div>
+    </article>
   );
 }
 
