@@ -266,12 +266,15 @@ export default function StudentHome() {
         </section>
 
         {selectedCard && activeGuide && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4" onClick={() => setSelectedCard(null)}>
+          <div
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-0 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:items-center sm:p-4 sm:pb-4"
+            onClick={() => setSelectedCard(null)}
+          >
             <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="syntax-modal-title"
-              className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:rounded-[28px]"
+              className="relative z-10 flex max-h-[92dvh] w-full max-w-[540px] flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:rounded-[28px]"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-slate-200 px-4 pb-3 pt-4">
@@ -318,7 +321,7 @@ export default function StudentHome() {
                 </div>
               </div>
 
-              <div className="shrink-0 border-t border-slate-200 bg-white px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
+              <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
                 <button
                   type="button"
                   onClick={handleGuideConfirm}
