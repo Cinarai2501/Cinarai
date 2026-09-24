@@ -118,7 +118,7 @@ export default function DashboardSiswaAiTutorPage() {
       subtitle="Siap membantumu belajar kapan saja!"
       gradientFrom="#623CEA"
       gradientTo="#7550F1"
-      className="flex h-[100dvh] min-h-0 flex-col overflow-hidden pb-[calc(88px+env(safe-area-inset-bottom))]"
+      className="flex h-[calc(100dvh-86px-env(safe-area-inset-bottom))] min-h-0 flex-col overflow-hidden"
       contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
       rightContent={
         <div className="flex items-center gap-3">
