@@ -171,6 +171,7 @@ function makeFallbackPackage(comicId: number): LearningContentPackage {
         page: 1,
         qrImage: '/features/comics/comic-1/assets/qr/kubus.png',
         objectImage: '/images/identification/komik1-soal1.jpg',
+        ...(comicId === 3 ? { image: '/images/identification/komik1-soal1.jpg' } : {}),
         modelUrl: '',
         embedUrl: '',
         viewerType: 'url',

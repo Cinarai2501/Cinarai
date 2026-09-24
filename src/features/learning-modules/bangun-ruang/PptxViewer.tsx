@@ -17,7 +17,8 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
   const presentationRef = useRef<ArrayBuffer | null>(null);
   const initialSlideRef = useRef(initialSlide);
   const currentSlideRef = useRef(initialSlide);
-  const [slideNumber, setSlideNumber] = useState(initialSlide + 1);
+  const renderVersionRef = useRef(0);
+  const [currentSlide, setCurrentSlide] = useState(initialSlide);
   const [totalSlides, setTotalSlides] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,27 +31,34 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     const width = Math.max(containerRef.current?.clientWidth ?? 1, 1);
     const height = Math.max(containerRef.current?.clientHeight ?? Math.round(width * (9 / 16)), 1);
     const slideWidth = Math.min(width, Math.round(height * (16 / 9)));
+    const slideHeight = Math.round(slideWidth * (9 / 16));
 
     return {
       width: Math.max(slideWidth, 1),
-      height,
+      height: Math.max(slideHeight, 1),
       mode: 'slide' as const,
     };
   }, []);
 
   const renderPresentation = useCallback(async (file: ArrayBuffer, slideIndex: number, notifyProgress: boolean) => {
     if (!containerRef.current) return;
+    const renderVersion = ++renderVersionRef.current;
 
     previewerRef.current?.destroy();
     const previewer = init(containerRef.current, getViewerOptions());
     previewerRef.current = previewer;
     await previewer.load(file);
 
+    if (renderVersion !== renderVersionRef.current || !containerRef.current) {
+      previewer.destroy();
+      return;
+    }
+
     const count = previewer.slideCount;
     const safeSlide = Math.min(Math.max(slideIndex, 0), Math.max(count - 1, 0));
     currentSlideRef.current = safeSlide;
+    setCurrentSlide(safeSlide);
     setTotalSlides(count);
-    setSlideNumber(safeSlide + 1);
     previewer.renderSingleSlide(safeSlide);
     if (notifyProgress) onSlideRead(safeSlide + 1, count);
   }, [getViewerOptions, onSlideRead]);
@@ -83,6 +91,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     void loadPresentation();
     return () => {
       cancelled = true;
+      renderVersionRef.current += 1;
       previewerRef.current?.destroy();
       previewerRef.current = null;
     };
@@ -95,14 +104,25 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
       if (!nextIsFullscreen) setOrientationFallback(false);
 
       if (presentationRef.current) {
-        window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
           void renderPresentation(presentationRef.current!, currentSlideRef.current, false);
-        });
+        }));
       }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    const handleResize = () => {
+      if (document.fullscreenElement !== viewerRef.current || !presentationRef.current) return;
+      window.requestAnimationFrame(() => {
+        void renderPresentation(presentationRef.current!, currentSlideRef.current, false);
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [renderPresentation]);
 
   const renderSlide = (nextSlide: number) => {
@@ -110,7 +130,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     if (!previewer || nextSlide < 0 || nextSlide >= totalSlides) return;
     currentSlideRef.current = nextSlide;
     previewer.renderSingleSlide(nextSlide);
-    setSlideNumber(nextSlide + 1);
+    setCurrentSlide(nextSlide);
     onSlideRead(nextSlide + 1, totalSlides);
   };
 
@@ -151,23 +171,23 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
       className={`relative flex w-full min-w-0 flex-col overflow-hidden rounded-[24px] bg-[#102F5B] p-3 shadow-[0_14px_36px_rgba(16,47,91,0.16)] sm:p-4 ${isFullscreen ? 'h-dvh rounded-none p-2 sm:p-3' : ''}`}
       aria-label="PPT viewer"
     >
-      <div className={`relative min-h-0 min-w-0 overflow-hidden rounded-[16px] bg-[#DDEBFA] [&_.pptx-preview-slide-wrapper]:!m-0 [&_.pptx-preview-wrapper]:!h-full [&_.pptx-preview-wrapper]:!w-full [&_.pptx-preview-wrapper]:!overflow-hidden ${isFullscreen ? 'flex-1' : 'aspect-[16/9] w-full'}`}>
+      <div className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-[16px] bg-[#DDEBFA] [&_.pptx-preview-slide-wrapper]:!m-0 ${isFullscreen ? 'flex-1' : 'aspect-[16/9] w-full'}`}>
         {loading && <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#DDEBFA]"><p className="text-sm font-semibold text-[#365576]">Menyiapkan materi...</p></div>}
         {error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#DDEBFA]"><p role="alert" className="px-6 text-center text-sm font-semibold text-[#A52A2A]">{error}</p></div>}
-        <div ref={containerRef} className="absolute inset-0 h-full w-full min-w-0 overflow-hidden overscroll-contain touch-pan-x touch-pan-y" />
+        <div ref={containerRef} className="absolute inset-0 flex h-full w-full min-w-0 items-center justify-center overflow-hidden overscroll-contain touch-pan-x touch-pan-y" />
       </div>
 
       {orientationFallback && isFullscreen && <p className="mt-2 text-center text-xs font-semibold text-white/75">Putar perangkat ke posisi mendatar untuk melihat materi dengan jelas.</p>}
 
       <div className="mt-3 flex shrink-0 items-center justify-between gap-2 text-white">
-        <button type="button" onClick={() => renderSlide(slideNumber - 2)} disabled={loading || slideNumber <= 1} className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40">Sebelumnya</button>
-        <span className="text-sm font-bold tabular-nums">{totalSlides ? `${slideNumber} / ${totalSlides}` : '- / -'}</span>
-        <button type="button" onClick={() => renderSlide(slideNumber)} disabled={loading || slideNumber >= totalSlides} className="rounded-full bg-[#0DBF7E] px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40">Berikutnya</button>
+        <button type="button" onClick={() => renderSlide(currentSlideRef.current - 1)} disabled={loading || currentSlide <= 0} className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40">Sebelumnya</button>
+        <span className="text-sm font-bold tabular-nums">{totalSlides ? `${currentSlide + 1} / ${totalSlides}` : '- / -'}</span>
+        <button type="button" onClick={() => renderSlide(currentSlideRef.current + 1)} disabled={loading || currentSlide >= totalSlides - 1} className="rounded-full bg-[#0DBF7E] px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40">Berikutnya</button>
       </div>
 
       <div className="mt-3 flex shrink-0 items-center justify-between gap-3">
         <button type="button" onClick={() => void (isFullscreen ? exitFullscreen() : enterFullscreen())} disabled={loading} className="text-xs font-bold text-white/80 underline underline-offset-4 disabled:opacity-40">{isFullscreen ? '⛶ Keluar Layar Penuh' : '⛶ Layar Penuh'}</button>
-        <button type="button" onClick={() => onComplete(totalSlides)} disabled={loading || !totalSlides || slideNumber !== totalSlides} className="rounded-full bg-white px-5 py-2 text-sm font-extrabold text-[#102F5B] disabled:cursor-not-allowed disabled:opacity-40">Selesai</button>
+        <button type="button" onClick={() => onComplete(totalSlides)} disabled={loading || !totalSlides || currentSlide + 1 !== totalSlides} className="rounded-full bg-white px-5 py-2 text-sm font-extrabold text-[#102F5B] disabled:cursor-not-allowed disabled:opacity-40">Selesai</button>
       </div>
 
       {showLearningPrompt && !isFullscreen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#102F5B]/70 p-5" role="dialog" aria-modal="true" aria-labelledby="ppt-learning-mode-title">

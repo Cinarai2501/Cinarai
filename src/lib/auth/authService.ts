@@ -7,6 +7,7 @@ export type AuthUser = User;
 
 export interface AuthSignUpDependencies {
   getSignInMethods: (email: string) => Promise<string[]>;
+  queryUserDocumentsByEmail?: (email: string) => Promise<UserDocument[]>;
   firebaseSignUp: (email: string, password: string) => Promise<UserCredential>;
   updateUserProfile: (user: User, displayName: string) => Promise<void>;
   getFirestoreDocument?: (collection: 'users', docId: string) => Promise<UserDocument | null>;
@@ -36,6 +37,17 @@ export async function signUpUser(
   const existingMethods = await deps.getSignInMethods(normalizedEmail);
   if (existingMethods.length > 0) {
     throw new Error('Email ini sudah terdaftar. Silakan login atau gunakan fitur Lupa Password.');
+  }
+
+  if (deps.queryUserDocumentsByEmail) {
+    try {
+      const existingUserDocuments = await deps.queryUserDocumentsByEmail(normalizedEmail);
+      if (existingUserDocuments.length > 0) {
+        throw new Error('Email ini sudah terdaftar. Silakan login atau gunakan fitur Lupa Password.');
+      }
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'permission-denied') throw error;
+    }
   }
 
   const userCredential = await deps.firebaseSignUp(normalizedEmail, password);
