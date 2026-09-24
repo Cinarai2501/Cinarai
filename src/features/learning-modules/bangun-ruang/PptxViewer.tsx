@@ -10,6 +10,16 @@ type PptxViewerProps = {
   onComplete: (totalSlides: number) => void;
 };
 
+function removeRenderedSlides(container: HTMLDivElement | null) {
+  container?.querySelectorAll('.pptx-preview-slide-wrapper').forEach((slide) => slide.remove());
+}
+
+function renderActiveSlide(previewer: ReturnType<typeof init>, container: HTMLDivElement | null, slideIndex: number) {
+  removeRenderedSlides(container);
+  previewer.renderSingleSlide(slideIndex);
+  removeRenderedSlides(container);
+}
+
 export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: PptxViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,11 +37,11 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
   const [orientationFallback, setOrientationFallback] = useState(false);
   const [fullscreenError, setFullscreenError] = useState(false);
 
-  const getViewerOptions = useCallback(() => {
+  const getViewerOptions = useCallback((slideAspectRatio = 16 / 9) => {
     const width = Math.max(containerRef.current?.clientWidth ?? 1, 1);
     const height = Math.max(containerRef.current?.clientHeight ?? Math.round(width * (9 / 16)), 1);
-    const slideWidth = Math.min(width, Math.round(height * (16 / 9)));
-    const slideHeight = Math.round(slideWidth * (9 / 16));
+    const slideWidth = Math.min(width, Math.round(height * slideAspectRatio));
+    const slideHeight = Math.round(slideWidth / slideAspectRatio);
 
     return {
       width: Math.max(slideWidth, 1),
@@ -45,6 +55,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     const renderVersion = ++renderVersionRef.current;
 
     previewerRef.current?.destroy();
+    containerRef.current.replaceChildren();
     const previewer = init(containerRef.current, getViewerOptions());
     previewerRef.current = previewer;
     await previewer.load(file);
@@ -59,12 +70,28 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     currentSlideRef.current = safeSlide;
     setCurrentSlide(safeSlide);
     setTotalSlides(count);
-    previewer.renderSingleSlide(safeSlide);
+    const slideAspectRatio = previewer.pptx.width / previewer.pptx.height;
+    const viewerOptions = getViewerOptions(slideAspectRatio);
+    if (viewerOptions.width !== previewer.options.width || viewerOptions.height !== previewer.options.height) {
+      previewer.destroy();
+      containerRef.current.replaceChildren();
+      const resizedPreviewer = init(containerRef.current, viewerOptions);
+      previewerRef.current = resizedPreviewer;
+      await resizedPreviewer.load(file);
+      if (renderVersion !== renderVersionRef.current || !containerRef.current) {
+        resizedPreviewer.destroy();
+        return;
+      }
+      renderActiveSlide(resizedPreviewer, containerRef.current, safeSlide);
+    } else {
+      renderActiveSlide(previewer, containerRef.current, safeSlide);
+    }
     if (notifyProgress) onSlideRead(safeSlide + 1, count);
   }, [getViewerOptions, onSlideRead]);
 
   useEffect(() => {
     let cancelled = false;
+    const container = containerRef.current;
 
     async function loadPresentation() {
       if (!containerRef.current) return;
@@ -94,6 +121,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
       renderVersionRef.current += 1;
       previewerRef.current?.destroy();
       previewerRef.current = null;
+      container?.replaceChildren();
     };
   }, [renderPresentation]);
 
@@ -129,7 +157,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete }: Pp
     const previewer = previewerRef.current;
     if (!previewer || nextSlide < 0 || nextSlide >= totalSlides) return;
     currentSlideRef.current = nextSlide;
-    previewer.renderSingleSlide(nextSlide);
+    renderActiveSlide(previewer, containerRef.current, nextSlide);
     setCurrentSlide(nextSlide);
     onSlideRead(nextSlide + 1, totalSlides);
   };
