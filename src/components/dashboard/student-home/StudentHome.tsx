@@ -267,14 +267,14 @@ export default function StudentHome() {
 
         {selectedCard && activeGuide && (
           <div
-            className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-0 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:items-center sm:p-4 sm:pb-4"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-0 pb-[calc(80px+env(safe-area-inset-bottom))] sm:items-center sm:p-4 sm:pb-4"
             onClick={() => setSelectedCard(null)}
           >
             <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="syntax-modal-title"
-              className="relative z-10 flex max-h-[calc(100dvh-90px)] w-full max-w-[540px] flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:rounded-[28px]"
+              className="relative z-10 flex h-[calc(100dvh-90px)] max-h-[calc(100dvh-90px)] min-h-0 w-full max-w-[540px] flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:h-auto sm:max-h-[calc(100dvh-32px)] sm:rounded-[28px]"
               onClick={(event) => event.stopPropagation()}
             >
               <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 pb-3 pt-4">
