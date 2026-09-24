@@ -274,10 +274,10 @@ export default function StudentHome() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="syntax-modal-title"
-              className="relative z-10 flex max-h-[92dvh] w-full max-w-[540px] flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:rounded-[28px]"
+              className="relative z-10 flex max-h-[calc(100dvh-90px)] w-full max-w-[540px] flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)] sm:rounded-[28px]"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 pb-3 pt-4">
+              <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 pb-3 pt-4">
                 <div className="flex items-center gap-3">
                   <span className="grid h-9 w-9 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ backgroundColor: selectedCard.accent }}>{selectedCard.number}</span>
                   <div>
@@ -293,7 +293,7 @@ export default function StudentHome() {
                 >
                   ×
                 </button>
-              </div>
+              </header>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
                 <div className="space-y-4 px-4 py-4">
@@ -321,7 +321,7 @@ export default function StudentHome() {
                 </div>
               </div>
 
-              <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+              <footer className="shrink-0 border-t border-slate-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
                 <button
                   type="button"
                   onClick={handleGuideConfirm}
@@ -329,7 +329,7 @@ export default function StudentHome() {
                 >
                   MENGERTI
                 </button>
-              </div>
+              </footer>
             </div>
           </div>
         )}
