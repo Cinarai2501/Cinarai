@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllComicProgress } from '@/hooks/useAllComicProgress';
@@ -49,6 +50,28 @@ const syntaxGuides = {
       '📌 Catat informasi penting yang kamu temukan.',
     ],
     result: 'Kamu memahami masalah sebelum mulai mencari solusinya.',
+  },
+  2: {
+    title: 'Eksplorasi dengan AR',
+    goal: 'Menjelajahi informasi dan objek pembelajaran melalui komik serta fitur AR yang tersedia.',
+    actions: [
+      '📖 Baca dan ikuti cerita pada komik.',
+      '🔍 Amati objek dan informasi yang ditampilkan.',
+      '📱 Gunakan fitur AR jika tersedia pada bagian pembelajaran.',
+      '💡 Catat hal menarik atau informasi penting yang kamu temukan.',
+    ],
+    result: 'Kamu mendapatkan informasi melalui komik dan eksplorasi AR sebagai bahan untuk pembelajaran berikutnya.',
+  },
+  3: {
+    title: 'Penggalian Informasi dengan AI',
+    goal: 'Memperdalam pemahaman dengan bertanya dan berdiskusi bersama AI Tutor.',
+    actions: [
+      '💬 Ajukan pertanyaan tentang materi yang sedang dipelajari.',
+      '🤖 Gunakan AI Tutor untuk mendapatkan penjelasan.',
+      '🧠 Hubungkan jawaban AI dengan informasi dari komik.',
+      '🔎 Gunakan informasi tersebut untuk memperdalam pemahamanmu.',
+    ],
+    result: 'Kamu mendapatkan pemahaman yang lebih mendalam dengan bantuan AI Tutor.',
   },
   4: {
     title: 'Analisis & Pemecahan Masalah',
@@ -99,6 +122,7 @@ const syntaxGuides = {
 export default function StudentHome() {
   const { user } = useAuth();
   const { getProgress } = useAllComicProgress();
+  const router = useRouter();
   const firstName = user?.displayName?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'Siswa';
   const avatarAsset = getAvatarAsset(firstName);
   const comics = useMemo(() => getAllComics(), []);
@@ -117,6 +141,27 @@ export default function StudentHome() {
   }, [comics, getProgress]);
 
   const activeGuide = selectedCard ? syntaxGuides[selectedCard.number as keyof typeof syntaxGuides] : null;
+
+  const handleGuideConfirm = () => {
+    if (!selectedCard) return;
+
+    const routeBySyntax: Record<number, string | null> = {
+      1: null,
+      2: '/dashboard/siswa/komik',
+      3: '/dashboard/siswa/ai-tutor',
+      4: null,
+      5: null,
+      6: null,
+      7: null,
+    };
+
+    const destination = routeBySyntax[selectedCard.number];
+    setSelectedCard(null);
+
+    if (destination) {
+      router.push(destination);
+    }
+  };
 
   useEffect(() => {
     if (!selectedCard) return;
@@ -156,7 +201,7 @@ export default function StudentHome() {
           </div>
           <div id="syntax-cards" className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
             {syntaxCards.map((card) => {
-              const isModalCard = [1, 4, 5, 6, 7].includes(card.number);
+              const isModalCard = [1, 2, 3, 4, 5, 6, 7].includes(card.number);
 
               if (isModalCard) {
                 return (
@@ -276,7 +321,7 @@ export default function StudentHome() {
               <div className="shrink-0 border-t border-slate-200 bg-white px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
                 <button
                   type="button"
-                  onClick={() => setSelectedCard(null)}
+                  onClick={handleGuideConfirm}
                   className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-[#1685EE] px-4 py-3 text-base font-bold text-white shadow-[0_8px_18px_rgba(22,133,238,0.2)] transition hover:bg-[#1479d4] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30"
                 >
                   MENGERTI
