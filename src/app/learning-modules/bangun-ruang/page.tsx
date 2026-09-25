@@ -66,7 +66,7 @@ export default function BangunRuangModulePage() {
   }, [user?.uid]);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#F5F9FF] px-4 py-5 text-[#102F5B] sm:px-6">
+    <main className="overflow-x-hidden bg-[#F5F9FF] px-4 py-5 text-[#102F5B] sm:px-6">
       <div className="mx-auto w-full max-w-3xl">
         <Link href="/dashboard/siswa/komik" className="inline-flex text-sm font-bold text-[#1685EE]">← Kembali ke daftar materi</Link>
         {view === 'detail' ? (
