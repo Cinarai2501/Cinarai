@@ -23,9 +23,12 @@ function renderActiveSlide(previewer: ReturnType<typeof init>, container: HTMLDi
 
 export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onResetProgress }: PptxViewerProps) {
   const viewerRef = useRef<HTMLElement>(null);
+  const slideViewportRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previewerRef = useRef<ReturnType<typeof init> | null>(null);
   const presentationRef = useRef<ArrayBuffer | null>(null);
+  const presentationAspectRatioRef = useRef(16 / 9);
+  const responsiveRenderFrameRef = useRef<number | null>(null);
   const initialSlideRef = useRef(initialSlide);
   const currentSlideRef = useRef(initialSlide);
   const renderVersionRef = useRef(0);
@@ -34,16 +37,15 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showLearningPrompt, setShowLearningPrompt] = useState(true);
-  const [orientationFallback, setOrientationFallback] = useState(false);
   const [fullscreenError, setFullscreenError] = useState(false);
   const [showResetPrompt, setShowResetPrompt] = useState(false);
+  const [slideAspectRatio, setSlideAspectRatio] = useState(16 / 9);
 
-  const getViewerOptions = useCallback((slideAspectRatio = 16 / 9) => {
-    const width = Math.max(containerRef.current?.clientWidth ?? 1, 1);
-    const height = Math.max(containerRef.current?.clientHeight ?? Math.round(width * (9 / 16)), 1);
-    const slideWidth = Math.min(width, Math.round(height * slideAspectRatio));
-    const slideHeight = Math.round(slideWidth / slideAspectRatio);
+  const getViewerOptions = useCallback((aspectRatio = presentationAspectRatioRef.current) => {
+    const width = Math.max(slideViewportRef.current?.clientWidth ?? 1, 1);
+    const height = Math.max(slideViewportRef.current?.clientHeight ?? 1, 1);
+    const slideWidth = Math.min(width, Math.round(height * aspectRatio));
+    const slideHeight = Math.round(slideWidth / aspectRatio);
 
     return {
       width: Math.max(slideWidth, 1),
@@ -72,8 +74,10 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
     currentSlideRef.current = safeSlide;
     setCurrentSlide(safeSlide);
     setTotalSlides(count);
-    const slideAspectRatio = previewer.pptx.width / previewer.pptx.height;
-    const viewerOptions = getViewerOptions(slideAspectRatio);
+    const actualAspectRatio = previewer.pptx.width / previewer.pptx.height;
+    presentationAspectRatioRef.current = actualAspectRatio;
+    setSlideAspectRatio(actualAspectRatio);
+    const viewerOptions = getViewerOptions(actualAspectRatio);
     if (viewerOptions.width !== previewer.options.width || viewerOptions.height !== previewer.options.height) {
       previewer.destroy();
       containerRef.current.replaceChildren();
@@ -127,33 +131,38 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
     };
   }, [renderPresentation]);
 
+  const scheduleResponsiveRender = useCallback(() => {
+    if (!presentationRef.current || responsiveRenderFrameRef.current !== null) return;
+    responsiveRenderFrameRef.current = window.requestAnimationFrame(() => {
+      responsiveRenderFrameRef.current = null;
+      void renderPresentation(presentationRef.current!, currentSlideRef.current, false);
+    });
+  }, [renderPresentation]);
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       const nextIsFullscreen = document.fullscreenElement === viewerRef.current;
       setIsFullscreen(nextIsFullscreen);
-      if (!nextIsFullscreen) setOrientationFallback(false);
-
-      if (presentationRef.current) {
-        window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-          void renderPresentation(presentationRef.current!, currentSlideRef.current, false);
-        }));
-      }
+      scheduleResponsiveRender();
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    const handleResize = () => {
-      if (document.fullscreenElement !== viewerRef.current || !presentationRef.current) return;
-      window.requestAnimationFrame(() => {
-        void renderPresentation(presentationRef.current!, currentSlideRef.current, false);
-      });
-    };
+    window.addEventListener('resize', scheduleResponsiveRender);
+    window.addEventListener('orientationchange', scheduleResponsiveRender);
+    const resizeObserver = new ResizeObserver(scheduleResponsiveRender);
+    if (slideViewportRef.current) resizeObserver.observe(slideViewportRef.current);
 
-    window.addEventListener('resize', handleResize);
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', scheduleResponsiveRender);
+      window.removeEventListener('orientationchange', scheduleResponsiveRender);
+      resizeObserver.disconnect();
+      if (responsiveRenderFrameRef.current !== null) {
+        window.cancelAnimationFrame(responsiveRenderFrameRef.current);
+        responsiveRenderFrameRef.current = null;
+      }
     };
-  }, [renderPresentation]);
+  }, [scheduleResponsiveRender]);
 
   const renderSlide = (nextSlide: number, notifyProgress = true) => {
     const previewer = previewerRef.current;
@@ -180,18 +189,6 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
 
     try {
       await viewerRef.current.requestFullscreen();
-      setShowLearningPrompt(false);
-
-      const orientation = window.screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
-      if (orientation?.lock) {
-        try {
-          await orientation.lock('landscape');
-        } catch {
-          setOrientationFallback(true);
-        }
-      } else {
-        setOrientationFallback(true);
-      }
     } catch {
       setFullscreenError(true);
     }
@@ -204,21 +201,23 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
   return (
     <section
       ref={viewerRef}
-      className={`relative flex w-full min-w-0 flex-col overflow-hidden rounded-[24px] bg-[#102F5B] p-3 shadow-[0_14px_36px_rgba(16,47,91,0.16)] sm:p-4 ${isFullscreen ? 'h-dvh rounded-none p-2 sm:p-3' : ''}`}
+      className={`relative flex h-auto max-h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden rounded-[24px] bg-[#102F5B] p-3 shadow-[0_14px_36px_rgba(16,47,91,0.16)] sm:p-4 ${isFullscreen ? 'h-dvh rounded-none p-2 sm:p-3' : ''}`}
       aria-label="PPT viewer"
     >
-      <div className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-[16px] bg-[#DDEBFA] [&_.pptx-preview-slide-wrapper]:!m-0 ${isFullscreen ? 'flex-1' : 'aspect-[16/9] w-full'}`}>
+      <div
+        ref={slideViewportRef}
+        style={isFullscreen ? undefined : { aspectRatio: slideAspectRatio }}
+        className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-[16px] bg-[#DDEBFA] [&_.pptx-preview-slide-wrapper]:!m-0 [&_.pptx-preview-slide-wrapper]:max-h-full [&_.pptx-preview-slide-wrapper]:max-w-full ${isFullscreen ? 'flex-1' : 'w-full'}`}
+      >
         {loading && <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#DDEBFA]"><p className="text-sm font-semibold text-[#365576]">Menyiapkan materi...</p></div>}
         {error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#DDEBFA]"><p role="alert" className="px-6 text-center text-sm font-semibold text-[#A52A2A]">{error}</p></div>}
         <div ref={containerRef} className="absolute inset-0 flex h-full w-full min-w-0 items-center justify-center overflow-hidden overscroll-contain touch-pan-x touch-pan-y" />
       </div>
 
-      {orientationFallback && isFullscreen && <p className="mt-2 text-center text-xs font-semibold text-white/75">Putar perangkat ke posisi mendatar untuk melihat materi dengan jelas.</p>}
-
-      <div className="mt-3 flex shrink-0 items-center justify-between gap-2 text-white">
-        <button type="button" onClick={() => renderSlide(currentSlideRef.current - 1)} disabled={loading || currentSlide <= 0} className="rounded-full bg-white/15 px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40">Sebelumnya</button>
+      <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-2 text-white">
+        <button type="button" onClick={() => renderSlide(currentSlideRef.current - 1)} disabled={loading || currentSlide <= 0} className="rounded-full bg-white/15 px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm">Sebelumnya</button>
         <span className="text-sm font-bold tabular-nums">{totalSlides ? `${currentSlide + 1} / ${totalSlides}` : '- / -'}</span>
-        <button type="button" onClick={() => renderSlide(currentSlideRef.current + 1)} disabled={loading || currentSlide >= totalSlides - 1} className="rounded-full bg-[#0DBF7E] px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40">Berikutnya</button>
+        <button type="button" onClick={() => renderSlide(currentSlideRef.current + 1)} disabled={loading || currentSlide >= totalSlides - 1} className="rounded-full bg-[#0DBF7E] px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm">Berikutnya</button>
       </div>
 
       <div className="mt-3 flex shrink-0 items-center justify-between gap-3">
@@ -230,14 +229,7 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
         <button type="button" onClick={() => setShowResetPrompt(true)} disabled={loading || !totalSlides} className="min-h-11 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40">↻ Reset Pembelajaran</button>
       </div>
 
-      {showLearningPrompt && !isFullscreen && <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#102F5B]/70 p-5" role="dialog" aria-modal="true" aria-labelledby="ppt-learning-mode-title">
-        <div className="w-full max-w-sm rounded-[20px] bg-white p-6 text-center shadow-2xl">
-          <p id="ppt-learning-mode-title" className="text-lg font-extrabold text-[#102F5B]">📘 Mode Belajar</p>
-          <p className="mt-3 text-sm leading-6 text-[#536782]">Agar materi terlihat jelas, gunakan layar penuh dalam posisi lanskap.</p>
-          <button type="button" onClick={() => void enterFullscreen()} disabled={loading} className="mt-5 inline-flex items-center justify-center rounded-full bg-[#0DBF7E] px-5 py-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">🔄 Layar Penuh</button>
-          {fullscreenError && <p role="alert" className="mt-3 text-xs font-semibold text-[#A52A2A]">Layar penuh belum tersedia. Anda tetap dapat membaca materi di sini.</p>}
-        </div>
-      </div>}
+      {fullscreenError && <p role="alert" className="mt-2 text-center text-xs font-semibold text-[#FCA5A5]">Layar penuh belum tersedia. Anda tetap dapat membaca materi di sini.</p>}
 
       {showResetPrompt && <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#102F5B]/70 p-5" role="dialog" aria-modal="true" aria-labelledby="ppt-reset-title">
         <div className="w-full max-w-sm rounded-[20px] bg-white p-6 text-center shadow-2xl">
