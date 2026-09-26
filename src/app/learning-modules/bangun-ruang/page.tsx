@@ -13,32 +13,40 @@ export default function BangunRuangModulePage() {
   const [completedItems, setCompletedItems] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
   const [view, setView] = useState<'detail' | 'viewer'>('detail');
-  const maxCompletedItemsRef = useRef(0);
+  const [progressReady, setProgressReady] = useState(false);
   const statusRef = useRef<LearningModuleStatus>('not_started');
+  const progressRequestRef = useRef(0);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    void getLearningModuleProgress(user.uid).then((progress) => {
-      if (!progress) return;
+    let active = true;
+    const request = ++progressRequestRef.current;
+    setProgressReady(false);
+    void getLearningModuleProgress(user?.uid ?? '').then((progress) => {
+      if (!active || progressRequestRef.current !== request || !progress) return;
       setStatus(progress.status);
       statusRef.current = progress.status;
       setCompletedItems(progress.completedItems);
       setTotalItems(progress.totalItems);
-      maxCompletedItemsRef.current = progress.completedItems;
+    }).finally(() => {
+      if (active && progressRequestRef.current === request) setProgressReady(true);
     });
+    return () => {
+      active = false;
+    };
   }, [user?.uid]);
 
   const handleSlideRead = useCallback((slideNumber: number, slideCount: number) => {
-    const nextCompletedItems = Math.max(maxCompletedItemsRef.current, slideNumber);
-    maxCompletedItemsRef.current = nextCompletedItems;
     setTotalItems(slideCount);
-    setCompletedItems(nextCompletedItems);
-    if (statusRef.current !== 'completed') {
+    setCompletedItems(slideNumber);
+    const remainsCompleted = statusRef.current === 'completed' && slideNumber === slideCount;
+    if (!remainsCompleted) {
       statusRef.current = 'in_progress';
       setStatus('in_progress');
     }
-    if (user?.uid && statusRef.current !== 'completed') {
-      void saveLearningModuleProgress(user.uid, { completedItems: nextCompletedItems, totalItems: slideCount, status: 'in_progress' });
+    if (user?.uid && !remainsCompleted) {
+      void saveLearningModuleProgress(user.uid, { completedItems: slideNumber, totalItems: slideCount, status: 'in_progress' }).catch(() => undefined);
+    } else if (!user?.uid && !remainsCompleted) {
+      void saveLearningModuleProgress('', { completedItems: slideNumber, totalItems: slideCount, status: 'in_progress' }).catch(() => undefined);
     }
   }, [user?.uid]);
 
@@ -47,21 +55,25 @@ export default function BangunRuangModulePage() {
     statusRef.current = 'completed';
     setCompletedItems(slideCount);
     setTotalItems(slideCount);
-    maxCompletedItemsRef.current = slideCount;
     if (user?.uid) {
-      void saveLearningModuleProgress(user.uid, { completedItems: slideCount, totalItems: slideCount, status: 'completed' });
+      void saveLearningModuleProgress(user.uid, { completedItems: slideCount, totalItems: slideCount, status: 'completed' }).catch(() => undefined);
+    } else {
+      void saveLearningModuleProgress('', { completedItems: slideCount, totalItems: slideCount, status: 'completed' }).catch(() => undefined);
     }
     setView('detail');
   }, [user?.uid]);
 
   const handleResetProgress = useCallback((slideCount: number) => {
+    progressRequestRef.current += 1;
     statusRef.current = 'not_started';
-    maxCompletedItemsRef.current = 0;
     setStatus('not_started');
     setCompletedItems(0);
     setTotalItems(slideCount);
+    setProgressReady(true);
     if (user?.uid) {
-      void saveLearningModuleProgress(user.uid, { completedItems: 0, totalItems: slideCount, status: 'not_started' });
+      void saveLearningModuleProgress(user.uid, { completedItems: 0, totalItems: slideCount, status: 'not_started' }).catch(() => undefined);
+    } else {
+      void saveLearningModuleProgress('', { completedItems: 0, totalItems: slideCount, status: 'not_started' }).catch(() => undefined);
     }
   }, [user?.uid]);
 
@@ -81,8 +93,8 @@ export default function BangunRuangModulePage() {
             <p className="mt-5 text-sm leading-6 text-[#536782]">{BANGUN_RUANG_MODULE.description}</p>
             {totalItems > 0 && <p className="mt-4 text-sm font-bold text-[#536782]">Progress: {completedItems} / {totalItems} slide</p>}
             {status === 'completed' && <p className="mt-3 inline-flex rounded-full bg-[#DCFCE7] px-3 py-1 text-sm font-bold text-[#15803D]">Selesai</p>}
-            <button type="button" onClick={() => setView('viewer')} className="mt-7 inline-flex rounded-full bg-[#0DBF7E] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#0AA86E]">
-              {status === 'not_started' ? 'Mulai Belajar' : 'Lanjutkan Belajar'}
+            <button type="button" onClick={() => setView('viewer')} disabled={!progressReady} className="mt-7 inline-flex rounded-full bg-[#0DBF7E] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#0AA86E] disabled:cursor-wait disabled:opacity-60">
+              {!progressReady ? 'Memuat progress...' : status === 'not_started' ? 'Mulai Belajar' : 'Lanjutkan Belajar'}
             </button>
           </section>
         ) : (
