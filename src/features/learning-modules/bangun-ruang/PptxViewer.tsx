@@ -244,28 +244,29 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
   return (
     <section
       ref={viewerRef}
-      className={`relative flex h-auto w-full max-w-full min-w-0 flex-col overflow-hidden bg-[#102F5B] [&:fullscreen]:h-dvh [&:fullscreen]:max-h-none [&:fullscreen]:w-screen ${isFullscreen ? 'h-dvh max-h-none w-screen rounded-none bg-black p-0' : ''}`}
+      className={`relative flex h-auto w-full max-w-full min-w-0 flex-col overflow-hidden bg-[#102F5B] [&:fullscreen]:fixed [&:fullscreen]:inset-0 [&:fullscreen]:z-[9999] [&:fullscreen]:m-0 [&:fullscreen]:h-screen [&:fullscreen]:max-h-none [&:fullscreen]:w-screen [&:fullscreen]:max-w-none [&:fullscreen]:rounded-none [&:fullscreen]:bg-black [&:fullscreen]:p-0 ${isFullscreen ? 'fixed inset-0 z-[9999] m-0 h-screen max-h-none w-screen max-w-none rounded-none bg-black p-0' : ''}`}
       aria-label="PPT viewer"
     >
       <div
         ref={slideViewportRef}
         style={isFullscreen ? undefined : { aspectRatio: slideAspectRatio }}
-        className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden ${isFullscreen ? 'flex-1 bg-black' : 'w-full bg-[#DDEBFA]'}`}
+        className={`relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden ${isFullscreen ? 'absolute inset-0 h-full w-full bg-black' : 'w-full bg-[#DDEBFA]'}`}
       >
         <div ref={containerRef} style={{ width: renderedDimensions.width, height: renderedDimensions.height }} className="relative shrink-0 overflow-hidden [&_.pptx-preview-slide-wrapper]:!m-0 [&_.pptx-preview-slide-wrapper]:!shadow-none" />
         {loading && <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#DDEBFA]"><p className="text-sm font-semibold text-[#365576]">Menyiapkan materi...</p></div>}
         {error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#DDEBFA]"><p role="alert" className="px-6 text-center text-sm font-semibold text-[#A52A2A]">{error}</p></div>}
       </div>
 
-      <div className={`flex shrink-0 flex-wrap items-center justify-between gap-2 bg-[#102F5B] px-3 text-white ${isFullscreen ? 'py-1' : 'py-2'}`}>
-        <button type="button" onClick={() => renderSlide(currentSlideRef.current - 1)} disabled={loading || currentSlide <= 0} className="min-h-11 rounded-full bg-white/15 px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm">Sebelumnya</button>
-        <span className="text-sm font-bold tabular-nums">{totalSlides ? `${currentSlide + 1} / ${totalSlides}` : '- / -'}</span>
-        <button type="button" onClick={() => renderSlide(currentSlideRef.current + 1)} disabled={loading || currentSlide >= totalSlides - 1} className="min-h-11 rounded-full bg-[#0DBF7E] px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-sm">Berikutnya</button>
+      <div className={`flex shrink-0 items-center justify-between gap-2 text-white ${isFullscreen ? 'absolute bottom-11 left-0 right-0 z-20 h-11 px-2' : 'flex-wrap bg-[#102F5B] px-3 py-2'}`}>
+        <button type="button" onClick={() => renderSlide(currentSlideRef.current - 1)} disabled={loading || currentSlide <= 0} className={`rounded-full bg-white/15 font-bold disabled:cursor-not-allowed disabled:opacity-40 ${isFullscreen ? 'min-h-11 min-w-11 px-3 py-2 text-xs' : 'min-h-11 px-3 py-2 text-xs sm:px-4 sm:text-sm'}`}>Sebelumnya</button>
+        <span className={`rounded-full font-bold tabular-nums ${isFullscreen ? 'bg-[#102F5B]/85 px-2 py-1 text-xs' : 'text-sm'}`}>{totalSlides ? `${currentSlide + 1} / ${totalSlides}` : '- / -'}</span>
+        <button type="button" onClick={() => renderSlide(currentSlideRef.current + 1)} disabled={loading || currentSlide >= totalSlides - 1} className={`rounded-full bg-[#0DBF7E] font-bold disabled:cursor-not-allowed disabled:opacity-40 ${isFullscreen ? 'min-h-11 min-w-11 px-3 py-2 text-xs' : 'min-h-11 px-3 py-2 text-xs sm:px-4 sm:text-sm'}`}>Berikutnya</button>
       </div>
 
-      <div className="flex shrink-0 items-center justify-between gap-3 bg-[#102F5B] px-3 py-1">
-        <button type="button" onClick={() => void (isFullscreen ? exitFullscreen() : enterFullscreen())} disabled={loading} className="min-h-11 text-xs font-bold text-white/80 underline underline-offset-4 disabled:opacity-40">{isFullscreen ? '⛶ Keluar Layar Penuh' : '⛶ Layar Penuh'}</button>
-        <button type="button" onClick={() => onComplete(totalSlides)} disabled={loading || !totalSlides || currentSlide + 1 !== totalSlides} className="min-h-11 rounded-full bg-white px-5 py-2 text-sm font-extrabold text-[#102F5B] disabled:cursor-not-allowed disabled:opacity-40">Selesai</button>
+      <div className={`flex shrink-0 items-center justify-between gap-2 ${isFullscreen ? 'absolute bottom-0 left-0 right-0 z-20 h-11 px-2' : 'bg-[#102F5B] px-3 py-1'}`}>
+        <button type="button" onClick={() => void (isFullscreen ? exitFullscreen() : enterFullscreen())} disabled={loading} className={`font-bold text-white/80 underline underline-offset-4 disabled:opacity-40 ${isFullscreen ? 'min-h-11 rounded-full bg-[#102F5B]/85 px-3 text-xs' : 'min-h-11 text-xs'}`}>{isFullscreen ? '⛶ Keluar Layar Penuh' : '⛶ Layar Penuh'}</button>
+        {isFullscreen && orientationWarning && <span role="status" className="min-w-0 truncate rounded-full bg-[#102F5B]/85 px-2 py-1 text-[10px] text-white/90">Putar perangkat ke landscape untuk tampilan terbaik.</span>}
+        <button type="button" onClick={() => onComplete(totalSlides)} disabled={loading || !totalSlides || currentSlide + 1 !== totalSlides} className={`rounded-full bg-white font-extrabold text-[#102F5B] disabled:cursor-not-allowed disabled:opacity-40 ${isFullscreen ? 'min-h-11 min-w-11 px-3 py-2 text-xs' : 'min-h-11 px-5 py-2 text-sm'}`}>Selesai</button>
       </div>
 
       {!isFullscreen && <div className="flex shrink-0 justify-start bg-[#102F5B] px-3 pb-2 pt-1">
@@ -273,7 +274,6 @@ export default function PptxViewer({ initialSlide, onSlideRead, onComplete, onRe
       </div>}
 
       {fullscreenError && <p role="alert" className="mt-2 text-center text-xs font-semibold text-[#FCA5A5]">Layar penuh belum tersedia. Anda tetap dapat membaca materi di sini.</p>}
-      {orientationWarning && isFullscreen && <p role="status" className="bg-black px-3 pb-2 text-center text-xs font-semibold text-white/80">Putar perangkat ke landscape untuk tampilan terbaik.</p>}
 
       {showResetPrompt && <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#102F5B]/70 p-5" role="dialog" aria-modal="true" aria-labelledby="ppt-reset-title">
         <div className="w-full max-w-sm rounded-[20px] bg-white p-6 text-center shadow-2xl">
