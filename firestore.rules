@@ -44,6 +44,10 @@ service cloud.firestore {
         allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
         allow write: if isSignedIn() && ownsUserDoc(uid);
       }
+
+      match /aiTutorChats/{chatId} {
+        allow read, create, update, delete: if ownsUserDoc(uid);
+      }
     }
 
     match /dashboard/{docId} {

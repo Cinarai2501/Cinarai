@@ -9,6 +9,7 @@ type DashboardPageProps = {
   gradientFrom: string;
   gradientTo: string;
   rightContent: ReactNode;
+  headerAction?: ReactNode;
   children: ReactNode;
   className?: string;
   contentClassName?: string;
@@ -20,6 +21,7 @@ export default function DashboardPage({
   gradientFrom,
   gradientTo,
   rightContent,
+  headerAction,
   children,
   className = '',
   contentClassName = '',
@@ -32,6 +34,7 @@ export default function DashboardPage({
         gradientFrom={gradientFrom}
         gradientTo={gradientTo}
         rightContent={rightContent}
+        headerAction={headerAction}
       />
 
       <div className={`mx-auto w-full max-w-[1200px] px-4 pb-2 pt-5 sm:px-5 lg:px-6 ${contentClassName}`}>

@@ -8,6 +8,7 @@ type HeaderCardProps = {
   gradientFrom: string;
   gradientTo: string;
   rightContent: ReactNode;
+  headerAction?: ReactNode;
   className?: string;
 };
 
@@ -17,6 +18,7 @@ export default function HeaderCard({
   gradientFrom,
   gradientTo,
   rightContent,
+  headerAction,
   className = '',
 }: HeaderCardProps) {
   return (
@@ -33,6 +35,7 @@ export default function HeaderCard({
         <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-white/90">
           {subtitle}
         </p>
+        {headerAction ? <div className="mt-2">{headerAction}</div> : null}
       </div>
 
       <div className="flex shrink-0 items-center justify-center">{rightContent}</div>
