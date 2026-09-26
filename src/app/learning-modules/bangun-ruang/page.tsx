@@ -66,9 +66,9 @@ export default function BangunRuangModulePage() {
   }, [user?.uid]);
 
   return (
-    <main className="overflow-x-hidden bg-[#F5F9FF] px-3 py-5 text-[#102F5B] sm:px-6">
-      <div className="mx-auto w-full max-w-3xl">
-        <Link href="/dashboard/siswa/komik" className="inline-flex text-sm font-bold text-[#1685EE]">← Kembali ke daftar materi</Link>
+    <main className={`overflow-x-hidden bg-[#F5F9FF] py-5 text-[#102F5B] ${view === 'viewer' ? 'px-0 sm:px-6' : 'px-3 sm:px-6'}`}>
+      <div className={`mx-auto w-full ${view === 'viewer' ? 'max-w-none' : 'max-w-3xl'}`}>
+        <Link href="/dashboard/siswa/komik" className="mx-3 inline-flex text-sm font-bold text-[#1685EE] sm:mx-0">← Kembali ke daftar materi</Link>
         {view === 'detail' ? (
           <section className="mt-5 rounded-[24px] bg-white p-6 shadow-[0_12px_30px_rgba(16,47,91,0.08)] sm:p-8">
             <div className="flex items-start gap-3">
@@ -87,12 +87,12 @@ export default function BangunRuangModulePage() {
           </section>
         ) : (
           <section className="mt-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-4 flex items-center justify-between gap-3 px-3 sm:px-0">
               <h1 className="text-xl font-extrabold">{BANGUN_RUANG_MODULE.title}</h1>
               <button type="button" onClick={() => setView('detail')} className="text-sm font-bold text-[#1685EE]">Kembali</button>
             </div>
             <PptxViewer initialSlide={Math.max(completedItems - 1, 0)} onSlideRead={handleSlideRead} onComplete={handleComplete} onResetProgress={handleResetProgress} />
-            <p className="mt-3 text-center text-sm font-bold text-[#536782]">
+            <p className="mt-3 px-3 text-center text-sm font-bold text-[#536782] sm:px-0">
               Progress: {totalItems ? `${Math.round((completedItems / totalItems) * 100)}% / ${status === 'not_started' ? 'Belum Mulai' : status === 'completed' ? 'Selesai' : 'Sedang Berjalan'}` : '0% / Belum Mulai'}
             </p>
           </section>
