@@ -2,7 +2,7 @@
 
 import type { Comic } from '@/types/comic';
 import { ComicReadingProgressProvider } from '@/context/ComicReadingProgressContext';
-import { Stage } from '../types';
+import { Stage, type LearningStage } from '../types';
 import { LearningEngineProvider } from '../context/LearningEngineContext';
 import LearningLayout from './layout/LearningLayout';
 import StageRouter from './StageRouter';
@@ -38,12 +38,13 @@ function LearningEngineInner() {
 
 interface LearningEngineProps {
   comic: Comic;
+  initialStage?: LearningStage;
 }
 
-export default function LearningEngine({ comic }: LearningEngineProps) {
+export default function LearningEngine({ comic, initialStage }: LearningEngineProps) {
   return (
     <ComicReadingProgressProvider>
-      <LearningEngineProvider comic={comic}>
+      <LearningEngineProvider comic={comic} initialStage={initialStage}>
         <LearningEngineInner />
       </LearningEngineProvider>
     </ComicReadingProgressProvider>

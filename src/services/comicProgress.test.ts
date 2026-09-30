@@ -41,3 +41,32 @@ test('mergeStageData preserves existing snapshots and adds new stage data', () =
     },
   });
 });
+
+test('mergeStageData stores orientation answers without replacing other stages', () => {
+  const result = mergeStageData({
+    identification: { selectedShapes: ['Kubus'] },
+  }, {
+    orientation: {
+      openedActivities: [1, 2],
+      answers: { problem: 'Mencari bentuk yang tersembunyi' },
+      choices: { sameShape: 'no' },
+      hypothesisStatus: 'cukup-yakin',
+      selectedInformation: ['Jumlah rusuk'],
+      informationOther: '',
+      readyForAr: false,
+    },
+  });
+
+  assert.deepEqual(result, {
+    identification: { selectedShapes: ['Kubus'] },
+    orientation: {
+      openedActivities: [1, 2],
+      answers: { problem: 'Mencari bentuk yang tersembunyi' },
+      choices: { sameShape: 'no' },
+      hypothesisStatus: 'cukup-yakin',
+      selectedInformation: ['Jumlah rusuk'],
+      informationOther: '',
+      readyForAr: false,
+    },
+  });
+});

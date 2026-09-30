@@ -57,10 +57,11 @@ function sintaksToStage(sintaks: Sintaks): Stage {
 
 interface LearningEngineProviderProps {
   comic: Comic;
+  initialStage?: Stage;
   children: React.ReactNode;
 }
 
-export function LearningEngineProvider({ comic, children }: LearningEngineProviderProps) {
+export function LearningEngineProvider({ comic, initialStage, children }: LearningEngineProviderProps) {
   const { user, loading: authLoading } = useAuth();
   const { showSnackbar } = useSnackbar();
   const comicId = comic.id;
@@ -132,6 +133,14 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     if (initialSyncDoneRef.current) return;
     initialSyncDoneRef.current = true;
 
+    if (initialStage) {
+      const initialIndex = ALL_STAGES.indexOf(initialStage);
+      if (initialIndex !== -1) {
+        setStageIndex(initialIndex);
+        return;
+      }
+    }
+
     if (progress.isCompleted) {
       setStageIndex(ALL_STAGES.indexOf(Stage.Finish));
       return;
@@ -143,7 +152,7 @@ export function LearningEngineProvider({ comic, children }: LearningEngineProvid
     const idx = ALL_STAGES.indexOf(stage);
     if (idx !== -1) setStageIndex(idx);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]);
+  }, [initialStage, isLoading]);
 
   const currentStage = ALL_STAGES[stageIndex] ?? Stage.Cover;
   const totalStages = ALL_STAGES.length;

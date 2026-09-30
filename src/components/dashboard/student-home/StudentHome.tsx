@@ -208,7 +208,13 @@ export default function StudentHome() {
                   <button
                     key={card.number}
                     type="button"
-                    onClick={() => setSelectedCard(card)}
+                    onClick={() => {
+                      if (card.number === 1) {
+                        router.push('/dashboard/siswa/sinteks/1');
+                        return;
+                      }
+                      setSelectedCard(card);
+                    }}
                     aria-label={card.ariaLabel}
                     className="group block h-full w-full cursor-pointer rounded-[17px] text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(16,47,91,0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2D83E8]/30 active:scale-[0.98]"
                   >

@@ -1,14 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import LearningEngine from './LearningEngine';
 import { getComicById } from '../services/comicService';
+import { Stage } from '../types';
 
 interface LearningEngineRootProps {
   comicId: number;
 }
 
 export default function LearningEngineRoot({ comicId }: LearningEngineRootProps) {
+  const searchParams = useSearchParams();
+  const initialStage = searchParams.get('stage') === Stage.Navigation ? Stage.Navigation : undefined;
+
   // Reset window scroll immediately on mount — prevents inheriting the PDF
   // reader's scroll position when navigating from /comic/[id] to /comic/[id]/learn.
   useEffect(() => {
@@ -31,5 +36,5 @@ export default function LearningEngineRoot({ comicId }: LearningEngineRootProps)
     );
   }
 
-  return <LearningEngine comic={comic} />;
+  return <LearningEngine comic={comic} initialStage={initialStage} />;
 }
