@@ -13,7 +13,7 @@ interface LearningEngineRootProps {
 export default function LearningEngineRoot({ comicId }: LearningEngineRootProps) {
   const searchParams = useSearchParams();
   const requestedStage = searchParams.get('stage');
-  const initialStage = requestedStage === Stage.Navigation || requestedStage === Stage.Application
+  const initialStage = requestedStage === Stage.Navigation || requestedStage === Stage.Application || requestedStage === Stage.Introspection
     ? requestedStage
     : undefined;
 

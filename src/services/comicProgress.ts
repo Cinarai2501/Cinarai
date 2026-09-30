@@ -11,6 +11,25 @@ import type { FirestoreTimestamp } from '@/types/firestore';
 import { SINTAKS } from '@/types/progress';
 
 export interface ComicProgressStageData {
+  kreasiSolusi?: {
+    openedActivities: number[];
+    answers: Record<string, string>;
+    selectedShapes: string[];
+    partDetails: Record<string, { shape: string; reason: string; size: string }>;
+    dimensions: { length: string; width: string; height: string };
+    proportionChoice: string;
+    sketchDataUrl: string;
+    volume: { shape: string; dimensions: string; formula: string; calculation: string; result: string };
+    volumePlausible: string;
+    aiResponse: string;
+    aiDecision: string;
+    aiAccepted: string;
+    aiRejected: string;
+    aiReason: string;
+    improvements: Record<string, { initial: string; revision: string; reason: string }>;
+    checklist: Record<string, boolean>;
+    completed: boolean;
+  };
   analysisProblem?: {
     openedActivities: number[];
     findings: Array<{

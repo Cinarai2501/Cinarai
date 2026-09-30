@@ -209,7 +209,7 @@ export default function StudentHome() {
                     key={card.number}
                     type="button"
                     onClick={() => {
-                      if (card.number === 1 || card.number === 4) {
+                      if (card.number === 1 || card.number === 4 || card.number === 5) {
                         router.push(`/dashboard/siswa/sinteks/${card.number}`);
                         return;
                       }
