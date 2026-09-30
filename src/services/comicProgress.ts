@@ -116,6 +116,13 @@ export interface ComicProgressStageData {
   };
   introspection?: {
     reflection?: string;
+    sinteks6?: {
+      openedActivities: number[];
+      answers: Record<string, string>;
+      selections: Record<string, string[]>;
+      selfAssessment: Record<string, string>;
+      completed: boolean;
+    };
     understood?: string[];
     interesting?: string;
     dailyUse?: string;
