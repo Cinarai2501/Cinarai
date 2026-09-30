@@ -238,6 +238,29 @@ function progressDocRef(userId: string, comicId: number) {
   return doc(firestore, 'users', userId, 'progress', comicDocId(comicId));
 }
 
+function cinaraiEvaluationDocRef(userId: string) {
+  return doc(firestore, 'users', userId, 'progress', 'evaluation-cinarai');
+}
+
+export async function loadCinaraiEvaluationProgress(userId: string) {
+  if (!userId) throw new Error('unauthenticated');
+  const snapshot = await getDoc(cinaraiEvaluationDocRef(userId));
+  if (!snapshot.exists()) return null;
+  const data = snapshot.data() as { evaluationCinarai?: import('@/types/evaluation').CinaraiEvaluationProgress };
+  return data.evaluationCinarai ?? null;
+}
+
+export async function saveCinaraiEvaluationProgress(
+  userId: string,
+  evaluationCinarai: import('@/types/evaluation').CinaraiEvaluationProgress
+): Promise<void> {
+  if (!userId) throw new Error('unauthenticated');
+  await setDoc(cinaraiEvaluationDocRef(userId), {
+    evaluationCinarai,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
 
 function buildCompatState(comicId: number, doc: ComicProgressV2 | null): ComicProgressState {
   // Build a compatible `ComicProgressState` used by existing UI code

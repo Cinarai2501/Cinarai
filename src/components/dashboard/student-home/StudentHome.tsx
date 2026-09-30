@@ -36,7 +36,6 @@ const syntaxCards: SyntaxCard[] = [
   { number: 4, title: 'Analisis & Pemecahan Masalah', description: 'Lanjutkan aktivitas analisis di komik', color: '#DDF5E6', accent: '#42A66A', icon: '▤', href: '/dashboard/siswa/komik', ariaLabel: 'Lanjutkan analisis dan pemecahan masalah di Komik', cta: 'Analisis ›' },
   { number: 5, title: 'Kreasi Solusi', description: 'Buat solusi dari aktivitas komik yang tersedia', color: '#EAE1FF', accent: '#7548D8', icon: '✧', href: '/dashboard/siswa/komik', ariaLabel: 'Buat solusi melalui aktivitas komik', cta: 'Buat ›' },
   { number: 6, title: 'Refleksi', description: 'Lakukan refleksi setelah aktivitas belajar', color: '#FFE4D6', accent: '#E7622A', icon: '◌', href: '/dashboard/siswa/komik', ariaLabel: 'Lakukan refleksi melalui komik', cta: 'Refleksi ›' },
-  { number: 7, title: 'Evaluasi', description: 'Kerjakan kuis untuk mengevaluasi pemahaman', color: '#FFDDEB', accent: '#D83272', icon: '✓', href: '/dashboard/siswa/kuis', ariaLabel: 'Kerjakan evaluasi dan kuis', cta: 'Kerjakan ›' },
 ] as const;
 
 const syntaxGuides = {
@@ -106,17 +105,6 @@ const syntaxGuides = {
     ],
     result: 'Kamu mengetahui apa yang sudah dipahami dan apa yang masih perlu dipelajari.',
   },
-  7: {
-    title: 'Evaluasi',
-    goal: 'Mengetahui sejauh mana pemahamanmu setelah mengikuti pembelajaran.',
-    actions: [
-      '📝 Kerjakan soal evaluasi.',
-      '🧠 Gunakan pengetahuan yang sudah dipelajari.',
-      '🔍 Periksa kembali jawabanmu.',
-      '📊 Lihat hasil belajarmu.',
-    ],
-    result: 'Kamu dapat mengetahui tingkat pemahamanmu setelah menyelesaikan pembelajaran.',
-  },
 } as const;
 
 export default function StudentHome() {
@@ -152,7 +140,6 @@ export default function StudentHome() {
       4: null,
       5: null,
       6: null,
-      7: null,
     };
 
     const destination = routeBySyntax[selectedCard.number];
@@ -195,13 +182,13 @@ export default function StudentHome() {
           <div className="flex items-end justify-between gap-3 px-1">
             <div>
               <h2 id="syntax-heading" className="text-[21px] font-extrabold leading-tight tracking-[-0.03em] text-[#102F5B]">Sintaks Model CINARAI</h2>
-              <p className="mt-1 text-[12px] leading-snug text-[#667895]">Ikuti 7 langkah pembelajaran untuk mengembangkan numerasi kritis Anda.</p>
+              <p className="mt-1 text-[12px] leading-snug text-[#667895]">Ikuti tahapan pembelajaran untuk mengembangkan numerasi kritis Anda.</p>
             </div>
             <a href="#syntax-cards" className="shrink-0 pb-0.5 text-[12px] font-bold text-[#1685EE]">Lihat Tahap ›</a>
           </div>
           <div id="syntax-cards" className="mt-3 grid grid-cols-2 gap-2.5 min-[390px]:gap-3">
             {syntaxCards.map((card) => {
-              const isModalCard = [1, 2, 3, 4, 5, 6, 7].includes(card.number);
+              const isModalCard = [1, 2, 3, 4, 5, 6].includes(card.number);
 
               if (isModalCard) {
                 return (
@@ -269,6 +256,25 @@ export default function StudentHome() {
               );
             })}
           </div>
+        </section>
+
+        <section aria-labelledby="final-evaluation-heading">
+          <div className="flex items-end justify-between gap-3 px-1">
+            <div>
+              <h2 id="final-evaluation-heading" className="text-[21px] font-extrabold leading-tight text-[#102F5B]">Tantangan Akhir</h2>
+              <p className="mt-1 text-[12px] leading-snug text-[#667895]">Asesmen akhir setelah perjalanan Sinteks 1–6.</p>
+            </div>
+          </div>
+          <Link href="/dashboard/siswa/evaluasi" aria-label="Mulai Evaluasi CINARAI" className="mt-3 flex min-h-[104px] items-center justify-between gap-4 rounded-[18px] bg-[#FFDDEB] px-4 py-4 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D83272]/30 active:scale-[0.99]">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#D83272] text-xl font-extrabold text-white" aria-hidden="true">✓</span>
+              <span className="min-w-0">
+                <strong className="block text-sm font-extrabold text-[#102F5B]">EVALUASI CINARAI</strong>
+                <span className="mt-1 block text-xs leading-relaxed text-[#536782]">Tantangan Akhir: Buktikan Kemampuan Numerasi Kritismu!</span>
+              </span>
+            </span>
+            <span className="shrink-0 rounded-full bg-white/75 px-3 py-2 text-xs font-extrabold text-[#B72862]">Mulai ›</span>
+          </Link>
         </section>
 
         {selectedCard && activeGuide && (

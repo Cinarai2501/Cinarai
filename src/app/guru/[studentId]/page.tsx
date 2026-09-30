@@ -11,14 +11,17 @@ import { firestore } from '@/lib/firebase/client';
 import { generateStudentInsight, type StudentInsightResponse } from '@/lib/ai/service';
 import { getAllComics } from '@/lib/comicRepository';
 import { SINTAKS } from '@/types/progress';
+import type { CinaraiEvaluationProgress } from '@/types/evaluation';
 import type { ActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import { calculateStudentValue, formatFirestoreDate, formatLearningDuration, toDateValue } from '../studentDetail.utils';
+import TeacherEvaluationReview from '@/features/evaluasi-cinarai/TeacherEvaluationReview';
 
 type StudentDetailState = {
   student: UserDocument | null;
   progressDocuments: ComicProgressDocument[];
   reflections: ReflectionDocument[];
   activities: ActivityDocument[];
+  evaluationCinarai: CinaraiEvaluationProgress | null;
   loading: boolean;
   error: string | null;
 };
@@ -47,6 +50,7 @@ export default function StudentDetailPage() {
     progressDocuments: [],
     reflections: [],
     activities: [],
+    evaluationCinarai: null,
     loading: true,
     error: null,
   });
@@ -90,11 +94,13 @@ export default function StudentDetailPage() {
 
         const studentSnapshot = studentResult.status === 'fulfilled' ? studentResult.value : null;
         const progressSnapshot = progressResult.status === 'fulfilled' ? progressResult.value : null;
+        const evaluationSnapshot = progressSnapshot?.docs.find((documentSnapshot) => documentSnapshot.id === 'evaluation-cinarai');
+        const evaluationCinarai = (evaluationSnapshot?.data() as { evaluationCinarai?: CinaraiEvaluationProgress } | undefined)?.evaluationCinarai ?? null;
         const reflectionsByUser = reflectionsByUserResult.status === 'fulfilled' ? (reflectionsByUserResult.value as ReflectionDocument[]) : [];
         const reflectionsByStudent = reflectionsByStudentResult.status === 'fulfilled' ? (reflectionsByStudentResult.value as ReflectionDocument[]) : [];
         const activityDocs = activityResult.status === 'fulfilled' ? (activityResult.value as ActivityDocument[]) : [];
 
-        const progressDocuments = (progressSnapshot?.docs ?? []).map((documentSnapshot) => {
+        const progressDocuments = (progressSnapshot?.docs ?? []).filter((documentSnapshot) => documentSnapshot.id !== 'evaluation-cinarai').map((documentSnapshot) => {
           const data = documentSnapshot.data() as Partial<ComicProgressDocument>;
           return {
             ...data,
@@ -161,6 +167,7 @@ export default function StudentDetailPage() {
           progressDocuments,
           reflections,
           activities,
+          evaluationCinarai,
           loading: false,
           error: null,
         });
@@ -171,6 +178,7 @@ export default function StudentDetailPage() {
           progressDocuments: [],
           reflections: [],
           activities: [],
+          evaluationCinarai: null,
           loading: false,
           error: error instanceof Error ? error.message : 'Gagal memuat data siswa.',
         });
@@ -253,7 +261,7 @@ export default function StudentDetailPage() {
     };
   }, [state.activities, state.loading, state.progressDocuments, state.reflections, state.student, studentId]);
 
-  const { student, progressDocuments, reflections, activities, loading, error } = state;
+  const { student, progressDocuments, reflections, activities, evaluationCinarai, loading, error } = state;
 
   const comics = useMemo(() => getAllComics(), []);
   const comicMap = useMemo(() => new Map(comics.map((comic) => [comic.id, comic])), [comics]);
@@ -387,6 +395,8 @@ export default function StudentDetailPage() {
                   </div>
                 </div>
               </div>
+
+              <TeacherEvaluationReview studentId={studentId ?? ''} evaluation={evaluationCinarai} />
 
               <div className="rounded-3xl bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3">

@@ -26,13 +26,77 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function hasGradedCinaraiEvaluation(data) {
+      return data.evaluationCinarai is map
+        && data.evaluationCinarai.grading is map
+        && data.evaluationCinarai.grading.status == 'graded';
+    }
+
+    function isValidCinaraiRubricScore(scores, challengeId) {
+      return scores[challengeId] is int
+        && scores[challengeId] >= 0
+        && scores[challengeId] <= 4;
+    }
+
+    function hasAllCinaraiRubricScores(scores) {
+      return scores is map
+        && scores.keys().hasAll([
+          'challenge1', 'challenge2', 'challenge3', 'challenge4', 'challenge5',
+          'challenge6', 'challenge7', 'challenge8', 'challenge9', 'challenge10'
+        ])
+        && scores.keys().hasOnly([
+          'challenge1', 'challenge2', 'challenge3', 'challenge4', 'challenge5',
+          'challenge6', 'challenge7', 'challenge8', 'challenge9', 'challenge10'
+        ])
+        && isValidCinaraiRubricScore(scores, 'challenge1')
+        && isValidCinaraiRubricScore(scores, 'challenge2')
+        && isValidCinaraiRubricScore(scores, 'challenge3')
+        && isValidCinaraiRubricScore(scores, 'challenge4')
+        && isValidCinaraiRubricScore(scores, 'challenge5')
+        && isValidCinaraiRubricScore(scores, 'challenge6')
+        && isValidCinaraiRubricScore(scores, 'challenge7')
+        && isValidCinaraiRubricScore(scores, 'challenge8')
+        && isValidCinaraiRubricScore(scores, 'challenge9')
+        && isValidCinaraiRubricScore(scores, 'challenge10');
+    }
+
+    function canTeacherGradeCinaraiEvaluation(progressId) {
+      return progressId == 'evaluation-cinarai'
+        && isTeacher()
+        && resource.data.evaluationCinarai.completed == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['evaluationCinarai', 'updatedAt'])
+        && request.resource.data.evaluationCinarai.diff(resource.data.evaluationCinarai).affectedKeys().hasOnly(['grading'])
+        && request.resource.data.evaluationCinarai.answers == resource.data.evaluationCinarai.answers
+        && request.resource.data.evaluationCinarai.completed == resource.data.evaluationCinarai.completed
+        && request.resource.data.evaluationCinarai.grading.status == 'graded'
+        && request.resource.data.evaluationCinarai.grading.gradedBy == request.auth.uid
+        && request.resource.data.evaluationCinarai.grading.rubricVersion == 'cinarai-0-4-v1'
+        && request.resource.data.evaluationCinarai.grading.totalScore is int
+        && request.resource.data.evaluationCinarai.grading.totalScore >= 0
+        && request.resource.data.evaluationCinarai.grading.totalScore <= 40
+        && hasAllCinaraiRubricScores(request.resource.data.evaluationCinarai.grading.challengeScores);
+    }
+
     match /users/{uid} {
       allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
       allow write: if isSignedIn() && ownsUserDoc(uid);
 
       match /progress/{comicId} {
         allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
-        allow write: if isSignedIn() && ownsUserDoc(uid);
+        allow create: if ownsUserDoc(uid)
+          && (comicId != 'evaluation-cinarai' || !hasGradedCinaraiEvaluation(request.resource.data));
+        allow update: if (
+            ownsUserDoc(uid)
+            && (comicId != 'evaluation-cinarai'
+              || !hasGradedCinaraiEvaluation(resource.data)
+              || (
+                request.resource.data.evaluationCinarai.grading == resource.data.evaluationCinarai.grading
+                && request.resource.data.evaluationCinarai.answers == resource.data.evaluationCinarai.answers
+                && request.resource.data.evaluationCinarai.completed == resource.data.evaluationCinarai.completed
+              ))
+          ) || canTeacherGradeCinaraiEvaluation(comicId);
+        allow delete: if ownsUserDoc(uid)
+          && (comicId != 'evaluation-cinarai' || !hasGradedCinaraiEvaluation(resource.data));
       }
 
       match /learning-module-progress/{moduleId} {
