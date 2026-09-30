@@ -11,6 +11,27 @@ import type { FirestoreTimestamp } from '@/types/firestore';
 import { SINTAKS } from '@/types/progress';
 
 export interface ComicProgressStageData {
+  analysisProblem?: {
+    openedActivities: number[];
+    findings: Array<{
+      part: string;
+      initialGuess: string;
+      arFinding: string;
+      aiInformation: string;
+      provisionalConclusion: string;
+    }>;
+    shapeEvidence: Record<string, {
+      sidesOrBase: string;
+      sideCount: string;
+      edgeCount: string;
+      vertexCount: string;
+      templePart: string;
+    }>;
+    answers: Record<string, string>;
+    choices: Record<string, string>;
+    checklist: Record<string, boolean>;
+    completed: boolean;
+  };
   orientation?: {
     openedActivities: number[];
     answers: Record<string, string>;

@@ -12,7 +12,10 @@ interface LearningEngineRootProps {
 
 export default function LearningEngineRoot({ comicId }: LearningEngineRootProps) {
   const searchParams = useSearchParams();
-  const initialStage = searchParams.get('stage') === Stage.Navigation ? Stage.Navigation : undefined;
+  const requestedStage = searchParams.get('stage');
+  const initialStage = requestedStage === Stage.Navigation || requestedStage === Stage.Application
+    ? requestedStage
+    : undefined;
 
   // Reset window scroll immediately on mount — prevents inheriting the PDF
   // reader's scroll position when navigating from /comic/[id] to /comic/[id]/learn.

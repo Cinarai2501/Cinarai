@@ -209,8 +209,8 @@ export default function StudentHome() {
                     key={card.number}
                     type="button"
                     onClick={() => {
-                      if (card.number === 1) {
-                        router.push('/dashboard/siswa/sinteks/1');
+                      if (card.number === 1 || card.number === 4) {
+                        router.push(`/dashboard/siswa/sinteks/${card.number}`);
                         return;
                       }
                       setSelectedCard(card);
