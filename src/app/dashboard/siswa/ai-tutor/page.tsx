@@ -9,6 +9,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
   orderBy,
   query,
   serverTimestamp,
@@ -89,6 +90,18 @@ const formatChatDate = (value: Date | Timestamp) => {
   return `${dayLabel} • ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 };
 
+const getChatDisplayTitle = (chat: ChatHistoryItem) => {
+  const title = chat.messages?.find((message) => message.role === 'user')?.content.trim()
+    || chat.title?.trim();
+  if (!title || title === 'Chat Baru') return 'Percakapan baru';
+
+  const characters = Array.from(title);
+  if (characters.length <= 48) return title;
+
+  const shortened = characters.slice(0, 45).join('').replace(/\s+\S*$/u, '').trim();
+  return `${shortened || characters.slice(0, 45).join('')}…`;
+};
+
 export default function DashboardSiswaAiTutorPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -97,14 +110,15 @@ export default function DashboardSiswaAiTutorPage() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [chatToDelete, setChatToDelete] = useState<ChatHistoryItem | null>(null);
   const [inputText, setInputText] = useState('');
-  const [showInfoModal, setShowInfoModal] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const getChatCollection = (uid: string) => collection(firestore, 'users', uid, 'aiTutorChats');
 
@@ -115,8 +129,9 @@ export default function DashboardSiswaAiTutorPage() {
     }
 
     setIsLoadingHistory(true);
+    setHistoryError(null);
     try {
-      const chatsQuery = query(getChatCollection(user.uid), orderBy('updatedAt', 'desc'));
+      const chatsQuery = query(getChatCollection(user.uid), orderBy('updatedAt', 'desc'), limit(20));
       const snapshot = await getDocs(chatsQuery);
       setChatHistory(snapshot.docs.map((chatDoc) => ({
         id: chatDoc.id,
@@ -124,7 +139,7 @@ export default function DashboardSiswaAiTutorPage() {
       })) as ChatHistoryItem[]);
     } catch (error) {
       console.error('[DashboardAiTutor] gagal memuat riwayat', error);
-      setErrorMessage('Riwayat chat belum dapat dimuat. Coba lagi sebentar.');
+      setHistoryError('Riwayat chat belum dapat dimuat.');
     } finally {
       setIsLoadingHistory(false);
     }
@@ -139,9 +154,30 @@ export default function DashboardSiswaAiTutorPage() {
   }, [loadChatHistory]);
 
   const startNewChat = async () => {
-    if (!user?.uid || isResponding || isSaving) return;
+    if (!user?.uid || isResponding || isSaving || isLoadingHistory) return;
+
+    const currentChat = chatHistory.find((chat) => chat.id === activeChatId);
+    const currentHasUserMessages = Boolean(
+      currentChat?.messages.some((message) => message.role === 'user')
+      || messages.some((message) => message.sender === 'user'),
+    );
+    const emptyChat = !activeChatId
+      ? chatHistory.find((chat) => chat.messages.length === 0)
+      : undefined;
+
+    if ((activeChatId && !currentHasUserMessages) || emptyChat) {
+      const reusableChatId = activeChatId ?? emptyChat?.id;
+      if (reusableChatId) setActiveChatId(reusableChatId);
+      setMessages(INITIAL_MESSAGES);
+      setInputText('');
+      setErrorMessage(null);
+      setHistoryError(null);
+      setShowHistory(false);
+      return;
+    }
 
     setIsSaving(true);
+    setIsCreatingChat(true);
     try {
       const chatRef = doc(getChatCollection(user.uid));
       const now = new Date();
@@ -157,6 +193,7 @@ export default function DashboardSiswaAiTutorPage() {
       setInputText('');
       setErrorMessage(null);
       setShowHistory(false);
+      setHistoryError(null);
       setChatHistory((previous) => [{
         id: chatRef.id,
         title: 'Chat Baru',
@@ -167,9 +204,11 @@ export default function DashboardSiswaAiTutorPage() {
       }, ...previous]);
     } catch (error) {
       console.error('[DashboardAiTutor] gagal membuat chat baru', error);
-      setErrorMessage('Chat baru belum dapat dibuat. Coba lagi sebentar.');
+      setErrorMessage('Chat baru belum dapat dibuat. Coba lagi.');
+      setHistoryError('Chat baru belum dapat dibuat. Coba lagi.');
     } finally {
       setIsSaving(false);
+      setIsCreatingChat(false);
     }
   };
 
@@ -199,10 +238,11 @@ export default function DashboardSiswaAiTutorPage() {
         };
       }) : INITIAL_MESSAGES);
       setShowHistory(false);
+      setHistoryError(null);
       setErrorMessage(null);
     } catch (error) {
       console.error('[DashboardAiTutor] gagal membuka percakapan', error);
-      setErrorMessage('Percakapan belum dapat dibuka. Coba lagi sebentar.');
+      setHistoryError('Riwayat chat belum dapat dimuat.');
     } finally {
       setIsLoadingChat(false);
     }
@@ -234,7 +274,10 @@ export default function DashboardSiswaAiTutorPage() {
   });
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -383,29 +426,43 @@ export default function DashboardSiswaAiTutorPage() {
   return (
     <DashboardPage
       title="AI Tutor CINARAI"
-      subtitle="Siap membantumu belajar kapan saja!"
+      subtitle="Siap membantumu belajar"
       gradientFrom="#623CEA"
       gradientTo="#7550F1"
+      headerClassName="!min-h-0 !py-3 !pb-3"
       headerAction={
-        <button
-          type="button"
-          onClick={() => {
-            setShowHistory(true);
-            void loadChatHistory();
-          }}
-          disabled={isResponding || isLoadingHistory}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/45 bg-white/15 px-3.5 text-[13px] font-bold text-white transition-colors hover:bg-white/25 active:bg-white/30 disabled:opacity-60"
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" />
-            <path d="M3 3v5h5" />
-            <path d="M12 7v5l3 2" />
-          </svg>
-          Riwayat Chat
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => void startNewChat()}
+            disabled={isCreatingChat || isSaving || isResponding || isLoadingHistory || !user?.uid}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-white/45 bg-white/20 px-2 text-[12px] font-bold text-white whitespace-nowrap transition-colors hover:bg-white/30 active:bg-white/35 disabled:opacity-60"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            {isCreatingChat ? 'Chat Baru...' : 'Chat Baru'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowHistory(true);
+              void loadChatHistory();
+            }}
+            disabled={isResponding || isLoadingHistory}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-white/45 bg-white/15 px-2 text-[12px] font-bold text-white whitespace-nowrap transition-colors hover:bg-white/25 active:bg-white/30 disabled:opacity-60"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+            Riwayat Chat
+          </button>
+        </div>
       }
       className="flex h-[calc(100dvh-86px-env(safe-area-inset-bottom))] min-h-0 flex-col overflow-hidden"
-      contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
+      contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden !pt-2 !pb-1"
       rightContent={
         <div className="flex items-center gap-3">
           <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full bg-white/20 p-0.5 ring-2 ring-white/50 shadow-md backdrop-blur-sm">
@@ -427,9 +484,9 @@ export default function DashboardSiswaAiTutorPage() {
           </div>
           <button
             type="button"
-            onClick={() => setShowInfoModal(true)}
+            disabled
             className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-white text-white transition-colors hover:bg-white/10 active:bg-white/20"
-            aria-label="Info Batasan AI"
+            aria-label="Informasi AI Tutor"
           >
             <svg viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="16" x2="12" y2="12" />
@@ -440,95 +497,9 @@ export default function DashboardSiswaAiTutorPage() {
       }
     >
 
-      {showHistory ? (
-        <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-1">
-          <div className="flex items-center justify-between gap-3 pb-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowHistory(false)}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm"
-                aria-label="Kembali ke chat"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-              <h2 className="truncate text-lg font-extrabold text-slate-800">Riwayat Chat</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => void startNewChat()}
-              disabled={isSaving || isResponding}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[#623CEA] px-4 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
-            >
-              <span className="text-lg leading-none" aria-hidden="true">+</span>
-              Chat Baru
-            </button>
-          </div>
-
-          <label className="mb-3 flex min-h-12 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-4-4" />
-            </svg>
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Cari percakapan"
-              className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-              aria-label="Cari percakapan"
-            />
-          </label>
-
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-3">
-            {isLoadingHistory ? (
-              <p className="py-8 text-center text-sm font-medium text-slate-500">Memuat riwayat...</p>
-            ) : filteredChatHistory.length === 0 ? (
-              <p className="py-8 text-center text-sm font-medium text-slate-500">
-                {chatHistory.length === 0 ? 'Belum ada riwayat percakapan.' : 'Percakapan tidak ditemukan.'}
-              </p>
-            ) : filteredChatHistory.map((chat) => (
-              <div key={chat.id} className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => void openChat(chat)}
-                  disabled={isLoadingChat || isResponding}
-                  className="min-w-0 flex-1 rounded-xl px-2 py-2 text-left transition-colors hover:bg-slate-50 disabled:opacity-60"
-                >
-                  <span className="block truncate text-[14px] font-bold text-slate-800">{chat.title || 'Chat Baru'}</span>
-                  <span
-                    className="mt-1 block text-[13px] leading-snug text-slate-500"
-                    style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                  >
-                    {chat.lastMessage || 'Belum ada pesan'}
-                  </span>
-                  <span className="mt-1.5 block text-[11px] font-medium text-slate-400">{formatChatDate(chat.updatedAt)}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChatToDelete(chat)}
-                  disabled={isSaving}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
-                  aria-label={`Hapus percakapan ${chat.title || 'Chat Baru'}`}
-                  title="Hapus percakapan"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4h8v2" />
-                    <path d="m19 6-1 14H6L5 6" />
-                    <path d="M10 11v5M14 11v5" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0.5 pb-3">
-          <div className="space-y-4">
+        <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-0.5 pb-3">
+          <div className="space-y-3">
             <div className="flex justify-center">
               <span className="rounded-full bg-slate-200/60 px-3 py-1 text-[11px] font-semibold text-slate-500">
                 Hari ini
@@ -539,8 +510,8 @@ export default function DashboardSiswaAiTutorPage() {
           if (msg.sender === 'user') {
             return (
               <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="max-w-[88%] rounded-[18px] rounded-br-md bg-[#845EF7] px-3.5 py-2.5 text-white shadow-[0_4px_12px_rgba(132,94,247,0.18)]">
-                  <p className="break-words text-[14px] font-medium leading-relaxed">{msg.text}</p>
+                <div className="max-w-[80%] rounded-[18px] rounded-br-md bg-[#845EF7] px-4 py-3 text-white shadow-[0_4px_12px_rgba(132,94,247,0.18)] md:max-w-[40rem]">
+                  <p className="break-words text-[16px] font-medium leading-relaxed">{msg.text}</p>
                   <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/80">
                     <span>{msg.time}</span>
                     <svg viewBox="0 0 24 24" className="h-[12px] w-[12px]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -569,13 +540,13 @@ export default function DashboardSiswaAiTutorPage() {
                   }}
                 />
               </div>
-              <div className="max-w-[88%] rounded-[18px] rounded-tl-md border border-slate-100 bg-white px-3.5 py-2.5 text-neutral-800 shadow-[0_8px_24px_rgba(37,99,235,0.06)]">
-                <div className="break-words whitespace-pre-line text-[14px] font-medium leading-relaxed text-neutral-800">
+              <div className="max-w-[90%] rounded-[18px] rounded-tl-md border border-slate-100 bg-white px-4 py-3 text-neutral-800 shadow-[0_8px_24px_rgba(37,99,235,0.06)] md:max-w-[48rem]">
+                <div className="break-words whitespace-pre-line text-[16px] font-medium leading-relaxed text-neutral-800">
                   {msg.text}
                 </div>
                 
                 {msg.listItems && (
-                  <ul className="mt-3 space-y-2 pl-2 text-[14px] font-medium leading-relaxed text-neutral-700">
+                  <ul className="mt-3 space-y-2 pl-2 text-[16px] font-medium leading-relaxed text-neutral-700">
                     {msg.listItems.map((item) => (
                       <li key={item} className="flex items-start gap-2.5">
                         <span className="text-[#623CEA] font-bold mt-1 text-[8px]">⚫</span>
@@ -586,7 +557,7 @@ export default function DashboardSiswaAiTutorPage() {
                 )}
 
                 {msg.followUp && (
-                  <p className="mt-2.5 text-[15px] font-semibold text-[#623CEA]">
+                  <p className="mt-2.5 text-[16px] font-semibold text-[#623CEA]">
                     {msg.followUp}
                   </p>
                 )}
@@ -598,19 +569,18 @@ export default function DashboardSiswaAiTutorPage() {
             </div>
           );
             })}
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
-        <div className="shrink-0 pt-3">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex min-h-[52px] shrink-0 items-center">
+          <div className="flex w-full gap-2 overflow-x-auto overscroll-x-contain whitespace-nowrap py-1 scrollbar-none">
             {QUICK_QUESTIONS.map((chip) => (
               <button
                 key={chip}
                 type="button"
                 onClick={() => void handleSend(chip)}
                 disabled={isResponding}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D5C2FE] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95 disabled:opacity-50"
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#D5C2FE] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#623CEA] shadow-[0_2px_8px_rgba(98,60,234,0.08)] transition-all hover:bg-indigo-50 active:scale-95 disabled:opacity-50"
               >
                 <svg viewBox="0 0 24 24" className="h-[13px] w-[13px] text-[#A78BFA]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2 2h14a2 2 0 0 1 2 2z" />
@@ -621,13 +591,13 @@ export default function DashboardSiswaAiTutorPage() {
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-slate-200/70 bg-[#f8faff] pt-3">
+        <div className="shrink-0 border-t border-slate-200/70 bg-[#f8faff] pt-2">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleSend();
           }}
-          className="box-border flex min-h-[58px] w-full items-center gap-2 rounded-[22px] border border-slate-100 bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)]"
+          className="box-border flex min-h-[64px] w-full items-center gap-2 rounded-[22px] border border-slate-100 bg-white p-1.5 shadow-[0_8px_24px_rgba(37,99,235,0.10)]"
         >
           <button
             type="button"
@@ -645,7 +615,7 @@ export default function DashboardSiswaAiTutorPage() {
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ketik pertanyaanmu di sini..."
             disabled={isResponding}
-            className="min-w-0 flex-1 bg-transparent px-1.5 text-[14px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
+            className="min-w-0 flex-1 bg-transparent px-1.5 text-[16px] font-medium text-neutral-800 placeholder-slate-400 outline-none transition-all focus:ring-0"
           />
           <button
             type="submit"
@@ -663,6 +633,157 @@ export default function DashboardSiswaAiTutorPage() {
         {errorMessage ? <p className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-center text-xs font-semibold text-rose-700">{errorMessage}</p> : null}
         </div>
       </div>
+
+      {showHistory && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-slate-950/35 p-3 sm:items-center sm:p-6"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setShowHistory(false);
+          }}
+        >
+          <section
+            className="flex max-h-[min(82dvh,44rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-[#f8faff] shadow-2xl sm:rounded-3xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chat-history-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-6">
+              <div className="min-w-0">
+                <h2 id="chat-history-title" className="text-lg font-extrabold text-slate-800">Riwayat Chat</h2>
+                <p className="text-xs font-medium text-slate-500">Pilih percakapan untuk melanjutkan.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHistory(false)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-200/70"
+                aria-label="Tutup riwayat chat"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </header>
+
+            <div className="shrink-0 px-4 pt-3 sm:px-6">
+              <button
+                type="button"
+                onClick={() => void startNewChat()}
+                disabled={isCreatingChat || isSaving || isResponding || isLoadingHistory || !user?.uid}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[#623CEA] px-4 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
+              >
+                <span className="text-lg leading-none" aria-hidden="true">+</span>
+                {isCreatingChat ? 'Chat Baru...' : 'Chat Baru'}
+              </button>
+
+              <label className="mt-3 flex min-h-12 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Cari percakapan"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                  aria-label="Cari percakapan"
+                />
+              </label>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6" aria-live="polite">
+              {historyError && (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3" role="alert">
+                  <p className="text-sm font-semibold text-rose-700">{historyError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (historyError === 'Chat baru belum dapat dibuat. Coba lagi.') {
+                        void startNewChat();
+                      } else {
+                        void loadChatHistory();
+                      }
+                    }}
+                    disabled={isLoadingHistory}
+                    className="min-h-11 rounded-full px-3 text-sm font-bold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-60"
+                  >
+                    Coba lagi
+                  </button>
+                </div>
+              )}
+
+              {isLoadingHistory ? (
+                <div className="space-y-2" role="status" aria-label="Memuat riwayat chat">
+                  <p className="pb-1 text-sm font-semibold text-slate-500">Memuat riwayat chat...</p>
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="space-y-2 rounded-2xl border border-slate-100 bg-white p-4">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-slate-100" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredChatHistory.length === 0 ? (
+                historyError ? null : chatHistory.length === 0 ? (
+                  <div className="flex min-h-56 flex-col items-center justify-center px-4 text-center">
+                    <h3 className="text-base font-extrabold text-slate-800">Belum ada riwayat chat</h3>
+                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500">
+                      Percakapan yang kamu lakukan dengan AI Tutor akan muncul di sini.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void startNewChat()}
+                      disabled={isCreatingChat || isSaving || isResponding || !user?.uid}
+                      className="mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[#623CEA] px-4 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
+                    >
+                      <span className="text-lg leading-none" aria-hidden="true">+</span>
+                      {isCreatingChat ? 'Chat Baru...' : 'Chat Baru'}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-sm font-medium text-slate-500">Percakapan tidak ditemukan.</p>
+                )
+              ) : filteredChatHistory.slice(0, 20).map((chat) => {
+                const isActiveChat = chat.id === activeChatId;
+                const messageCount = chat.messages?.length ?? 0;
+
+                return (
+                  <div
+                    key={chat.id}
+                    className={`mb-2 flex items-center gap-2 rounded-2xl border p-2.5 shadow-sm transition-colors ${isActiveChat ? 'border-violet-200 bg-violet-50/80' : 'border-slate-100 bg-white'}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => void openChat(chat)}
+                      disabled={isLoadingChat || isResponding}
+                      aria-current={isActiveChat ? 'true' : undefined}
+                      className="flex min-h-14 min-w-0 flex-1 flex-col justify-center rounded-xl px-2 py-2 text-left transition-colors hover:bg-slate-50/80 disabled:opacity-60"
+                    >
+                      <span className="line-clamp-2 text-[14px] font-bold leading-snug text-slate-800">{getChatDisplayTitle(chat)}</span>
+                      <span className="mt-1 block truncate text-[12px] leading-snug text-slate-500">{messageCount} pesan · {formatChatDate(chat.updatedAt)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChatToDelete(chat)}
+                      disabled={isSaving}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
+                      aria-label={`Hapus percakapan ${getChatDisplayTitle(chat)}`}
+                      title="Hapus percakapan"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="m19 6-1 14H6L5 6" />
+                        <path d="M10 11v5M14 11v5" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
       )}
 
       {/* Info Modal */}
@@ -690,58 +811,6 @@ export default function DashboardSiswaAiTutorPage() {
                 Hapus
               </button>
             </div>
-          </div>
-        </div>
-      )}
-      {showInfoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-5 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-[0_16px_40px_rgba(37,99,235,0.10)] space-y-4 animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-rose-500">
-                <svg viewBox="0 0 24 24" className="h-[24px] w-[24px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <h3 className="text-[16px] font-bold">Batasan AI Tutor</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowInfoModal(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"
-                aria-label="Tutup"
-              >
-                <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="text-[14px] font-medium leading-relaxed text-slate-600 space-y-3">
-              <p>AI hanya menjawab topik berikut:</p>
-              <ul className="space-y-1.5 pl-2">
-                {['Bangun ruang', 'Bangun datar', 'Rumus', 'Ciri-ciri', 'Identifikasi bentuk', 'Materi semua komik CINARAI', 'Numerasi', 'Geometri', 'Materi pembelajaran aplikasi'].map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <svg viewBox="0 0 24 24" className="h-[16px] w-[16px] text-emerald-500" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 rounded-xl bg-rose-50 p-3 text-rose-700">
-                <p className="text-[13px] italic">&quot;Jika bertanya di luar topik, AI akan menjawab: Maaf, AI Tutor CINARAI hanya membantu pembelajaran materi yang tersedia pada aplikasi.&quot;</p>
-              </div>
-            </div>
-            
-            <button
-              type="button"
-              onClick={() => setShowInfoModal(false)}
-              className="mt-2 w-full rounded-full bg-[#623CEA] py-3 text-[15px] font-bold text-white transition-colors hover:bg-indigo-700 active:scale-95"
-            >
-              Mengerti
-            </button>
           </div>
         </div>
       )}

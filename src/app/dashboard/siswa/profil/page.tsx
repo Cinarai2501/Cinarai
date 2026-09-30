@@ -247,8 +247,8 @@ export default function DashboardSiswaProfilPage() {
               </svg>
             </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/dashboard/siswa/pengaturan-akun"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
             >
               <div className="flex min-w-0 items-center gap-4">
@@ -266,7 +266,7 @@ export default function DashboardSiswaProfilPage() {
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-[#CBD5E1]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />
               </svg>
-            </button>
+            </Link>
 
             <Link
               href="/auth/forgot-password"
@@ -289,8 +289,8 @@ export default function DashboardSiswaProfilPage() {
               </svg>
             </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/dashboard/siswa/pusat-bantuan"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
             >
               <div className="flex min-w-0 items-center gap-4">
@@ -312,7 +312,7 @@ export default function DashboardSiswaProfilPage() {
                   <path d="M9 18l6-6-6-6" />
                 </svg>
               </div>
-            </button>
+            </Link>
 
             <button
               type="button"

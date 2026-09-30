@@ -10,9 +10,7 @@ export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'student' | 'teacher' | null>(null);
-  const [isCompletingProfile, setIsCompletingProfile] = useState(false);
-  const { user, pendingProfileUser, loading, signIn, signInWithGoogle, completeRegistration, error, clearError } = useAuth();
+  const { user, loading, signIn, signInWithGoogle, error, clearError } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -43,20 +41,6 @@ export const LoginForm: React.FC = () => {
       console.error('Google sign in error:', err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCompleteRegistration = async () => {
-    if (!selectedRole || isCompletingProfile) return;
-    setIsCompletingProfile(true);
-    clearError();
-    try {
-      const role = await completeRegistration(selectedRole);
-      router.replace(getRoleBasedDashboardPath(role));
-    } catch (err) {
-      console.error('Profile completion error:', err);
-    } finally {
-      setIsCompletingProfile(false);
     }
   };
 
@@ -167,46 +151,6 @@ export const LoginForm: React.FC = () => {
           Daftar sekarang
         </Link>
       </p>
-
-      {pendingProfileUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true" aria-labelledby="complete-registration-title">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 id="complete-registration-title" className="text-xl font-black text-[#1E293B]">Lengkapi Pendaftaran</h2>
-            <p className="mt-2 text-sm text-slate-600">Bagaimana kamu menggunakan CINARAI?</p>
-            <div className="mt-5 grid gap-3">
-              <button
-                type="button"
-                aria-pressed={selectedRole === 'student'}
-                onClick={() => setSelectedRole('student')}
-                disabled={isCompletingProfile}
-                className={`rounded-xl border p-4 text-left transition-colors ${selectedRole === 'student' ? 'border-[#1F5FBF] bg-[#EAF6FF]' : 'border-slate-200 hover:bg-slate-50'}`}
-              >
-                <span className="block font-bold text-[#1E293B]">👨‍🎓 Siswa</span>
-                <span className="mt-1 block text-sm text-slate-500">Belajar dan mengikuti pembelajaran CINARAI</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={selectedRole === 'teacher'}
-                onClick={() => setSelectedRole('teacher')}
-                disabled={isCompletingProfile}
-                className={`rounded-xl border p-4 text-left transition-colors ${selectedRole === 'teacher' ? 'border-[#1F5FBF] bg-[#EAF6FF]' : 'border-slate-200 hover:bg-slate-50'}`}
-              >
-                <span className="block font-bold text-[#1E293B]">👩‍🏫 Guru</span>
-                <span className="mt-1 block text-sm text-slate-500">Mengelola pembelajaran dan melihat perkembangan siswa</span>
-              </button>
-            </div>
-            {error && <p role="alert" className="mt-4 text-sm text-[#b42318]">{error}</p>}
-            <button
-              type="button"
-              onClick={handleCompleteRegistration}
-              disabled={!selectedRole || isCompletingProfile}
-              className="mt-5 w-full rounded-xl bg-[#1F5FBF] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#163d7d] disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {isCompletingProfile ? 'Menyimpan profil...' : 'Simpan dan lanjutkan'}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

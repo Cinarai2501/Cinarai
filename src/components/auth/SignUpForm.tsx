@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleBasedDashboardPath } from '@/lib/auth/redirects';
-import { getFirestoreDocument } from '@/services/firestore';
+import { getFirestoreDocument, upsertUser } from '@/services/firestore';
 import type { User as FirebaseUser } from 'firebase/auth';
+import type { UserRole } from '@/types/firestore';
 
 export const SignUpForm: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
@@ -18,13 +19,14 @@ export const SignUpForm: React.FC = () => {
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [teacherUnavailableNotification, setTeacherUnavailableNotification] = useState(false);
   const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
   const [googleRole, setGoogleRole] = useState<'student' | 'teacher' | null>(null);
   const [googleError, setGoogleError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGoogleCompleting, setIsGoogleCompleting] = useState(false);
   const googleCompletionRef = useRef(false);
-  const { signUp, authenticateWithGoogleForRegistration, completeRegistration, pendingProfileUser, error, clearError } = useAuth();
+  const { signUp, authenticateWithGoogleForRegistration, error, clearError } = useAuth();
   const router = useRouter();
 
   const getGoogleErrorMessage = (err: unknown) => {
@@ -58,6 +60,8 @@ export const SignUpForm: React.FC = () => {
           router.replace(getRoleBasedDashboardPath(existingRole));
           return;
         }
+        setGoogleError('Profil Google ini memiliki role yang tidak valid. Hubungi admin.');
+        return;
       }
 
       setGoogleUser(firebaseUser);
@@ -76,8 +80,27 @@ export const SignUpForm: React.FC = () => {
     setIsGoogleCompleting(true);
     setGoogleError('');
     try {
-      const completedRole = await completeRegistration(googleRole, googleUser.displayName ?? undefined);
-      router.replace(getRoleBasedDashboardPath(completedRole));
+      const existingUser = await getFirestoreDocument('users', googleUser.uid);
+      if (existingUser) {
+        const existingRole = existingUser.role;
+        if (existingRole === 'student' || existingRole === 'teacher' || existingRole === 'admin') {
+          router.replace(getRoleBasedDashboardPath(existingRole));
+          return;
+        }
+        throw new Error('Profil Google ini memiliki role yang tidak valid.');
+      }
+
+      const role: UserRole = googleRole;
+      await upsertUser({
+        uid: googleUser.uid,
+        email: googleUser.email ?? '',
+        displayName: googleUser.displayName ?? googleUser.email ?? 'Pengguna Google',
+        role,
+        isActive: true,
+        duplicate: false,
+        ...(googleUser.photoURL ? { photoURL: googleUser.photoURL } : {}),
+      });
+      router.replace(getRoleBasedDashboardPath(role));
     } catch (err) {
       console.error('Google profile creation error:', err);
       setGoogleError('Akun Google berhasil masuk, tetapi profil belum dapat disimpan. Silakan coba lagi.');
@@ -91,6 +114,7 @@ export const SignUpForm: React.FC = () => {
     e.preventDefault();
     clearError();
     setValidationError('');
+    setTeacherUnavailableNotification(false);
 
     const trimmedDisplayName = displayName.trim();
     const normalizedEmail = email.trim();
@@ -109,15 +133,16 @@ export const SignUpForm: React.FC = () => {
       return;
     }
 
+    // Check role before Firebase Authentication
+    if (role === 'teacher') {
+      setTeacherUnavailableNotification(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      if (pendingProfileUser?.email?.toLowerCase() === normalizedEmail.toLowerCase()) {
-        const completedRole = await completeRegistration(role, trimmedDisplayName);
-        router.push(getRoleBasedDashboardPath(completedRole));
-      } else {
-        await signUp(normalizedEmail, password, trimmedDisplayName, role);
-        router.push(getRoleBasedDashboardPath(role));
-      }
+      await signUp(normalizedEmail, password, trimmedDisplayName, role);
+      router.push(getRoleBasedDashboardPath(role));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Pendaftaran gagal. Silakan coba lagi.';
       const normalizedMessage = message.includes('Missing or insufficient permissions')
@@ -144,6 +169,16 @@ export const SignUpForm: React.FC = () => {
         <div className="flex items-start gap-3 rounded-2xl bg-error-50 border border-error-200 px-4 py-3">
           <span className="text-lg flex-shrink-0">😕</span>
           <p className="text-sm text-error-700 leading-snug">{error || validationError}</p>
+        </div>
+      )}
+
+      {teacherUnavailableNotification && (
+        <div className="flex items-start gap-3 rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3">
+          <span className="text-lg flex-shrink-0">👨‍🏫</span>
+          <div className="text-sm text-blue-700 leading-snug">
+            <p className="font-semibold">Fitur Guru sedang dalam perbaikan</p>
+            <p className="mt-1">Pendaftaran akun Guru untuk sementara belum tersedia. Silakan gunakan pendaftaran Siswa terlebih dahulu.</p>
+          </div>
         </div>
       )}
 
@@ -284,6 +319,7 @@ export const SignUpForm: React.FC = () => {
             >
               <div className="flex flex-col items-center gap-0.5">
                 <span>Guru</span>
+                <span className="text-xs font-normal text-neutral-400">Sedang dalam perbaikan</span>
               </div>
             </button>
           </div>
@@ -318,7 +354,7 @@ export const SignUpForm: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="google-role-title">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <h2 id="google-role-title" className="text-xl font-black text-neutral-900">Lengkapi Pendaftaran</h2>
+              <h2 id="google-role-title" className="text-xl font-black text-neutral-900">Pilih Peran Anda</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -333,10 +369,10 @@ export const SignUpForm: React.FC = () => {
                 ×
               </button>
             </div>
-            <p className="mt-2 text-sm text-neutral-500">Bagaimana kamu menggunakan CINARAI?</p>
+            <p className="mt-2 text-sm text-neutral-500">Bagaimana Anda akan menggunakan CINARAI?</p>
             <div className="mt-5 space-y-3">
-              <RoleOption selected={googleRole === 'student'} onClick={() => setGoogleRole('student')} title="👨‍🎓 Siswa" description="Belajar dan mengikuti pembelajaran CINARAI." />
-              <RoleOption selected={googleRole === 'teacher'} onClick={() => setGoogleRole('teacher')} title="👩‍🏫 Guru" description="Mengelola pembelajaran dan melihat perkembangan siswa." />
+              <RoleOption selected={googleRole === 'student'} onClick={() => setGoogleRole('student')} title="Siswa" description="Belajar menggunakan komik, AR, dan aktivitas numerasi." />
+              <RoleOption selected={googleRole === 'teacher'} onClick={() => setGoogleRole('teacher')} title="Guru" description="Mengelola pembelajaran dan memantau perkembangan siswa." />
             </div>
             {googleError && <p className="mt-4 text-sm text-error-700">{googleError}</p>}
             <button
