@@ -19,15 +19,17 @@ export interface User {
 
 export interface AuthState {
   user: User | null;
+  pendingProfileUser: FirebaseUser | null;
   loading: boolean;
   error: string | null;
 }
 
 export interface AuthContextType extends AuthState {
   signUp: (email: string, password: string, displayName: string, role?: 'student' | 'teacher') => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   authenticateWithGoogleForRegistration: () => Promise<FirebaseUser>;
+  completeRegistration: (role: 'student' | 'teacher', displayName?: string) => Promise<UserRole>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (profile: {

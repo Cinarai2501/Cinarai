@@ -68,6 +68,7 @@ const mapFirebaseUserToUser = (
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
+    pendingProfileUser: null,
     loading: true,
     error: null,
   });
@@ -77,16 +78,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const [userDocument, claimsResult] = await Promise.all([
-        getFirestoreDocument('users', firebaseUser.uid),
-        firebaseUser.getIdTokenResult(),
-      ]);
-      const resolvedRole = resolveUserRoleFromProfileAndClaims(userDocument?.role, claimsResult.claims.role);
+      const userDocument = await getFirestoreDocument('users', firebaseUser.uid);
+      const resolvedRole = resolveUserRoleFromProfileAndClaims(userDocument?.role, null);
 
       if (!resolvedRole) {
-        const message = 'Akun belum memiliki role yang valid. Hubungi admin.';
-        setState({ user: null, loading: false, error: message });
-        return;
+        const message = 'Akun berhasil masuk, tetapi data pendaftaran belum lengkap. Silakan pilih peran Anda.';
+        setState({ user: null, pendingProfileUser: firebaseUser, loading: false, error: message });
+        return null;
       }
 
       const user = mapFirebaseUserToUser(firebaseUser, resolvedRole, userDocument);
@@ -101,7 +99,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // login resolved
 
-      setState({ user, loading: false, error: null });
+      setState({ user, pendingProfileUser: null, loading: false, error: null });
+      return user;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to sync user profile';
 
@@ -113,7 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
       }
 
-      setState({ user: null, loading: false, error: message });
+      setState({ user: null, pendingProfileUser: null, loading: false, error: message });
+      return null;
     }
 
     initializeUserProgress(firebaseUser.uid).catch(() => {
@@ -136,6 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         setState({
           user: null,
+          pendingProfileUser: null,
           loading: false,
           error: null,
         });
@@ -162,7 +163,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
 
         await firebaseUser.getIdTokenResult(true);
-        await syncUserFromFirestore(firebaseUser);
+        const synchronizedUser = await syncUserFromFirestore(firebaseUser);
+        if (!synchronizedUser || synchronizedUser.role !== role) {
+          throw new Error('Akun berhasil dibuat, tetapi profil belum dapat dimuat. Silakan coba lagi.');
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to sign up';
@@ -183,7 +187,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const firebaseUser = await signInUser(email, password, {
         firebaseSignIn,
       });
-      await syncUserFromFirestore(firebaseUser);
+      return Boolean(await syncUserFromFirestore(firebaseUser));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to sign in';
@@ -200,7 +204,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const { user: firebaseUser } = await firebaseSignInWithGoogle();
-      await syncUserFromFirestore(firebaseUser);
+      return Boolean(await syncUserFromFirestore(firebaseUser));
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to sign in with Google';
@@ -209,6 +213,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         loading: false,
         error: errorMessage,
       }));
+      throw error;
+    }
+  }, [syncUserFromFirestore]);
+
+  const completeRegistration = useCallback(async (role: 'student' | 'teacher', displayName?: string): Promise<UserRole> => {
+    const firebaseUser = getCurrentUser();
+    if (!firebaseUser) throw new Error('Sesi masuk tidak ditemukan. Silakan masuk kembali.');
+
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const existingProfile = await getFirestoreDocument('users', firebaseUser.uid);
+      const existingRole = existingProfile?.role;
+      if (existingRole === 'student' || existingRole === 'teacher' || existingRole === 'admin') {
+        const synchronizedUser = await syncUserFromFirestore(firebaseUser);
+        if (!synchronizedUser) throw new Error('Profil belum dapat dimuat. Silakan coba lagi.');
+        return synchronizedUser.role;
+      }
+
+      await upsertUser({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? existingProfile?.email ?? '',
+        displayName: displayName?.trim() || existingProfile?.displayName || firebaseUser.displayName || firebaseUser.email || 'Pengguna CINARAI',
+        role,
+        isActive: existingProfile?.isActive ?? true,
+        duplicate: existingProfile?.duplicate ?? false,
+        ...(firebaseUser.photoURL || existingProfile?.photoURL
+          ? { photoURL: firebaseUser.photoURL ?? existingProfile?.photoURL }
+          : {}),
+      });
+
+      const synchronizedUser = await syncUserFromFirestore(firebaseUser);
+      if (!synchronizedUser || synchronizedUser.role !== role) {
+        throw new Error('Profil belum dapat dimuat. Silakan coba lagi.');
+      }
+      return synchronizedUser.role;
+    } catch (error) {
+      const message = 'Akun berhasil dibuat, tetapi data profil belum tersimpan. Silakan coba lagi.';
+      setState((prev) => ({ ...prev, loading: false, error: message }));
       throw error;
     }
   }, [syncUserFromFirestore]);
@@ -284,7 +326,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         avatar: profile.avatar,
       } as User;
 
-      setState({ user: updatedUser, loading: false, error: null });
+      setState({ user: updatedUser, pendingProfileUser: null, loading: false, error: null });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update profile';
@@ -299,6 +341,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await firebaseLogout();
       setState({
         user: null,
+        pendingProfileUser: null,
         loading: false,
         error: null,
       });
@@ -346,6 +389,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signInWithGoogle,
     authenticateWithGoogleForRegistration,
+    completeRegistration,
     logout,
     resetPassword,
     updateUserProfile,
