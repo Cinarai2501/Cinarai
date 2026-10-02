@@ -269,28 +269,7 @@ export default function DashboardSiswaProfilPage() {
             </Link>
 
             <Link
-              href="/auth/forgot-password"
-              className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
-            >
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[18px] bg-[#F3E8FF] text-[#9333EA]">
-                  <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-[15px] font-bold text-[#1E293B]">Ganti Password</h3>
-                  <p className="mt-0.5 truncate text-[12px] font-semibold text-[#94A3B8]">Ubah password akunmu</p>
-                </div>
-              </div>
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-[#CBD5E1]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </Link>
-
-            <Link
-              href="/dashboard/siswa/pusat-bantuan"
+              href="/dashboard/siswa/bahasa"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
             >
               <div className="flex min-w-0 items-center gap-4">
@@ -314,8 +293,8 @@ export default function DashboardSiswaProfilPage() {
               </div>
             </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/dashboard/siswa/pusat-bantuan"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
             >
               <div className="flex min-w-0 items-center gap-4">
@@ -334,10 +313,10 @@ export default function DashboardSiswaProfilPage() {
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-[#CBD5E1]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />
               </svg>
-            </button>
+            </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/dashboard/siswa/profil/tentang"
               className="flex w-full items-center justify-between rounded-2xl p-3.5 text-left transition hover:bg-slate-50/80"
             >
               <div className="flex min-w-0 items-center gap-4">
@@ -356,7 +335,7 @@ export default function DashboardSiswaProfilPage() {
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-[#CBD5E1]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />
               </svg>
-            </button>
+            </Link>
 
             <button
               type="button"
