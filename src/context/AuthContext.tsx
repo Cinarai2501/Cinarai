@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
 import {
@@ -13,6 +13,7 @@ import {
   updateUserProfile as firebaseUpdateUserProfile,
   getCurrentUser,
   getSignInMethods,
+  deleteAuthUser,
 } from '@/lib/firebase/auth';
 import { initializeUserProgress } from '@/services/comicProgress';
 import {
@@ -72,8 +73,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     error: null,
   });
   const router = useRouter();
+  const authSyncVersion = useRef(0);
 
-  const syncUserFromFirestore = useCallback(async (firebaseUser: FirebaseUser) => {
+  const syncUserFromFirestore = useCallback(async (firebaseUser: FirebaseUser): Promise<boolean> => {
+    const syncVersion = ++authSyncVersion.current;
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -84,11 +87,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const resolvedRole = resolveUserRoleFromProfileAndClaims(userDocument?.role, claimsResult.claims.role);
 
       if (!resolvedRole) {
+        if (syncVersion !== authSyncVersion.current) return true;
         const message = 'Akun belum memiliki role yang valid. Hubungi admin.';
         setState({ user: null, loading: false, error: message });
-        return;
+        return false;
       }
 
+      if (syncVersion !== authSyncVersion.current) return true;
       const user = mapFirebaseUserToUser(firebaseUser, resolvedRole, userDocument);
 
       if (typeof window !== 'undefined') {
@@ -102,7 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // login resolved
 
       setState({ user, loading: false, error: null });
+      initializeUserProgress(firebaseUser.uid).catch(() => {
+        /* ignore progress init errors */
+      });
+      return true;
     } catch (error) {
+      if (syncVersion !== authSyncVersion.current) return true;
       const message = error instanceof Error ? error.message : 'Failed to sync user profile';
 
       if (typeof window !== 'undefined') {
@@ -114,11 +124,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       setState({ user: null, loading: false, error: message });
+      return false;
     }
-
-    initializeUserProgress(firebaseUser.uid).catch(() => {
-      /* ignore progress init errors */
-    });
   }, []);
 
   // Subscribe to auth changes on mount
@@ -127,6 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (firebaseUser) {
         void syncUserFromFirestore(firebaseUser);
       } else {
+        authSyncVersion.current += 1;
         if (typeof window !== 'undefined') {
           window.__cinaraiAuthDebug = {
             ...(window.__cinaraiAuthDebug ?? {}),
@@ -157,12 +165,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }),
           firebaseSignUp,
           updateUserProfile: firebaseUpdateUserProfile,
-          getFirestoreDocument,
+          deleteFirebaseUser: deleteAuthUser,
           upsertUser,
         });
 
         await firebaseUser.getIdTokenResult(true);
-        await syncUserFromFirestore(firebaseUser);
+        const profileLoaded = await syncUserFromFirestore(firebaseUser);
+        if (!profileLoaded) {
+          throw new Error('Akun berhasil dibuat, tetapi profil belum dapat diverifikasi. Silakan coba masuk kembali.');
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to sign up';

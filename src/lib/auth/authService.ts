@@ -1,7 +1,6 @@
 import type { User, UserCredential } from 'firebase/auth';
 import type { UserDocument, UserRole } from '@/types/firestore';
 import { normalizeEmail } from '@/lib/userAudit';
-import { isAllowedUserRole } from './role';
 
 export type AuthUser = User;
 
@@ -10,7 +9,7 @@ export interface AuthSignUpDependencies {
   queryUserDocumentsByEmail?: (email: string) => Promise<UserDocument[]>;
   firebaseSignUp: (email: string, password: string) => Promise<UserCredential>;
   updateUserProfile: (user: User, displayName: string) => Promise<void>;
-  getFirestoreDocument?: (collection: 'users', docId: string) => Promise<UserDocument | null>;
+  deleteFirebaseUser: (user: User) => Promise<void>;
   upsertUser: (user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
@@ -25,8 +24,8 @@ export async function signUpUser(
   role: UserRole = 'student',
   deps: AuthSignUpDependencies
 ): Promise<User> {
-  if (!isAllowedUserRole(role)) {
-    throw new Error('Role tidak valid. Pilih student, teacher, atau admin.');
+  if (role !== 'student' && role !== 'teacher') {
+    throw new Error('Role pendaftaran tidak valid. Pilih student atau teacher.');
   }
 
   const normalizedEmail = normalizeEmail(email);
@@ -53,27 +52,34 @@ export async function signUpUser(
   const userCredential = await deps.firebaseSignUp(normalizedEmail, password);
   const firebaseUser = userCredential.user;
 
-  await deps.updateUserProfile(firebaseUser, displayName);
+  try {
+    await deps.updateUserProfile(firebaseUser, displayName);
 
-  if (deps.getFirestoreDocument) {
-    const existingUserDocument = await deps.getFirestoreDocument('users', firebaseUser.uid);
-    if (existingUserDocument) {
-      // Existing user document will be merged by upsertUser.
+    const userData: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? normalizedEmail,
+      displayName: firebaseUser.displayName ?? displayName,
+      username: normalizedEmail.split('@')[0],
+      role,
+      isActive: true,
+      duplicate: false,
+      ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
+    };
+
+    await deps.upsertUser(userData);
+  } catch (profileError) {
+    try {
+      await deps.deleteFirebaseUser(firebaseUser);
+    } catch (cleanupError) {
+      const profileMessage = profileError instanceof Error ? profileError.message : String(profileError);
+      const cleanupMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+      throw new Error(
+        `Profil pengguna gagal disimpan (${profileMessage}) dan akun Authentication gagal dibersihkan (${cleanupMessage}).`
+      );
     }
+    throw profileError;
   }
 
-  const userData: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> = {
-    uid: firebaseUser.uid,
-    email: normalizedEmail,
-    displayName: firebaseUser.displayName ?? displayName,
-    username: normalizedEmail.split('@')[0],
-    role,
-    isActive: true,
-    duplicate: false,
-    ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
-  };
-
-  await deps.upsertUser(userData);
   return firebaseUser;
 }
 

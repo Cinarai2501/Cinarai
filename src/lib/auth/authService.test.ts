@@ -19,7 +19,7 @@ const createSignUpDeps = (overrides: Partial<Record<string, unknown>> = {}) => {
     queryUserDocumentsByEmail: overrides.queryUserDocumentsByEmail as ((email: string) => Promise<UserDocument[]>) ?? (async () => []),
     firebaseSignUp: overrides.firebaseSignUp as ((email: string, password: string) => Promise<UserCredential>) ?? (async (email: string) => ({ user: makeMockEmailUser(email) as User, providerId: 'password', operationType: 'signIn' } as unknown as UserCredential)),
     updateUserProfile: overrides.updateUserProfile as ((user: User, displayName: string) => Promise<void>) ?? (async () => undefined),
-    getFirestoreDocument: overrides.getFirestoreDocument as ((collection: 'users', docId: string) => Promise<UserDocument | null>) ?? (async () => null),
+    deleteFirebaseUser: overrides.deleteFirebaseUser as ((user: User) => Promise<void>) ?? (async () => undefined),
     upsertUser: overrides.upsertUser as ((user: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>) ?? (async () => undefined),
   } as const;
 };
@@ -111,6 +111,40 @@ test('signUpUser ignores Firestore permission errors while checking duplicate do
   assert.ok(upsertedUser);
   assert.equal(upsertedUser.role, 'teacher');
   assert.equal(upsertedUser.email, 'new@example.com');
+});
+
+test('signUpUser rejects admin registration before creating an auth account', async () => {
+  let firebaseSignUpCalled = false;
+  const deps = createSignUpDeps({
+    firebaseSignUp: async () => {
+      firebaseSignUpCalled = true;
+      throw new Error('Must not create an admin account');
+    },
+  });
+
+  await assert.rejects(
+    () => signUpUser('new@example.com', 'password123', 'Nama Baru', 'admin', deps),
+    /Role pendaftaran tidak valid/,
+  );
+  assert.equal(firebaseSignUpCalled, false);
+});
+
+test('signUpUser removes the auth account when profile creation fails', async () => {
+  let deletedUid: string | null = null;
+  const deps = createSignUpDeps({
+    upsertUser: async () => {
+      throw new Error('Firestore unavailable');
+    },
+    deleteFirebaseUser: async (user: User) => {
+      deletedUid = user.uid;
+    },
+  });
+
+  await assert.rejects(
+    () => signUpUser('new@example.com', 'password123', 'Nama Baru', 'teacher', deps),
+    /Firestore unavailable/,
+  );
+  assert.equal(deletedUid, 'user-123');
 });
 
 test('signInUser signs in an existing account', async () => {

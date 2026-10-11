@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminFirestore, adminInitializationError } from '@/lib/firebase/admin';
 import type { UserDocument, UserRole } from '@/types/firestore';
-import { isAllowedUserRole } from '@/lib/auth/role';
 import debug from '@/lib/debug';
 
 function normalizeEmail(email: unknown): string {
@@ -46,10 +45,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let userRole: UserRole = 'student';
-    if (isAllowedUserRole(role)) {
-      userRole = role;
+    if (role !== 'student' && role !== 'teacher') {
+      return NextResponse.json(
+        { error: 'Role pendaftaran tidak valid', code: 'INVALID_ROLE' },
+        { status: 400 }
+      );
     }
+    const userRole: Exclude<UserRole, 'admin'> = role;
 
     try {
       await adminAuth.getUserByEmail(email);
@@ -115,14 +117,34 @@ export async function POST(request: NextRequest) {
       duplicate: false,
     };
 
-    await firestore.collection('users').doc(uid).set(
-      {
-        ...userData,
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    try {
+      await firestore.collection('users').doc(uid).set(
+        {
+          ...userData,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (profileError) {
+      try {
+        await adminAuth.deleteUser(uid);
+      } catch (cleanupError) {
+        debug('[api/auth/signup] Failed to clean up auth account after profile creation failure', {
+          uid,
+          error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+        });
+      }
+
+      debug('[api/auth/signup] Failed to create user profile', {
+        uid,
+        error: profileError instanceof Error ? profileError.message : String(profileError),
+      });
+      return NextResponse.json(
+        { error: 'Profil pengguna gagal disimpan; pendaftaran tidak dapat diselesaikan.', code: 'PROFILE_CREATION_FAILED' },
+        { status: 500 }
+      );
+    }
 
     debug('[api/auth/signup] User created successfully', { uid, email, role: userRole });
 

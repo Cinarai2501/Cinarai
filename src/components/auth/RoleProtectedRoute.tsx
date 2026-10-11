@@ -10,10 +10,6 @@ interface RoleProtectedRouteProps {
   allowedRole: 'student' | 'teacher' | 'admin';
 }
 
-function roleToDashboard(role: string): string {
-  return getRoleBasedDashboardPath(role as 'student' | 'teacher' | 'admin');
-}
-
 export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   children,
   allowedRole,
@@ -43,7 +39,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     }
 
     if (user.role !== allowedRole) {
-      router.replace(roleToDashboard(user.role));
+      router.replace(getRoleBasedDashboardPath(user.role));
     }
   }, [allowedRole, loading, router, user]);
 

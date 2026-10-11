@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
+  deleteUser as deleteFirebaseUser,
   onAuthStateChanged,
   updateProfile,
   signInWithPopup,
@@ -33,6 +34,15 @@ export const getSignInMethods = async (email: string): Promise<string[]> => {
     return await fetchSignInMethodsForEmail(auth, email);
   } catch (error) {
     console.error('Fetch sign-in methods error:', error);
+    throw error;
+  }
+};
+
+export const deleteAuthUser = async (user: User): Promise<void> => {
+  try {
+    await deleteFirebaseUser(user);
+  } catch (error) {
+    console.error('Delete newly-created auth user error:', error);
     throw error;
   }
 };

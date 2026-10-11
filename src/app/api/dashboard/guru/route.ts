@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
         ? adminInitializationError
         : `Firebase Admin environment variables missing: ${missingEnv.join(', ')}`;
       debug('[dashboard/guru] Firebase Admin env validation failed', { missingEnv, message });
-      return NextResponse.json(buildEmptyPayload(message, 'Firebase Admin unavailable'), { status: 200 });
+      return NextResponse.json(buildEmptyPayload(message, 'Firebase Admin unavailable'), { status: 503 });
     }
 
     debug('[dashboard/guru] adminAuth present?', Boolean(adminAuth));
@@ -258,7 +258,7 @@ export async function GET(request: NextRequest) {
         ? adminInitializationError
         : 'Admin Auth not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment.';
       debug('[dashboard/guru] Admin Auth unavailable', { message: msg });
-      return NextResponse.json(buildEmptyPayload(msg, 'Admin Auth unavailable'), { status: 200 });
+      return NextResponse.json(buildEmptyPayload(msg, 'Admin Auth unavailable'), { status: 503 });
     }
 
     debug('[dashboard/guru] adminFirestore present?', Boolean(adminFirestore));
@@ -267,7 +267,7 @@ export async function GET(request: NextRequest) {
         ? adminInitializationError
         : 'Admin Firestore not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment.';
       debug('[dashboard/guru] Admin Firestore unavailable', { message: msg });
-      return NextResponse.json(buildEmptyPayload(msg, 'Admin Firestore unavailable'), { status: 200 });
+      return NextResponse.json(buildEmptyPayload(msg, 'Admin Firestore unavailable'), { status: 503 });
     }
 
     const headerValue = request.headers.get('authorization');
@@ -294,7 +294,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       debug('[dashboard/guru] Failed to fetch user profile', { error: message, uid });
-      return NextResponse.json(buildEmptyPayload('Failed to fetch user profile', message), { status: 200 });
+      return NextResponse.json(buildEmptyPayload('Failed to fetch user profile', message), { status: 500 });
     }
 
     if (role !== 'teacher' && role !== 'admin') {
@@ -304,7 +304,7 @@ export async function GET(request: NextRequest) {
     const firestore = adminFirestore;
     if (!firestore) {
       debug('[dashboard/guru] Firestore client unavailable before querying collections');
-      return NextResponse.json(buildEmptyPayload('Firestore client unavailable', 'Firestore unavailable'), { status: 200 });
+      return NextResponse.json(buildEmptyPayload('Firestore client unavailable', 'Firestore unavailable'), { status: 503 });
     }
 
     // Run queries sequentially with logging so we can capture the exact failing step and stack

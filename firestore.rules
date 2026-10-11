@@ -79,7 +79,13 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
-      allow write: if isSignedIn() && ownsUserDoc(uid);
+      allow create: if ownsUserDoc(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.role in ['student', 'teacher'];
+      allow update: if ownsUserDoc(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.role == resource.data.role;
+      allow delete: if ownsUserDoc(uid);
 
       match /progress/{comicId} {
         allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
