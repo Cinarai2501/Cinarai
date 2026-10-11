@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const router = useRouter();
   const authSyncVersion = useRef(0);
 
-  const syncUserFromFirestore = useCallback(async (firebaseUser: FirebaseUser): Promise<boolean> => {
+  const syncUserFromFirestore = useCallback(async (firebaseUser: FirebaseUser): Promise<UserRole | null> => {
     const syncVersion = ++authSyncVersion.current;
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
@@ -84,16 +84,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         getFirestoreDocument('users', firebaseUser.uid),
         firebaseUser.getIdTokenResult(),
       ]);
-      const resolvedRole = resolveUserRoleFromProfileAndClaims(userDocument?.role, claimsResult.claims.role);
 
+      const resolvedRole = resolveUserRoleFromProfileAndClaims(
+        userDocument?.role,
+        claimsResult.claims.role
+      );
       if (!resolvedRole) {
-        if (syncVersion !== authSyncVersion.current) return true;
-        const message = 'Akun belum memiliki role yang valid. Hubungi admin.';
+        if (syncVersion !== authSyncVersion.current) return null;
+        const message = userDocument
+          ? 'Role pada profil akun tidak valid. Akses diblokir; hubungi admin.'
+          : 'Profil akun tidak ditemukan dan tidak ada role valid. Akses diblokir; hubungi admin.';
         setState({ user: null, loading: false, error: message });
-        return false;
+        return null;
       }
 
-      if (syncVersion !== authSyncVersion.current) return true;
+      if (syncVersion !== authSyncVersion.current) return null;
       const user = mapFirebaseUserToUser(firebaseUser, resolvedRole, userDocument);
 
       if (typeof window !== 'undefined') {
@@ -110,10 +115,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       initializeUserProgress(firebaseUser.uid).catch(() => {
         /* ignore progress init errors */
       });
-      return true;
+      return resolvedRole;
     } catch (error) {
-      if (syncVersion !== authSyncVersion.current) return true;
-      const message = error instanceof Error ? error.message : 'Failed to sync user profile';
+      if (syncVersion !== authSyncVersion.current) return null;
+      console.error('Failed to read authenticated user profile:', error);
+      const message = 'Profil akun gagal dibaca. Akses diblokir; periksa koneksi atau hubungi admin.';
 
       if (typeof window !== 'undefined') {
         window.__cinaraiAuthDebug = {
@@ -124,7 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       setState({ user: null, loading: false, error: message });
-      return false;
+      return null;
     }
   }, []);
 
@@ -169,11 +175,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           upsertUser,
         });
 
-        await firebaseUser.getIdTokenResult(true);
-        const profileLoaded = await syncUserFromFirestore(firebaseUser);
-        if (!profileLoaded) {
+        const storedRole = await syncUserFromFirestore(firebaseUser);
+        if (!storedRole) {
           throw new Error('Akun berhasil dibuat, tetapi profil belum dapat diverifikasi. Silakan coba masuk kembali.');
         }
+        return storedRole;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to sign up';
@@ -236,6 +242,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
   }, []);
+
+  const completeGoogleRegistration = useCallback(
+    async (firebaseUser: FirebaseUser, role: 'student' | 'teacher'): Promise<UserRole> => {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        await upsertUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName ?? firebaseUser.email ?? 'Pengguna Google',
+          role,
+          isActive: true,
+          duplicate: false,
+          ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
+        });
+
+        const storedRole = await syncUserFromFirestore(firebaseUser);
+        if (!storedRole) {
+          throw new Error('Profil Google gagal diverifikasi. Akses diblokir; silakan coba lagi atau hubungi admin.');
+        }
+        if (storedRole !== role) {
+          throw new Error('Role pada profil Google tidak sesuai dengan pilihan. Akses diblokir; hubungi admin.');
+        }
+        return storedRole;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Profil Google gagal diverifikasi.';
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: errorMessage,
+        }));
+        throw error;
+      }
+    },
+    [syncUserFromFirestore]
+  );
 
   const updateUserProfile = useCallback(async (profile: {
     displayName: string;
@@ -357,6 +399,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signInWithGoogle,
     authenticateWithGoogleForRegistration,
+    completeGoogleRegistration,
     logout,
     resetPassword,
     updateUserProfile,
