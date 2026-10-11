@@ -6,17 +6,9 @@ export function isAllowedUserRole(role: unknown): role is UserRole {
   return typeof role === 'string' && allowedRoles.has(role as UserRole);
 }
 
-export function resolveUserRoleFromProfileAndClaims(
-  profileRole: unknown,
-  claimsRole: unknown
-): UserRole | null {
-  const fromProfile = typeof profileRole === 'string' ? profileRole : null;
-  const fromClaims = typeof claimsRole === 'string' ? claimsRole : null;
-
-  const candidate = fromProfile ?? fromClaims;
-
-  if (candidate && allowedRoles.has(candidate as UserRole)) {
-    return candidate as UserRole;
+export function resolveUserRoleFromProfile(profileRole: unknown): UserRole | null {
+  if (typeof profileRole === 'string' && allowedRoles.has(profileRole as UserRole)) {
+    return profileRole as UserRole;
   }
 
   return null;

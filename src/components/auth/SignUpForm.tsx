@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleBasedDashboardPath } from '@/lib/auth/redirects';
-import { getFirestoreDocument, upsertUser } from '@/services/firestore';
+import { getFirestoreDocument } from '@/services/firestore';
+import { isAllowedUserRole } from '@/lib/auth/role';
 import type { User as FirebaseUser } from 'firebase/auth';
-import type { UserRole } from '@/types/firestore';
 
 export const SignUpForm: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
@@ -25,7 +25,13 @@ export const SignUpForm: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGoogleCompleting, setIsGoogleCompleting] = useState(false);
   const googleCompletionRef = useRef(false);
-  const { signUp, authenticateWithGoogleForRegistration, error, clearError } = useAuth();
+  const {
+    signUp,
+    authenticateWithGoogleForRegistration,
+    completeGoogleRegistration,
+    error,
+    clearError,
+  } = useAuth();
   const router = useRouter();
 
   const getGoogleErrorMessage = (err: unknown) => {
@@ -54,9 +60,8 @@ export const SignUpForm: React.FC = () => {
       const existingUser = await getFirestoreDocument('users', firebaseUser.uid);
 
       if (existingUser) {
-        const existingRole = existingUser.role;
-        if (existingRole === 'student' || existingRole === 'teacher' || existingRole === 'admin') {
-          router.replace(getRoleBasedDashboardPath(existingRole));
+        if (isAllowedUserRole(existingUser.role)) {
+          router.replace(getRoleBasedDashboardPath(existingUser.role));
           return;
         }
         setGoogleError('Profil Google ini memiliki role yang tidak valid. Hubungi admin.');
@@ -81,28 +86,18 @@ export const SignUpForm: React.FC = () => {
     try {
       const existingUser = await getFirestoreDocument('users', googleUser.uid);
       if (existingUser) {
-        const existingRole = existingUser.role;
-        if (existingRole === 'student' || existingRole === 'teacher' || existingRole === 'admin') {
-          router.replace(getRoleBasedDashboardPath(existingRole));
+        if (isAllowedUserRole(existingUser.role)) {
+          router.replace(getRoleBasedDashboardPath(existingUser.role));
           return;
         }
         throw new Error('Profil Google ini memiliki role yang tidak valid.');
       }
 
-      const role: UserRole = googleRole;
-      await upsertUser({
-        uid: googleUser.uid,
-        email: googleUser.email ?? '',
-        displayName: googleUser.displayName ?? googleUser.email ?? 'Pengguna Google',
-        role,
-        isActive: true,
-        duplicate: false,
-        ...(googleUser.photoURL ? { photoURL: googleUser.photoURL } : {}),
-      });
-      router.replace(getRoleBasedDashboardPath(role));
+      const storedRole = await completeGoogleRegistration(googleUser, googleRole);
+      router.replace(getRoleBasedDashboardPath(storedRole));
     } catch (err) {
       console.error('Google profile creation error:', err);
-      setGoogleError('Akun Google berhasil masuk, tetapi profil belum dapat disimpan. Silakan coba lagi.');
+      setGoogleError(err instanceof Error ? err.message : 'Profil Google gagal disimpan atau diverifikasi.');
       googleCompletionRef.current = false;
     } finally {
       setIsGoogleCompleting(false);
@@ -133,8 +128,8 @@ export const SignUpForm: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await signUp(normalizedEmail, password, trimmedDisplayName, role);
-      router.push(getRoleBasedDashboardPath(role));
+      const storedRole = await signUp(normalizedEmail, password, trimmedDisplayName, role);
+      router.replace(getRoleBasedDashboardPath(storedRole));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Pendaftaran gagal. Silakan coba lagi.';
       const normalizedMessage = message.includes('Missing or insufficient permissions')
