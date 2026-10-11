@@ -22,7 +22,7 @@ import {
   upsertUser,
 } from '@/services/firestore';
 import {
-  resolveUserRoleFromProfile,
+  resolveUserRoleFromProfileAndClaims,
 } from '@/lib/auth/role';
 import { signUpUser, signInUser } from '@/lib/auth/authService';
 import type { User, AuthContextType, AuthState } from '@/types/auth';
@@ -80,19 +80,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const userDocument = await getFirestoreDocument('users', firebaseUser.uid);
+      const [userDocument, claimsResult] = await Promise.all([
+        getFirestoreDocument('users', firebaseUser.uid),
+        firebaseUser.getIdTokenResult(),
+      ]);
 
-      if (!userDocument) {
-        if (syncVersion !== authSyncVersion.current) return null;
-        const message = 'Profil akun tidak ditemukan. Akses diblokir; hubungi admin.';
-        setState({ user: null, loading: false, error: message });
-        return null;
-      }
-
-      const resolvedRole = resolveUserRoleFromProfile(userDocument.role);
+      const resolvedRole = resolveUserRoleFromProfileAndClaims(
+        userDocument?.role,
+        claimsResult.claims.role
+      );
       if (!resolvedRole) {
         if (syncVersion !== authSyncVersion.current) return null;
-        const message = 'Role pada profil akun tidak valid. Akses diblokir; hubungi admin.';
+        const message = userDocument
+          ? 'Role pada profil akun tidak valid. Akses diblokir; hubungi admin.'
+          : 'Profil akun tidak ditemukan dan tidak ada role valid. Akses diblokir; hubungi admin.';
         setState({ user: null, loading: false, error: message });
         return null;
       }
