@@ -68,9 +68,9 @@ export function GuruHeader({ summary, loading, onLogout }: Props) {
           ) : (
             <>
               <StatPill label="Total Siswa" value={String(summary.totalStudents)} emoji="👥" />
+              <StatPill label="Progres Berjalan" value={summary.progressDocuments ? String(summary.activeStudents) : '—'} emoji="📈" />
               <StatPill label="Total Komik" value={String(summary.totalComics)} emoji="📚" />
-              <StatPill label="Modul Selesai" value={String(summary.totalCompleted)} emoji="✅" />
-              <StatPill label="Rata-rata Progress" value={`${summary.averageProgress}%`} emoji="📈" />
+              <StatPill label="Siswa Tuntas" value={summary.progressDocuments ? String(summary.studentsCompleted) : '—'} emoji="✅" />
             </>
           )}
         </div>

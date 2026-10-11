@@ -2,14 +2,17 @@
 
 import { Card, ProgressBar, ProgressRing, Badge, Skeleton } from './ui';
 import type { DashboardSummary, StudentRow } from '../types';
+import type { GuruRecentActivity } from '../services/firestoreService';
 
 interface Props {
   summary: DashboardSummary;
   topStudents: StudentRow[];
+  recentActivities: GuruRecentActivity[];
+  recentActivityLoading: boolean;
   loading: boolean;
 }
 
-export function DashboardOverview({ summary, topStudents, loading }: Props) {
+export function DashboardOverview({ summary, topStudents, recentActivities, recentActivityLoading, loading }: Props) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -22,6 +25,8 @@ export function DashboardOverview({ summary, topStudents, loading }: Props) {
     );
   }
 
+  const rankedStudents = topStudents.filter((student) => student.progressList.length > 0);
+
   return (
     <div className="space-y-4">
       {/* Completion rate card */}
@@ -32,9 +37,13 @@ export function DashboardOverview({ summary, topStudents, loading }: Props) {
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
               Tingkat Penyelesaian
             </p>
-            <p className="mt-1 text-2xl font-black text-neutral-900">{summary.completionRate}%</p>
+            <p className="mt-1 text-2xl font-black text-neutral-900">
+              {summary.progressDocuments ? `${summary.completionRate}%` : '—'}
+            </p>
             <p className="text-xs text-neutral-500">
-              {summary.totalCompleted} dari {summary.totalStudents * summary.totalComics} modul
+              {summary.progressDocuments
+                ? `${summary.totalCompleted} dari ${summary.totalStudents * summary.totalComics} modul`
+                : 'Data progres belum tersedia'}
             </p>
           </div>
         </Card>
@@ -45,14 +54,50 @@ export function DashboardOverview({ summary, topStudents, loading }: Props) {
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
               Rata-rata Progress
             </p>
-            <p className="mt-1 text-2xl font-black text-neutral-900">{summary.averageProgress}%</p>
-            <p className="text-xs text-neutral-500">dari {summary.totalStudents} siswa</p>
+            <p className="mt-1 text-2xl font-black text-neutral-900">
+              {summary.progressDocuments ? `${summary.averageProgress}%` : '—'}
+            </p>
+            <p className="text-xs text-neutral-500">
+              {summary.progressDocuments ? `dari ${summary.totalStudents} siswa` : 'Belum ada dokumen progres'}
+            </p>
           </div>
         </Card>
       </div>
 
+      <Card>
+        <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Live</p>
+          <h2 className="text-base font-black text-neutral-900">Aktivitas terbaru</h2>
+        </div>
+        {recentActivityLoading ? (
+          <div className="space-y-3 px-5 py-4">
+            <Skeleton className="h-10 rounded" />
+            <Skeleton className="h-10 rounded" />
+          </div>
+        ) : recentActivities.length ? (
+          <ul className="divide-y divide-neutral-100">
+            {recentActivities.slice(0, 10).map((activity) => {
+              const studentName = topStudents.find((student) => student.uid === activity.userId)?.displayName;
+              const date = toDate(activity.timestamp);
+              return (
+                <li key={activity.id} className="px-5 py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <p className="text-sm font-semibold text-neutral-800">{activity.title}</p>
+                    {date && <time className="text-xs text-neutral-400" dateTime={date.toISOString()}>{date.toLocaleString('id-ID')}</time>}
+                  </div>
+                  <p className="mt-1 text-xs text-neutral-500">{studentName ?? 'Siswa'}</p>
+                  {activity.description && <p className="mt-1 text-sm text-neutral-600">{activity.description}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="px-5 py-4 text-sm text-neutral-500">Belum ada aktivitas terbaru yang tersimpan.</p>
+        )}
+      </Card>
+
       {/* Top students */}
-      {topStudents.length > 0 && (
+      {rankedStudents.length > 0 && (
         <Card>
           <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
@@ -61,7 +106,7 @@ export function DashboardOverview({ summary, topStudents, loading }: Props) {
             <h2 className="text-base font-black text-neutral-900">Progress Terbaik 🏆</h2>
           </div>
           <ul className="divide-y divide-neutral-50">
-            {topStudents.slice(0, 5).map((s, i) => (
+            {rankedStudents.slice(0, 5).map((s, i) => (
               <li key={s.uid} className="flex items-center gap-3 px-5 py-3">
                 <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-black text-primary-700">
                   {i + 1}
@@ -80,4 +125,24 @@ export function DashboardOverview({ summary, topStudents, loading }: Props) {
       )}
     </div>
   );
+}
+
+function toDate(value: unknown): Date | null {
+  if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const normalized = typeof value === 'number' && value < 1_000_000_000_000 ? value * 1000 : value;
+    const date = new Date(normalized);
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+  if (typeof value === 'object' && value !== null) {
+    const timestamp = value as { toDate?: () => Date; seconds?: number; nanoseconds?: number };
+    if (typeof timestamp.toDate === 'function') {
+      const date = timestamp.toDate();
+      return date instanceof Date && Number.isFinite(date.getTime()) ? date : null;
+    }
+    if (typeof timestamp.seconds === 'number') {
+      return new Date(timestamp.seconds * 1000 + (timestamp.nanoseconds ?? 0) / 1_000_000);
+    }
+  }
+  return null;
 }

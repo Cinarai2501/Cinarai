@@ -1,22 +1,11 @@
-import type { UserDocument } from '@/types/firestore';
-import { getTimestampMillis, logUserAuditFindings, normalizeEmail } from '@/lib/userAudit';
+import type { ComicProgressDocument, UserDocument } from '@/types/firestore';
+import { SINTAKS } from '@/types/progress';
+import { calculatePercentage } from '@/lib/progressEngine';
+import { getTimestampMillis, normalizeEmail } from '@/lib/userAudit';
 
-function logDuplicateUsers(duplicateMap: Map<string, UserDocument[]>, type: string): void {
-  if (duplicateMap.size === 0) return;
-  console.warn(`[dashboard/guru] ${type} duplicate user documents detected:`);
-  duplicateMap.forEach((users, key) => {
-    console.warn(`  ${type}: ${key}`);
-    users.forEach((user) => {
-      console.warn(
-        `    uid=${user.uid ?? 'missing'} email=${user.email ?? 'missing'} role=${user.role ?? 'missing'} updatedAt=${String(user.updatedAt)} id=${user.id ?? 'unknown'}`
-      );
-    });
-  });
-}
+type RawProgressDocument = { id: string; userId?: string; [field: string]: unknown };
 
 export function normalizeStudentDocuments(users: UserDocument[]): UserDocument[] {
-  logUserAuditFindings(users, 'dashboard/guru user audit');
-
   const studentDocs = users.filter((user) => user.role === 'student' && user.duplicate !== true);
 
   const byUid = new Map<string, UserDocument[]>();
@@ -36,9 +25,6 @@ export function normalizeStudentDocuments(users: UserDocument[]): UserDocument[]
       byEmail.set(emailKey, existing);
     }
   }
-
-  logDuplicateUsers(new Map(Array.from(byUid.entries()).filter(([, entries]) => entries.length > 1)), 'UID');
-  logDuplicateUsers(new Map(Array.from(byEmail.entries()).filter(([, entries]) => entries.length > 1)), 'Email');
 
   const latestByUid = new Map<string, UserDocument>();
   for (const [uid, documents] of byUid.entries()) {
@@ -66,4 +52,81 @@ export function normalizeStudentDocuments(users: UserDocument[]): UserDocument[]
     const rightName = right.displayName?.trim() ?? right.email?.trim() ?? '';
     return leftName.localeCompare(rightName, 'id', { sensitivity: 'base' });
   });
+}
+
+export function normalizeComicProgressDocuments(
+  uid: string,
+  documents: RawProgressDocument[]
+): ComicProgressDocument[] {
+  const normalized = documents.flatMap((document) => {
+    if (document.id === 'evaluation-cinarai') return [];
+
+    const idComic = /^comic-(\d+)$/.exec(document.id)?.[1] ?? document.id;
+    const comicId = typeof document.comicId === 'number' ? document.comicId : Number(idComic);
+    if (!Number.isInteger(comicId) || comicId < 1) return [];
+
+    const storedStages = Array.isArray(document.sintaksList)
+      ? document.sintaksList as Array<{ sintaks?: unknown; status?: unknown }>
+      : [];
+    const completedStages = new Set<string>([
+      ...(Array.isArray(document.completedStages)
+        ? document.completedStages.filter((stage): stage is string => typeof stage === 'string')
+        : []),
+      ...storedStages
+        .filter((stage) => stage.status === 'COMPLETED' && typeof stage.sintaks === 'string')
+        .map((stage) => stage.sintaks as string),
+    ]);
+    const storedCurrent = storedStages.find((stage) => stage.status === 'CURRENT')?.sintaks;
+    const currentStage = typeof document.currentStage === 'string'
+      ? document.currentStage
+      : typeof storedCurrent === 'string'
+        ? storedCurrent
+        : SINTAKS[0];
+    const sintaksList = SINTAKS.map((sintaks) => ({
+      sintaks,
+      status: completedStages.has(sintaks)
+        ? 'COMPLETED' as const
+        : currentStage === sintaks
+          ? 'CURRENT' as const
+          : 'LOCKED' as const,
+    }));
+    const completedCount = sintaksList.filter((stage) => stage.status === 'COMPLETED').length;
+    const storedPercentage = document.percentage;
+    const percentage = typeof storedPercentage === 'number' && Number.isFinite(storedPercentage)
+      ? storedPercentage
+      : calculatePercentage(completedCount);
+    const storedStatus = document.status;
+    const status = storedStatus === 'completed' || storedStatus === 'in_progress' || storedStatus === 'not_started'
+      ? storedStatus
+      : completedCount === SINTAKS.length || percentage >= 100
+        ? 'completed'
+        : completedCount > 0 || percentage > 0 || currentStage !== SINTAKS[0]
+          ? 'in_progress'
+          : 'not_started';
+    const lastCompletedStage = [...sintaksList].reverse().find((stage) => stage.status === 'COMPLETED')?.sintaks;
+
+    return [{
+      ...document,
+      id: document.id,
+      userId: uid,
+      comicId,
+      percentage,
+      status,
+      completedStage: typeof document.completedStage === 'string'
+        ? document.completedStage
+        : lastCompletedStage ?? '',
+      completedPages: typeof document.completedPages === 'number' ? document.completedPages : 0,
+      sintaksList,
+      updatedAt: document.updatedAt as ComicProgressDocument['updatedAt'],
+    } as ComicProgressDocument];
+  });
+
+  const uniqueByComic = new Map<number, ComicProgressDocument>();
+  normalized.forEach((document) => {
+    const current = uniqueByComic.get(document.comicId);
+    const currentTime = getTimestampMillis(current?.updatedAt);
+    const candidateTime = getTimestampMillis(document.updatedAt);
+    if (!current || candidateTime >= currentTime) uniqueByComic.set(document.comicId, document);
+  });
+  return Array.from(uniqueByComic.values());
 }

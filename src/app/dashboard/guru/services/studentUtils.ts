@@ -46,6 +46,11 @@ export function buildStudentRow(
 
 export function buildDashboardSummary(rows: StudentRow[], totalComics: number) {
   const totalStudents = rows.length;
+  const progressDocuments = rows.reduce((sum, row) => sum + row.progressList.length, 0);
+  const activeStudents = rows.filter((row) => row.progressList.some((progress) => progress.status === 'in_progress')).length;
+  const studentsCompleted = totalComics > 0
+    ? rows.filter((row) => row.completedComics >= totalComics).length
+    : 0;
   const totalCompleted = rows.reduce((s, r) => s + r.completedComics, 0);
   const completionRate =
     totalStudents > 0 && totalComics > 0
@@ -55,5 +60,14 @@ export function buildDashboardSummary(rows: StudentRow[], totalComics: number) {
     rows.length > 0
       ? Math.round(rows.reduce((s, r) => s + r.averageProgress, 0) / rows.length)
       : 0;
-  return { totalStudents, totalComics, totalCompleted, completionRate, averageProgress };
+  return {
+    totalStudents,
+    totalComics,
+    activeStudents,
+    studentsCompleted,
+    progressDocuments,
+    totalCompleted,
+    completionRate,
+    averageProgress,
+  };
 }

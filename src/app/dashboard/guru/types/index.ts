@@ -19,6 +19,9 @@ export interface StudentRow {
 export interface DashboardSummary {
   totalStudents: number;
   totalComics: number;
+  activeStudents: number;
+  studentsCompleted: number;
+  progressDocuments: number;
   totalCompleted: number;
   completionRate: number;
   averageProgress: number;

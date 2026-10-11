@@ -17,7 +17,7 @@ const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((mod
 
 export default function GuruDashboardPage() {
   const { logout } = useAuth();
-  const { comics, rows, summary, loading, error } = useGuruDashboard();
+  const { comics, rows, summary, recentActivities, recentActivityLoading, loading, error } = useGuruDashboard();
   const { filtered, search, setSearch, sortKey, sortDir, toggleSort } = useStudentFilter(rows);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [tab, setTab] = useState<'overview' | 'students' | 'ai'>('overview');
@@ -30,22 +30,28 @@ export default function GuruDashboardPage() {
   };
 
   const handleSelectStudent = (uid: string) => {
+    aiInsight.reset(uid);
     setSelectedUid(uid);
-    aiInsight.insight && void 0; // reset handled inside hook
   };
 
   const handleBack = () => {
+    aiInsight.reset();
     setSelectedUid(null);
   };
 
   const handleGenerateInsight = () => {
-    if (!detail.student) return;
+    if (!detail.student || detail.student.uid !== selectedUid) return;
+    const evidence = [
+      ...detail.activities,
+      ...detail.applicationActivities,
+      ...detail.identificationAnswers,
+    ];
     void aiInsight.generate(
-      detail.student.displayName ?? detail.student.email,
-      detail.student.email,
+      detail.student.uid,
+      'Siswa',
       detail.progressList,
       detail.reflections,
-      detail.activities
+      evidence
     );
   };
 
@@ -89,6 +95,7 @@ export default function GuruDashboardPage() {
 
         {selectedUid ? (
           <StudentDetail
+            key={selectedUid}
             uid={selectedUid}
             displayName={detail.student?.displayName ?? '—'}
             email={detail.student?.email ?? '—'}
@@ -96,18 +103,28 @@ export default function GuruDashboardPage() {
             gradeLevel={detail.student?.gradeLevel ?? null}
             isActive={detail.student?.isActive ?? false}
             comicProgress={detail.comicProgress}
+            evaluation={detail.evaluation}
             reflections={detail.reflections}
             activities={detail.activities}
+            applicationActivities={detail.applicationActivities}
+            identificationAnswers={detail.identificationAnswers}
             insight={aiInsight.insight}
             insightLoading={aiInsight.loading}
             insightError={aiInsight.error}
             loading={detail.loading}
+            error={detail.error}
             onBack={handleBack}
             onGenerateInsight={handleGenerateInsight}
             onGeneratePdf={handleGeneratePdf}
           />
         ) : tab === 'overview' ? (
-          <DashboardOverview summary={summary} topStudents={topStudents} loading={loading} />
+          <DashboardOverview
+            summary={summary}
+            topStudents={topStudents}
+            recentActivities={recentActivities}
+            recentActivityLoading={recentActivityLoading}
+            loading={loading}
+          />
         ) : tab === 'students' ? (
           <StudentDirectory
             rows={filtered}
