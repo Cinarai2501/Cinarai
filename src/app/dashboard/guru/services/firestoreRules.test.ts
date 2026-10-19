@@ -150,6 +150,18 @@ test('a teacher claim without a trusted profile cannot read dashboard data', asy
   await assertFails(getDocs(query(collection(db, 'users'), where('role', '==', 'student'))));
 });
 
+test('a profile with an invalid role cannot read dashboard data as a teacher', async () => {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'users', 'invalid-role-user'), {
+      uid: 'invalid-role-user',
+      role: 'instructor',
+    });
+  });
+
+  const db = testEnvironment.authenticatedContext('invalid-role-user').firestore();
+  await assertFails(getDocs(query(collection(db, 'users'), where('role', '==', 'student'))));
+});
+
 test('self-service users can create student profiles but cannot assign themselves the teacher role', async () => {
   const db = testEnvironment.authenticatedContext('new-user').firestore();
 
