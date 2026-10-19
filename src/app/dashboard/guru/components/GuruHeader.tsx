@@ -14,10 +14,11 @@ function getGreeting() {
 interface Props {
   summary: DashboardSummary;
   loading: boolean;
+  dataUnavailable: boolean;
   onLogout: () => void;
 }
 
-export function GuruHeader({ summary, loading, onLogout }: Props) {
+export function GuruHeader({ summary, loading, dataUnavailable, onLogout }: Props) {
   const { user } = useAuth();
   const firstName = user?.displayName?.split(' ')[0] ?? 'Guru';
 
@@ -67,10 +68,10 @@ export function GuruHeader({ summary, loading, onLogout }: Props) {
             ))
           ) : (
             <>
-              <StatPill label="Total Siswa" value={String(summary.totalStudents)} emoji="👥" />
-              <StatPill label="Progres Berjalan" value={summary.progressDocuments ? String(summary.activeStudents) : '—'} emoji="📈" />
-              <StatPill label="Total Komik" value={String(summary.totalComics)} emoji="📚" />
-              <StatPill label="Siswa Tuntas" value={summary.progressDocuments ? String(summary.studentsCompleted) : '—'} emoji="✅" />
+              <StatPill label="Total Siswa" value={dataUnavailable ? '—' : String(summary.totalStudents)} emoji="👥" />
+              <StatPill label="Progres Berjalan" value={dataUnavailable || !summary.progressDocuments ? '—' : String(summary.activeStudents)} emoji="📈" />
+              <StatPill label="Total Komik" value={dataUnavailable ? '—' : String(summary.totalComics)} emoji="📚" />
+              <StatPill label="Siswa Tuntas" value={dataUnavailable || !summary.progressDocuments ? '—' : String(summary.studentsCompleted)} emoji="✅" />
             </>
           )}
         </div>

@@ -160,10 +160,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [syncUserFromFirestore]);
 
   const signUp = useCallback(
-    async (email: string, password: string, displayName: string, role: UserRole = 'student') => {
+    async (email: string, password: string, displayName: string) => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        const firebaseUser = await signUpUser(email, password, displayName, role, {
+        const firebaseUser = await signUpUser(email, password, displayName, {
           getSignInMethods,
           queryUserDocumentsByEmail: async (normalizedEmail) => queryFirestoreCollection('users', {
             filters: [{ field: 'email', operator: '==', value: normalizedEmail }],
@@ -244,14 +244,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const completeGoogleRegistration = useCallback(
-    async (firebaseUser: FirebaseUser, role: 'student' | 'teacher'): Promise<UserRole> => {
+    async (firebaseUser: FirebaseUser): Promise<UserRole> => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
         await upsertUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName ?? firebaseUser.email ?? 'Pengguna Google',
-          role,
+          role: 'student',
           isActive: true,
           duplicate: false,
           ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),
@@ -261,8 +261,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!storedRole) {
           throw new Error('Profil Google gagal diverifikasi. Akses diblokir; silakan coba lagi atau hubungi admin.');
         }
-        if (storedRole !== role) {
-          throw new Error('Role pada profil Google tidak sesuai dengan pilihan. Akses diblokir; hubungi admin.');
+        if (storedRole !== 'student') {
+          throw new Error('Pendaftaran Google harus menggunakan role siswa. Akses diblokir; hubungi admin.');
         }
         return storedRole;
       } catch (error) {

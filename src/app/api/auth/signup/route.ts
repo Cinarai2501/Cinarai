@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAuth, adminFirestore, adminInitializationError } from '@/lib/firebase/admin';
-import type { UserDocument, UserRole } from '@/types/firestore';
+import type { UserDocument } from '@/types/firestore';
 import debug from '@/lib/debug';
 
 function normalizeEmail(email: unknown): string {
@@ -45,13 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (role !== 'student' && role !== 'teacher') {
+    if (role !== 'student') {
       return NextResponse.json(
-        { error: 'Role pendaftaran tidak valid', code: 'INVALID_ROLE' },
+        { error: 'Pendaftaran mandiri hanya tersedia untuk siswa; hubungi admin untuk akun Guru.', code: 'INVALID_ROLE' },
         { status: 400 }
       );
     }
-    const userRole: Exclude<UserRole, 'admin'> = role;
 
     try {
       await adminAuth.getUserByEmail(email);
@@ -112,7 +111,7 @@ export async function POST(request: NextRequest) {
       email,
       displayName,
       username: email.split('@')[0],
-      role: userRole,
+      role: 'student',
       isActive: true,
       duplicate: false,
     };
@@ -146,10 +145,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    debug('[api/auth/signup] User created successfully', { uid, email, role: userRole });
+    debug('[api/auth/signup] User created successfully', { uid, email, role: 'student' });
 
     return NextResponse.json(
-      { uid, email, displayName, role: userRole },
+      { uid, email, displayName, role: 'student' },
       { status: 201 }
     );
   } catch (error) {

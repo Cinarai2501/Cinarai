@@ -2,10 +2,15 @@
 
 import { Card, ProgressBar, Badge, Skeleton } from './ui';
 import type { StudentRow } from '../types';
+import { FirestoreOperationErrors } from './FirestoreOperationErrors';
+import type { FirestoreOperationFailure } from '../services/firestoreDiagnostics';
 
 interface Props {
   rows: StudentRow[];
   loading: boolean;
+  errors: FirestoreOperationFailure[];
+  progressUnavailable: boolean;
+  onRetry: () => void;
   search: string;
   onSearch: (v: string) => void;
   sortKey: 'name' | 'progress' | 'completed';
@@ -17,6 +22,9 @@ interface Props {
 export function StudentDirectory({
   rows,
   loading,
+  errors,
+  progressUnavailable,
+  onRetry,
   search,
   onSearch,
   sortKey,
@@ -46,9 +54,13 @@ export function StudentDirectory({
             <h2 className="text-base font-black text-neutral-900">Daftar Siswa 👨‍🎓</h2>
           </div>
           <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
-            {rows.length} siswa
+            {errors.some((failure) => failure.operation === 'subscribeStudents')
+              ? 'Jumlah tidak tersedia'
+              : `${rows.length} siswa`}
           </span>
         </div>
+
+        <FirestoreOperationErrors failures={errors} onRetry={onRetry} />
 
         <input
           type="search"
@@ -79,7 +91,9 @@ export function StudentDirectory({
         </ul>
       ) : rows.length === 0 ? (
         <div className="px-5 py-12 text-center text-sm text-neutral-400">
-          {search ? 'Tidak ada siswa yang cocok.' : 'Belum ada data siswa.'}
+          {errors.some((failure) => failure.operation === 'subscribeStudents')
+            ? 'Daftar siswa gagal dimuat.'
+            : search ? 'Tidak ada siswa yang cocok.' : 'Belum ada data siswa.'}
         </div>
       ) : (
         <ul className="divide-y divide-neutral-50">
@@ -97,18 +111,20 @@ export function StudentDirectory({
                   <p className="text-sm font-semibold text-neutral-800 truncate">{s.displayName}</p>
                   <Badge
                     color={
-                      s.averageProgress >= 80
+                      progressUnavailable
+                        ? 'warning'
+                        : s.averageProgress >= 80
                         ? 'accent'
                         : s.averageProgress >= 50
                         ? 'primary'
                         : 'warning'
                     }
                   >
-                    {s.averageProgress}%
+                    {progressUnavailable ? '—' : `${s.averageProgress}%`}
                   </Badge>
                 </div>
                 <p className="text-xs text-neutral-400 truncate">{s.email}</p>
-                <ProgressBar value={s.averageProgress} className="mt-1.5" />
+                {!progressUnavailable && <ProgressBar value={s.averageProgress} className="mt-1.5" />}
               </div>
               <span className="text-neutral-300 text-sm flex-shrink-0">›</span>
             </li>

@@ -7,9 +7,17 @@ import {
   query,
   where,
   type Unsubscribe,
+  type DocumentData,
+  type Query,
+  type QuerySnapshot,
 } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
+import {
+  createFirestoreOperationFailure,
+  logFirestoreOperationFailure,
+  type FirestoreOperationFailure,
+} from './firestoreDiagnostics';
 
 export type StudentProgressSnapshot = Record<string, unknown> & { id: string; userId: string };
 
@@ -19,6 +27,25 @@ export interface GuruRecentActivity {
   title: string;
   description?: string;
   timestamp: unknown;
+}
+
+function subscribeWithDiagnostics<T extends DocumentData>(
+  source: Query<T>,
+  operation: string,
+  path: string,
+  context: string,
+  onData: (snapshot: QuerySnapshot<T>) => void,
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
+): Unsubscribe {
+  return onSnapshot(source, (snapshot) => {
+    onRecovered?.(operation);
+    onData(snapshot);
+  }, (error) => {
+    const failure = createFirestoreOperationFailure(error, operation, path, context);
+    logFirestoreOperationFailure(failure);
+    onError(failure);
+  });
 }
 
 function timestampMillis(value: unknown): number | null {
@@ -43,7 +70,8 @@ function timestampMillis(value: unknown): number | null {
 
 export function subscribeRecentGuruActivities(
   onData: (activities: GuruRecentActivity[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const sources = new Map<string, GuruRecentActivity[]>();
   const ready = new Set<string>();
@@ -61,19 +89,23 @@ export function subscribeRecentGuruActivities(
     collectionName: string,
     timestampField: string,
     createActivity: (id: string, data: Record<string, unknown>) => GuruRecentActivity
-  ) => onSnapshot(
+  ) => subscribeWithDiagnostics(
     query(collection(firestore, collectionName), orderBy(timestampField, 'desc'), limit(20)),
+    `subscribeRecentGuruActivities.${source}`,
+    collectionName,
+    'useGuruDashboard',
     (snap) => {
       sources.set(source, snap.docs.map((document) => createActivity(document.id, document.data())));
       ready.add(source);
       emit();
     },
     (error) => {
-      sources.set(source, []);
+      if (!sources.has(source)) sources.set(source, []);
       ready.add(source);
       onError(error);
       emit();
-    }
+    },
+    onRecovered
   );
   const toString = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : undefined;
   const unsubscribers = [
@@ -111,33 +143,43 @@ export function subscribeRecentGuruActivities(
 
 export function subscribeStudents(
   onData: (students: UserDocument[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const q = query(
     collection(firestore, 'users'),
     where('role', '==', 'student'),
     orderBy('displayName', 'asc')
   );
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     q,
+    'subscribeStudents',
+    'users',
+    'useGuruDashboard',
     (snap) => {
       const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserDocument));
       const students = raw.filter((u) => u.duplicate !== true);
       onData(students);
     },
-    onError
+    onError,
+    onRecovered
   );
 }
 
 export function subscribeComics(
   onData: (comics: ComicDocument[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const q = query(collection(firestore, 'comics'), orderBy('order', 'asc'));
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     q,
+    'subscribeComics',
+    'comics',
+    'useGuruDashboard',
     (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() } as ComicDocument))),
-    onError
+    onError,
+    onRecovered
   );
 }
 
@@ -161,36 +203,48 @@ export async function fetchAllStudentProgress(
 export function subscribeStudentProgress(
   uid: string,
   onData: (progress: StudentProgressSnapshot[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  context = 'useStudentDetail',
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     collection(firestore, 'users', uid, 'progress'),
+    'subscribeStudentProgress',
+    'users/{uid}/progress',
+    context,
     (snap) =>
       onData(snap.docs.map((d) => ({ id: d.id, userId: uid, ...d.data() }))),
-    onError
+    onError,
+    onRecovered
   );
 }
 
 export function subscribeStudentDoc(
   uid: string,
   onData: (student: UserDocument | null) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const q = query(collection(firestore, 'users'), where('uid', '==', uid));
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     q,
+    'subscribeStudentDoc',
+    'users',
+    'useStudentDetail',
     (snap) => {
       const document = snap.docs[0];
       onData(document ? { id: document.id, ...document.data() } as UserDocument : null);
     },
-    onError
+    onError,
+    onRecovered
   );
 }
 
 export function subscribeStudentReflections(
   uid: string,
   onData: (reflections: Record<string, unknown>[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const byUserId = new Map<string, Record<string, unknown>>();
   const byStudentId = new Map<string, Record<string, unknown>>();
@@ -203,18 +257,34 @@ export function subscribeStudentReflections(
   };
   const userQuery = query(collection(firestore, 'reflection'), where('userId', '==', uid));
   const studentQuery = query(collection(firestore, 'reflection'), where('studentId', '==', uid));
-  const unsubscribeUser = onSnapshot(userQuery, (snap) => {
-    userSnapshotReady = true;
-    byUserId.clear();
-    snap.docs.forEach((document) => byUserId.set(document.id, { id: document.id, ...document.data() }));
-    emit();
-  }, onError);
-  const unsubscribeStudent = onSnapshot(studentQuery, (snap) => {
-    studentSnapshotReady = true;
-    byStudentId.clear();
-    snap.docs.forEach((document) => byStudentId.set(document.id, { id: document.id, ...document.data() }));
-    emit();
-  }, onError);
+  const unsubscribeUser = subscribeWithDiagnostics(
+    userQuery,
+    'subscribeStudentReflections.userId',
+    'reflection',
+    'useStudentDetail',
+    (snap) => {
+      userSnapshotReady = true;
+      byUserId.clear();
+      snap.docs.forEach((document) => byUserId.set(document.id, { id: document.id, ...document.data() }));
+      emit();
+    },
+    onError,
+    onRecovered
+  );
+  const unsubscribeStudent = subscribeWithDiagnostics(
+    studentQuery,
+    'subscribeStudentReflections.studentId',
+    'reflection',
+    'useStudentDetail',
+    (snap) => {
+      studentSnapshotReady = true;
+      byStudentId.clear();
+      snap.docs.forEach((document) => byStudentId.set(document.id, { id: document.id, ...document.data() }));
+      emit();
+    },
+    onError,
+    onRecovered
+  );
   return () => {
     unsubscribeUser();
     unsubscribeStudent();
@@ -224,39 +294,54 @@ export function subscribeStudentReflections(
 export function subscribeStudentActivities(
   uid: string,
   onData: (activities: Record<string, unknown>[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const q = query(collection(firestore, 'activity'), where('userId', '==', uid));
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     q,
+    'subscribeStudentActivities',
+    'activity',
+    'useStudentDetail',
     (snap) => onData(snap.docs.map((document) => ({ id: document.id, ...document.data() }))),
-    onError
+    onError,
+    onRecovered
   );
 }
 
 export function subscribeStudentApplicationActivities(
   uid: string,
   onData: (activities: Record<string, unknown>[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const q = query(collection(firestore, 'application_activity'), where('userId', '==', uid));
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     q,
+    'subscribeStudentApplicationActivities',
+    'application_activity',
+    'useStudentDetail',
     (snap) => onData(snap.docs.map((document) => ({ id: document.id, ...document.data() }))),
-    onError
+    onError,
+    onRecovered
   );
 }
 
 export function subscribeStudentIdentificationAnswers(
   uid: string,
   onData: (answers: Record<string, unknown>[]) => void,
-  onError: (err: Error) => void
+  onError: (failure: FirestoreOperationFailure) => void,
+  onRecovered?: (operation: string) => void
 ): Unsubscribe {
   const q = query(collection(firestore, 'identification_answers'), where('userId', '==', uid));
-  return onSnapshot(
+  return subscribeWithDiagnostics(
     q,
+    'subscribeStudentIdentificationAnswers',
+    'identification_answers',
+    'useStudentDetail',
     (snap) => onData(snap.docs.map((document) => ({ id: document.id, ...document.data() }))),
-    onError
+    onError,
+    onRecovered
   );
 }
 

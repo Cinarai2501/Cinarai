@@ -24,11 +24,11 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  signUp: (email: string, password: string, displayName: string, role?: 'student' | 'teacher') => Promise<UserRole>;
+  signUp: (email: string, password: string, displayName: string) => Promise<UserRole>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   authenticateWithGoogleForRegistration: () => Promise<FirebaseUser>;
-  completeGoogleRegistration: (firebaseUser: FirebaseUser, role: 'student' | 'teacher') => Promise<UserRole>;
+  completeGoogleRegistration: (firebaseUser: FirebaseUser) => Promise<UserRole>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (profile: {
