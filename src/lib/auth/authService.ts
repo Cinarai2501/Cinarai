@@ -1,5 +1,5 @@
 import type { User, UserCredential } from 'firebase/auth';
-import type { UserDocument, UserRole } from '@/types/firestore';
+import type { UserDocument } from '@/types/firestore';
 import { normalizeEmail } from '@/lib/userAudit';
 
 export type AuthUser = User;
@@ -21,13 +21,8 @@ export async function signUpUser(
   email: string,
   password: string,
   displayName: string,
-  role: UserRole = 'student',
   deps: AuthSignUpDependencies
 ): Promise<User> {
-  if (role !== 'student' && role !== 'teacher') {
-    throw new Error('Role pendaftaran tidak valid. Pilih student atau teacher.');
-  }
-
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
     throw new Error('Email tidak valid.');
@@ -60,7 +55,7 @@ export async function signUpUser(
       email: firebaseUser.email ?? normalizedEmail,
       displayName: firebaseUser.displayName ?? displayName,
       username: normalizedEmail.split('@')[0],
-      role,
+      role: 'student',
       isActive: true,
       duplicate: false,
       ...(firebaseUser.photoURL ? { photoURL: firebaseUser.photoURL } : {}),

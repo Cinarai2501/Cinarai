@@ -4,6 +4,8 @@ import { Card, ProgressBar, ProgressRing, Badge, Skeleton } from './ui';
 import type { ComicDocument, ComicProgressDocument } from '@/types/firestore';
 import type { CinaraiEvaluationProgress } from '@/types/evaluation';
 import type { AiInsight } from '../types';
+import { FirestoreOperationErrors } from './FirestoreOperationErrors';
+import type { FirestoreOperationFailure } from '../services/firestoreDiagnostics';
 
 interface ComicEntry {
   comic: ComicDocument;
@@ -16,7 +18,7 @@ interface Props {
   email: string;
   schoolName: string;
   gradeLevel: number | null;
-  isActive: boolean;
+  isActive: boolean | null;
   comicProgress: ComicEntry[];
   evaluation: CinaraiEvaluationProgress | null;
   reflections: Record<string, unknown>[];
@@ -27,8 +29,9 @@ interface Props {
   insightLoading: boolean;
   insightError: string | null;
   loading: boolean;
-  error: string | null;
+  errors: FirestoreOperationFailure[];
   onBack: () => void;
+  onRetry: () => void;
   onGenerateInsight: () => void;
   onGeneratePdf: () => void;
 }
@@ -50,19 +53,30 @@ export function StudentDetail({
   insightLoading,
   insightError,
   loading,
-  error,
+  errors,
   onBack,
+  onRetry,
   onGenerateInsight,
   onGeneratePdf,
 }: Props) {
   void uid;
-  const avgProgress =
-    comicProgress.length > 0
+  const progressUnavailable = errors.some((failure) => failure.operation === 'subscribeStudentProgress');
+  const reflectionUnavailable = errors.some((failure) => failure.operation.startsWith('subscribeStudentReflections.'));
+  const activitiesUnavailable = errors.some((failure) => failure.operation === 'subscribeStudentActivities');
+  const timelineUnavailable = errors.some((failure) =>
+    failure.operation.startsWith('subscribeStudentReflections.')
+    || failure.operation === 'subscribeStudentActivities'
+    || failure.operation === 'subscribeStudentApplicationActivities'
+    || failure.operation === 'subscribeStudentIdentificationAnswers'
+  );
+  const avgProgress = progressUnavailable
+    ? null
+    : comicProgress.length > 0
       ? Math.round(
           comicProgress.reduce((s, e) => s + (e.progress?.percentage ?? 0), 0) /
             comicProgress.length
         )
-      : 0;
+      : null;
   const recentActivity = [
     ...activities.map((activity, index) => ({
       id: `activity:${String(activity.id ?? index)}`,
@@ -110,11 +124,7 @@ export function StudentDetail({
         </button>
       </div>
 
-      {error && (
-        <div role="alert" className="rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
-          Data siswa tidak seluruhnya dapat dimuat: {error}
-        </div>
-      )}
+      <FirestoreOperationErrors failures={errors} onRetry={onRetry} />
 
       {loading ? (
         <div className="space-y-4">
@@ -135,12 +145,14 @@ export function StudentDetail({
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   <Badge color="primary">{schoolName}</Badge>
                   {gradeLevel && <Badge color="secondary">Kelas {gradeLevel}</Badge>}
-                  <Badge color={isActive ? 'accent' : 'error'}>
-                    {isActive ? 'Aktif' : 'Tidak Aktif'}
+                  <Badge color={isActive === null ? 'warning' : isActive ? 'accent' : 'error'}>
+                    {isActive === null ? 'Tidak tersedia' : isActive ? 'Aktif' : 'Tidak Aktif'}
                   </Badge>
                 </div>
               </div>
-              <ProgressRing value={avgProgress} size={64} stroke={5} className="flex-shrink-0" />
+              {avgProgress === null
+                ? <span className="flex h-16 w-16 flex-shrink-0 items-center justify-center text-xl font-black text-neutral-400">—</span>
+                : <ProgressRing value={avgProgress} size={64} stroke={5} className="flex-shrink-0" />}
             </div>
           </Card>
 
@@ -166,15 +178,17 @@ export function StudentDetail({
                           : 'primary'
                       }
                     >
-                      {!progress
+                      {progressUnavailable
+                        ? 'Tidak tersedia'
+                        : !progress
                         ? 'Belum ada data'
                         : progress.status === 'completed'
                         ? 'Selesai'
                         : `${progress.percentage ?? 0}%`}
                     </Badge>
                   </div>
-                  {progress && <ProgressBar value={progress.percentage ?? 0} />}
-                  {progress && (
+                  {progress && !progressUnavailable && <ProgressBar value={progress.percentage ?? 0} />}
+                  {progress && !progressUnavailable && (
                     <>
                       <p className="mt-1 text-xs text-neutral-400">
                         Tahap terakhir: {progress.completedStage || '—'}
@@ -207,12 +221,12 @@ export function StudentDetail({
 
           {/* Stats row */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatCard emoji="📝" label="Refleksi" value={String(reflections.length)} />
-            <StatCard emoji="⚡" label="Aktivitas" value={String(activities.length)} />
+            <StatCard emoji="📝" label="Refleksi" value={reflectionUnavailable ? '—' : String(reflections.length)} />
+            <StatCard emoji="⚡" label="Aktivitas" value={activitiesUnavailable ? '—' : String(activities.length)} />
             <StatCard
               emoji="✅"
               label="Komik Selesai"
-              value={String(comicProgress.filter((e) => e.progress?.status === 'completed').length)}
+              value={progressUnavailable ? '—' : String(comicProgress.filter((e) => e.progress?.status === 'completed').length)}
             />
           </div>
 
@@ -222,7 +236,9 @@ export function StudentDetail({
               <h3 className="text-base font-black text-neutral-900">Evaluasi CINARAI</h3>
             </div>
             <div className="px-5 py-4 text-sm text-neutral-700">
-              {!evaluation ? (
+              {progressUnavailable ? (
+                <p className="text-error-700">Evaluasi tidak dapat ditampilkan karena pembacaan progres gagal.</p>
+              ) : !evaluation ? (
                 <p className="text-neutral-500">Belum ada dokumen evaluasi tersimpan.</p>
               ) : (
                 <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -259,6 +275,8 @@ export function StudentDetail({
                   </li>
                 ))}
               </ul>
+            ) : timelineUnavailable ? (
+              <p className="px-5 py-4 text-sm text-error-700">Linimasa tidak dapat dimuat. Lihat operasi yang gagal di atas.</p>
             ) : (
               <p className="px-5 py-4 text-sm text-neutral-500">Belum ada aktivitas dengan timestamp valid.</p>
             )}

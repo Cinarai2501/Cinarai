@@ -7,19 +7,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function authUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
     function isTeacher() {
-      return isSignedIn() && authUser().exists() && (
-        authUser().data.role == 'teacher'
-        || authUser().data.role == 'admin'
-      );
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher', 'admin'];
     }
 
     function isStudent() {
-      return isSignedIn() && authUser().exists() && authUser().data.role == 'student';
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
     }
 
     function ownsUserDoc(uid) {
@@ -81,7 +78,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
       allow create: if ownsUserDoc(uid)
         && request.resource.data.uid == uid
-        && request.resource.data.role in ['student', 'teacher'];
+        && request.resource.data.role == 'student';
       allow update: if ownsUserDoc(uid)
         && request.resource.data.uid == uid
         && request.resource.data.role == resource.data.role;

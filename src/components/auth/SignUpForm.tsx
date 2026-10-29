@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleBasedDashboardPath } from '@/lib/auth/redirects';
-import { getFirestoreDocument, upsertUser } from '@/services/firestore';
+import { getFirestoreDocument } from '@/services/firestore';
+import { isAllowedUserRole } from '@/lib/auth/role';
 import type { User as FirebaseUser } from 'firebase/auth';
-import type { UserRole } from '@/types/firestore';
 
 export const SignUpForm: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
@@ -16,16 +16,20 @@ export const SignUpForm: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
-  const [googleRole, setGoogleRole] = useState<'student' | 'teacher' | null>(null);
   const [googleError, setGoogleError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGoogleCompleting, setIsGoogleCompleting] = useState(false);
   const googleCompletionRef = useRef(false);
-  const { signUp, authenticateWithGoogleForRegistration, error, clearError } = useAuth();
+  const {
+    signUp,
+    authenticateWithGoogleForRegistration,
+    completeGoogleRegistration,
+    error,
+    clearError,
+  } = useAuth();
   const router = useRouter();
 
   const getGoogleErrorMessage = (err: unknown) => {
@@ -54,17 +58,15 @@ export const SignUpForm: React.FC = () => {
       const existingUser = await getFirestoreDocument('users', firebaseUser.uid);
 
       if (existingUser) {
-        const existingRole = existingUser.role;
-        if (existingRole === 'student' || existingRole === 'teacher' || existingRole === 'admin') {
-          router.replace(getRoleBasedDashboardPath(existingRole));
+        if (isAllowedUserRole(existingUser.role)) {
+          router.replace(getRoleBasedDashboardPath(existingUser.role));
           return;
         }
         setGoogleError('Profil Google ini memiliki role yang tidak valid. Hubungi admin.');
         return;
       }
-
       setGoogleUser(firebaseUser);
-      setGoogleRole(null);
+      setGoogleUser(firebaseUser);
     } catch (err) {
       console.error('Google registration error:', err);
       setGoogleError(getGoogleErrorMessage(err));
@@ -74,35 +76,25 @@ export const SignUpForm: React.FC = () => {
   };
 
   const handleCompleteGoogleRegistration = async () => {
-    if (!googleUser || !googleRole || googleCompletionRef.current) return;
+    if (!googleUser || googleCompletionRef.current) return;
     googleCompletionRef.current = true;
     setIsGoogleCompleting(true);
     setGoogleError('');
     try {
       const existingUser = await getFirestoreDocument('users', googleUser.uid);
       if (existingUser) {
-        const existingRole = existingUser.role;
-        if (existingRole === 'student' || existingRole === 'teacher' || existingRole === 'admin') {
-          router.replace(getRoleBasedDashboardPath(existingRole));
+        if (isAllowedUserRole(existingUser.role)) {
+          router.replace(getRoleBasedDashboardPath(existingUser.role));
           return;
         }
         throw new Error('Profil Google ini memiliki role yang tidak valid.');
       }
 
-      const role: UserRole = googleRole;
-      await upsertUser({
-        uid: googleUser.uid,
-        email: googleUser.email ?? '',
-        displayName: googleUser.displayName ?? googleUser.email ?? 'Pengguna Google',
-        role,
-        isActive: true,
-        duplicate: false,
-        ...(googleUser.photoURL ? { photoURL: googleUser.photoURL } : {}),
-      });
-      router.replace(getRoleBasedDashboardPath(role));
+      const storedRole = await completeGoogleRegistration(googleUser);
+      router.replace(getRoleBasedDashboardPath(storedRole));
     } catch (err) {
       console.error('Google profile creation error:', err);
-      setGoogleError('Akun Google berhasil masuk, tetapi profil belum dapat disimpan. Silakan coba lagi.');
+      setGoogleError(err instanceof Error ? err.message : 'Profil Google gagal disimpan atau diverifikasi.');
       googleCompletionRef.current = false;
     } finally {
       setIsGoogleCompleting(false);
@@ -133,8 +125,8 @@ export const SignUpForm: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await signUp(normalizedEmail, password, trimmedDisplayName, role);
-      router.push(getRoleBasedDashboardPath(role));
+      const storedRole = await signUp(normalizedEmail, password, trimmedDisplayName);
+      router.replace(getRoleBasedDashboardPath(storedRole));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Pendaftaran gagal. Silakan coba lagi.';
       const normalizedMessage = message.includes('Missing or insufficient permissions')
@@ -274,37 +266,9 @@ export const SignUpForm: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-neutral-700">Pilih Peran</label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setRole('student')}
-              disabled={isLoading}
-              aria-pressed={role === 'student'}
-              className={`flex-1 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                role === 'student'
-                  ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-neutral-200 bg-white text-neutral-600'
-              } disabled:opacity-60`}
-            >
-              Siswa
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('teacher')}
-              disabled={isLoading}
-              aria-pressed={role === 'teacher'}
-              className={`flex-1 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
-                role === 'teacher'
-                  ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-neutral-200 bg-white text-neutral-600'
-              } disabled:opacity-60`}
-            >
-              Guru
-            </button>
-          </div>
-        </div>
+        <p className="text-xs leading-relaxed text-neutral-500">
+          Pendaftaran mandiri tersedia untuk siswa. Akun Guru dikelola admin; hubungi admin untuk meminta akses.
+        </p>
 
         <button
           type="submit"
@@ -335,12 +299,11 @@ export const SignUpForm: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="google-role-title">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <h2 id="google-role-title" className="text-xl font-black text-neutral-900">Pilih Peran Anda</h2>
+              <h2 id="google-role-title" className="text-xl font-black text-neutral-900">Buat akun siswa</h2>
               <button
                 type="button"
                 onClick={() => {
                   setGoogleUser(null);
-                  setGoogleRole(null);
                   setGoogleError('');
                 }}
                 disabled={isGoogleCompleting}
@@ -350,16 +313,15 @@ export const SignUpForm: React.FC = () => {
                 ×
               </button>
             </div>
-            <p className="mt-2 text-sm text-neutral-500">Bagaimana Anda akan menggunakan CINARAI?</p>
-            <div className="mt-5 space-y-3">
-              <RoleOption selected={googleRole === 'student'} onClick={() => setGoogleRole('student')} title="Siswa" description="Belajar menggunakan komik, AR, dan aktivitas numerasi." />
-              <RoleOption selected={googleRole === 'teacher'} onClick={() => setGoogleRole('teacher')} title="Guru" description="Mengelola pembelajaran dan memantau perkembangan siswa." />
+            <div className="mt-5 space-y-2">
+              <p className="text-sm text-neutral-600">Akun baru akan terdaftar sebagai siswa.</p>
+              <p className="text-xs leading-relaxed text-neutral-500">Akun Guru dikelola admin; hubungi admin untuk meminta akses.</p>
             </div>
             {googleError && <p className="mt-4 text-sm text-error-700">{googleError}</p>}
             <button
               type="button"
               onClick={handleCompleteGoogleRegistration}
-              disabled={!googleRole || isGoogleCompleting}
+              disabled={isGoogleCompleting}
               className="mt-6 w-full rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
               {isGoogleCompleting ? 'Menyimpan profil...' : 'Lanjutkan'}
@@ -377,32 +339,6 @@ export const SignUpForm: React.FC = () => {
     </div>
   );
 };
-
-function RoleOption({ selected, onClick, title, description }: {
-  selected: boolean;
-  onClick: () => void;
-  title: string;
-  description: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full rounded-2xl border p-4 text-left transition-colors ${selected ? 'border-primary-500 bg-primary-50' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}
-      aria-pressed={selected}
-    >
-      <span className="flex items-start gap-3">
-        <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${selected ? 'border-primary-600' : 'border-neutral-300'}`}>
-          {selected && <span className="h-2.5 w-2.5 rounded-full bg-primary-600" />}
-        </span>
-        <span>
-          <span className="block text-sm font-bold text-neutral-900">{title}</span>
-          <span className="mt-1 block text-xs leading-5 text-neutral-500">{description}</span>
-        </span>
-      </span>
-    </button>
-  );
-}
 
 function GoogleIcon() {
   return (

@@ -10,14 +10,9 @@ export function resolveUserRoleFromProfileAndClaims(
   profileRole: unknown,
   claimsRole: unknown
 ): UserRole | null {
-  const fromProfile = typeof profileRole === 'string' ? profileRole : null;
-  const fromClaims = typeof claimsRole === 'string' ? claimsRole : null;
-
-  const candidate = fromProfile ?? fromClaims;
-
-  if (candidate && allowedRoles.has(candidate as UserRole)) {
-    return candidate as UserRole;
+  if (profileRole !== undefined && profileRole !== null) {
+    return isAllowedUserRole(profileRole) ? profileRole : null;
   }
 
-  return null;
+  return claimsRole === 'student' ? 'student' : null;
 }

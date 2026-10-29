@@ -17,7 +17,7 @@ const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((mod
 
 export default function GuruDashboardPage() {
   const { logout } = useAuth();
-  const { comics, rows, summary, recentActivities, recentActivityLoading, loading, error } = useGuruDashboard();
+  const { comics, rows, summary, recentActivities, recentActivityLoading, loading, errors, retry } = useGuruDashboard();
   const { filtered, search, setSearch, sortKey, sortDir, toggleSort } = useStudentFilter(rows);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [tab, setTab] = useState<'overview' | 'students' | 'ai'>('overview');
@@ -65,15 +65,18 @@ export default function GuruDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f0f7ff] overflow-x-hidden">
-      <GuruHeader summary={summary} loading={loading} onLogout={handleLogout} />
+      <GuruHeader
+        summary={summary}
+        loading={loading}
+        dataUnavailable={errors.some((failure) =>
+          failure.operation === 'subscribeStudents'
+          || failure.operation === 'subscribeComics'
+          || failure.operation === 'subscribeStudentProgress'
+        )}
+        onLogout={handleLogout}
+      />
 
       <div className="relative -mt-16 mx-auto max-w-5xl px-4 pb-12 sm:px-6">
-        {error && (
-          <div className="mb-4 rounded-2xl bg-error-50 border border-error-200 px-5 py-4 text-sm text-error-700">
-            ⚠️ {error}
-          </div>
-        )}
-
         {/* Tab nav */}
         {!selectedUid && (
           <div className="mb-4 flex gap-2 overflow-x-auto scrollbar-none pb-1">
@@ -101,7 +104,7 @@ export default function GuruDashboardPage() {
             email={detail.student?.email ?? '—'}
             schoolName={detail.student?.schoolName ?? '—'}
             gradeLevel={detail.student?.gradeLevel ?? null}
-            isActive={detail.student?.isActive ?? false}
+            isActive={detail.student?.isActive ?? null}
             comicProgress={detail.comicProgress}
             evaluation={detail.evaluation}
             reflections={detail.reflections}
@@ -112,8 +115,9 @@ export default function GuruDashboardPage() {
             insightLoading={aiInsight.loading}
             insightError={aiInsight.error}
             loading={detail.loading}
-            error={detail.error}
+            errors={detail.errors}
             onBack={handleBack}
+            onRetry={detail.retry}
             onGenerateInsight={handleGenerateInsight}
             onGeneratePdf={handleGeneratePdf}
           />
@@ -124,11 +128,16 @@ export default function GuruDashboardPage() {
             recentActivities={recentActivities}
             recentActivityLoading={recentActivityLoading}
             loading={loading}
+            errors={errors}
+            onRetry={retry}
           />
         ) : tab === 'students' ? (
           <StudentDirectory
             rows={filtered}
             loading={loading}
+            errors={errors}
+            progressUnavailable={errors.some((failure) => failure.operation === 'subscribeStudentProgress')}
+            onRetry={retry}
             search={search}
             onSearch={setSearch}
             sortKey={sortKey}

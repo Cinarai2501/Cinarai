@@ -3,6 +3,8 @@
 import { Card, ProgressBar, ProgressRing, Badge, Skeleton } from './ui';
 import type { DashboardSummary, StudentRow } from '../types';
 import type { GuruRecentActivity } from '../services/firestoreService';
+import { FirestoreOperationErrors } from './FirestoreOperationErrors';
+import type { FirestoreOperationFailure } from '../services/firestoreDiagnostics';
 
 interface Props {
   summary: DashboardSummary;
@@ -10,9 +12,11 @@ interface Props {
   recentActivities: GuruRecentActivity[];
   recentActivityLoading: boolean;
   loading: boolean;
+  errors: FirestoreOperationFailure[];
+  onRetry: () => void;
 }
 
-export function DashboardOverview({ summary, topStudents, recentActivities, recentActivityLoading, loading }: Props) {
+export function DashboardOverview({ summary, topStudents, recentActivities, recentActivityLoading, loading, errors, onRetry }: Props) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -26,22 +30,40 @@ export function DashboardOverview({ summary, topStudents, recentActivities, rece
   }
 
   const rankedStudents = topStudents.filter((student) => student.progressList.length > 0);
+  const summaryUnavailable = errors.some((failure) =>
+    failure.operation === 'subscribeStudents'
+    || failure.operation === 'subscribeComics'
+    || failure.operation === 'subscribeStudentProgress'
+  );
+  const recentActivityErrors = errors.filter((failure) =>
+    failure.operation.startsWith('subscribeRecentGuruActivities.')
+  );
 
   return (
     <div className="space-y-4">
+      {errors.some((failure) => !failure.operation.startsWith('subscribeRecentGuruActivities.')) && (
+        <FirestoreOperationErrors
+          failures={errors.filter((failure) => !failure.operation.startsWith('subscribeRecentGuruActivities.'))}
+          onRetry={onRetry}
+        />
+      )}
       {/* Completion rate card */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card className="p-5 flex items-center gap-5">
-          <ProgressRing value={summary.completionRate} size={72} stroke={6} />
+          {summaryUnavailable
+            ? <span className="flex h-[72px] w-[72px] items-center justify-center text-2xl font-black text-neutral-400">—</span>
+            : <ProgressRing value={summary.completionRate} size={72} stroke={6} />}
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
               Tingkat Penyelesaian
             </p>
             <p className="mt-1 text-2xl font-black text-neutral-900">
-              {summary.progressDocuments ? `${summary.completionRate}%` : '—'}
+              {summaryUnavailable ? '—' : summary.progressDocuments ? `${summary.completionRate}%` : '—'}
             </p>
             <p className="text-xs text-neutral-500">
-              {summary.progressDocuments
+              {summaryUnavailable
+                ? 'Data ringkasan tidak lengkap'
+                : summary.progressDocuments
                 ? `${summary.totalCompleted} dari ${summary.totalStudents * summary.totalComics} modul`
                 : 'Data progres belum tersedia'}
             </p>
@@ -49,16 +71,20 @@ export function DashboardOverview({ summary, topStudents, recentActivities, rece
         </Card>
 
         <Card className="p-5 flex items-center gap-5">
-          <ProgressRing value={summary.averageProgress} size={72} stroke={6} />
+          {summaryUnavailable
+            ? <span className="flex h-[72px] w-[72px] items-center justify-center text-2xl font-black text-neutral-400">—</span>
+            : <ProgressRing value={summary.averageProgress} size={72} stroke={6} />}
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
               Rata-rata Progress
             </p>
             <p className="mt-1 text-2xl font-black text-neutral-900">
-              {summary.progressDocuments ? `${summary.averageProgress}%` : '—'}
+              {summaryUnavailable ? '—' : summary.progressDocuments ? `${summary.averageProgress}%` : '—'}
             </p>
             <p className="text-xs text-neutral-500">
-              {summary.progressDocuments ? `dari ${summary.totalStudents} siswa` : 'Belum ada dokumen progres'}
+              {summaryUnavailable
+                ? 'Data ringkasan tidak lengkap'
+                : summary.progressDocuments ? `dari ${summary.totalStudents} siswa` : 'Belum ada dokumen progres'}
             </p>
           </div>
         </Card>
@@ -69,6 +95,11 @@ export function DashboardOverview({ summary, topStudents, recentActivities, rece
           <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Live</p>
           <h2 className="text-base font-black text-neutral-900">Aktivitas terbaru</h2>
         </div>
+        {recentActivityErrors.length > 0 && (
+          <div className="px-5 pt-4">
+            <FirestoreOperationErrors failures={recentActivityErrors} onRetry={onRetry} />
+          </div>
+        )}
         {recentActivityLoading ? (
           <div className="space-y-3 px-5 py-4">
             <Skeleton className="h-10 rounded" />
@@ -91,13 +122,13 @@ export function DashboardOverview({ summary, topStudents, recentActivities, rece
               );
             })}
           </ul>
-        ) : (
+        ) : recentActivityErrors.length ? null : (
           <p className="px-5 py-4 text-sm text-neutral-500">Belum ada aktivitas terbaru yang tersimpan.</p>
         )}
       </Card>
 
       {/* Top students */}
-      {rankedStudents.length > 0 && (
+      {!summaryUnavailable && rankedStudents.length > 0 && (
         <Card>
           <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">

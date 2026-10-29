@@ -45,7 +45,7 @@ test('signUpUser registers a new email and preserves profile update', async () =
     },
   });
 
-  const result = await signUpUser('new@example.com', 'password123', 'Nama Baru', 'student', deps);
+  const result = await signUpUser('new@example.com', 'password123', 'Nama Baru', deps);
 
   assert.equal(result.email, 'new@example.com');
   assert.equal(userProfileUpdated, true);
@@ -66,7 +66,7 @@ test('signUpUser rejects when email already exists in auth methods', async () =>
   });
 
   await assert.rejects(
-    () => signUpUser('exists@example.com', 'password123', 'Nama', 'student', deps),
+    () => signUpUser('exists@example.com', 'password123', 'Nama', deps),
     /Email ini sudah terdaftar/,
   );
 });
@@ -86,12 +86,12 @@ test('signUpUser rejects when duplicate user document exists', async () => {
   });
 
   await assert.rejects(
-    () => signUpUser('exists@example.com', 'password123', 'Nama', 'student', deps),
+    () => signUpUser('exists@example.com', 'password123', 'Nama', deps),
     /Email ini sudah terdaftar/,
   );
 });
 
-test('signUpUser ignores Firestore permission errors while checking duplicate docs before auth signup', async () => {
+test('signUpUser ignores duplicate-check permission errors and registers as a student', async () => {
   let upsertedUser: Omit<UserDocument, 'id' | 'createdAt' | 'updatedAt'> | undefined;
 
   const deps = createSignUpDeps({
@@ -105,28 +105,12 @@ test('signUpUser ignores Firestore permission errors while checking duplicate do
     },
   });
 
-  const result = await signUpUser('new@example.com', 'password123', 'Nama Baru', 'teacher', deps);
+  const result = await signUpUser('new@example.com', 'password123', 'Nama Baru', deps);
 
   assert.equal(result.email, 'new@example.com');
   assert.ok(upsertedUser);
-  assert.equal(upsertedUser.role, 'teacher');
+  assert.equal(upsertedUser.role, 'student');
   assert.equal(upsertedUser.email, 'new@example.com');
-});
-
-test('signUpUser rejects admin registration before creating an auth account', async () => {
-  let firebaseSignUpCalled = false;
-  const deps = createSignUpDeps({
-    firebaseSignUp: async () => {
-      firebaseSignUpCalled = true;
-      throw new Error('Must not create an admin account');
-    },
-  });
-
-  await assert.rejects(
-    () => signUpUser('new@example.com', 'password123', 'Nama Baru', 'admin', deps),
-    /Role pendaftaran tidak valid/,
-  );
-  assert.equal(firebaseSignUpCalled, false);
 });
 
 test('signUpUser removes the auth account when profile creation fails', async () => {
@@ -141,7 +125,7 @@ test('signUpUser removes the auth account when profile creation fails', async ()
   });
 
   await assert.rejects(
-    () => signUpUser('new@example.com', 'password123', 'Nama Baru', 'teacher', deps),
+    () => signUpUser('new@example.com', 'password123', 'Nama Baru', deps),
     /Firestore unavailable/,
   );
   assert.equal(deletedUid, 'user-123');
