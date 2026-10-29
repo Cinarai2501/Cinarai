@@ -70,6 +70,7 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
       update({ loading: sources.some((item) => !ready.has(item)) });
     };
     const fail = (source: string, failure: FirestoreOperationFailure) => {
+      if (!active) return;
       markReady(source);
       setState((previous) => previous.uid === uid
         ? {
@@ -82,6 +83,7 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
         : previous);
     };
     const clearFailure = (operation: string) => {
+      if (!active) return;
       setState((previous) => previous.uid === uid
         ? { ...previous, errors: previous.errors.filter((failure) => failure.operation !== operation) }
         : previous);
@@ -90,9 +92,8 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
     const unsubscribers = [
       subscribeStudentDoc(uid, (student) => {
         update({ student });
-        clearFailure('subscribeStudentDoc');
         markReady('student');
-      }, (failure) => fail('student', failure)),
+      }, (failure) => fail('student', failure), clearFailure),
       subscribeStudentProgress(uid, (documents) => {
         const evaluationDocument = documents.find((document) => document.id === 'evaluation-cinarai');
         const evaluation = evaluationDocument?.evaluationCinarai as CinaraiEvaluationProgress | undefined;
@@ -100,28 +101,24 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
           progressList: normalizeComicProgressDocuments(uid, documents),
           evaluation: evaluation ?? null,
         });
-        clearFailure('subscribeStudentProgress');
         markReady('progress');
-      }, (failure) => fail('progress', failure), 'useStudentDetail', (operation) => clearFailure(operation)),
+      }, (failure) => fail('progress', failure), 'useStudentDetail', clearFailure),
       subscribeStudentReflections(uid, (reflections) => {
         update({ reflections });
         markReady('reflections');
-      }, (failure) => fail('reflections', failure), (operation) => clearFailure(operation)),
+      }, (failure) => fail('reflections', failure), clearFailure),
       subscribeStudentActivities(uid, (activities) => {
         update({ activities });
-        clearFailure('subscribeStudentActivities');
         markReady('activities');
-      }, (failure) => fail('activities', failure)),
+      }, (failure) => fail('activities', failure), clearFailure),
       subscribeStudentApplicationActivities(uid, (applicationActivities) => {
         update({ applicationActivities });
-        clearFailure('subscribeStudentApplicationActivities');
         markReady('application');
-      }, (failure) => fail('application', failure)),
+      }, (failure) => fail('application', failure), clearFailure),
       subscribeStudentIdentificationAnswers(uid, (identificationAnswers) => {
         update({ identificationAnswers });
-        clearFailure('subscribeStudentIdentificationAnswers');
         markReady('identification');
-      }, (failure) => fail('identification', failure)),
+      }, (failure) => fail('identification', failure), clearFailure),
     ];
 
     return () => {
@@ -147,5 +144,10 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
     progress: currentState.progressList.find((p) => p.comicId === c.comicId) ?? null,
   }));
 
-  return { ...currentState, comicProgress, retry: () => setRetryCount((count) => count + 1) };
+  return {
+    ...currentState,
+    error: currentState.errors[0]?.message ?? null,
+    comicProgress,
+    retry: () => setRetryCount((count) => count + 1),
+  };
 }

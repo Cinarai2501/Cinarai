@@ -9,7 +9,9 @@ import {
   type GuruRecentActivity,
 } from '../services/firestoreService';
 import { normalizeComicProgressDocuments, normalizeStudentDocuments } from '../services/studentNormalization';
-import type { FirestoreOperationFailure } from '../services/firestoreDiagnostics';
+import {
+  type FirestoreOperationFailure,
+} from '../services/firestoreDiagnostics';
 import { buildStudentRow, buildDashboardSummary } from '../services/studentUtils';
 import type { ComicDocument, UserDocument } from '@/types/firestore';
 import type { DashboardSummary, StudentRow } from '../types';
@@ -55,11 +57,18 @@ export function useGuruDashboard() {
   const rebuildRows = (students: UserDocument[], comics: ComicDocument[], progressMap: Map<string, import('@/types/firestore').ComicProgressDocument[]>) => {
     const rows = students.map((s) => buildStudentRow(s, progressMap.get(s.uid) ?? []));
     const summary = buildDashboardSummary(rows, comics.length);
-    setState((prev) => ({ ...prev, rows, summary }));
+    setState((prev) => ({ ...prev, rows, summary, loading: false }));
   };
 
   useEffect(() => {
     let active = true;
+    const clearFailure = (operation: string) => {
+      if (!active) return;
+      setState((prev) => ({
+        ...prev,
+        errors: prev.errors.filter((failure) => failure.operation !== operation),
+      }));
+    };
     setState((prev) => ({ ...prev, loading: true }));
     const progressMap = new Map<string, import('@/types/firestore').ComicProgressDocument[]>();
     const progressListeners = new Map<string, { token: object; unsubscribe: (() => void) | null }>();
@@ -72,7 +81,6 @@ export function useGuruDashboard() {
       const allProgressReady = studentsRef.current.every((student) => progressReady.has(student.uid));
       if (studentsReady && comicsReady && allProgressReady) {
         rebuildRows(studentsRef.current, comicsRef.current, progressMap);
-        setState((prev) => ({ ...prev, loading: false }));
       }
     };
 
@@ -101,14 +109,6 @@ export function useGuruDashboard() {
             if (!active || progressListeners.get(uid)?.token !== token) return;
             progressMap.set(uid, normalizeComicProgressDocuments(uid, progress));
             progressReady.add(uid);
-            progressFailures.delete(uid);
-            setState((prev) => ({
-              ...prev,
-              errors: [
-                ...prev.errors.filter((failure) => failure.operation !== 'subscribeStudentProgress'),
-                ...Array.from(progressFailures.values()),
-              ],
-            }));
             rebuildIfReady();
           },
           (failure) => {
@@ -126,13 +126,13 @@ export function useGuruDashboard() {
             rebuildIfReady();
           },
           'useGuruDashboard',
-          () => {
+          (operation) => {
             if (!active || progressListeners.get(uid)?.token !== token) return;
             progressFailures.delete(uid);
             setState((prev) => ({
               ...prev,
               errors: [
-                ...prev.errors.filter((failure) => failure.operation !== 'subscribeStudentProgress'),
+                ...prev.errors.filter((failure) => failure.operation !== operation),
                 ...Array.from(progressFailures.values()),
               ],
             }));
@@ -161,17 +161,13 @@ export function useGuruDashboard() {
       },
       (failure) => {
         if (!active) return;
-        studentsReady = true;
         setState((prev) => ({
           ...prev,
           loading: false,
           errors: [...prev.errors.filter((item) => item.operation !== failure.operation), failure],
         }));
       },
-      (operation) => {
-        if (!active) return;
-        setState((prev) => ({ ...prev, errors: prev.errors.filter((failure) => failure.operation !== operation) }));
-      }
+      clearFailure
     );
 
     const unsubComics = subscribeComics(
@@ -188,27 +184,19 @@ export function useGuruDashboard() {
       },
       (failure) => {
         if (!active) return;
-        comicsReady = true;
         setState((prev) => ({
           ...prev,
           loading: false,
           errors: [...prev.errors.filter((item) => item.operation !== failure.operation), failure],
         }));
       },
-      (operation) => {
-        if (!active) return;
-        setState((prev) => ({ ...prev, errors: prev.errors.filter((failure) => failure.operation !== operation) }));
-      }
+      clearFailure
     );
 
     const unsubRecentActivities = subscribeRecentGuruActivities(
       (recentActivities) => {
         if (!active) return;
-        setState((prev) => ({
-          ...prev,
-          recentActivities,
-          recentActivityLoading: false,
-        }));
+        setState((prev) => ({ ...prev, recentActivities, recentActivityLoading: false }));
       },
       (failure) => {
         if (!active) return;
@@ -218,10 +206,7 @@ export function useGuruDashboard() {
           errors: [...prev.errors.filter((item) => item.operation !== failure.operation), failure],
         }));
       },
-      (operation) => {
-        if (!active) return;
-        setState((prev) => ({ ...prev, errors: prev.errors.filter((failure) => failure.operation !== operation) }));
-      }
+      clearFailure
     );
 
     return () => {

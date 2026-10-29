@@ -60,24 +60,23 @@ export function StudentDetail({
   onGeneratePdf,
 }: Props) {
   void uid;
-  const avgProgress =
-    errors.some((failure) => failure.operation === 'subscribeStudentProgress')
-      ? null
-      : comicProgress.length > 0
-      ? Math.round(
-          comicProgress.reduce((s, e) => s + (e.progress?.percentage ?? 0), 0) /
-            comicProgress.length
-        )
-      : null;
+  const progressUnavailable = errors.some((failure) => failure.operation === 'subscribeStudentProgress');
   const reflectionUnavailable = errors.some((failure) => failure.operation.startsWith('subscribeStudentReflections.'));
   const activitiesUnavailable = errors.some((failure) => failure.operation === 'subscribeStudentActivities');
-  const progressUnavailable = errors.some((failure) => failure.operation === 'subscribeStudentProgress');
   const timelineUnavailable = errors.some((failure) =>
     failure.operation.startsWith('subscribeStudentReflections.')
     || failure.operation === 'subscribeStudentActivities'
     || failure.operation === 'subscribeStudentApplicationActivities'
     || failure.operation === 'subscribeStudentIdentificationAnswers'
   );
+  const avgProgress = progressUnavailable
+    ? null
+    : comicProgress.length > 0
+      ? Math.round(
+          comicProgress.reduce((s, e) => s + (e.progress?.percentage ?? 0), 0) /
+            comicProgress.length
+        )
+      : null;
   const recentActivity = [
     ...activities.map((activity, index) => ({
       id: `activity:${String(activity.id ?? index)}`,

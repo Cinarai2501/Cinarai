@@ -16,15 +16,7 @@ interface Props {
   onRetry: () => void;
 }
 
-export function DashboardOverview({
-  summary,
-  topStudents,
-  recentActivities,
-  recentActivityLoading,
-  loading,
-  errors,
-  onRetry,
-}: Props) {
+export function DashboardOverview({ summary, topStudents, recentActivities, recentActivityLoading, loading, errors, onRetry }: Props) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -103,19 +95,34 @@ export function DashboardOverview({
           <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Live</p>
           <h2 className="text-base font-black text-neutral-900">Aktivitas terbaru</h2>
         </div>
+        {recentActivityErrors.length > 0 && (
+          <div className="px-5 pt-4">
+            <FirestoreOperationErrors failures={recentActivityErrors} onRetry={onRetry} />
+          </div>
+        )}
         {recentActivityLoading ? (
           <div className="space-y-3 px-5 py-4">
             <Skeleton className="h-10 rounded" />
             <Skeleton className="h-10 rounded" />
           </div>
-        ) : recentActivityErrors.length ? (
-          <div className="space-y-3 px-5 py-4">
-            <FirestoreOperationErrors failures={recentActivityErrors} onRetry={onRetry} />
-            {recentActivities.length > 0 && <RecentActivities activities={recentActivities} topStudents={topStudents} />}
-          </div>
         ) : recentActivities.length ? (
-          <RecentActivities activities={recentActivities} topStudents={topStudents} />
-        ) : (
+          <ul className="divide-y divide-neutral-100">
+            {recentActivities.slice(0, 10).map((activity) => {
+              const studentName = topStudents.find((student) => student.uid === activity.userId)?.displayName;
+              const date = toDate(activity.timestamp);
+              return (
+                <li key={activity.id} className="px-5 py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <p className="text-sm font-semibold text-neutral-800">{activity.title}</p>
+                    {date && <time className="text-xs text-neutral-400" dateTime={date.toISOString()}>{date.toLocaleString('id-ID')}</time>}
+                  </div>
+                  <p className="mt-1 text-xs text-neutral-500">{studentName ?? 'Siswa'}</p>
+                  {activity.description && <p className="mt-1 text-sm text-neutral-600">{activity.description}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        ) : recentActivityErrors.length ? null : (
           <p className="px-5 py-4 text-sm text-neutral-500">Belum ada aktivitas terbaru yang tersimpan.</p>
         )}
       </Card>
@@ -148,33 +155,6 @@ export function DashboardOverview({
         </Card>
       )}
     </div>
-  );
-}
-
-function RecentActivities({
-  activities,
-  topStudents,
-}: {
-  activities: GuruRecentActivity[];
-  topStudents: StudentRow[];
-}) {
-  return (
-    <ul className="divide-y divide-neutral-100">
-      {activities.slice(0, 10).map((activity) => {
-        const studentName = topStudents.find((student) => student.uid === activity.userId)?.displayName;
-        const date = toDate(activity.timestamp);
-        return (
-          <li key={activity.id} className="px-5 py-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <p className="text-sm font-semibold text-neutral-800">{activity.title}</p>
-              {date && <time className="text-xs text-neutral-400" dateTime={date.toISOString()}>{date.toLocaleString('id-ID')}</time>}
-            </div>
-            <p className="mt-1 text-xs text-neutral-500">{studentName ?? 'Siswa'}</p>
-            {activity.description && <p className="mt-1 text-sm text-neutral-600">{activity.description}</p>}
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 

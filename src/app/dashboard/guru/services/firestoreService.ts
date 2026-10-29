@@ -99,10 +99,10 @@ export function subscribeRecentGuruActivities(
       ready.add(source);
       emit();
     },
-    (error) => {
-      if (!sources.has(source)) sources.set(source, []);
+    (failure) => {
+      sources.set(source, []);
       ready.add(source);
-      onError(error);
+      onError(failure);
       emit();
     },
     onRecovered

@@ -17,16 +17,7 @@ const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((mod
 
 export default function GuruDashboardPage() {
   const { logout } = useAuth();
-  const {
-    comics,
-    rows,
-    summary,
-    recentActivities,
-    recentActivityLoading,
-    loading,
-    errors,
-    retry,
-  } = useGuruDashboard();
+  const { comics, rows, summary, recentActivities, recentActivityLoading, loading, errors, retry } = useGuruDashboard();
   const { filtered, search, setSearch, sortKey, sortDir, toggleSort } = useStudentFilter(rows);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [tab, setTab] = useState<'overview' | 'students' | 'ai'>('overview');
