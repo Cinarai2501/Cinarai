@@ -14,7 +14,7 @@ export class OpenRouterProvider implements AiProvider {
 
   constructor(private readonly config: AiProviderConfig = {}) {}
 
-  async generate(payload: AiRequestPayload): Promise<AiResponse> {
+  async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying OpenRouter...');
     console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
@@ -34,6 +34,7 @@ export class OpenRouterProvider implements AiProvider {
           'HTTP-Referer': 'https://cinarai.app',
           'X-Title': 'Cinarai',
         },
+        signal,
         body: JSON.stringify({
           model: this.config.model ?? 'openai/gpt-4o-mini',
           temperature: payload.temperature ?? 0.7,

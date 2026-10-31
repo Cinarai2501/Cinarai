@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AiRouter, AiRouterError } from './router';
+import { AiRouter, AiRouterError, AiRouterTimeoutError } from './router';
 import type { AiProvider, AiRequestPayload, AiResponse } from './provider';
 
 class StubProvider implements AiProvider {
@@ -147,6 +147,27 @@ test('falls back to next provider when first provider times out', async () => {
   assert.equal(response.content, 'fallback after timeout');
 });
 
+test('aborts the timed-out provider request before falling back', async () => {
+  let observedSignal: AbortSignal | undefined;
+  const slowProvider: AiProvider = {
+    name: 'gemini',
+    generate: (_payload: AiRequestPayload, signal?: AbortSignal) => {
+      observedSignal = signal;
+      return new Promise<AiResponse>(() => {});
+    },
+  };
+  const router = new AiRouter(
+    [slowProvider, new StubProvider('openai', 'success', 'fallback')],
+    console,
+    20,
+  );
+
+  const response = await router.generate({ prompt: 'Halo' });
+
+  assert.equal(response.provider, 'openai');
+  assert.equal(observedSignal?.aborted, true);
+});
+
 test('logs timeout with provider name, elapsed time, and reason', async () => {
   const SHORT_TIMEOUT = 80;
   const logs: Array<{ level: string; args: unknown[] }> = [];
@@ -199,4 +220,78 @@ test('throws AiRouterError when all providers time out', async () => {
       return true;
     },
   );
+});
+
+test('enforces one global deadline across providers and aborts the active slow request', async () => {
+  let observedSignal: AbortSignal | undefined;
+  let fallbackCalled = false;
+  const slowProvider: AiProvider = {
+    name: 'gemini',
+    generate: (_payload: AiRequestPayload, signal?: AbortSignal) => {
+      observedSignal = signal;
+      return new Promise<AiResponse>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(new Error('request aborted')), { once: true });
+      });
+    },
+  };
+  const router = new AiRouter(
+    [
+      slowProvider,
+      {
+        name: 'openai',
+        generate: async () => {
+          fallbackCalled = true;
+          return { provider: 'openai', content: 'late fallback' };
+        },
+      },
+    ],
+    console,
+    500,
+    80,
+  );
+
+  await assert.rejects(
+    () => router.generate({ prompt: 'Halo' }),
+    (error: unknown) => {
+      assert.ok(error instanceof AiRouterTimeoutError);
+      assert.ok(error instanceof AiRouterError);
+      assert.match(error.message, /batas waktu keseluruhan/i);
+      return true;
+    },
+  );
+  assert.equal(observedSignal?.aborted, true);
+  assert.equal(fallbackCalled, false);
+});
+
+test('does not abort a provider that succeeds before the global deadline', async () => {
+  let observedSignal: AbortSignal | undefined;
+  const slowSuccess: AiProvider = {
+    name: 'gemini',
+    generate: async (_payload: AiRequestPayload, signal?: AbortSignal) => {
+      observedSignal = signal;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return { provider: 'gemini', content: 'success before deadline' };
+    },
+  };
+  const response = await new AiRouter([slowSuccess], console, 500, 300).generate({ prompt: 'Halo' });
+
+  assert.equal(response.content, 'success before deadline');
+  assert.equal(observedSignal?.aborted, false);
+});
+
+test('returns a successful fallback completed before the shared deadline', async () => {
+  const router = new AiRouter(
+    [
+      new StubProvider('gemini', 'quota'),
+      new StubProvider('groq', 'success', 'fallback before deadline', 20),
+    ],
+    console,
+    500,
+    300,
+  );
+
+  const response = await router.generate({ prompt: 'Halo' });
+
+  assert.equal(response.provider, 'groq');
+  assert.equal(response.content, 'fallback before deadline');
 });

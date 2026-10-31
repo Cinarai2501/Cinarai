@@ -56,6 +56,7 @@ const mapFirebaseUserToUser = (
   nickname: userDocument?.nickname,
   gender: userDocument?.gender,
   classLevel: userDocument?.classLevel,
+  schoolName: userDocument?.schoolName,
   bio: userDocument?.bio,
   avatar: userDocument?.avatar,
   photoURL: firebaseUser.photoURL ?? userDocument?.photoURL ?? null,

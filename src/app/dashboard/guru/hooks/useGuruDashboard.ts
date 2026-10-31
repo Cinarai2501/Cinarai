@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   subscribeComics,
   subscribeRecentGuruActivities,
@@ -28,6 +29,8 @@ const EMPTY_SUMMARY: DashboardSummary = {
   totalStudents: 0,
   totalComics: 0,
   activeStudents: 0,
+  attentionStudents: 0,
+  notStartedStudents: 0,
   studentsCompleted: 0,
   progressDocuments: 0,
   totalCompleted: 0,
@@ -36,6 +39,10 @@ const EMPTY_SUMMARY: DashboardSummary = {
 };
 
 export function useGuruDashboard() {
+  const { user, loading: authLoading } = useAuth();
+  const userUid = user?.uid;
+  const userRole = user?.role;
+  const userSchoolName = user?.schoolName;
   const [state, setState] = useState<GuruDashboardState>({
     students: [],
     comics: [],
@@ -57,12 +64,39 @@ export function useGuruDashboard() {
   };
 
   useEffect(() => {
+    if (authLoading) {
+      studentsRef.current = [];
+      comicsRef.current = [];
+      setState((prev) => ({
+        ...prev,
+        students: [],
+        comics: [],
+        rows: [],
+        summary: EMPTY_SUMMARY,
+        recentActivities: [],
+        loading: true,
+        recentActivityLoading: true,
+        error: null,
+      }));
+      return;
+    }
+    if (!userUid || (userRole !== 'teacher' && userRole !== 'admin')) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        recentActivityLoading: false,
+        error: 'Sesi guru tidak valid. Silakan masuk kembali.',
+      }));
+      return;
+    }
+
     let active = true;
     const progressMap = new Map<string, import('@/types/firestore').ComicProgressDocument[]>();
     const progressListeners = new Map<string, { token: object; unsubscribe: (() => void) | null }>();
     const progressReady = new Set<string>();
     let studentsReady = false;
     let comicsReady = false;
+    let unsubscribeRecentActivities: (() => void) | null = null;
 
     const rebuildIfReady = () => {
       const allProgressReady = studentsRef.current.every((student) => progressReady.has(student.uid));
@@ -113,12 +147,26 @@ export function useGuruDashboard() {
     };
 
     const unsubStudents = subscribeStudents(
+      userRole,
+      userSchoolName,
       (students) => {
         if (!active) return;
         const normalized = normalizeStudentDocuments(students);
         studentsRef.current = normalized;
         studentsReady = true;
-        setState((prev) => ({ ...prev, students: normalized }));
+        setState((prev) => ({ ...prev, students: normalized, recentActivityLoading: true }));
+        unsubscribeRecentActivities?.();
+        unsubscribeRecentActivities = subscribeRecentGuruActivities(
+          normalized.map((student) => student.uid),
+          (recentActivities) => {
+            if (!active) return;
+            setState((prev) => ({ ...prev, recentActivities, recentActivityLoading: false }));
+          },
+          (err) => {
+            if (!active) return;
+            setState((prev) => ({ ...prev, recentActivityLoading: false, error: err.message }));
+          }
+        );
         syncProgressListeners(normalized);
       },
       (err) => {
@@ -141,26 +189,15 @@ export function useGuruDashboard() {
       }
     );
 
-    const unsubRecentActivities = subscribeRecentGuruActivities(
-      (recentActivities) => {
-        if (!active) return;
-        setState((prev) => ({ ...prev, recentActivities, recentActivityLoading: false }));
-      },
-      (err) => {
-        if (!active) return;
-        setState((prev) => ({ ...prev, recentActivityLoading: false, error: err.message }));
-      }
-    );
-
     return () => {
       active = false;
       unsubStudents();
       unsubComics();
-      unsubRecentActivities();
+      unsubscribeRecentActivities?.();
       progressListeners.forEach((listener) => listener.unsubscribe?.());
       progressListeners.clear();
     };
-  }, []);
+  }, [authLoading, userRole, userSchoolName, userUid]);
 
   return state;
 }

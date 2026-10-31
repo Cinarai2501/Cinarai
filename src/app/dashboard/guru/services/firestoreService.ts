@@ -1,5 +1,7 @@
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   limit,
   onSnapshot,
@@ -10,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
+import { deduplicateActivitiesById } from './activityUtils';
 
 export type StudentProgressSnapshot = Record<string, unknown> & { id: string; userId: string };
 
@@ -42,15 +45,24 @@ function timestampMillis(value: unknown): number | null {
 }
 
 export function subscribeRecentGuruActivities(
+  studentUids: string[],
   onData: (activities: GuruRecentActivity[]) => void,
   onError: (err: Error) => void
 ): Unsubscribe {
   const sources = new Map<string, GuruRecentActivity[]>();
   const ready = new Set<string>();
-  const sourceCount = 4;
+  const uids = Array.from(new Set(studentUids.filter(Boolean)));
+  if (uids.length === 0) {
+    onData([]);
+    return () => {};
+  }
+  const chunks: string[][] = [];
+  for (let index = 0; index < uids.length; index += 8) chunks.push(uids.slice(index, index + 8));
+  const subscriptions: Unsubscribe[] = [];
+  let sourceCount = 0;
   const emit = () => {
     if (ready.size !== sourceCount) return;
-    const latest = Array.from(sources.values()).flat()
+    const latest = deduplicateActivitiesById(Array.from(sources.values()).flat())
       .filter((activity) => timestampMillis(activity.timestamp) !== null)
       .sort((left, right) => (timestampMillis(right.timestamp) ?? 0) - (timestampMillis(left.timestamp) ?? 0))
       .slice(0, 20);
@@ -59,64 +71,91 @@ export function subscribeRecentGuruActivities(
   const subscribe = (
     source: string,
     collectionName: string,
-    timestampField: string,
-    createActivity: (id: string, data: Record<string, unknown>) => GuruRecentActivity
-  ) => onSnapshot(
-    query(collection(firestore, collectionName), orderBy(timestampField, 'desc'), limit(20)),
-    (snap) => {
-      sources.set(source, snap.docs.map((document) => createActivity(document.id, document.data())));
-      ready.add(source);
-      emit();
-    },
-    (error) => {
-      sources.set(source, []);
-      ready.add(source);
-      onError(error);
-      emit();
-    }
-  );
+      userField: 'userId' | 'studentId',
+      timestampField: string,
+      createActivity: (id: string, data: Record<string, unknown>) => GuruRecentActivity
+  ) => chunks.forEach((chunk, index) => {
+      const key = `${source}:${index}`;
+      sourceCount += 1;
+      subscriptions.push(onSnapshot(
+        query(
+          collection(firestore, collectionName),
+          where(userField, 'in', chunk),
+          orderBy(timestampField, 'desc'),
+          limit(20)
+        ),
+        (snap) => {
+          sources.set(key, snap.docs.map((document) => createActivity(document.id, document.data())));
+          ready.add(key);
+          emit();
+        },
+        (error) => {
+          sources.set(key, []);
+          ready.add(key);
+          onError(error);
+          emit();
+        }
+      ));
+  });
   const toString = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : undefined;
-  const unsubscribers = [
-    subscribe('activity', 'activity', 'occurredAt', (id, data) => ({
-      id: `activity:${id}`,
-      userId: typeof data.userId === 'string' ? data.userId : '',
-      title: toString(data.title) ?? toString(data.type) ?? 'Aktivitas belajar',
-      description: toString(data.description),
-      timestamp: data.occurredAt,
-    })),
-    subscribe('application', 'application_activity', 'timestamp', (id, data) => ({
-      id: `application:${id}`,
-      userId: typeof data.userId === 'string' ? data.userId : '',
-      title: `Penerapan Komik ${String(data.comicId ?? '—')}`,
-      description: [toString(data.selectedAnswer), toString(data.studentReason)].filter(Boolean).join(' · ') || undefined,
-      timestamp: data.timestamp,
-    })),
-    subscribe('reflection', 'reflection', 'createdAt', (id, data) => ({
-      id: `reflection:${id}`,
-      userId: typeof data.userId === 'string' ? data.userId : typeof data.studentId === 'string' ? data.studentId : '',
-      title: `Refleksi Komik ${String(data.comicId ?? data.moduleId ?? '—')}`,
-      description: toString(data.reflectionText) ?? toString(data.response),
-      timestamp: data.createdAt,
-    })),
-    subscribe('identification', 'identification_answers', 'updatedAt', (id, data) => ({
-      id: `identification:${id}`,
-      userId: typeof data.userId === 'string' ? data.userId : '',
-      title: `Identifikasi Komik ${String(data.comicId ?? '—')} · Langkah ${String(data.step ?? '—')}`,
-      description: [toString(data.selectedAnswer), toString(data.reason)].filter(Boolean).join(' · ') || undefined,
-      timestamp: data.updatedAt,
-    })),
-  ];
-  return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  subscribe('activity', 'activity', 'userId', 'occurredAt', (id, data) => ({
+        id: `activity:${id}`,
+        userId: typeof data.userId === 'string' ? data.userId : '',
+        title: toString(data.title) ?? toString(data.type) ?? 'Aktivitas belajar',
+        description: toString(data.description),
+        timestamp: data.occurredAt,
+      }));
+  subscribe('application', 'application_activity', 'userId', 'timestamp', (id, data) => ({
+        id: `application:${id}`,
+        userId: typeof data.userId === 'string' ? data.userId : '',
+        title: `Penerapan Komik ${String(data.comicId ?? '—')}`,
+        description: [toString(data.selectedAnswer), toString(data.studentReason)].filter(Boolean).join(' · ') || undefined,
+        timestamp: data.timestamp,
+      }));
+  subscribe('reflection-user', 'reflection', 'userId', 'createdAt', (id, data) => ({
+        id: `reflection:${id}`,
+        userId: typeof data.userId === 'string' ? data.userId : typeof data.studentId === 'string' ? data.studentId : '',
+        title: `Refleksi Komik ${String(data.comicId ?? data.moduleId ?? '—')}`,
+        description: toString(data.reflectionText) ?? toString(data.response),
+        timestamp: data.createdAt,
+      }));
+  subscribe('reflection-student', 'reflection', 'studentId', 'createdAt', (id, data) => ({
+        id: `reflection:${id}`,
+        userId: typeof data.userId === 'string' ? data.userId : typeof data.studentId === 'string' ? data.studentId : '',
+        title: `Refleksi Komik ${String(data.comicId ?? data.moduleId ?? '—')}`,
+        description: toString(data.reflectionText) ?? toString(data.response),
+        timestamp: data.createdAt,
+      }));
+  subscribe('identification', 'identification_answers', 'userId', 'updatedAt', (id, data) => ({
+        id: `identification:${id}`,
+        userId: typeof data.userId === 'string' ? data.userId : '',
+        title: `Identifikasi Komik ${String(data.comicId ?? '—')} · Langkah ${String(data.step ?? '—')}`,
+        description: [toString(data.selectedAnswer), toString(data.reason)].filter(Boolean).join(' · ') || undefined,
+        timestamp: data.updatedAt,
+      }));
+  emit();
+  return () => subscriptions.forEach((unsubscribe) => unsubscribe());
 }
 
 export function subscribeStudents(
+  role: UserDocument['role'] | undefined,
+  schoolName: string | undefined,
   onData: (students: UserDocument[]) => void,
   onError: (err: Error) => void
 ): Unsubscribe {
+  if (role !== 'admin' && role !== 'teacher') {
+      onError(new Error('Hanya akun guru yang dapat mengakses daftar siswa.'));
+      return () => {};
+  }
+  if (role === 'teacher' && !schoolName?.trim()) {
+      onError(new Error('Profil guru belum memiliki sekolah; daftar siswa tidak dapat diakses.'));
+      return () => {};
+  }
+  const filters = [where('role', '==', 'student')];
+  if (role === 'teacher') filters.push(where('schoolName', '==', schoolName?.trim() ?? ''));
   const q = query(
-    collection(firestore, 'users'),
-    where('role', '==', 'student'),
-    orderBy('displayName', 'asc')
+      collection(firestore, 'users'),
+      ...filters
   );
   return onSnapshot(
     q,
@@ -176,13 +215,9 @@ export function subscribeStudentDoc(
   onData: (student: UserDocument | null) => void,
   onError: (err: Error) => void
 ): Unsubscribe {
-  const q = query(collection(firestore, 'users'), where('uid', '==', uid));
   return onSnapshot(
-    q,
-    (snap) => {
-      const document = snap.docs[0];
-      onData(document ? { id: document.id, ...document.data() } as UserDocument : null);
-    },
+    doc(firestore, 'users', uid),
+    (snapshot) => onData(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } as UserDocument : null),
     onError
   );
 }
@@ -281,10 +316,6 @@ export async function fetchStudentActivities(uid: string) {
 }
 
 export async function fetchStudentDoc(uid: string): Promise<UserDocument | null> {
-  const snap = await getDocs(
-    query(collection(firestore, 'users'), where('uid', '==', uid))
-  );
-  if (snap.empty) return null;
-  const d = snap.docs[0];
-  return { id: d.id, ...d.data() } as UserDocument;
+  const snapshot = await getDoc(doc(firestore, 'users', uid));
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } as UserDocument : null;
 }

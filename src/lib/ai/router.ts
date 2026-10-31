@@ -5,6 +5,7 @@ import { OpenAIProvider } from './openai';
 import type { AiProvider, AiProviderConfig, AiProviderName, AiRequestPayload, AiResponse } from './provider';
 
 const PROVIDER_TIMEOUT_MS = 8_000;
+const GLOBAL_TIMEOUT_MS = 35_000;
 
 const PROVIDER_ENV_KEYS: Record<AiProviderName, string> = {
   gemini: 'GEMINI_API_KEY',
@@ -36,11 +37,22 @@ export class AiRouterError extends Error {
   }
 }
 
+export class AiRouterTimeoutError extends AiRouterError {
+  constructor(logs: AiRouterLogEntry[]) {
+    super('Batas waktu keseluruhan analisis AI terlampaui.', logs);
+    this.name = 'AiRouterTimeoutError';
+  }
+}
+
+class ProviderTimeoutError extends Error {}
+class GlobalDeadlineError extends Error {}
+
 export class AiRouter {
   constructor(
     private readonly providers: AiProvider[],
     private readonly logger: Pick<Console, 'info' | 'warn' | 'error'> = console,
     private readonly timeoutMs: number = PROVIDER_TIMEOUT_MS,
+    private readonly globalTimeoutMs: number = GLOBAL_TIMEOUT_MS,
   ) {}
 
   static createDefault(configs: Partial<Record<AiProviderName, AiProviderConfig>> = {}): AiRouter {
@@ -79,27 +91,34 @@ export class AiRouter {
     }
   }
 
-  private generateWithTimeout(
+  private async generateWithTimeout(
     provider: AiProvider,
     payload: AiRequestPayload,
     timeoutMs: number,
+    globalDeadlineApplies: boolean,
   ): Promise<AiResponse> {
     const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const timeoutPromise = new Promise<never>((_, reject) => {
-      const id = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         controller.abort();
-        reject(new Error(`Timeout after ${timeoutMs}ms`));
+        reject(globalDeadlineApplies
+          ? new GlobalDeadlineError(`Global deadline exceeded after ${this.globalTimeoutMs}ms`)
+          : new ProviderTimeoutError(`Timeout after ${timeoutMs}ms`));
       }, timeoutMs);
-      // Allow Node.js to exit even if this timer is still pending
-      if (typeof id === 'object' && 'unref' in id) (id as NodeJS.Timeout).unref();
     });
 
-    return Promise.race([provider.generate(payload), timeoutPromise]);
+    try {
+      return await Promise.race([provider.generate(payload, controller.signal), timeoutPromise]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
   }
 
   async generate(payload: AiRequestPayload): Promise<AiResponse> {
     const logs: AiRouterLogEntry[] = [];
+    const deadline = Date.now() + this.globalTimeoutMs;
 
     if (this.providers.length === 0) {
       this.logger.error('[ai-router] No AI providers configured.');
@@ -108,15 +127,35 @@ export class AiRouter {
     }
 
     for (const [index, provider] of this.providers.entries()) {
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) {
+        throw new AiRouterTimeoutError(logs);
+      }
+
       const displayName = PROVIDER_DISPLAY_NAMES[provider.name] ?? provider.name;
       const providerLabel = displayName;
       this.logger.info(`[AI Router] router -> ${providerLabel}`);
       this.logger.info(`[AI Router] Trying ${providerLabel}...`);
 
       const startMs = Date.now();
+      const providerTimeoutMs = Math.min(this.timeoutMs, remainingMs);
+      const globalDeadlineApplies = remainingMs <= this.timeoutMs;
 
       try {
-        const response = await this.generateWithTimeout(provider, payload, this.timeoutMs);
+        const response = await this.generateWithTimeout(
+          provider,
+          payload,
+          providerTimeoutMs,
+          globalDeadlineApplies,
+        );
+        if (Date.now() >= deadline) {
+          logs.push({
+            provider: provider.name,
+            status: 'failed',
+            reason: `Global deadline exceeded after ${this.globalTimeoutMs}ms`,
+          });
+          throw new AiRouterTimeoutError(logs);
+        }
         if (!response?.content?.trim()) {
           throw new Error(`Provider ${provider.name} returned empty content`);
         }
@@ -129,26 +168,41 @@ export class AiRouter {
         this.logger.info(`[AI Router] router returned provider: ${providerLabel}`);
         return response;
       } catch (error) {
+        if (error instanceof AiRouterTimeoutError) {
+          throw error;
+        }
+
         const elapsedMs = Date.now() - startMs;
         const reason = error instanceof Error ? error.message : 'unknown error';
-        const isTimeout = reason.startsWith('Timeout after');
+        const isGlobalTimeout = error instanceof GlobalDeadlineError;
+        const globalDeadlineReached = isGlobalTimeout || Date.now() >= deadline;
+        const isTimeout = globalDeadlineReached || error instanceof ProviderTimeoutError;
         const statusCode = typeof (error as { statusCode?: unknown }).statusCode === 'number'
           ? (error as { statusCode: number }).statusCode
           : undefined;
 
-        logs.push({ provider: provider.name, status: 'failed', reason });
+        const failureReason = globalDeadlineReached
+          ? `Global deadline exceeded after ${this.globalTimeoutMs}ms`
+          : reason;
+        logs.push({ provider: provider.name, status: 'failed', reason: failureReason });
 
         if (isTimeout) {
           this.logger.warn(`[AI Router] Provider = ${providerLabel}`);
           this.logger.warn(`[AI Router] Elapsed = ${elapsedMs}ms`);
           this.logger.warn(`[AI Router] Reason = Timeout`);
-          this.logger.warn(`[AI Router] Timeout after ${this.timeoutMs}ms`);
+          this.logger.warn(globalDeadlineReached
+            ? `[AI Router] Global timeout after ${this.globalTimeoutMs}ms`
+            : `[AI Router] Timeout after ${providerTimeoutMs}ms`);
         } else {
           this.logger.error(`[AI Router] Provider = ${providerLabel}`);
           this.logger.error('[AI Router] Status = failed');
           this.logger.error(`[AI Router] HTTP Status = ${statusCode ?? 'n/a'}`);
           this.logger.error(`[AI Router] Message = ${reason}`);
           this.logger.error(error);
+        }
+
+        if (globalDeadlineReached) {
+          throw new AiRouterTimeoutError(logs);
         }
 
         const nextProvider = this.providers[index + 1];

@@ -73,6 +73,10 @@ export interface ComicProgressDocument {
   completedPages: number;
   percentage: number;
   status: 'not_started' | 'in_progress' | 'completed';
+  completedStages?: string[];
+  currentStage?: string;
+  readerPage?: number;
+  readerCompleted?: boolean;
   sintaksList: SintaksProgress[];
   introspection?: IntrospectionProgressMetadata;
   stageData?: {

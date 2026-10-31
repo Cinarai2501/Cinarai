@@ -14,7 +14,7 @@ export class GeminiProvider implements AiProvider {
 
   constructor(private readonly config: AiProviderConfig = {}) {}
 
-  async generate(payload: AiRequestPayload): Promise<AiResponse> {
+  async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying Gemini...');
     console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
@@ -31,6 +31,7 @@ export class GeminiProvider implements AiProvider {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal,
           body: JSON.stringify({
             contents: [
               {

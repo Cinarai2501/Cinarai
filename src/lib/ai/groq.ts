@@ -14,7 +14,7 @@ export class GroqProvider implements AiProvider {
 
   constructor(private readonly config: AiProviderConfig = {}) {}
 
-  async generate(payload: AiRequestPayload): Promise<AiResponse> {
+  async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying Groq...');
     console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
@@ -32,6 +32,7 @@ export class GroqProvider implements AiProvider {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
+        signal,
         body: JSON.stringify({
           model: this.config.model ?? 'llama-3.3-70b-versatile',
           temperature: payload.temperature ?? 0.7,

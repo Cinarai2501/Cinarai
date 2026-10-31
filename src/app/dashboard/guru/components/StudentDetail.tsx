@@ -15,6 +15,7 @@ interface Props {
   displayName: string;
   email: string;
   schoolName: string;
+  classLevel: string | null;
   gradeLevel: number | null;
   isActive: boolean;
   comicProgress: ComicEntry[];
@@ -38,6 +39,7 @@ export function StudentDetail({
   displayName,
   email,
   schoolName,
+  classLevel,
   gradeLevel,
   isActive,
   comicProgress,
@@ -56,13 +58,12 @@ export function StudentDetail({
   onGeneratePdf,
 }: Props) {
   void uid;
-  const avgProgress =
-    comicProgress.length > 0
-      ? Math.round(
-          comicProgress.reduce((s, e) => s + (e.progress?.percentage ?? 0), 0) /
-            comicProgress.length
-        )
-      : 0;
+  const recordedProgress = comicProgress.flatMap((entry) =>
+    entry.progress ? [entry.progress.percentage] : []
+  );
+  const avgProgress = recordedProgress.length
+    ? Math.round(recordedProgress.reduce((sum, percentage) => sum + percentage, 0) / recordedProgress.length)
+    : null;
   const recentActivity = [
     ...activities.map((activity, index) => ({
       id: `activity:${String(activity.id ?? index)}`,
@@ -134,13 +135,26 @@ export function StudentDetail({
                 <p className="text-sm text-neutral-500 truncate">{email}</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   <Badge color="primary">{schoolName}</Badge>
-                  {gradeLevel && <Badge color="secondary">Kelas {gradeLevel}</Badge>}
+                  {classLevel
+                    ? <Badge color="secondary">{classLevel}</Badge>
+                    : gradeLevel !== null && <Badge color="secondary">Kelas {gradeLevel}</Badge>}
                   <Badge color={isActive ? 'accent' : 'error'}>
                     {isActive ? 'Aktif' : 'Tidak Aktif'}
                   </Badge>
                 </div>
               </div>
-              <ProgressRing value={avgProgress} size={64} stroke={5} className="flex-shrink-0" />
+              <div className="flex-shrink-0 text-center">
+                {avgProgress === null ? (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-neutral-200 text-lg font-bold text-neutral-400">
+                    —
+                  </div>
+                ) : (
+                  <ProgressRing value={avgProgress} size={64} stroke={5} />
+                )}
+                <p className="mt-1 text-[10px] font-medium text-neutral-500">
+                  {avgProgress === null ? 'Belum ada data' : `${recordedProgress.length}/${comicProgress.length} komik`}
+                </p>
+              </div>
             </div>
           </Card>
 

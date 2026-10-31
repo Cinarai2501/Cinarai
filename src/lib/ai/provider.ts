@@ -16,7 +16,7 @@ export interface AiResponse {
 
 export interface AiProvider {
   name: AiProviderName;
-  generate(payload: AiRequestPayload): Promise<AiResponse>;
+  generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse>;
 }
 
 export interface AiProviderConfig {

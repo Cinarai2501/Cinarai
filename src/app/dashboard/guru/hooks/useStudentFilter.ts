@@ -1,39 +1,58 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { StudentRow } from '../types';
+import type { StudentRow, StudentStatusFilter } from '../types';
+import { filterAndSortStudents } from '../services/studentUtils';
 
-export function useStudentFilter(rows: StudentRow[]) {
-  const [search, setSearch] = useState('');
+export const STUDENT_PAGE_SIZE = 20;
+
+export function useStudentFilter(rows: StudentRow[], totalComics: number) {
+  const [search, setSearchValue] = useState('');
+  const [status, setStatusValue] = useState<StudentStatusFilter>('all');
   const [sortKey, setSortKey] = useState<'name' | 'progress' | 'completed'>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    let result = q
-      ? rows.filter(
-          (r) =>
-            r.displayName.toLowerCase().includes(q) ||
-            r.email.toLowerCase().includes(q) ||
-            r.schoolName.toLowerCase().includes(q)
-        )
-      : rows;
+  const filtered = useMemo(
+    () => filterAndSortStudents(rows, { search, status, sortKey, sortDir, totalComics }),
+    [rows, search, status, sortKey, sortDir, totalComics]
+  );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / STUDENT_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visible = useMemo(
+    () => filtered.slice((currentPage - 1) * STUDENT_PAGE_SIZE, currentPage * STUDENT_PAGE_SIZE),
+    [currentPage, filtered]
+  );
 
-    result = [...result].sort((a, b) => {
-      let cmp = 0;
-      if (sortKey === 'name') cmp = a.displayName.localeCompare(b.displayName, 'id');
-      if (sortKey === 'progress') cmp = a.averageProgress - b.averageProgress;
-      if (sortKey === 'completed') cmp = a.completedComics - b.completedComics;
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-
-    return result;
-  }, [rows, search, sortKey, sortDir]);
-
+  const setSearch = (value: string) => {
+    setSearchValue(value);
+    setPage(1);
+  };
+  const setStatus = (value: StudentStatusFilter) => {
+    setStatusValue(value);
+    setPage(1);
+  };
   const toggleSort = (key: typeof sortKey) => {
-    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortKey(key); setSortDir('asc'); }
+    if (sortKey === key) setSortDir((direction) => (direction === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+    setPage(1);
   };
 
-  return { filtered, search, setSearch, sortKey, sortDir, toggleSort };
+  return {
+    filtered,
+    visible,
+    search,
+    setSearch,
+    status,
+    setStatus,
+    sortKey,
+    sortDir,
+    toggleSort,
+    page: currentPage,
+    pageCount,
+    setPage,
+  };
 }

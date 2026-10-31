@@ -9,6 +9,7 @@ export interface User {
   nickname?: string;
   gender?: 'Laki-laki' | 'Perempuan';
   classLevel?: 'Kelas I' | 'Kelas II' | 'Kelas III' | 'Kelas IV' | 'Kelas V' | 'Kelas VI';
+  schoolName?: string;
   bio?: string;
   avatar?: string;
   photoURL: string | null;

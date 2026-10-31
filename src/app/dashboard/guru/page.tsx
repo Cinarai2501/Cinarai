@@ -10,6 +10,8 @@ import { useStudentAiInsight } from './hooks/useStudentAiInsight';
 import { GuruHeader } from './components/GuruHeader';
 import { DashboardOverview } from './components/DashboardOverview';
 import { StudentDirectory } from './components/StudentDirectory';
+import { ModuleDirectory } from './components/ModuleDirectory';
+import { GuruBottomNav, type GuruDashboardTab } from './components/GuruBottomNav';
 import { printStudentReport } from './reports/studentReport';
 
 const StudentDetail = dynamic(() => import('./components/StudentDetail').then((module) => module.StudentDetail), { ssr: false });
@@ -18,9 +20,9 @@ const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((mod
 export default function GuruDashboardPage() {
   const { logout } = useAuth();
   const { comics, rows, summary, recentActivities, recentActivityLoading, loading, error } = useGuruDashboard();
-  const { filtered, search, setSearch, sortKey, sortDir, toggleSort } = useStudentFilter(rows);
+  const studentFilter = useStudentFilter(rows, comics.length);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
-  const [tab, setTab] = useState<'overview' | 'students' | 'ai'>('overview');
+  const [tab, setTab] = useState<GuruDashboardTab>('overview');
 
   const detail = useStudentDetail(selectedUid ?? '', comics);
   const aiInsight = useStudentAiInsight();
@@ -37,6 +39,14 @@ export default function GuruDashboardPage() {
   const handleBack = () => {
     aiInsight.reset();
     setSelectedUid(null);
+  };
+
+  const handleTabChange = (nextTab: GuruDashboardTab) => {
+    if (selectedUid) {
+      aiInsight.reset();
+      setSelectedUid(null);
+    }
+    setTab(nextTab);
   };
 
   const handleGenerateInsight = () => {
@@ -64,32 +74,14 @@ export default function GuruDashboardPage() {
   const topStudents = [...rows].sort((a, b) => b.averageProgress - a.averageProgress);
 
   return (
-    <div className="min-h-screen bg-[#f0f7ff] overflow-x-hidden">
-      <GuruHeader summary={summary} loading={loading} onLogout={handleLogout} />
+    <div className="min-h-[100dvh] overflow-x-hidden bg-[#f0f7ff]">
+      <GuruHeader summary={summary} loading={loading} />
 
-      <div className="relative -mt-16 mx-auto max-w-5xl px-4 pb-12 sm:px-6">
+      <main className="mx-auto max-w-5xl px-3 py-3 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-6 sm:py-5">
         {error && (
-          <div className="mb-4 rounded-2xl bg-error-50 border border-error-200 px-5 py-4 text-sm text-error-700">
-            ⚠️ {error}
-          </div>
-        )}
-
-        {/* Tab nav */}
-        {!selectedUid && (
-          <div className="mb-4 flex gap-2 overflow-x-auto scrollbar-none pb-1">
-            {(['overview', 'students', 'ai'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                  tab === t
-                    ? 'bg-primary-600 text-white shadow-sm'
-                    : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                {t === 'overview' ? '📊 Ringkasan' : t === 'students' ? '👨🎓 Siswa' : '🤖 AI'}
-              </button>
-            ))}
+          <div role="alert" className="mb-3 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
+            <p className="font-bold">Sebagian data dashboard tidak dapat dimuat.</p>
+            <p className="mt-1 break-words">{error}</p>
           </div>
         )}
 
@@ -100,6 +92,7 @@ export default function GuruDashboardPage() {
             displayName={detail.student?.displayName ?? '—'}
             email={detail.student?.email ?? '—'}
             schoolName={detail.student?.schoolName ?? '—'}
+            classLevel={detail.student?.classLevel ?? null}
             gradeLevel={detail.student?.gradeLevel ?? null}
             isActive={detail.student?.isActive ?? false}
             comicProgress={detail.comicProgress}
@@ -120,26 +113,47 @@ export default function GuruDashboardPage() {
         ) : tab === 'overview' ? (
           <DashboardOverview
             summary={summary}
+            rows={rows}
             topStudents={topStudents}
+            comics={comics}
             recentActivities={recentActivities}
             recentActivityLoading={recentActivityLoading}
             loading={loading}
+            onSelectStudent={handleSelectStudent}
+            onOpenAi={() => handleTabChange('ai')}
+            onOpenStudents={() => handleTabChange('students')}
+            onOpenModules={() => handleTabChange('modules')}
           />
         ) : tab === 'students' ? (
           <StudentDirectory
-            rows={filtered}
+            rows={studentFilter.visible}
+            totalCount={studentFilter.filtered.length}
             loading={loading}
-            search={search}
-            onSearch={setSearch}
-            sortKey={sortKey}
-            sortDir={sortDir}
-            onSort={toggleSort}
+            search={studentFilter.search}
+            onSearch={studentFilter.setSearch}
+            status={studentFilter.status}
+            onStatus={studentFilter.setStatus}
+            sortKey={studentFilter.sortKey}
+            sortDir={studentFilter.sortDir}
+            onSort={studentFilter.toggleSort}
+            page={studentFilter.page}
+            pageCount={studentFilter.pageCount}
+            onPage={studentFilter.setPage}
+            totalComics={comics.length}
             onSelect={handleSelectStudent}
           />
+        ) : tab === 'ai' ? (
+          <AiAssistantPanel
+            students={rows}
+            studentCount={summary.totalStudents}
+            dashboardLoading={loading}
+            onSelectStudent={handleSelectStudent}
+          />
         ) : (
-          <AiAssistantPanel rows={rows} comics={comics} />
+          <ModuleDirectory comics={comics} rows={rows} loading={loading} />
         )}
-      </div>
+      </main>
+      <GuruBottomNav activeTab={tab} onTabChange={handleTabChange} onLogout={handleLogout} />
     </div>
   );
 }

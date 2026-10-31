@@ -4,5 +4,5 @@ export { GeminiProvider } from './gemini';
 export { GroqProvider } from './groq';
 export { OpenRouterProvider } from './openrouter';
 export { OpenAIProvider } from './openai';
-export { AiRouter, AiRouterError } from './router';
+export { AiRouter, AiRouterError, AiRouterTimeoutError } from './router';
 export { buildTutorPrompt, generateTutorResponse } from './service';

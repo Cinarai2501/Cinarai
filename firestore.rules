@@ -18,6 +18,59 @@ service cloud.firestore {
       );
     }
 
+    function isAdmin() {
+      return isSignedIn() && authUser().exists() && authUser().data.role == 'admin';
+    }
+
+    function hasTeacherSchoolAccess(studentUid) {
+      let teacher = authUser();
+      let student = get(/databases/$(database)/documents/users/$(studentUid));
+      return isSignedIn()
+        && studentUid is string
+        && teacher.exists()
+        && teacher.data.role == 'teacher'
+        && teacher.data.schoolName is string
+        && teacher.data.schoolName.size() > 0
+        && student.exists()
+        && student.data.role == 'student'
+        && student.data.schoolName is string
+        && student.data.schoolName == teacher.data.schoolName;
+    }
+
+    function canReadStudentData(studentUid) {
+      return isAdmin() || hasTeacherSchoolAccess(studentUid);
+    }
+
+    function canReadStudentProfile(data) {
+      let teacher = authUser();
+      return isAdmin()
+        || (isSignedIn()
+          && teacher.exists()
+          && teacher.data.role == 'teacher'
+          && teacher.data.schoolName is string
+          && teacher.data.schoolName.size() > 0
+          && data.role == 'student'
+          && data.schoolName == teacher.data.schoolName);
+    }
+
+    function canReadStudentRecord(data) {
+      return data.userId is string
+        && (data.userId == request.auth.uid || canReadStudentData(data.userId));
+    }
+
+    function hasConsistentReflectionOwner(data) {
+      return !('userId' in data)
+        || !('studentId' in data)
+        || data.userId == data.studentId;
+    }
+
+    function hasUnchangedSchoolAssignment(oldData, newData) {
+      return (!('schoolName' in oldData) && !('schoolName' in newData))
+        || (('schoolName' in oldData)
+          && ('schoolName' in newData)
+          && oldData.schoolName == newData.schoolName);
+    }
+
     function isStudent() {
       return isSignedIn() && authUser().exists() && authUser().data.role == 'student';
     }
@@ -60,9 +113,10 @@ service cloud.firestore {
         && isValidCinaraiRubricScore(scores, 'challenge10');
     }
 
-    function canTeacherGradeCinaraiEvaluation(progressId) {
+    function canTeacherGradeCinaraiEvaluation(uid, progressId) {
       return progressId == 'evaluation-cinarai'
         && isTeacher()
+        && canReadStudentData(uid)
         && resource.data.evaluationCinarai.completed == true
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['evaluationCinarai', 'updatedAt'])
         && request.resource.data.evaluationCinarai.diff(resource.data.evaluationCinarai).affectedKeys().hasOnly(['grading'])
@@ -78,17 +132,20 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
+      allow read: if ownsUserDoc(uid) || canReadStudentProfile(resource.data);
+      // School scope is assigned by trusted admin tooling, not self-selected by clients.
       allow create: if ownsUserDoc(uid)
         && request.resource.data.uid == uid
-        && request.resource.data.role in ['student', 'teacher'];
+        && request.resource.data.role in ['student', 'teacher']
+        && !('schoolName' in request.resource.data);
       allow update: if ownsUserDoc(uid)
         && request.resource.data.uid == uid
-        && request.resource.data.role == resource.data.role;
+        && request.resource.data.role == resource.data.role
+        && hasUnchangedSchoolAssignment(resource.data, request.resource.data);
       allow delete: if ownsUserDoc(uid);
 
       match /progress/{comicId} {
-        allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
+        allow read: if ownsUserDoc(uid) || canReadStudentData(uid);
         allow create: if ownsUserDoc(uid)
           && (comicId != 'evaluation-cinarai' || !hasGradedCinaraiEvaluation(request.resource.data));
         allow update: if (
@@ -100,18 +157,18 @@ service cloud.firestore {
                 && request.resource.data.evaluationCinarai.answers == resource.data.evaluationCinarai.answers
                 && request.resource.data.evaluationCinarai.completed == resource.data.evaluationCinarai.completed
               ))
-          ) || canTeacherGradeCinaraiEvaluation(comicId);
+          ) || canTeacherGradeCinaraiEvaluation(uid, comicId);
         allow delete: if ownsUserDoc(uid)
           && (comicId != 'evaluation-cinarai' || !hasGradedCinaraiEvaluation(resource.data));
       }
 
       match /learning-module-progress/{moduleId} {
-        allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
+        allow read: if ownsUserDoc(uid) || canReadStudentData(uid);
         allow write: if isSignedIn() && ownsUserDoc(uid);
       }
 
       match /daily_motivation/{date} {
-        allow read: if isSignedIn() && (ownsUserDoc(uid) || isTeacher());
+        allow read: if ownsUserDoc(uid) || canReadStudentData(uid);
         allow write: if isSignedIn() && ownsUserDoc(uid);
       }
 
@@ -121,7 +178,12 @@ service cloud.firestore {
     }
 
     match /dashboard/{docId} {
-      allow read: if isSignedIn() && isTeacher();
+      allow read: if isAdmin()
+        || (isSignedIn()
+          && authUser().exists()
+          && authUser().data.role == 'teacher'
+          && authUser().data.schoolName is string
+          && resource.data.schoolName == authUser().data.schoolName);
       allow write: if false;
     }
 
@@ -130,13 +192,22 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid
         || resource.data.studentId == request.auth.uid
-        || isTeacher()
+        || (hasConsistentReflectionOwner(resource.data)
+          && ((resource.data.userId is string && canReadStudentData(resource.data.userId))
+            || (resource.data.studentId is string && canReadStudentData(resource.data.studentId))))
       );
       allow create: if isSignedIn() && (
         request.resource.data.userId == request.auth.uid
         || request.resource.data.studentId == request.auth.uid
-      );
-      allow update, delete: if isSignedIn() && (
+      ) && hasConsistentReflectionOwner(request.resource.data);
+      allow update: if isSignedIn() && (
+        resource.data.userId == request.auth.uid
+        || resource.data.studentId == request.auth.uid
+      )
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.studentId == resource.data.studentId
+        && hasConsistentReflectionOwner(request.resource.data);
+      allow delete: if isSignedIn() && (
         resource.data.userId == request.auth.uid
         || resource.data.studentId == request.auth.uid
       );
@@ -145,7 +216,7 @@ service cloud.firestore {
     match /activity/{docId} {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid
-        || isTeacher()
+        || canReadStudentRecord(resource.data)
       );
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false;
@@ -154,7 +225,7 @@ service cloud.firestore {
     match /application_activity/{docId} {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid
-        || isTeacher()
+        || canReadStudentRecord(resource.data)
       );
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false;
@@ -163,10 +234,13 @@ service cloud.firestore {
     match /identification_answers/{docId} {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid
-        || isTeacher()
+        || canReadStudentRecord(resource.data)
       );
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     // ── comics ────────────────────────────────────────────────────────────
@@ -179,7 +253,7 @@ service cloud.firestore {
     match /progress/{docId} {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid
-        || isTeacher()
+        || canReadStudentRecord(resource.data)
       );
       allow write: if isSignedIn() && resource.data.userId == request.auth.uid;
     }

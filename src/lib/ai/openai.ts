@@ -14,7 +14,7 @@ export class OpenAIProvider implements AiProvider {
 
   constructor(private readonly config: AiProviderConfig = {}) {}
 
-  async generate(payload: AiRequestPayload): Promise<AiResponse> {
+  async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying OpenAI...');
     console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
@@ -32,6 +32,7 @@ export class OpenAIProvider implements AiProvider {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
+        signal,
         body: JSON.stringify({
           model: this.config.model ?? 'gpt-4o-mini',
           temperature: payload.temperature ?? 0.7,

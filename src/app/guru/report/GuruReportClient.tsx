@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 import { getAllComics } from '@/lib/comicRepository';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
 import type { ActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
@@ -37,8 +37,14 @@ export default function GuruReportClient() {
   useEffect(() => {
     if (loading) return;
 
-    if (!user) {
+    if (!user || (user.role !== 'teacher' && user.role !== 'admin')) {
       setIsLoading(false);
+      setError('Sesi guru tidak valid. Silakan masuk kembali.');
+      return;
+    }
+    if (user.role === 'teacher' && !user.schoolName?.trim()) {
+      setIsLoading(false);
+      setError('Profil guru belum memiliki sekolah; laporan siswa tidak dapat diakses.');
       return;
     }
 
@@ -49,11 +55,11 @@ export default function GuruReportClient() {
       setError(null);
 
       try {
-        const [studentsSnapshot, reflectionSnapshot, activitySnapshot] = await Promise.all([
-          getDocs(collection(firestore, 'users')),
-          getDocs(collection(firestore, 'reflection')),
-          getDocs(collection(firestore, 'activity')),
-        ]);
+        const studentFilters = [where('role', '==', 'student')];
+        if (user.role === 'teacher') {
+          studentFilters.push(where('schoolName', '==', user.schoolName?.trim() ?? ''));
+        }
+        const studentsSnapshot = await getDocs(query(collection(firestore, 'users'), ...studentFilters));
 
         if (!active) return;
 
@@ -62,11 +68,38 @@ export default function GuruReportClient() {
             .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as UserDocument))
             .filter((student) => student.role === 'student')
         );
+        const studentUids = students.map((student) => student.uid).filter(Boolean);
+        const studentChunks: string[][] = [];
+        for (let index = 0; index < studentUids.length; index += 8) {
+          studentChunks.push(studentUids.slice(index, index + 8));
+        }
+        const [reflectionUserSnapshots, reflectionStudentSnapshots, activitySnapshots] = await Promise.all([
+          Promise.all(studentChunks.map((chunk) => getDocs(query(
+            collection(firestore, 'reflection'),
+            where('userId', 'in', chunk)
+          )))),
+          Promise.all(studentChunks.map((chunk) => getDocs(query(
+            collection(firestore, 'reflection'),
+            where('studentId', 'in', chunk)
+          )))),
+          Promise.all(studentChunks.map((chunk) => getDocs(query(
+            collection(firestore, 'activity'),
+            where('userId', 'in', chunk)
+          )))),
+        ]);
+        if (!active) return;
 
-        const reflections = reflectionSnapshot.docs
-          .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ReflectionDocument));
+        const reflections = Array.from(new Map(
+          [...reflectionUserSnapshots, ...reflectionStudentSnapshots]
+            .flatMap((snapshot) => snapshot.docs)
+            .map((documentSnapshot) => [
+              documentSnapshot.id,
+              { id: documentSnapshot.id, ...documentSnapshot.data() } as ReflectionDocument,
+            ])
+        ).values());
 
-        const activities = activitySnapshot.docs
+        const activities = activitySnapshots
+          .flatMap((snapshot) => snapshot.docs)
           .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ActivityDocument));
 
         const progressSnapshots = await Promise.all(
@@ -103,7 +136,11 @@ export default function GuruReportClient() {
               comicTitle: comic?.title ?? `Komik ${document.comicId}`,
               progress: Math.round(document.percentage ?? 0),
               value: Math.round((latestReflection?.rating ?? 0) * 20),
-              status: document.status === 'completed' ? 'completed' : document.percentage && document.percentage >= 60 ? 'in_progress' : 'not_started',
+              status: document.status === 'completed'
+                ? 'completed'
+                : document.status === 'in_progress' || (document.percentage ?? 0) > 0
+                  ? 'in_progress'
+                  : 'not_started',
               updatedAt: latestActivity?.occurredAt ?? latestReflection?.submittedAt ?? document.updatedAt,
             };
           });
