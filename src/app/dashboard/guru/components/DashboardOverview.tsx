@@ -87,6 +87,15 @@ export function DashboardOverview({
       </Card>
 
       <Card className="p-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <MiniMetric label="Belum mulai" value={String(summary.notStartedStudents)} />
+          <MiniMetric label="Sedang belajar" value={String(summary.learningStudents)} />
+          <MiniMetric label="Perlu perhatian" value={String(summary.attentionStudents)} />
+          <MiniMetric label="Tuntas" value={String(summary.studentsCompleted)} />
+        </div>
+      </Card>
+
+      <Card className="p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Tindak lanjut</p>

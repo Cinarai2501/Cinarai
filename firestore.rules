@@ -22,23 +22,19 @@ service cloud.firestore {
       return isSignedIn() && authUser().exists() && authUser().data.role == 'admin';
     }
 
-    function hasTeacherSchoolAccess(studentUid) {
+    function hasTeacherStudentAccess(studentUid) {
       let teacher = authUser();
       let student = get(/databases/$(database)/documents/users/$(studentUid));
       return isSignedIn()
         && studentUid is string
         && teacher.exists()
         && teacher.data.role == 'teacher'
-        && teacher.data.schoolName is string
-        && teacher.data.schoolName.size() > 0
         && student.exists()
-        && student.data.role == 'student'
-        && student.data.schoolName is string
-        && student.data.schoolName == teacher.data.schoolName;
+        && student.data.role == 'student';
     }
 
     function canReadStudentData(studentUid) {
-      return isAdmin() || hasTeacherSchoolAccess(studentUid);
+      return isAdmin() || hasTeacherStudentAccess(studentUid);
     }
 
     function canReadStudentProfile(data) {
@@ -47,15 +43,17 @@ service cloud.firestore {
         || (isSignedIn()
           && teacher.exists()
           && teacher.data.role == 'teacher'
-          && teacher.data.schoolName is string
-          && teacher.data.schoolName.size() > 0
-          && data.role == 'student'
-          && data.schoolName == teacher.data.schoolName);
+          && data.role == 'student');
     }
 
     function canReadStudentRecord(data) {
-      return data.userId is string
-        && (data.userId == request.auth.uid || canReadStudentData(data.userId));
+      return isSignedIn()
+        && (
+          (data.userId is string
+            && (data.userId == request.auth.uid || canReadStudentData(data.userId)))
+          || (data.studentId is string
+            && (data.studentId == request.auth.uid || canReadStudentData(data.studentId)))
+        );
     }
 
     function hasConsistentReflectionOwner(data) {
@@ -69,6 +67,24 @@ service cloud.firestore {
         || (('schoolName' in oldData)
           && ('schoolName' in newData)
           && oldData.schoolName == newData.schoolName);
+    }
+
+    function hasUnchangedTeacherAssignment(oldData, newData) {
+      return (!('teacherUid' in oldData) && !('teacherUid' in newData))
+        || (('teacherUid' in oldData)
+          && ('teacherUid' in newData)
+          && oldData.teacherUid == newData.teacherUid);
+    }
+
+    function canAdminAssignTeacher() {
+      return isAdmin()
+        && resource.data.role == 'student'
+        && request.resource.data.role == 'student'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teacherUid', 'updatedAt'])
+        && (!('teacherUid' in request.resource.data)
+          || (request.resource.data.teacherUid is string
+            && get(/databases/$(database)/documents/users/$(request.resource.data.teacherUid)).exists()
+            && get(/databases/$(database)/documents/users/$(request.resource.data.teacherUid)).data.role == 'teacher'));
     }
 
     function isStudent() {
@@ -115,7 +131,7 @@ service cloud.firestore {
 
     function canTeacherGradeCinaraiEvaluation(uid, progressId) {
       return progressId == 'evaluation-cinarai'
-        && isTeacher()
+        && isAdmin()
         && canReadStudentData(uid)
         && resource.data.evaluationCinarai.completed == true
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['evaluationCinarai', 'updatedAt'])
@@ -137,11 +153,15 @@ service cloud.firestore {
       allow create: if ownsUserDoc(uid)
         && request.resource.data.uid == uid
         && request.resource.data.role in ['student', 'teacher']
-        && !('schoolName' in request.resource.data);
-      allow update: if ownsUserDoc(uid)
-        && request.resource.data.uid == uid
-        && request.resource.data.role == resource.data.role
-        && hasUnchangedSchoolAssignment(resource.data, request.resource.data);
+        && !('schoolName' in request.resource.data)
+        && !('teacherUid' in request.resource.data);
+      allow update: if (
+          ownsUserDoc(uid)
+          && request.resource.data.uid == uid
+          && request.resource.data.role == resource.data.role
+          && hasUnchangedSchoolAssignment(resource.data, request.resource.data)
+          && hasUnchangedTeacherAssignment(resource.data, request.resource.data)
+        ) || canAdminAssignTeacher();
       allow delete: if ownsUserDoc(uid);
 
       match /progress/{comicId} {
@@ -168,12 +188,13 @@ service cloud.firestore {
       }
 
       match /daily_motivation/{date} {
-        allow read: if ownsUserDoc(uid) || canReadStudentData(uid);
+        allow read: if ownsUserDoc(uid) || isAdmin();
         allow write: if isSignedIn() && ownsUserDoc(uid);
       }
 
       match /aiTutorChats/{chatId} {
-        allow read, create, update, delete: if ownsUserDoc(uid);
+        allow read: if ownsUserDoc(uid) || canReadStudentData(uid);
+        allow create, update, delete: if ownsUserDoc(uid);
       }
     }
 
@@ -182,8 +203,7 @@ service cloud.firestore {
         || (isSignedIn()
           && authUser().exists()
           && authUser().data.role == 'teacher'
-          && authUser().data.schoolName is string
-          && resource.data.schoolName == authUser().data.schoolName);
+          && resource.data.teacherUid == request.auth.uid);
       allow write: if false;
     }
 
@@ -192,9 +212,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.userId == request.auth.uid
         || resource.data.studentId == request.auth.uid
-        || (hasConsistentReflectionOwner(resource.data)
-          && ((resource.data.userId is string && canReadStudentData(resource.data.userId))
-            || (resource.data.studentId is string && canReadStudentData(resource.data.studentId))))
+        || canReadStudentRecord(resource.data)
       );
       allow create: if isSignedIn() && (
         request.resource.data.userId == request.auth.uid

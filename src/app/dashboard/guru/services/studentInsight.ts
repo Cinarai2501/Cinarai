@@ -11,6 +11,7 @@ const learningActivityTypes = new Set([
   'comic_started',
   'comic_completed',
   'reflection_submitted',
+  'ai_tutor_question',
 ]);
 
 export interface StudentInsightAiItem {
@@ -59,6 +60,7 @@ export interface StudentInsightActivity {
   type: string;
   comicId: number | null;
   occurredAt: string;
+  sessionId?: string;
 }
 
 export interface StudentInsightApplication {
@@ -80,26 +82,27 @@ export interface StudentInsightEvidence {
 }
 
 export function isStudentAllowedForInsight(
-  profile: { uid?: unknown; id?: string; role?: unknown; schoolName?: unknown; duplicate?: unknown },
+  profile: { uid?: unknown; id?: string; role?: unknown; duplicate?: unknown },
   requestedUid: string,
   teacherRole: unknown,
-  teacherSchoolName: string,
 ): boolean {
-  const profileUid = typeof profile.uid === 'string' && profile.uid.trim()
-    ? profile.uid.trim()
-    : profile.id?.trim();
+  const profileUid = profile.id?.trim()
+    || (typeof profile.uid === 'string' ? profile.uid.trim() : '');
   return profile.role === 'student'
-    && profile.duplicate !== true
     && profileUid === requestedUid
-    && (teacherRole === 'admin'
-      || (teacherRole === 'teacher'
-        && typeof profile.schoolName === 'string'
-        && profile.schoolName.trim() === teacherSchoolName));
+    && (teacherRole === 'admin' || teacherRole === 'teacher');
+}
+
+export interface StudentInsightEvaluationResponse {
+  challengeId: string;
+  answeredFields: number;
+  totalFields: number;
 }
 
 export interface StudentInsightFacts {
   generatedAt: string;
   dataPeriod: { from: string | null; to: string | null };
+  profile: { classLevel: string | null; gradeLevel: number | null };
   modules: Array<{
     comicId: number;
     title: string;
@@ -125,6 +128,7 @@ export interface StudentInsightFacts {
     };
   }>;
   assessments: Array<{ type: string; score: number; maximum: number | null }>;
+  evaluationResponses: StudentInsightEvaluationResponse[];
   activity: {
     recordCount: number;
     activeDays: number;
@@ -143,19 +147,34 @@ export interface StudentInsightFacts {
     confidenceCount: number;
     averageConfidence: number | null;
   };
+  supplementaryProgress: {
+    recordCount: number;
+    records: Array<{
+      moduleId: string;
+      status: string | null;
+      score: number | null;
+      completedItems: number | null;
+      totalItems: number | null;
+      updatedAt: string | null;
+    }>;
+  };
+  aiTutorActivity: { sessionCount: number; questionCount: number };
   sample: { limitPerQuery: number; mayBeTruncated: boolean };
   evidence: StudentInsightEvidence[];
   limitations: string[];
 }
 
 export function buildStudentInsightFacts(input: {
+  profile?: StudentInsightFacts['profile'];
   modules: StudentInsightModule[];
   progress: StudentInsightProgress[];
   evaluationScore: number | null;
+  evaluationResponses?: StudentInsightEvaluationResponse[];
   answers: StudentInsightAnswer[];
   activities: StudentInsightActivity[];
   applications: StudentInsightApplication[];
   reflections: StudentInsightReflection[];
+  supplementaryProgress?: StudentInsightFacts['supplementaryProgress']['records'];
   generatedAt?: Date;
   sampleLimitPerQuery: number;
   sampleMayBeTruncated: boolean;
@@ -243,9 +262,21 @@ export function buildStudentInsightFacts(input: {
   ));
   const ratings = input.reflections.flatMap((reflection) => reflection.rating === null ? [] : [reflection.rating]);
   const confidences = input.reflections.flatMap((reflection) => reflection.confidence === null ? [] : [reflection.confidence]);
+  const supplementaryProgress = input.supplementaryProgress ?? [];
+  const profile = input.profile ?? { classLevel: null, gradeLevel: null };
+  const aiTutorQuestions = validActivities.filter((activity) => activity.type === 'ai_tutor_question').length;
   const evidence: StudentInsightEvidence[] = [];
   const addEvidence = (key: string, label: string, detail: string) => evidence.push({ key, label, detail });
 
+  if (profile.classLevel || profile.gradeLevel !== null) {
+    addEvidence(
+      'profile:class',
+      'Konteks kelas',
+      [profile.classLevel, profile.gradeLevel === null ? null : `Kelas ${profile.gradeLevel}`]
+        .filter(Boolean)
+        .join('; ')
+    );
+  }
   modules.forEach((module) => {
     if (module.progressAvailable) {
       addEvidence(
@@ -271,6 +302,14 @@ export function buildStudentInsightFacts(input: {
   });
   if (input.evaluationScore !== null) {
     addEvidence('assessment:evaluation-cinarai', 'Evaluasi CINARAI', `Skor penilaian tersimpan ${input.evaluationScore}/40.`);
+  }
+  const evaluationResponses = input.evaluationResponses ?? [];
+  if (evaluationResponses.length) {
+    addEvidence(
+      'assessment:evaluation-answers',
+      'Jawaban evaluasi CINARAI',
+      `${evaluationResponses.length} tantangan memiliki jawaban tersimpan; ${evaluationResponses.reduce((sum, item) => sum + item.answeredFields, 0)}/${evaluationResponses.reduce((sum, item) => sum + item.totalFields, 0)} bidang jawaban terisi.`
+    );
   }
   if (validActivities.length) {
     addEvidence(
@@ -300,6 +339,25 @@ export function buildStudentInsightFacts(input: {
       `${input.reflections.length} refleksi; ${ratings.length} rating dan ${confidences.length} nilai confidence bertipe 1–5 tersedia.`
     );
   }
+  if (supplementaryProgress.length) {
+    addEvidence(
+      'supplementary-progress',
+      'Progress modul tambahan',
+      supplementaryProgress.slice(0, 5).map((record) =>
+        `${record.moduleId}: status ${record.status ?? 'tidak tersedia'}; skor ${record.score ?? 'tidak tersedia'}; item selesai ${record.completedItems ?? '—'}/${record.totalItems ?? '—'}`
+      ).join('; ')
+    );
+  }
+  if (aiTutorQuestions) {
+    const sessions = new Set(input.activities
+      .filter((activity) => activity.type === 'ai_tutor_question')
+      .map((activity) => activity.sessionId ?? activity.occurredAt.slice(0, 10)));
+    addEvidence(
+      'ai-tutor:usage',
+      'Interaksi AI Tutor',
+      `${aiTutorQuestions} pertanyaan siswa pada ${sessions.size} percakapan atau hari tercatat; isi percakapan tidak disertakan.`
+    );
+  }
 
   const timestamps = [
     ...input.progress.flatMap((progress) => progress.updatedAt ? [progress.updatedAt] : []),
@@ -307,6 +365,7 @@ export function buildStudentInsightFacts(input: {
     ...activityDates.map((date) => date.toISOString()),
     ...input.applications.flatMap((application) => application.recordedAt ? [application.recordedAt] : []),
     ...input.reflections.flatMap((reflection) => reflection.recordedAt ? [reflection.recordedAt] : []),
+    ...supplementaryProgress.flatMap((progress) => progress.updatedAt ? [progress.updatedAt] : []),
   ].flatMap((value) => Number.isFinite(Date.parse(value)) ? [new Date(value)] : []);
 
   const limitations: string[] = [];
@@ -322,7 +381,7 @@ export function buildStudentInsightFacts(input: {
   if (!input.reflections.length) limitations.push('Data refleksi belum tersedia.');
   limitations.push('Riwayat snapshot progress tidak tersedia; progress saat ini tidak dapat dibandingkan sebagai tren dari waktu ke waktu.');
   if (input.sampleMayBeTruncated) {
-    limitations.push(`Sedikitnya satu sumber mencapai batas ${input.sampleLimitPerQuery} dokumen; jumlah terkait hanya mewakili sampel terbaru.`);
+    limitations.push('Sedikitnya satu sumber mencapai batas pengambilan; jumlah terkait hanya mewakili sampel terbaru.');
   }
 
   return {
@@ -333,10 +392,12 @@ export function buildStudentInsightFacts(input: {
         to: new Date(Math.max(...timestamps.map((date) => date.getTime()))).toISOString(),
       }
       : { from: null, to: null },
+    profile,
     modules,
     assessments: input.evaluationScore === null
       ? []
       : [{ type: 'Evaluasi CINARAI', score: input.evaluationScore, maximum: 40 }],
+    evaluationResponses,
     activity: {
       recordCount: validActivities.length,
       activeDays: activeDates.size,
@@ -354,6 +415,16 @@ export function buildStudentInsightFacts(input: {
       confidenceCount: confidences.length,
       averageConfidence: confidences.length ? mean(confidences) : null,
     },
+    supplementaryProgress: {
+      recordCount: supplementaryProgress.length,
+      records: supplementaryProgress,
+    },
+    aiTutorActivity: {
+      sessionCount: new Set(input.activities
+        .filter((activity) => activity.type === 'ai_tutor_question')
+        .map((activity) => activity.sessionId ?? activity.occurredAt.slice(0, 10))).size,
+      questionCount: aiTutorQuestions,
+    },
     sample: { limitPerQuery: input.sampleLimitPerQuery, mayBeTruncated: input.sampleMayBeTruncated },
     evidence,
     limitations,
@@ -361,7 +432,22 @@ export function buildStudentInsightFacts(input: {
 }
 
 export function buildStudentInsightPrompt(facts: StudentInsightFacts): string {
+  const supplementaryStatuses = countBy(facts.supplementaryProgress.records.flatMap((record) =>
+    record.status ? [record.status] : []
+  ));
+  const supplementaryScores = facts.supplementaryProgress.records.flatMap((record) =>
+    record.score === null ? [] : [record.score]
+  );
+  const supplementaryProgress = {
+    recordCount: facts.supplementaryProgress.recordCount,
+    statusCounts: supplementaryStatuses,
+    scoredRecordCount: supplementaryScores.length,
+    averageScore: supplementaryScores.length ? mean(supplementaryScores) : null,
+    completedItems: sumAvailable(facts.supplementaryProgress.records.map((record) => record.completedItems)),
+    totalItems: sumAvailable(facts.supplementaryProgress.records.map((record) => record.totalItems)),
+  };
   const input = {
+    profile: facts.profile,
     modules: facts.modules.map((module) => ({
       comicId: module.comicId,
       progressAvailable: module.progressAvailable,
@@ -379,6 +465,7 @@ export function buildStudentInsightPrompt(facts: StudentInsightFacts): string {
       })),
     })),
     evaluation: facts.assessments,
+    evaluationResponses: facts.evaluationResponses,
     activity: {
       byType: facts.activity.byType,
       byWeek: facts.activity.byWeek,
@@ -387,6 +474,8 @@ export function buildStudentInsightPrompt(facts: StudentInsightFacts): string {
     },
     application: facts.application,
     reflection: facts.reflection,
+    supplementaryProgress,
+    aiTutorActivity: facts.aiTutorActivity,
     period: facts.dataPeriod,
     evidence: getStudentInsightPromptEvidence(facts).map(({ key, label, detail }) => ({ key, label, detail })),
     limitations: facts.limitations,
@@ -402,8 +491,8 @@ export function buildStudentInsightPrompt(facts: StudentInsightFacts): string {
   ].join('\n');
 }
 
-const MAX_STUDENT_PROMPT_EVIDENCE = 20;
-const MAX_STUDENT_PROMPT_EVIDENCE_CHARS = 220;
+const MAX_STUDENT_PROMPT_EVIDENCE = 40;
+const MAX_STUDENT_PROMPT_EVIDENCE_CHARS = 80;
 
 export function getStudentInsightPromptEvidence(facts: StudentInsightFacts): StudentInsightEvidence[] {
   return facts.evidence.slice(0, MAX_STUDENT_PROMPT_EVIDENCE).map((item) => ({
@@ -477,6 +566,11 @@ function normalize(value: string | null): string {
 
 function mean(values: number[]): number {
   return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
+}
+
+function sumAvailable(values: Array<number | null>): number | null {
+  const available = values.filter((value): value is number => value !== null);
+  return available.length ? available.reduce((sum, value) => sum + value, 0) : null;
 }
 
 function weekStarting(date: Date): string {

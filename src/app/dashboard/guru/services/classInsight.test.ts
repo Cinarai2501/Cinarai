@@ -148,6 +148,44 @@ test('activity series uses stored timestamps and is not named progress history',
   assert.equal(result.scope.learningActivityRecords, 1);
 });
 
+test('class aggregates cover the complete roster and anonymize most-active student counts for AI', () => {
+  const students = Array.from({ length: 201 }, (_, index) => student(`uid-${index}`));
+  students[0] = student('uid-0', [
+    { comicId: 1, percentage: 10, status: 'in_progress' },
+    { comicId: 2, percentage: 20, status: 'in_progress' },
+  ]);
+  const result = facts({
+    students,
+    activities: [
+      ...Array.from({ length: 5 }, (_, index) => ({
+        userId: 'uid-0',
+        type: 'lesson_started',
+        comicId: 1,
+        occurredAt: `2026-10-${String(25 + index).padStart(2, '0')}T10:00:00.000Z`,
+      })),
+      {
+        userId: 'uid-1',
+        type: 'comic_completed',
+        comicId: 2,
+        occurredAt: '2026-10-29T10:00:00.000Z',
+      },
+    ],
+  });
+  const prompt = buildClassInsightPrompt(result);
+
+  assert.equal(result.scope.studentCount, 201);
+  assert.equal(result.summary.studentsWithNoRecordedProgress, 200);
+  assert.equal(result.summary.studentsWithLowRecordedProgress, 1);
+  assert.equal(result.summary.studentsWithLearningActivity, 2);
+  assert.deepEqual(result.mostActiveStudents.map(({ eventCount }) => eventCount), [5, 1]);
+  assert.match(prompt, /"totalStudents":201/);
+  assert.match(prompt, /"withLowRecordedProgress":1/);
+  assert.match(prompt, /"mostActiveStudentEventCounts":\[5,1\]/);
+  assert.ok(!prompt.includes('uid-0'));
+  assert.ok(!prompt.includes('Nama privat'));
+  assert.ok(prompt.length < 12000);
+});
+
 test('non-learning events are not presented as learning activity', () => {
   const result = facts({
     activities: [{

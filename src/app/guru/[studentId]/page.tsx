@@ -7,14 +7,15 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
-import { firestore } from '@/lib/firebase/client';
-import { generateStudentInsight, type StudentInsightResponse } from '@/lib/ai/service';
+import { auth, firestore } from '@/lib/firebase/client';
 import { getAllComics } from '@/lib/comicRepository';
 import { SINTAKS } from '@/types/progress';
 import type { CinaraiEvaluationProgress } from '@/types/evaluation';
 import type { ActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import { calculateStudentValue, formatFirestoreDate, formatLearningDuration, toDateValue } from '../studentDetail.utils';
 import TeacherEvaluationReview from '@/features/evaluasi-cinarai/TeacherEvaluationReview';
+import { normalizeComicProgressDocuments } from '@/app/dashboard/guru/services/studentNormalization';
+import type { StudentInsightAiResult } from '@/app/dashboard/guru/services/studentInsight';
 
 type StudentDetailState = {
   student: UserDocument | null;
@@ -36,9 +37,20 @@ const insightSections = [
   { key: 'enrichment', title: 'Pengayaan' },
 ] as const;
 
+interface LegacyStudentInsight {
+  capabilitySummary: string;
+  weakestStage: string;
+  bestStage: string;
+  errorPattern: string;
+  teacherRecommendation: string;
+  remedial: string;
+  enrichment: string;
+  fallbackUsed: false;
+}
+
 function formatDisplayName(user: UserDocument | null): string {
   if (!user) return 'Siswa';
-  return user.displayName?.trim() || user.email?.split('@')[0] || 'Siswa';
+  return user.displayName?.trim() || user.nickname?.trim() || user.username?.trim() || 'Belum diisi';
 }
 
 export default function StudentDetailPage() {
@@ -54,7 +66,7 @@ export default function StudentDetailPage() {
     loading: true,
     error: null,
   });
-  const [insight, setInsight] = useState<StudentInsightResponse | null>(null);
+  const [insight, setInsight] = useState<LegacyStudentInsight | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightError, setInsightError] = useState<string | null>(null);
 
@@ -100,14 +112,16 @@ export default function StudentDetailPage() {
         const reflectionsByStudent = reflectionsByStudentResult.status === 'fulfilled' ? (reflectionsByStudentResult.value as ReflectionDocument[]) : [];
         const activityDocs = activityResult.status === 'fulfilled' ? (activityResult.value as ActivityDocument[]) : [];
 
-        const progressDocuments = (progressSnapshot?.docs ?? []).filter((documentSnapshot) => documentSnapshot.id !== 'evaluation-cinarai').map((documentSnapshot) => {
-          const data = documentSnapshot.data() as Partial<ComicProgressDocument>;
-          return {
-            ...data,
-            id: documentSnapshot.id,
-            comicId: data.comicId ?? Number(documentSnapshot.id.replace('comic-', '')),
-          } as ComicProgressDocument;
-        });
+        const progressDocuments = normalizeComicProgressDocuments(studentId, (progressSnapshot?.docs ?? [])
+          .filter((documentSnapshot) => documentSnapshot.id !== 'evaluation-cinarai')
+          .map((documentSnapshot) => {
+            const data = documentSnapshot.data() as Partial<ComicProgressDocument>;
+            return {
+              ...data,
+              id: documentSnapshot.id,
+              comicId: data.comicId ?? Number(documentSnapshot.id.replace('comic-', '')),
+            };
+          }));
 
         // Merge reflections from both queries and dedupe by id
         const reflectionsMap = new Map<string, ReflectionDocument>();
@@ -193,73 +207,10 @@ export default function StudentDetailPage() {
   }, [studentId]);
 
   useEffect(() => {
-    if (!studentId || !state.student || state.loading) {
-      setInsight(null);
-      setInsightLoading(false);
-      setInsightError(null);
-      return;
-    }
-
-    let active = true;
-
-    const loadInsight = async () => {
-      setInsightLoading(true);
-      setInsightError(null);
-
-      const student = state.student;
-
-      if (!student) {
-        setInsight(null);
-        setInsightLoading(false);
-        setInsightError(null);
-        return;
-      }
-
-      try {
-        const result = await generateStudentInsight(
-          {
-            studentName: formatDisplayName(student),
-            email: student.email,
-            progressDocuments: state.progressDocuments.map((document) => ({
-              comicId: document.comicId,
-              percentage: document.percentage,
-              status: document.status,
-              completedStage: document.completedStage,
-            })),
-            reflections: state.reflections.map((reflection) => ({
-              rating: reflection.rating,
-              stage: reflection.stage,
-              response: reflection.response,
-              reflectionText: reflection.reflectionText,
-            })),
-            activities: state.activities.map((activity) => ({
-              title: activity.title,
-              description: activity.description,
-              occurredAt: activity.occurredAt,
-            })),
-          },
-          { retryCount: 2 }
-        );
-
-        if (!active) return;
-        setInsight(result);
-      } catch (error) {
-        if (!active) return;
-        setInsightError(error instanceof Error ? error.message : 'AI insight gagal dimuat.');
-        setInsight(null);
-      } finally {
-        if (active) {
-          setInsightLoading(false);
-        }
-      }
-    };
-
-    void loadInsight();
-
-    return () => {
-      active = false;
-    };
-  }, [state.activities, state.loading, state.progressDocuments, state.reflections, state.student, studentId]);
+    setInsight(null);
+    setInsightLoading(false);
+    setInsightError(null);
+  }, [studentId]);
 
   const { student, progressDocuments, reflections, activities, evaluationCinarai, loading, error } = state;
 
@@ -267,24 +218,23 @@ export default function StudentDetailPage() {
   const comicMap = useMemo(() => new Map(comics.map((comic) => [comic.id, comic])), [comics]);
 
   const comicProgress = useMemo(
-    () =>
-      progressDocuments
-        .map((document) => {
-          const comic = comicMap.get(document.comicId);
-          return {
-            comicId: document.comicId,
-            title: comic?.title ?? `Komik ${document.comicId}`,
-            percentage: document.percentage ?? 0,
-            status: document.status ?? 'not_started',
-            currentStage: document.completedStage ?? 'Cover',
-          };
-        })
-        .sort((left, right) => left.comicId - right.comicId),
+    () => Array.from({ length: 6 }, (_, index) => {
+      const comicId = index + 1;
+      const document = progressDocuments.find((item) => item.comicId === comicId);
+      const comic = comicMap.get(comicId);
+      return {
+        comicId,
+        title: comic?.title ?? `Komik ${comicId}`,
+        percentage: document?.percentage ?? 0,
+        status: document?.status ?? 'not_started',
+        currentStage: document?.completedStage || 'Belum ada',
+      };
+    }),
     [comicMap, progressDocuments]
   );
 
   const stageProgress = useMemo(() => {
-    const totalComics = progressDocuments.length || 1;
+    const totalComics = 6;
     return SINTAKS.map((stage) => {
       const completedCount = progressDocuments.reduce((sum, document) => {
         const stages = document.sintaksList ?? [];
@@ -315,12 +265,66 @@ export default function StudentDetailPage() {
     [progressDocuments]
   );
 
-  const firstActivity = activities[0];
-  const lastActivity = activities[activities.length - 1];
+  const firstActivity = activities[activities.length - 1];
+  const lastActivity = activities[0];
   const activeSince = student?.createdAt ?? firstActivity?.occurredAt;
   const lastSeenAt = lastActivity?.occurredAt ?? student?.lastLoginAt;
 
   const displayName = formatDisplayName(student);
+
+  const requestInsight = async () => {
+    if (!studentId) return;
+    setInsightLoading(true);
+    setInsightError(null);
+    setInsight(null);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/dashboard/guru', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'student-insight', studentUid: studentId }),
+        cache: 'no-store',
+      });
+      const payload = await response.json() as { error?: string } | {
+        ai: StudentInsightAiResult | null;
+        aiError?: string | null;
+        usage?: { provider?: string } | null;
+      };
+      if (!response.ok) {
+        throw new Error('error' in payload && payload.error ? payload.error : 'AI insight gagal dimuat.');
+      }
+      if (!('ai' in payload) || !payload.ai) {
+        throw new Error('aiError' in payload && payload.aiError
+          ? payload.aiError
+          : 'Data belum cukup untuk menampilkan analisis AI.');
+      }
+      const recommendations = payload.ai.recommendations;
+      const findings = payload.ai.findings.map((item) => item.text);
+      setInsight({
+        capabilitySummary: payload.ai.summary,
+        weakestStage: 'Tidak dapat disimpulkan dari bukti yang tersedia.',
+        bestStage: 'Tidak dapat disimpulkan dari bukti yang tersedia.',
+        errorPattern: findings.join(' ') || 'Belum ada temuan yang didukung bukti.',
+        teacherRecommendation: recommendations.map((item) => item.text).join(' '),
+        remedial: recommendations
+          .filter((item) => item.category === 'review' || item.category === 'support')
+          .map((item) => item.text).join(' ') || 'Belum ada rekomendasi remedial berbasis bukti.',
+        enrichment: recommendations
+          .filter((item) => item.category === 'activity' || item.category === 'next_check')
+          .map((item) => item.text).join(' ') || 'Belum ada rekomendasi pengayaan berbasis bukti.',
+        fallbackUsed: false,
+      });
+    } catch (error) {
+      setInsightError(error instanceof Error ? error.message : 'AI insight gagal dimuat.');
+    } finally {
+      setInsightLoading(false);
+    }
+  };
 
   return (
     <RoleProtectedRoute allowedRole="teacher">
@@ -367,15 +371,31 @@ export default function StudentDetailPage() {
                     </div>
                     <div className="rounded-2xl bg-neutral-50 p-3">
                       <p className="text-[10px] uppercase tracking-wide text-neutral-400">Status</p>
-                      <p className="mt-1 font-black text-neutral-900">{student.isActive ? 'Aktif' : 'Nonaktif'}</p>
+                      <p className="mt-1 font-black text-neutral-900">{student.isActive === undefined ? 'Belum diisi' : student.isActive ? 'Aktif' : 'Nonaktif'}</p>
                     </div>
                     <div className="rounded-2xl bg-neutral-50 p-3">
                       <p className="text-[10px] uppercase tracking-wide text-neutral-400">Sekolah</p>
-                      <p className="mt-1 font-black text-neutral-900">{student.schoolName || '—'}</p>
+                      <p className="mt-1 font-black text-neutral-900">{student.schoolName || 'Belum diisi'}</p>
                     </div>
                     <div className="rounded-2xl bg-neutral-50 p-3">
                       <p className="text-[10px] uppercase tracking-wide text-neutral-400">Kelas</p>
-                      <p className="mt-1 font-black text-neutral-900">{student.gradeLevel ? `${student.gradeLevel}` : '—'}</p>
+                      <p className="mt-1 font-black text-neutral-900">{student.classLevel || (student.gradeLevel ? `${student.gradeLevel}` : 'Belum diisi')}</p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-3">
+                      <p className="text-[10px] uppercase tracking-wide text-neutral-400">UID</p>
+                      <p className="mt-1 break-all font-black text-neutral-900">{student.uid || student.id || 'Belum diisi'}</p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-3">
+                      <p className="text-[10px] uppercase tracking-wide text-neutral-400">Username</p>
+                      <p className="mt-1 font-black text-neutral-900">{student.username || 'Belum diisi'}</p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-3">
+                      <p className="text-[10px] uppercase tracking-wide text-neutral-400">Jenis kelamin</p>
+                      <p className="mt-1 font-black text-neutral-900">{student.gender || 'Belum diisi'}</p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-3">
+                      <p className="text-[10px] uppercase tracking-wide text-neutral-400">Tanggal registrasi</p>
+                      <p className="mt-1 font-black text-neutral-900">{formatFirestoreDate(student.createdAt)}</p>
                     </div>
                   </div>
                 </div>
@@ -511,42 +531,7 @@ export default function StudentDetailPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!student) return;
-                      setInsightLoading(true);
-                      setInsightError(null);
-                      void generateStudentInsight(
-                        {
-                          studentName: formatDisplayName(student),
-                          email: student.email,
-                          progressDocuments: progressDocuments.map((document) => ({
-                            comicId: document.comicId,
-                            percentage: document.percentage,
-                            status: document.status,
-                            completedStage: document.completedStage,
-                          })),
-                          reflections: reflections.map((reflection) => ({
-                            rating: reflection.rating,
-                            stage: reflection.stage,
-                            response: reflection.response,
-                            reflectionText: reflection.reflectionText,
-                          })),
-                          activities: activities.map((activity) => ({
-                            title: activity.title,
-                            description: activity.description,
-                            occurredAt: activity.occurredAt,
-                          })),
-                        },
-                        { retryCount: 2 }
-                      ).then((result) => {
-                        setInsight(result);
-                      }).catch((error) => {
-                        setInsightError(error instanceof Error ? error.message : 'AI insight gagal dimuat.');
-                        setInsight(null);
-                      }).finally(() => {
-                        setInsightLoading(false);
-                      });
-                    }}
+                    onClick={() => void requestInsight()}
                     disabled={insightLoading}
                     className="rounded-full border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-black text-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -566,9 +551,6 @@ export default function StudentDetailPage() {
                         <p className="mt-2 text-sm text-neutral-600">{insight[section.key]}</p>
                       </div>
                     ))}
-                    {insight.fallbackUsed ? (
-                      <p className="text-xs text-amber-600">Ringkasan ini dibuat dari data Firestore karena AI tidak tersedia saat ini.</p>
-                    ) : null}
                   </div>
                 ) : (
                   <div className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">Belum ada insight AI yang dapat ditampilkan.</div>

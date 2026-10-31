@@ -99,7 +99,7 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
             <p className="text-[11px] font-bold uppercase tracking-widest text-primary-600">AI Assistant</p>
             <h2 className="text-lg font-black text-neutral-900">Insight pembelajaran kelas</h2>
             <p className="mt-1 text-xs leading-5 text-neutral-600">
-              Fakta dihitung dari roster, progress, asesmen, refleksi, dan aktivitas dalam cakupan sekolah Anda.
+              Fakta dihitung dari seluruh roster siswa, progress, asesmen, refleksi, dan aktivitas yang tersedia.
             </p>
           </div>
           <button

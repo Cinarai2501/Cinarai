@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { ComicProgressDocument, UserDocument } from '@/types/firestore';
 import { normalizeComicProgressDocuments, normalizeStudentDocuments } from './studentNormalization';
-import { buildDashboardSummary, filterAndSortStudents, getStudentLearningStatus } from './studentUtils';
+import { buildDashboardSummary, buildStudentRow, filterAndSortStudents, getStudentLearningStatus } from './studentUtils';
 import { getModuleStudentStatus, isModuleProgressComplete } from './progressStatus';
 import type { StudentRow } from '../types';
 import { SINTAKS } from '@/types/progress';
@@ -32,6 +32,45 @@ test('keeps distinct Firebase UIDs even when emails match', () => {
   ];
 
   assert.deepEqual(normalizeStudentDocuments(users).map(({ uid }) => uid), ['student-a', 'student-b']);
+});
+
+test('includes every student-role document without school or teacher assignment and merges duplicate UIDs', () => {
+  const users: UserDocument[] = [
+    { uid: 'student-a', email: 'a@example.test', role: 'student', duplicate: true },
+    { uid: 'student-a', email: '', role: 'student', username: 'student-a', schoolName: undefined },
+    { uid: 'student-b', email: 'b@example.test', role: 'student' },
+    { uid: 'teacher-a', email: 't@example.test', role: 'teacher' },
+  ];
+
+  const normalized = normalizeStudentDocuments(users);
+  assert.deepEqual(normalized.map(({ uid }) => uid), ['student-a', 'student-b']);
+  assert.equal(normalized[0].username, 'student-a');
+  assert.equal(normalized[0].schoolName, undefined);
+  assert.equal(normalized[1].teacherUid, undefined);
+});
+
+test('uses the users document ID as the canonical Firebase UID', () => {
+  const normalized = normalizeStudentDocuments([{
+    id: 'account-uid',
+    uid: 'stale-profile-uid',
+    email: 'student@example.test',
+    role: 'student',
+  }]);
+
+  assert.equal(normalized[0].uid, 'account-uid');
+});
+
+test('uses explicit placeholders for missing profile fields and retains students without progress', () => {
+  const row = buildStudentRow({
+    uid: 'student-empty',
+    role: 'student',
+  } as UserDocument, []);
+
+  assert.equal(row.uid, 'student-empty');
+  assert.equal(row.displayName, 'Belum diisi');
+  assert.equal(row.email, 'Belum diisi');
+  assert.equal(row.schoolName, 'Belum diisi');
+  assert.equal(getStudentLearningStatus(row, 6), 'not_started');
 });
 
 test('does not infer module completion from a 100% percentage alone', () => {
@@ -244,7 +283,8 @@ test('classifies no-data, learning, attention and completion consistently in fil
   const summary = buildDashboardSummary(rows, 6);
   assert.equal(summary.notStartedStudents, 1);
   assert.equal(summary.attentionStudents, 1);
-  assert.equal(summary.activeStudents, 2);
+  assert.equal(summary.activeStudents, 3);
+  assert.equal(summary.learningStudents, 1);
 });
 
 test('searches email and sorts by completed comics', () => {

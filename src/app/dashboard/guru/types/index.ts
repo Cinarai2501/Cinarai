@@ -6,11 +6,13 @@ export interface StudentRow {
   uid: string;
   displayName: string;
   email: string;
+  username?: string;
+  nickname?: string;
   photoURL: string | null;
   schoolName: string;
   classLevel: UserDocument['classLevel'] | null;
   gradeLevel: number | null;
-  isActive: boolean;
+  isActive?: boolean;
   progressList: ComicProgressDocument[];
   averageProgress: number;
   completedComics: number;
@@ -21,6 +23,7 @@ export interface DashboardSummary {
   totalStudents: number;
   totalComics: number;
   activeStudents: number;
+  learningStudents: number;
   attentionStudents: number;
   notStartedStudents: number;
   studentsCompleted: number;

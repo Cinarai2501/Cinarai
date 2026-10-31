@@ -51,18 +51,7 @@ export default function GuruDashboardPage() {
 
   const handleGenerateInsight = () => {
     if (!detail.student || detail.student.uid !== selectedUid) return;
-    const evidence = [
-      ...detail.activities,
-      ...detail.applicationActivities,
-      ...detail.identificationAnswers,
-    ];
-    void aiInsight.generate(
-      detail.student.uid,
-      'Siswa',
-      detail.progressList,
-      detail.reflections,
-      evidence
-    );
+    void aiInsight.generate(detail.student.uid);
   };
 
   const handleGeneratePdf = () => {
@@ -89,18 +78,31 @@ export default function GuruDashboardPage() {
           <StudentDetail
             key={selectedUid}
             uid={selectedUid}
-            displayName={detail.student?.displayName ?? '—'}
-            email={detail.student?.email ?? '—'}
-            schoolName={detail.student?.schoolName ?? '—'}
+            profile={detail.student}
+            displayName={detail.student?.displayName?.trim()
+              || detail.student?.nickname?.trim()
+              || detail.student?.username?.trim()
+              || 'Belum diisi'}
+            email={detail.student?.email?.trim() || 'Belum diisi'}
+            username={detail.student?.username}
+            nickname={detail.student?.nickname}
+            photoURL={detail.student?.photoURL ?? detail.student?.avatar}
+            schoolId={detail.student?.schoolId}
+            schoolName={detail.student?.schoolName?.trim() || 'Belum diisi'}
             classLevel={detail.student?.classLevel ?? null}
             gradeLevel={detail.student?.gradeLevel ?? null}
-            isActive={detail.student?.isActive ?? false}
+            isActive={detail.student?.isActive}
+            gender={detail.student?.gender}
+            bio={detail.student?.bio}
+            createdAt={detail.student?.createdAt}
             comicProgress={detail.comicProgress}
             evaluation={detail.evaluation}
             reflections={detail.reflections}
             activities={detail.activities}
             applicationActivities={detail.applicationActivities}
             identificationAnswers={detail.identificationAnswers}
+            moduleProgress={detail.moduleProgress}
+            aiTutorChats={detail.aiTutorChats}
             insight={aiInsight.insight}
             insightLoading={aiInsight.loading}
             insightError={aiInsight.error}

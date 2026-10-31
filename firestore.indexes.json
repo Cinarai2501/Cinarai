@@ -72,7 +72,28 @@
       ]
     },
     {
+      "collectionId": "identification_answers",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "comicId", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionId": "application_activity",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "comicId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionId": "application_activity",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "comicId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionId": "reflection",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
@@ -81,7 +102,7 @@
     {
       "collectionId": "reflection",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "studentId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
       ]
     }

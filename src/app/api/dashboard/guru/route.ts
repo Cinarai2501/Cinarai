@@ -40,18 +40,20 @@ import { AiRouter, AiRouterTimeoutError } from '@/lib/ai/router';
 import { consumeTeacherAiRateLimit } from './rateLimit';
 import { readAllPages } from './pagedQuery';
 import { readBoundedJsonBody } from './requestBody';
+import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
 import type { ActivityDocument, ComicDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import { FieldPath } from 'firebase-admin/firestore';
-import type { DocumentSnapshot, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import type { DocumentSnapshot, Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 const DASHBOARD_ROSTER_PAGE_SIZE = 200;
 const CLASS_INSIGHT_SAMPLE_LIMIT = 150;
 const CLASS_INSIGHT_CHUNK_SIZE = 10;
 const CLASS_INSIGHT_COOLDOWN_MS = 60_000;
-const CLASS_INSIGHT_MAX_STUDENTS = 100;
 const STUDENT_INSIGHT_SAMPLE_LIMIT = 150;
 const MAX_AI_PROMPT_CHARS = 12_000;
 const COMIC_IDS = [1, 2, 3, 4, 5, 6] as const;
+const RECENT_RECORD_CHUNK_SIZE = 10;
+const RECENT_RECORDS_PER_QUERY = 20;
 
 type DashboardRoutePayload = {
   success: boolean;
@@ -62,6 +64,26 @@ type DashboardRoutePayload = {
   progressDocuments: ComicProgressDocument[];
   activities: ActivityDocument[];
   reflections: ReflectionDocument[];
+  applicationActivities: Array<{
+    id: string;
+    userId: string;
+    comicId?: number;
+    selectedAnswer?: string;
+    studentReason?: string;
+    coachType?: string;
+    timestamp?: unknown;
+    localTimestamp?: string;
+  }>;
+  identificationAnswers: Array<{
+    id: string;
+    userId: string;
+    comicId?: number;
+    step?: number;
+    selectedAnswer?: string | null;
+    reason?: string;
+    updatedAt?: unknown;
+    createdAt?: unknown;
+  }>;
   analytics: Array<Record<string, unknown>>;
   errors?: {
     users?: string;
@@ -83,18 +105,26 @@ type DashboardRoutePayload = {
 };
 
 function serializeUser(document: DocumentSnapshot): UserDocument {
-  const data = document.data() as Partial<UserDocument> | undefined;
+  const data = document.data() as (Partial<UserDocument> & Record<string, unknown>) | undefined;
   return {
+    ...data,
     id: document.id,
-    uid: typeof data?.uid === 'string' && data.uid.trim() ? data.uid.trim() : document.id,
+    uid: document.id,
     email: data?.email ?? '',
     displayName: data?.displayName,
+    username: data?.username,
+    nickname: data?.nickname,
+    gender: data?.gender,
+    bio: data?.bio,
+    avatar: data?.avatar,
     photoURL: data?.photoURL,
     role: (data?.role as UserDocument['role']) ?? 'student',
+    schoolId: data?.schoolId,
     schoolName: data?.schoolName,
+    teacherUid: data?.teacherUid,
     classLevel: data?.classLevel,
     gradeLevel: data?.gradeLevel,
-    isActive: data?.isActive ?? true,
+    isActive: typeof data?.isActive === 'boolean' ? data.isActive : undefined,
     duplicate: data?.duplicate === true,
     lastLoginAt: data?.lastLoginAt as UserDocument['lastLoginAt'],
     createdAt: data?.createdAt as UserDocument['createdAt'],
@@ -102,11 +132,11 @@ function serializeUser(document: DocumentSnapshot): UserDocument {
   };
 }
 
-function serializeActivity(document: DocumentSnapshot): ActivityDocument {
+function serializeActivity(document: DocumentSnapshot, ownerUid: string): ActivityDocument {
   const data = document.data() as Partial<ActivityDocument> | undefined;
   return {
     id: document.id,
-    userId: data?.userId ?? '',
+    userId: ownerUid,
     type: data?.type ?? 'login',
     title: data?.title ?? '',
     description: data?.description,
@@ -115,11 +145,11 @@ function serializeActivity(document: DocumentSnapshot): ActivityDocument {
   };
 }
 
-function serializeReflection(document: DocumentSnapshot): ReflectionDocument {
+function serializeReflection(document: DocumentSnapshot, ownerUid: string): ReflectionDocument {
   const data = document.data() as Partial<ReflectionDocument> | undefined;
   return {
     id: document.id,
-    userId: data?.userId,
+    userId: ownerUid,
     studentId: data?.studentId,
     moduleId: data?.moduleId,
     comicId: data?.comicId,
@@ -138,6 +168,36 @@ function serializeReflection(document: DocumentSnapshot): ReflectionDocument {
     submittedAt: data?.submittedAt as ReflectionDocument['submittedAt'],
     createdAt: data?.createdAt as ReflectionDocument['createdAt'],
     updatedAt: data?.updatedAt as ReflectionDocument['updatedAt'],
+  };
+}
+
+function serializeApplicationActivity(document: QueryDocumentSnapshot, ownerUid: string) {
+  const data = document.data();
+  return {
+    id: document.id,
+    userId: ownerUid,
+    comicId: typeof data.comicId === 'number' ? data.comicId : undefined,
+    selectedAnswer: typeof data.selectedAnswer === 'string' ? data.selectedAnswer : undefined,
+    studentReason: typeof data.studentReason === 'string' ? data.studentReason : undefined,
+    coachType: typeof data.coachType === 'string' ? data.coachType : undefined,
+    timestamp: data.timestamp,
+    localTimestamp: typeof data.localTimestamp === 'string' ? data.localTimestamp : undefined,
+  };
+}
+
+function serializeIdentificationAnswer(document: QueryDocumentSnapshot, ownerUid: string) {
+  const data = document.data();
+  return {
+    id: document.id,
+    userId: ownerUid,
+    comicId: typeof data.comicId === 'number' ? data.comicId : undefined,
+    step: typeof data.step === 'number' ? data.step : undefined,
+    selectedAnswer: typeof data.selectedAnswer === 'string' || data.selectedAnswer === null
+      ? data.selectedAnswer
+      : undefined,
+    reason: typeof data.reason === 'string' ? data.reason : undefined,
+    updatedAt: data.updatedAt,
+    createdAt: data.createdAt,
   };
 }
 
@@ -176,6 +236,8 @@ function buildEmptyPayload(message?: string, error?: string, status: 'success' |
     progressDocuments: [],
     activities: [],
     reflections: [],
+    applicationActivities: [],
+    identificationAnswers: [],
     analytics: [],
     errors: {},
     stats: {
@@ -197,12 +259,16 @@ function buildPayloadFromCollections(payload: {
   progressDocuments: ComicProgressDocument[];
   activities: ActivityDocument[];
   reflections: ReflectionDocument[];
+  applicationActivities: DashboardRoutePayload['applicationActivities'];
+  identificationAnswers: DashboardRoutePayload['identificationAnswers'];
 }, errors?: { [key: string]: string | undefined }): DashboardRoutePayload {
   const students = payload.students ?? [];
   const comics = payload.comics ?? [];
   const progressDocuments = payload.progressDocuments ?? [];
   const activities = payload.activities ?? [];
   const reflections = payload.reflections ?? [];
+  const applicationActivities = payload.applicationActivities ?? [];
+  const identificationAnswers = payload.identificationAnswers ?? [];
   const averageProgress = progressDocuments.length
     ? Math.round(progressDocuments.reduce((sum, document) => sum + (document.percentage ?? 0), 0) / progressDocuments.length)
     : 0;
@@ -215,6 +281,8 @@ function buildPayloadFromCollections(payload: {
     progressDocuments,
     activities,
     reflections,
+    applicationActivities,
+    identificationAnswers,
     analytics: [],
     errors: errors ?? {},
     stats: {
@@ -224,7 +292,8 @@ function buildPayloadFromCollections(payload: {
       averageProgress,
       completedModules,
       reflectionCount: reflections.length,
-      recentActivityCount: activities.length,
+      recentActivityCount: activities.length + reflections.length
+        + applicationActivities.length + identificationAnswers.length,
     },
     generatedAt: new Date().toISOString(),
   };
@@ -316,14 +385,12 @@ export async function GET(request: NextRequest) {
 
     const uid = decodedToken.uid;
     let role: string | undefined;
-    let teacherSchoolName: string | undefined;
 
     try {
       const profileSnapshot = await adminFirestore.collection('users').doc(uid).get();
       if (profileSnapshot.exists) {
         const userData = profileSnapshot.data() as Record<string, unknown> | undefined;
         role = typeof userData?.role === 'string' ? userData.role : undefined;
-        teacherSchoolName = typeof userData?.schoolName === 'string' ? userData.schoolName.trim() : undefined;
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -334,13 +401,6 @@ export async function GET(request: NextRequest) {
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json(buildEmptyPayload('Akun ini bukan akun guru.', 'Forbidden'), { status: 403 });
     }
-    if (role === 'teacher' && !teacherSchoolName) {
-      return NextResponse.json(
-        buildEmptyPayload('Profil guru belum memiliki sekolah; data siswa tidak dapat diakses.', 'Forbidden'),
-        { status: 403 }
-      );
-    }
-
     const firestore = adminFirestore;
     if (!firestore) {
       debug('[dashboard/guru] Firestore client unavailable before querying collections');
@@ -349,23 +409,17 @@ export async function GET(request: NextRequest) {
 
     // Run queries sequentially with logging so we can capture the exact failing step and stack
     debug('[dashboard/guru] starting collection queries');
-    const rosterSchoolName = role === 'teacher' ? teacherSchoolName : undefined;
-    const studentDocuments = await readAllPages<QueryDocumentSnapshot>(
-      async (cursor, pageSize) => {
-        let studentQuery = firestore.collection('users').where('role', '==', 'student');
-        if (rosterSchoolName) studentQuery = studentQuery.where('schoolName', '==', rosterSchoolName);
-        studentQuery = studentQuery.orderBy(FieldPath.documentId()).limit(pageSize);
-        if (cursor) studentQuery = studentQuery.startAfter(cursor);
-        const page = await safeGetCollection('users page', () => studentQuery.get());
-        return page.data?.docs ?? [];
-      },
-      DASHBOARD_ROSTER_PAGE_SIZE,
-    );
-    const [reflectionsSnapshot, activitySnapshot, comicsSnapshot] = await Promise.all([
-      safeGetCollection('reflection', async () =>
-        firestore.collection('reflection').orderBy('createdAt', 'desc').limit(200).get()),
-      safeGetCollection('activity', async () =>
-        firestore.collection('activity').orderBy('occurredAt', 'desc').limit(20).get()),
+    const [studentDocuments, comicsSnapshot] = await Promise.all([
+      readAllPages<QueryDocumentSnapshot>(
+        async (cursor, pageSize) => {
+          let studentQuery = firestore.collection('users').where('role', '==', 'student');
+          studentQuery = studentQuery.orderBy(FieldPath.documentId()).limit(pageSize);
+          if (cursor) studentQuery = studentQuery.startAfter(cursor);
+          const page = await safeGetCollection('users page', () => studentQuery.get());
+          return page.data?.docs ?? [];
+        },
+        DASHBOARD_ROSTER_PAGE_SIZE,
+      ),
       safeGetCollection('comics', async () => getComicCatalogSnapshots(firestore)),
     ]);
 
@@ -374,13 +428,21 @@ export async function GET(request: NextRequest) {
     const rawStudents = studentDocuments.map(serializeUser);
     const students = normalizeStudentDocuments(rawStudents);
     const studentUids = new Set(students.map((student) => student.uid));
+    const [reflectionsSnapshot, activitySnapshot, applicationSnapshot, answersSnapshot] = await Promise.all([
+      safeGetCollection('reflection', () =>
+        readRecentStudentRecords(firestore, 'reflection', 'createdAt', Array.from(studentUids))),
+      safeGetCollection('activity', () =>
+        readRecentStudentRecords(firestore, 'activity', 'occurredAt', Array.from(studentUids))),
+      safeGetCollection('application_activity', () =>
+        readRecentStudentRecords(firestore, 'application_activity', 'timestamp', Array.from(studentUids))),
+      safeGetCollection('identification_answers', () =>
+        readRecentStudentRecords(firestore, 'identification_answers', 'updatedAt', Array.from(studentUids))),
+    ]);
     const comics = comicsSnapshot.data?.map(serializeComic) ?? [];
     const progressReferences = students.flatMap((student) =>
-      comics
-        .filter((comic) => Number.isInteger(comic.comicId) && comic.comicId > 0)
-        .map((comic) => ({
+      COMIC_IDS.map((comicId) => ({
           uid: student.uid,
-          reference: firestore.collection('users').doc(student.uid).collection('progress').doc(`comic-${comic.comicId}`),
+          reference: firestore.collection('users').doc(student.uid).collection('progress').doc(`comic-${comicId}`),
         }))
     );
     const progressByUid = new Map<string, Array<{ id: string; userId: string; [field: string]: unknown }>>();
@@ -400,21 +462,33 @@ export async function GET(request: NextRequest) {
     const progressDocuments = students.flatMap((student) =>
       normalizeComicProgressDocuments(student.uid, progressByUid.get(student.uid) ?? [])
     );
-    const activities = activitySnapshot.data
-      ? activitySnapshot.data.docs.map(serializeActivity).filter((activity) => studentUids.has(activity.userId))
-      : [];
-    const reflections = reflectionsSnapshot.data
-      ? reflectionsSnapshot.data.docs
-          .map(serializeReflection)
-          .filter(
-            (reflection) =>
-              (reflection.userId && studentUids.has(reflection.userId)) ||
-              (reflection.studentId && studentUids.has(reflection.studentId))
-          )
-      : [];
+    const activities = activitySnapshot.data?.flatMap((document) => {
+      const ownerUid = getStudentRecordOwner(document.data(), studentUids);
+      return ownerUid ? [serializeActivity(document, ownerUid)] : [];
+    }) ?? [];
+    const reflections = reflectionsSnapshot.data?.flatMap((document) => {
+      const ownerUid = getStudentRecordOwner(document.data(), studentUids);
+      return ownerUid ? [serializeReflection(document, ownerUid)] : [];
+    }) ?? [];
+    const applicationActivities = applicationSnapshot.data?.flatMap((document) => {
+      const ownerUid = getStudentRecordOwner(document.data(), studentUids);
+      return ownerUid ? [serializeApplicationActivity(document, ownerUid)] : [];
+    }) ?? [];
+    const identificationAnswers = answersSnapshot.data?.flatMap((document) => {
+      const ownerUid = getStudentRecordOwner(document.data(), studentUids);
+      return ownerUid ? [serializeIdentificationAnswer(document, ownerUid)] : [];
+    }) ?? [];
 
     debug('[dashboard/guru] building payload snapshot');
-    const payload = buildPayloadFromCollections({ students, comics, progressDocuments, activities, reflections });
+    const payload = buildPayloadFromCollections({
+      students,
+      comics,
+      progressDocuments,
+      activities,
+      reflections,
+      applicationActivities,
+      identificationAnswers,
+    });
     debug('[dashboard/guru] payload built, sending response');
 
     return NextResponse.json(payload, { status: 200 });
@@ -466,19 +540,81 @@ function getComicCatalogSnapshots(firestore: AdminFirestore) {
   return firestore.getAll(...references);
 }
 
+async function readRecentStudentRecords(
+  firestore: AdminFirestore,
+  collectionName: 'activity' | 'application_activity' | 'identification_answers' | 'reflection',
+  timestampField: string,
+  studentUids: string[],
+): Promise<QueryDocumentSnapshot[]> {
+  const uidChunks: string[][] = [];
+  for (let offset = 0; offset < studentUids.length; offset += RECENT_RECORD_CHUNK_SIZE) {
+    uidChunks.push(studentUids.slice(offset, offset + RECENT_RECORD_CHUNK_SIZE));
+  }
+  const allowedUids = new Set(studentUids);
+  const queries = uidChunks.flatMap((uids) =>
+    (['userId', 'studentId'] as const).map((ownerField) => ({
+      uids,
+      ownerField,
+    }))
+  );
+  const snapshots = await Promise.all(queries.map(({ uids, ownerField }) =>
+    firestore.collection(collectionName)
+      .where(ownerField, 'in', uids)
+      .orderBy(timestampField, 'desc')
+      .limit(RECENT_RECORDS_PER_QUERY)
+      .get()
+  ));
+  const documents = new Map<string, QueryDocumentSnapshot>();
+  snapshots.flatMap((snapshot) => snapshot.docs).forEach((document) => {
+    if (getStudentRecordOwner(document.data(), allowedUids)) documents.set(document.id, document);
+  });
+  return Array.from(documents.values());
+}
+
+function readStudentRecords(firestore: AdminFirestore, collectionName: string, uid: string) {
+  const ownerFields = ['userId', 'studentId'] as const;
+  return Promise.all(ownerFields.map((ownerField) =>
+    readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
+      let recordsQuery = firestore.collection(collectionName)
+        .where(ownerField, '==', uid)
+        .orderBy(FieldPath.documentId())
+        .limit(pageSize);
+      if (cursor) recordsQuery = recordsQuery.startAfter(cursor);
+      return (await recordsQuery.get()).docs;
+    }, STUDENT_INSIGHT_SAMPLE_LIMIT)
+  )).then((groups) => {
+    const records = new Map<string, QueryDocumentSnapshot>();
+    groups.flat().forEach((document) => {
+      if (getStudentRecordOwner(document.data(), new Set([uid])) === uid) {
+        records.set(document.id, document);
+      }
+    });
+    return Array.from(records.values());
+  });
+}
+
+function readStudentSubcollection(
+  firestore: AdminFirestore,
+  uid: string,
+  collectionName: string,
+) {
+  return readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
+    let recordsQuery: Query = firestore.collection('users').doc(uid).collection(collectionName);
+    recordsQuery = recordsQuery.orderBy(FieldPath.documentId()).limit(pageSize);
+    if (cursor) recordsQuery = recordsQuery.startAfter(cursor);
+    return (await recordsQuery.get()).docs;
+  }, STUDENT_INSIGHT_SAMPLE_LIMIT);
+}
+
 async function buildStudentInsightResponse(
   firestore: AdminFirestore,
   teacherRole: unknown,
-  teacherSchoolName: string,
   studentUid: string,
 ): Promise<NextResponse> {
-  let scopedStudentQuery = firestore.collection('users')
+  const scopedStudentQuery = firestore.collection('users')
     .where('role', '==', 'student')
     .where('uid', '==', studentUid)
     .limit(10);
-  if (teacherRole === 'teacher') {
-    scopedStudentQuery = scopedStudentQuery.where('schoolName', '==', teacherSchoolName);
-  }
   const [directProfile, matchingProfiles] = await Promise.all([
     firestore.collection('users').doc(studentUid).get(),
     scopedStudentQuery.get(),
@@ -493,9 +629,7 @@ async function buildStudentInsightResponse(
       uid: data?.uid,
       id: document.id,
       role: data?.role,
-      schoolName: data?.schoolName,
-      duplicate: data?.duplicate,
-    }, studentUid, teacherRole, teacherSchoolName);
+    }, studentUid, teacherRole);
   });
   const student = normalizeStudentDocuments(scopedDocuments.map(serializeUser))
     .find((profile) => profile.uid === studentUid);
@@ -534,12 +668,31 @@ async function buildStudentInsightResponse(
     : [];
   const progress: StudentInsightProgress[] = [];
   let evaluationScore: number | null = null;
+  let evaluationResponses: Array<{ challengeId: string; answeredFields: number; totalFields: number }> = [];
   progressSnapshots.forEach((snapshot, index) => {
     if (!snapshot.exists) return;
     const data = snapshot.data() as Record<string, unknown> | undefined;
     if (!data) return;
     if (snapshot.id === 'evaluation-cinarai') {
       const evaluation = data.evaluationCinarai;
+      if (evaluation && typeof evaluation === 'object' && 'answers' in evaluation
+        && evaluation.answers && typeof evaluation.answers === 'object') {
+        evaluationResponses = Object.entries(evaluation.answers)
+          .filter(([, answer]) => answer && typeof answer === 'object' && !Array.isArray(answer))
+          .map(([challengeId, answer]) => {
+            const fields = Object.values(answer as Record<string, unknown>);
+            return {
+              challengeId,
+              answeredFields: fields.filter((value) =>
+                (typeof value === 'string' && value.trim().length > 0)
+                || (Array.isArray(value) && value.length > 0)
+                || (typeof value === 'number' && Number.isFinite(value))
+                || typeof value === 'boolean'
+              ).length,
+              totalFields: fields.length,
+            };
+          });
+      }
       const grading = evaluation && typeof evaluation === 'object' && 'grading' in evaluation
         ? evaluation.grading
         : null;
@@ -585,29 +738,22 @@ async function buildStudentInsightResponse(
     });
   });
 
-  const [answerSnapshot, activitySnapshot, applicationTimestampSnapshot, applicationLocalSnapshot, reflectionUserSnapshot, reflectionStudentSnapshot] = await Promise.all([
-    firestore.collection('identification_answers').where('userId', '==', studentUid)
-      .orderBy('updatedAt', 'desc').limit(STUDENT_INSIGHT_SAMPLE_LIMIT).get(),
-    firestore.collection('activity').where('userId', '==', studentUid)
-      .orderBy('occurredAt', 'desc').limit(STUDENT_INSIGHT_SAMPLE_LIMIT).get(),
-    firestore.collection('application_activity').where('userId', '==', studentUid)
-      .orderBy('timestamp', 'desc').limit(STUDENT_INSIGHT_SAMPLE_LIMIT).get(),
-    firestore.collection('application_activity').where('userId', '==', studentUid)
-      .orderBy('localTimestamp', 'desc').limit(STUDENT_INSIGHT_SAMPLE_LIMIT).get(),
-    firestore.collection('reflection').where('userId', '==', studentUid)
-      .orderBy('createdAt', 'desc').limit(STUDENT_INSIGHT_SAMPLE_LIMIT).get(),
-    firestore.collection('reflection').where('studentId', '==', studentUid)
-      .orderBy('createdAt', 'desc').limit(STUDENT_INSIGHT_SAMPLE_LIMIT).get(),
+  const [
+    answers,
+    activities,
+    applications,
+    reflections,
+    supplementaryProgress,
+    aiTutorChats,
+  ] = await Promise.all([
+    readStudentRecords(firestore, 'identification_answers', studentUid),
+    readStudentRecords(firestore, 'activity', studentUid),
+    readStudentRecords(firestore, 'application_activity', studentUid),
+    readStudentRecords(firestore, 'reflection', studentUid),
+    readStudentSubcollection(firestore, studentUid, 'learning-module-progress'),
+    readStudentSubcollection(firestore, studentUid, 'aiTutorChats'),
   ]);
-  const sampleMayBeTruncated = [
-    answerSnapshot,
-    activitySnapshot,
-    applicationTimestampSnapshot,
-    applicationLocalSnapshot,
-    reflectionUserSnapshot,
-    reflectionStudentSnapshot,
-  ].some((snapshot) => snapshot.size === STUDENT_INSIGHT_SAMPLE_LIMIT);
-  const answers: StudentInsightAnswer[] = answerSnapshot.docs.flatMap((document) => {
+  const mappedAnswers: StudentInsightAnswer[] = answers.flatMap((document) => {
     const data = document.data();
     const comicId = numericValue(data.comicId);
     const step = numericValue(data.step);
@@ -625,7 +771,7 @@ async function buildStudentInsightResponse(
       recordedAt: timestampToIso(data.updatedAt ?? data.createdAt),
     }];
   });
-  const activities: StudentInsightActivity[] = activitySnapshot.docs.flatMap((document) => {
+  const mappedActivities: StudentInsightActivity[] = activities.flatMap((document) => {
     const data = document.data();
     const occurredAt = timestampToIso(data.occurredAt);
     if (!occurredAt) return [];
@@ -639,10 +785,34 @@ async function buildStudentInsightResponse(
       occurredAt,
     }];
   });
-  const applicationDocuments = new Map<string, DocumentSnapshot>();
-  [...applicationTimestampSnapshot.docs, ...applicationLocalSnapshot.docs]
-    .forEach((document) => applicationDocuments.set(document.id, document));
-  const applications: StudentInsightApplication[] = Array.from(applicationDocuments.values()).map((document) => {
+  const aiTutorActivities = aiTutorChats.flatMap((document) => {
+    const data = document.data();
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    return messages.flatMap((message) => {
+      if (!message || typeof message !== 'object' || !('role' in message) || message.role !== 'user') return [];
+      const occurredAt = timestampToIso('timestamp' in message ? message.timestamp : null)
+        ?? timestampToIso(data.updatedAt);
+      return occurredAt ? [{
+        type: 'ai_tutor_question',
+        comicId: null,
+        occurredAt,
+        sessionId: document.id,
+      }] : [];
+    });
+  });
+  mappedActivities.push(...aiTutorActivities);
+  const mappedSupplementaryProgress = supplementaryProgress.map((document) => {
+    const data = document.data();
+    return {
+      moduleId: document.id,
+      status: stringValue(data.status),
+      score: numericValue(data.score),
+      completedItems: numericValue(data.completedItems),
+      totalItems: numericValue(data.totalItems),
+      updatedAt: timestampToIso(data.updatedAt),
+    };
+  });
+  const mappedApplications: StudentInsightApplication[] = applications.map((document) => {
     const data = document.data();
     const coachType = ['positive', 'constructive', 'neutral'].includes(String(data?.coachType))
       ? String(data?.coachType)
@@ -656,12 +826,8 @@ async function buildStudentInsightResponse(
       coachType,
       recordedAt: timestampToIso(data?.timestamp) ?? localTimestamp,
     };
-  }).sort((left, right) => Date.parse(right.recordedAt ?? '') - Date.parse(left.recordedAt ?? ''))
-    .slice(0, STUDENT_INSIGHT_SAMPLE_LIMIT);
-  const reflectionDocuments = new Map<string, DocumentSnapshot>();
-  [...reflectionUserSnapshot.docs, ...reflectionStudentSnapshot.docs]
-    .forEach((document) => reflectionDocuments.set(document.id, document));
-  const reflections: StudentInsightReflection[] = Array.from(reflectionDocuments.values()).flatMap((document) => {
+  }).sort((left, right) => Date.parse(right.recordedAt ?? '') - Date.parse(left.recordedAt ?? ''));
+  const mappedReflections: StudentInsightReflection[] = reflections.flatMap((document) => {
     const data = document.data();
     if (!data) return [];
     const rating = numericValue(data.rating);
@@ -671,20 +837,25 @@ async function buildStudentInsightResponse(
       confidence: confidence !== null && confidence >= 1 && confidence <= 5 ? confidence : null,
       recordedAt: timestampToIso(data.submittedAt ?? data.createdAt ?? data.timestamp),
     }];
-  }).sort((left, right) => Date.parse(right.recordedAt ?? '') - Date.parse(left.recordedAt ?? ''))
-    .slice(0, STUDENT_INSIGHT_SAMPLE_LIMIT);
+  }).sort((left, right) => Date.parse(right.recordedAt ?? '') - Date.parse(left.recordedAt ?? ''));
   const generatedAt = new Date();
   const facts = buildStudentInsightFacts({
+    profile: {
+      classLevel: student.classLevel ?? null,
+      gradeLevel: student.gradeLevel ?? null,
+    },
     modules: catalog.map(({ comicId, title, stages }) => ({ comicId, title, stages })),
     progress,
     evaluationScore,
-    answers,
-    activities,
-    applications,
-    reflections,
+    evaluationResponses,
+    answers: mappedAnswers,
+    activities: mappedActivities,
+    applications: mappedApplications,
+    reflections: mappedReflections,
+    supplementaryProgress: mappedSupplementaryProgress,
     generatedAt,
     sampleLimitPerQuery: STUDENT_INSIGHT_SAMPLE_LIMIT,
-    sampleMayBeTruncated,
+    sampleMayBeTruncated: false,
   });
   catalog.filter((comic) => !comic.definition).forEach((comic) => {
     facts.limitations.push(`Blueprint pembelajaran komik ${comic.comicId} belum tersedia; rincian tahap untuk komik ini terbatas.`);
@@ -825,12 +996,8 @@ export async function POST(request: NextRequest) {
     const profileSnapshot = await firestore.collection('users').doc(decodedToken.uid).get();
     const profile = profileSnapshot.data();
     const role = profile?.role;
-    const schoolName = typeof profile?.schoolName === 'string' ? profile.schoolName.trim() : '';
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 });
-    }
-    if (role === 'teacher' && !schoolName) {
-      return NextResponse.json({ error: 'Profil guru belum memiliki sekolah.' }, { status: 403 });
     }
     const rateLimited = await consumeTeacherAiRateLimit(firestore, decodedToken.uid, CLASS_INSIGHT_COOLDOWN_MS);
     if (rateLimited) {
@@ -840,19 +1007,23 @@ export async function POST(request: NextRequest) {
       );
     }
     if (requestBody.action === 'student-insight') {
-      return buildStudentInsightResponse(firestore, role, schoolName, requestedStudentUid);
+      return buildStudentInsightResponse(firestore, role, requestedStudentUid);
     }
 
-    let studentQuery = firestore.collection('users').where('role', '==', 'student');
-    if (role === 'teacher') studentQuery = studentQuery.where('schoolName', '==', schoolName);
-    studentQuery = studentQuery.limit(CLASS_INSIGHT_MAX_STUDENTS + 1);
+    const studentQuery = firestore.collection('users').where('role', '==', 'student');
     const [studentSnapshot, comicSnapshots] = await Promise.all([
-      studentQuery.get(),
+      readAllPages<QueryDocumentSnapshot>(
+        async (cursor, pageSize) => {
+          let pageQuery = studentQuery.orderBy(FieldPath.documentId()).limit(pageSize);
+          if (cursor) pageQuery = pageQuery.startAfter(cursor);
+          return (await pageQuery.get()).docs;
+        },
+        DASHBOARD_ROSTER_PAGE_SIZE,
+      ),
       getComicCatalogSnapshots(firestore),
     ]);
-    const rosterMayBeTruncated = studentSnapshot.docs.length > CLASS_INSIGHT_MAX_STUDENTS;
     const students = normalizeStudentDocuments(
-      studentSnapshot.docs.slice(0, CLASS_INSIGHT_MAX_STUDENTS).map(serializeUser)
+      studentSnapshot.map(serializeUser)
     );
     const comics = comicSnapshots
       .filter((document) => document.exists)
@@ -966,32 +1137,38 @@ export async function POST(request: NextRequest) {
     const activities: ClassInsightActivity[] = [];
     const reflections: ClassInsightReflection[] = [];
     const applications: ClassInsightApplication[] = [];
-    let sampleMayBeTruncated = rosterMayBeTruncated;
+    const readStudentRecords = (collectionName: string, uidChunk: string[]) =>
+      Promise.all((['userId', 'studentId'] as const).map((ownerField) =>
+        readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
+          let query = firestore.collection(collectionName)
+            .where(ownerField, 'in', uidChunk)
+            .limit(pageSize);
+          if (cursor) query = query.startAfter(cursor);
+          return (await query.get()).docs;
+        }, CLASS_INSIGHT_SAMPLE_LIMIT)
+      )).then((groups) => {
+        const documents = new Map<string, QueryDocumentSnapshot>();
+        const allowedUids = new Set(uidChunk);
+        groups.flat().forEach((document) => {
+          if (getStudentRecordOwner(document.data(), allowedUids)) {
+            documents.set(document.id, document);
+          }
+        });
+        return Array.from(documents.values());
+      });
+
     for (let offset = 0; offset < studentUids.length; offset += CLASS_INSIGHT_CHUNK_SIZE) {
       const uidChunk = studentUids.slice(offset, offset + CLASS_INSIGHT_CHUNK_SIZE);
-      const [answerSnapshot, activitySnapshot, applicationSnapshot, reflectionByUserSnapshot, reflectionByStudentSnapshot] = await Promise.all([
-        firestore.collection('identification_answers').where('userId', 'in', uidChunk)
-          .orderBy('updatedAt', 'desc').limit(CLASS_INSIGHT_SAMPLE_LIMIT).get(),
-        firestore.collection('activity').where('userId', 'in', uidChunk)
-          .orderBy('occurredAt', 'desc').limit(CLASS_INSIGHT_SAMPLE_LIMIT).get(),
-        firestore.collection('application_activity').where('userId', 'in', uidChunk)
-          .orderBy('timestamp', 'desc').limit(CLASS_INSIGHT_SAMPLE_LIMIT).get(),
-        firestore.collection('reflection').where('userId', 'in', uidChunk)
-          .orderBy('createdAt', 'desc').limit(CLASS_INSIGHT_SAMPLE_LIMIT).get(),
-        firestore.collection('reflection').where('studentId', 'in', uidChunk)
-          .orderBy('createdAt', 'desc').limit(CLASS_INSIGHT_SAMPLE_LIMIT).get(),
+      const [answerDocuments, activityDocuments, applicationDocuments, reflectionDocuments] = await Promise.all([
+        readStudentRecords('identification_answers', uidChunk),
+        readStudentRecords('activity', uidChunk),
+        readStudentRecords('application_activity', uidChunk),
+        readStudentRecords('reflection', uidChunk),
       ]);
-      sampleMayBeTruncated ||= [
-        answerSnapshot,
-        activitySnapshot,
-        applicationSnapshot,
-        reflectionByUserSnapshot,
-        reflectionByStudentSnapshot,
-      ].some((snapshot) => snapshot.size === CLASS_INSIGHT_SAMPLE_LIMIT);
 
-      answerSnapshot.docs.forEach((document) => {
+      answerDocuments.forEach((document) => {
         const data = document.data();
-        const userId = stringValue(data.userId);
+        const userId = stringValue(data.userId) ?? stringValue(data.studentId);
         const comicId = numericValue(data.comicId);
         const step = numericValue(data.step);
         if (!userId || comicId === null || step === null) return;
@@ -1010,9 +1187,9 @@ export async function POST(request: NextRequest) {
           recordedAt: timestampToIso(data.updatedAt ?? data.createdAt),
         });
       });
-      activitySnapshot.docs.forEach((document) => {
+      activityDocuments.forEach((document) => {
         const data = document.data();
-        const userId = stringValue(data.userId);
+        const userId = stringValue(data.userId) ?? stringValue(data.studentId);
         const type = stringValue(data.type);
         const occurredAt = timestampToIso(data.occurredAt);
         if (!userId || !type || !occurredAt) return;
@@ -1023,9 +1200,9 @@ export async function POST(request: NextRequest) {
           occurredAt,
         });
       });
-      applicationSnapshot.docs.forEach((document) => {
+      applicationDocuments.forEach((document) => {
         const data = document.data();
-        const userId = stringValue(data.userId);
+        const userId = stringValue(data.userId) ?? stringValue(data.studentId);
         if (!userId) return;
         applications.push({
           userId,
@@ -1036,9 +1213,6 @@ export async function POST(request: NextRequest) {
           recordedAt: timestampToIso(data.timestamp ?? data.localTimestamp),
         });
       });
-      const reflectionDocuments = new Map<string, DocumentSnapshot>();
-      [...reflectionByUserSnapshot.docs, ...reflectionByStudentSnapshot.docs]
-        .forEach((document) => reflectionDocuments.set(document.id, document));
       reflectionDocuments.forEach((document) => {
         const data = document.data();
         if (!data) return;
@@ -1063,8 +1237,8 @@ export async function POST(request: NextRequest) {
       applications,
       generatedAt: new Date(),
       sampleLimitPerQuery: CLASS_INSIGHT_SAMPLE_LIMIT,
-      sampleMayBeTruncated,
-      rosterMayBeTruncated,
+      sampleMayBeTruncated: false,
+      rosterMayBeTruncated: false,
     });
     const hasLearningEvidence = facts.scope.assessmentRecords > 0
       || facts.scope.activityRecords > 0

@@ -27,10 +27,12 @@ export function buildStudentRow(
 
   return {
     uid,
-    displayName: user.displayName?.trim() || user.email?.split('@')[0] || `Siswa ${uid.slice(0, 6)}`,
-    email: user.email?.trim() || 'Email tidak tersedia',
-    photoURL: user.photoURL ?? null,
-    schoolName: user.schoolName ?? '—',
+    displayName: user.displayName?.trim() || user.nickname?.trim() || user.username?.trim() || 'Belum diisi',
+    email: user.email?.trim() || 'Belum diisi',
+    username: user.username?.trim() || undefined,
+    nickname: user.nickname?.trim() || undefined,
+    photoURL: user.photoURL ?? user.avatar ?? null,
+    schoolName: user.schoolName?.trim() || 'Belum diisi',
     classLevel: user.classLevel ?? null,
     gradeLevel: user.gradeLevel ?? null,
     isActive: user.isActive,
@@ -96,8 +98,11 @@ export function filterAndSortStudents(
       if (!matchesStudentStatus(student, options.status, options.totalComics)) return false;
       if (!q) return true;
       const searchableValues = [
+        student.uid,
         student.displayName,
         student.email,
+        student.username ?? '',
+        student.nickname ?? '',
         student.schoolName,
         student.classLevel ?? '',
         student.gradeLevel === null ? '' : `kelas ${student.gradeLevel}`,
@@ -119,7 +124,8 @@ export function buildDashboardSummary(rows: StudentRow[], totalComics: number) {
   const totalStudents = rows.length;
   const progressDocuments = rows.reduce((sum, row) => sum + row.progressList.length, 0);
   const statuses = rows.map((row) => getStudentLearningStatus(row, totalComics));
-  const activeStudents = statuses.filter((status) => status === 'learning' || status === 'attention').length;
+  const activeStudents = rows.filter((row) => row.isActive === true).length;
+  const learningStudents = statuses.filter((status) => status === 'learning').length;
   const attentionStudents = statuses.filter((status) => status === 'attention').length;
   const notStartedStudents = statuses.filter((status) => status === 'not_started').length;
   const studentsCompleted = totalComics > 0
@@ -144,6 +150,7 @@ export function buildDashboardSummary(rows: StudentRow[], totalComics: number) {
     totalStudents,
     totalComics,
     activeStudents,
+    learningStudents,
     attentionStudents,
     notStartedStudents,
     studentsCompleted,

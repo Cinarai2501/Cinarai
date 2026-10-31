@@ -14,15 +14,20 @@ const modules = [
   { comicId: 2, title: 'Komik Dua', stages: ['Contextualization', 'Resolution'] },
 ];
 
-test('student insight authorization binds UID, role, and teacher school', () => {
-  const scopedProfile = { uid: 'student-uid', role: 'student', schoolName: 'Sekolah A' };
-  assert.equal(isStudentAllowedForInsight(scopedProfile, 'student-uid', 'teacher', 'Sekolah A'), true);
-  assert.equal(isStudentAllowedForInsight(scopedProfile, 'student-uid', 'teacher', 'Sekolah B'), false);
-  assert.equal(isStudentAllowedForInsight(scopedProfile, 'other-uid', 'teacher', 'Sekolah A'), false);
-  assert.equal(isStudentAllowedForInsight({ ...scopedProfile, role: 'teacher' }, 'student-uid', 'teacher', 'Sekolah A'), false);
-  assert.equal(isStudentAllowedForInsight({ ...scopedProfile, duplicate: true }, 'student-uid', 'teacher', 'Sekolah A'), false);
-  assert.equal(isStudentAllowedForInsight(scopedProfile, 'student-uid', 'admin', ''), true);
-  assert.equal(isStudentAllowedForInsight({ id: 'student-uid', role: 'student', schoolName: 'Sekolah A' }, 'student-uid', 'teacher', 'Sekolah A'), true);
+test('student insight authorization permits verified teacher/admin roles for every student UID', () => {
+  const studentProfile = { uid: 'student-uid', role: 'student' };
+  assert.equal(isStudentAllowedForInsight(studentProfile, 'student-uid', 'teacher'), true);
+  assert.equal(isStudentAllowedForInsight(studentProfile, 'student-uid', 'admin'), true);
+  assert.equal(isStudentAllowedForInsight(studentProfile, 'other-uid', 'teacher'), false);
+  assert.equal(isStudentAllowedForInsight({ ...studentProfile, role: 'teacher' }, 'student-uid', 'teacher'), false);
+  assert.equal(isStudentAllowedForInsight({ ...studentProfile, duplicate: true }, 'student-uid', 'teacher'), true);
+  assert.equal(isStudentAllowedForInsight({ id: 'student-uid', role: 'student' }, 'student-uid', 'teacher'), true);
+  assert.equal(isStudentAllowedForInsight({
+    id: 'student-uid',
+    uid: 'stale-profile-uid',
+    role: 'student',
+  }, 'student-uid', 'teacher'), true);
+  assert.equal(isStudentAllowedForInsight(studentProfile, 'student-uid', 'student'), false);
 });
 
 function facts(overrides: Partial<Parameters<typeof buildStudentInsightFacts>[0]> = {}) {
@@ -43,6 +48,7 @@ function facts(overrides: Partial<Parameters<typeof buildStudentInsightFacts>[0]
 
 test('complete individual data covers all modules and creates evidence-backed summaries', () => {
   const result = facts({
+    profile: { classLevel: 'Kelas IV', gradeLevel: 4 },
     progress: [
       {
         comicId: 1,
@@ -86,6 +92,56 @@ test('complete individual data covers all modules and creates evidence-backed su
   assert.equal(result.assessments[0].score, 30);
   assert.ok(result.evidence.some((item) => item.key === 'answers:1'));
   assert.ok(result.evidence.some((item) => item.key === 'activity:completion'));
+  assert.ok(result.evidence.some((item) => item.key === 'profile:class'));
+  assert.match(buildStudentInsightPrompt(result), /"classLevel":"Kelas IV"/);
+});
+
+test('individual AI facts include bounded supplemental progress and AI Tutor interaction evidence', () => {
+  const result = facts({
+    supplementaryProgress: [{
+      moduleId: 'bangun-ruang',
+      status: 'in_progress',
+      score: 8,
+      completedItems: 2,
+      totalItems: 4,
+      updatedAt: '2026-10-30T10:00:00.000Z',
+    }],
+    activities: [
+      { type: 'ai_tutor_question', comicId: null, sessionId: 'chat-1', occurredAt: '2026-10-30T10:00:00.000Z' },
+      { type: 'ai_tutor_question', comicId: null, sessionId: 'chat-1', occurredAt: '2026-10-30T10:01:00.000Z' },
+    ],
+  });
+
+  assert.equal(result.supplementaryProgress.recordCount, 1);
+  assert.equal(result.aiTutorActivity.sessionCount, 1);
+  assert.equal(result.aiTutorActivity.questionCount, 2);
+  assert.ok(result.evidence.some((item) => item.key === 'supplementary-progress'));
+  assert.ok(result.evidence.some((item) => item.key === 'ai-tutor:usage'));
+  assert.match(buildStudentInsightPrompt(result), /aiTutorActivity/);
+});
+
+test('individual AI prompt aggregates every stored supplementary and evaluation response', () => {
+  const result = facts({
+    supplementaryProgress: Array.from({ length: 200 }, (_, index) => ({
+      moduleId: `module-${index}`,
+      status: index % 2 ? 'completed' : 'in_progress',
+      score: index % 10,
+      completedItems: 2,
+      totalItems: 4,
+      updatedAt: null,
+    })),
+    evaluationResponses: [
+      { challengeId: 'challenge1', answeredFields: 2, totalFields: 2 },
+      { challengeId: 'challenge2', answeredFields: 1, totalFields: 3 },
+    ],
+  });
+  const prompt = buildStudentInsightPrompt(result);
+
+  assert.equal(result.supplementaryProgress.recordCount, 200);
+  assert.equal(result.evaluationResponses.length, 2);
+  assert.match(prompt, /"recordCount":200/);
+  assert.match(prompt, /"averageScore":4\.5/);
+  assert.match(prompt, /"challengeId":"challenge2","answeredFields":1/);
 });
 
 test('all catalog modules are included instead of only the latest progress document', () => {
@@ -196,10 +252,10 @@ test('AI prompt evidence is bounded in count and field size', () => {
   const evidence = getStudentInsightPromptEvidence(result);
   const prompt = buildStudentInsightPrompt(result);
 
-  assert.equal(evidence.length, 20);
+  assert.equal(evidence.length, 40);
   assert.ok(evidence.every((item) => item.label.length <= 80 && item.detail.length <= 220));
   assert.ok(prompt.length < 12_000);
-  assert.ok(!prompt.includes('evidence:20'));
+  assert.ok(!prompt.includes('evidence:40'));
 });
 
 test('AI output requires valid evidence references and recommendation categories', () => {

@@ -1,10 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { useRef } from 'react';
-import { generateStudentInsight } from '@/lib/ai/service';
+import { useRef, useState } from 'react';
+import { auth } from '@/lib/firebase/client';
 import type { AiInsight } from '../types';
-import type { ComicProgressDocument } from '@/types/firestore';
+
+interface StudentInsightResponse {
+  ai?: {
+    summary: string;
+    findings: Array<{ text: string }>;
+    recommendations: Array<{ category: string; text: string }>;
+  } | null;
+  aiError?: string | null;
+  usage?: { provider?: string } | null;
+}
 
 export function useStudentAiInsight() {
   const selectedUid = useRef<string | null>(null);
@@ -21,55 +29,54 @@ export function useStudentAiInsight() {
     setError(null);
   };
 
-  const generate = async (
-    uid: string,
-    studentName: string,
-    progressList: ComicProgressDocument[],
-    reflections: unknown[],
-    activities: unknown[]
-  ) => {
+  const generate = async (uid: string) => {
     if (!uid || selectedUid.current !== uid) return;
-    if (progressList.length === 0 && reflections.length === 0 && activities.length === 0) {
-      setInsight(null);
-      setLoading(false);
-      setError('Insight belum dapat dibuat karena belum ada data pembelajaran siswa.');
-      return;
-    }
     const currentRequest = ++requestId.current;
     setLoading(true);
     setError(null);
     setInsight(null);
     try {
-      const result = await generateStudentInsight({
-        studentName,
-        progressDocuments: progressList.map((p) => ({
-          comicId: p.comicId,
-          percentage: p.percentage,
-          status: p.status,
-          completedStage: p.completedStage,
-        })),
-        reflections: (reflections as Array<Record<string, unknown>>).map((r) => ({
-          rating: typeof r.rating === 'number' ? r.rating : null,
-          stage: typeof r.stage === 'string' ? r.stage : undefined,
-          response: typeof r.response === 'string' ? r.response : undefined,
-          reflectionText: typeof r.reflectionText === 'string' ? r.reflectionText : undefined,
-        })),
-        activities: (activities as Array<Record<string, unknown>>).map((a) => ({
-          title: typeof a.title === 'string' ? a.title : undefined,
-          description: typeof a.description === 'string' ? a.description : undefined,
-          occurredAt: a.occurredAt,
-        })),
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/dashboard/guru', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'student-insight', studentUid: uid }),
+        cache: 'no-store',
       });
-      if (selectedUid.current === uid && requestId.current === currentRequest) {
-        if (result.fallbackUsed) {
-          setError('Layanan AI tidak tersedia. Tidak ada analisis yang ditampilkan.');
-        } else {
-          setInsight(result);
-        }
+      const payload = await response.json() as { error?: string } | StudentInsightResponse;
+      if (!response.ok) {
+        throw new Error('error' in payload && payload.error
+          ? payload.error
+          : 'Analisis individu gagal dimuat.');
       }
-    } catch (err) {
+      if (!('ai' in payload)) throw new Error('Format data analisis individu tidak valid.');
+      if (!payload.ai) throw new Error(payload.aiError || 'Data belum cukup untuk menampilkan analisis AI.');
+
+      const findings = payload.ai.findings.map((item) => item.text).filter(Boolean);
+      const recommendations = payload.ai.recommendations;
+      const mappedInsight: AiInsight = {
+        capabilitySummary: payload.ai.summary,
+        weakestStage: 'Lihat temuan berbasis bukti',
+        bestStage: 'Lihat temuan berbasis bukti',
+        errorPattern: findings.join(' '),
+        teacherRecommendation: recommendations.map((item) => item.text).join(' '),
+        remedial: recommendations
+          .filter((item) => item.category === 'review' || item.category === 'support')
+          .map((item) => item.text).join(' ') || 'Belum ada rekomendasi remedial berbasis bukti.',
+        enrichment: recommendations
+          .filter((item) => item.category === 'activity' || item.category === 'next_check')
+          .map((item) => item.text).join(' ') || 'Belum ada rekomendasi pengayaan berbasis bukti.',
+        provider: payload.usage?.provider,
+      };
+      if (selectedUid.current === uid && requestId.current === currentRequest) setInsight(mappedInsight);
+    } catch (requestError) {
       if (selectedUid.current === uid && requestId.current === currentRequest) {
-        setError(err instanceof Error ? err.message : 'Gagal menghasilkan analisis AI');
+        setError(requestError instanceof Error ? requestError.message : 'Analisis individu gagal dimuat.');
       }
     } finally {
       if (selectedUid.current === uid && requestId.current === currentRequest) setLoading(false);

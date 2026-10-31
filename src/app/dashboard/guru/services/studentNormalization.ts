@@ -6,12 +6,12 @@ import { getCompletedModuleStages, getModuleProgressPercentage, getModuleStudent
 type RawProgressDocument = { id: string; userId?: string; [field: string]: unknown };
 
 export function normalizeStudentDocuments(users: UserDocument[]): UserDocument[] {
-  const studentDocs = users.filter((user) => user.role === 'student' && user.duplicate !== true);
+  const studentDocs = users.filter((user) => user.role === 'student');
 
   const byUid = new Map<string, UserDocument[]>();
 
   for (const student of studentDocs) {
-    const uid = student.uid?.trim() || student.id?.trim() || '';
+    const uid = student.id?.trim() || student.uid?.trim() || '';
     if (uid) {
       const existing = byUid.get(uid) ?? [];
       existing.push(student);
@@ -21,10 +21,18 @@ export function normalizeStudentDocuments(users: UserDocument[]): UserDocument[]
 
   const latestByUid = new Map<string, UserDocument>();
   for (const [uid, documents] of byUid.entries()) {
-    const latest = documents.reduce((best, candidate) => {
-      return getTimestampMillis(candidate.updatedAt) > getTimestampMillis(best.updatedAt) ? candidate : best;
-    }, documents[0]);
-    latestByUid.set(uid, { ...latest, uid });
+    const ordered = [...documents].sort(
+      (left, right) => getTimestampMillis(left.updatedAt) - getTimestampMillis(right.updatedAt)
+    );
+    const merged = ordered.reduce<UserDocument>((profile, candidate) => {
+      const nonEmptyFields = Object.fromEntries(
+        Object.entries(candidate).filter(([, value]) =>
+          value !== undefined && value !== null && value !== ''
+        )
+      );
+      return Object.assign(profile, nonEmptyFields);
+    }, { uid, email: '', role: 'student' });
+    latestByUid.set(uid, { ...merged, uid });
   }
 
   return Array.from(latestByUid.values()).sort((left, right) => {

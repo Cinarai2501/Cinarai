@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import {
   subscribeStudentActivities,
+  subscribeStudentAiTutorChats,
   subscribeStudentApplicationActivities,
   subscribeStudentDoc,
   subscribeStudentIdentificationAnswers,
+  subscribeStudentModuleProgress,
   subscribeStudentProgress,
   subscribeStudentReflections,
 } from '../services/firestoreService';
@@ -22,6 +24,8 @@ interface StudentDetailState {
   activities: Record<string, unknown>[];
   applicationActivities: Record<string, unknown>[];
   identificationAnswers: Record<string, unknown>[];
+  moduleProgress: Record<string, unknown>[];
+  aiTutorChats: Record<string, unknown>[];
   loading: boolean;
   error: string | null;
 }
@@ -36,6 +40,8 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
     activities: [],
     applicationActivities: [],
     identificationAnswers: [],
+    moduleProgress: [],
+    aiTutorChats: [],
     loading: true,
     error: null,
   });
@@ -44,17 +50,18 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
     if (!uid) {
       setState({
         uid: '', student: null, progressList: [], evaluation: null, reflections: [],
-        activities: [], applicationActivities: [], identificationAnswers: [], loading: false, error: null,
+        activities: [], applicationActivities: [], identificationAnswers: [],
+        moduleProgress: [], aiTutorChats: [], loading: false, error: null,
       });
       return;
     }
 
     let active = true;
     const ready = new Set<string>();
-    const sources = ['student', 'progress', 'reflections', 'activities', 'application', 'identification'];
+    const sources = ['student', 'progress', 'reflections', 'activities', 'application', 'identification', 'module-progress', 'ai-tutor'];
     setState({
       uid, student: null, progressList: [], evaluation: null, reflections: [], activities: [],
-      applicationActivities: [], identificationAnswers: [], loading: true, error: null,
+      applicationActivities: [], identificationAnswers: [], moduleProgress: [], aiTutorChats: [], loading: true, error: null,
     });
 
     const update = (patch: Partial<StudentDetailState>) => {
@@ -102,6 +109,14 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
         update({ identificationAnswers });
         markReady('identification');
       }, (error) => fail('identification', error)),
+      subscribeStudentModuleProgress(uid, (moduleProgress) => {
+        update({ moduleProgress });
+        markReady('module-progress');
+      }, (error) => fail('module-progress', error)),
+      subscribeStudentAiTutorChats(uid, (aiTutorChats) => {
+        update({ aiTutorChats });
+        markReady('ai-tutor');
+      }, (error) => fail('ai-tutor', error)),
     ];
 
     return () => {
@@ -119,6 +134,8 @@ export function useStudentDetail(uid: string, comics: ComicDocument[]) {
     activities: [],
     applicationActivities: [],
     identificationAnswers: [],
+    moduleProgress: [],
+    aiTutorChats: [],
     loading: Boolean(uid),
     error: null,
   };

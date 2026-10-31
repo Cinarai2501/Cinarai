@@ -3,18 +3,22 @@ import { comicModules } from '@/features/comics';
 import { adminFirestore, verifyIdToken } from '@/lib/firebase/admin';
 import { AiRouter, AiRouterTimeoutError } from '@/lib/ai/router';
 import { buildModuleBlueprint, getModuleStudentStatus } from '@/app/dashboard/guru/services/moduleAnalytics';
+import { getCompletedModuleStages } from '@/app/dashboard/guru/services/progressStatus';
 import { getModuleProgressPercentage } from '@/app/dashboard/guru/services/progressStatus';
 import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
 import { consumeTeacherAiRateLimit } from '../../rateLimit';
+import { readAllPages } from '../../pagedQuery';
+import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
 import type { ModuleDetailResponse } from '@/app/dashboard/guru/services/moduleAnalytics';
 import type { UserDocument } from '@/types/firestore';
+import { FieldPath, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export const runtime = 'nodejs';
 
 type RouteContext = { params: Promise<{ comicId: string }> };
 type RawDocument = Record<string, unknown> & { id: string };
 type Student = { uid: string; name: string; email: string };
-const MAX_MODULE_ROSTER = 100;
+const MODULE_ROSTER_PAGE_SIZE = 200;
 const MODULE_SAMPLE_LIMIT = 150;
 const MODULE_AI_COOLDOWN_MS = 60_000;
 const MAX_MODULE_AI_PROMPT_CHARS = 8_000;
@@ -72,12 +76,8 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   const profile = await firestore.collection('users').doc(uid).get();
   const profileData = profile.data();
   const role = profileData?.role;
-  const schoolName = typeof profileData?.schoolName === 'string' ? profileData.schoolName.trim() : '';
   if (role !== 'teacher' && role !== 'admin') {
     return { response: NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 }) };
-  }
-  if (role === 'teacher' && !schoolName) {
-    return { response: NextResponse.json({ error: 'Profil guru belum memiliki sekolah.' }, { status: 403 }) };
   }
   if (forAi && await consumeTeacherAiRateLimit(firestore, uid, MODULE_AI_COOLDOWN_MS)) {
     return {
@@ -88,28 +88,30 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
     };
   }
 
-  const [comicSnapshot, studentSnapshot] = await Promise.all([
+  const [comicSnapshot, studentDocuments] = await Promise.all([
     firestore.collection('comics').doc(`comic-${comicId}`).get(),
     (() => {
-      let query = firestore.collection('users').where('role', '==', 'student');
-      if (role === 'teacher') query = query.where('schoolName', '==', schoolName);
-      return query.limit(MAX_MODULE_ROSTER + 1).get();
+      const query = firestore.collection('users').where('role', '==', 'student');
+      return readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
+        let pageQuery = query.orderBy(FieldPath.documentId()).limit(pageSize);
+        if (cursor) pageQuery = pageQuery.startAfter(cursor);
+        return (await pageQuery.get()).docs;
+      }, MODULE_ROSTER_PAGE_SIZE);
     })(),
   ]);
   const comicDoc = comicSnapshot;
   if (!comicDoc.exists) return { response: NextResponse.json({ error: 'Komik tidak ditemukan di katalog.' }, { status: 404 }) };
 
-  const rosterMayBeTruncated = studentSnapshot.docs.length > MAX_MODULE_ROSTER;
-  const rawStudents: UserDocument[] = studentSnapshot.docs.slice(0, MAX_MODULE_ROSTER).map((document) => {
+  const rawStudents: UserDocument[] = studentDocuments.map((document) => {
     const data = document.data();
     return {
       id: document.id,
-      uid: typeof data.uid === 'string' ? data.uid : document.id,
+      uid: document.id,
       displayName: typeof data.displayName === 'string' ? data.displayName : undefined,
       email: typeof data.email === 'string' ? data.email : '',
       role: 'student',
       schoolName: typeof data.schoolName === 'string' ? data.schoolName : undefined,
-      isActive: data.isActive !== false,
+      isActive: typeof data.isActive === 'boolean' ? data.isActive : undefined,
       duplicate: data.duplicate === true,
     };
   });
@@ -138,30 +140,47 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   for (let offset = 0; offset < students.length; offset += 10) {
     chunks.push(students.slice(offset, offset + 10).map((student) => student.uid));
   }
-  const answerSnapshots = await Promise.all(chunks.map((uids) =>
-    firestore.collection('identification_answers').where('userId', 'in', uids).where('comicId', '==', comicId)
-      .limit(MODULE_SAMPLE_LIMIT + 1).get()
-  ));
-  const applicationSnapshots = await Promise.all(chunks.map((uids) =>
-    firestore.collection('application_activity').where('userId', 'in', uids).where('comicId', '==', comicId)
-      .limit(MODULE_SAMPLE_LIMIT + 1).get()
-  ));
-  const reflectionSnapshots = await Promise.all(chunks.map((uids) =>
-    firestore.collection('reflection').where('userId', 'in', uids).where('comicId', '==', String(comicId))
-      .limit(MODULE_SAMPLE_LIMIT + 1).get()
-  ));
-  const sampleMayBeTruncated = [
-    ...answerSnapshots,
-    ...applicationSnapshots,
-    ...reflectionSnapshots,
-  ].some((snapshot) => snapshot.docs.length > MODULE_SAMPLE_LIMIT);
+  const answerDocuments: QueryDocumentSnapshot[] = [];
+  const applicationDocuments: QueryDocumentSnapshot[] = [];
+  const reflectionDocuments = new Map<string, QueryDocumentSnapshot>();
+  const readModuleRecords = (collectionName: string, uids: string[]) =>
+    Promise.all((['userId', 'studentId'] as const).map((ownerField) =>
+      readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
+        let recordsQuery = firestore.collection(collectionName)
+          .where(ownerField, 'in', uids)
+          .where('comicId', '==', collectionName === 'reflection' ? String(comicId) : comicId)
+          .limit(pageSize);
+        if (cursor) recordsQuery = recordsQuery.startAfter(cursor);
+        return (await recordsQuery.get()).docs;
+      }, MODULE_SAMPLE_LIMIT)
+    )).then((groups) => {
+      const records = new Map<string, QueryDocumentSnapshot>();
+      const allowedUids = new Set(uids);
+      groups.flat().forEach((document) => {
+        if (getStudentRecordOwner(document.data(), allowedUids)) {
+          records.set(document.id, document);
+        }
+      });
+      return Array.from(records.values());
+    });
+  for (const uids of chunks) {
+    const [answers, applications, reflections] = await Promise.all([
+      readModuleRecords('identification_answers', uids),
+      readModuleRecords('application_activity', uids),
+      readModuleRecords('reflection', uids),
+    ]);
+    answerDocuments.push(...answers);
+    applicationDocuments.push(...applications);
+    reflections.forEach((document) => reflectionDocuments.set(document.id, document));
+  }
 
   const comicData = comicDoc.data() ?? {};
   const comicModule = comicModules[comicId as keyof typeof comicModules];
   if (!comicModule) return { response: NextResponse.json({ error: 'Blueprint modul belum tersedia.' }, { status: 404 }) };
   const studentByUid = new Map(students.map((student) => [student.uid, student]));
-  const rawAnswers: RawDocument[] = answerSnapshots.flatMap((snapshot) =>
-    snapshot.docs.slice(0, MODULE_SAMPLE_LIMIT).map((document) => toRawDocument(document.id, document.data()))
+  const studentUids = new Set(students.map((student) => student.uid));
+  const rawAnswers: RawDocument[] = answerDocuments.map((document) =>
+    toRawDocument(document.id, document.data())
   );
   const answered = rawAnswers.map((answer) => {
     const step = typeof answer.step === 'number' ? answer.step : -1;
@@ -175,7 +194,7 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
     const optionCorrect = questionDefinition?.options.find((option) => option.correct)?.text ?? '';
     const correctAnswer = declaredCorrect || optionCorrect;
     const correct = selected && correctAnswer ? normalizedText(selected) === normalizedText(correctAnswer) : null;
-    const uidValue = typeof answer.userId === 'string' ? answer.userId : '';
+    const uidValue = getStudentRecordOwner(answer, studentUids) ?? '';
     const student = studentByUid.get(uidValue);
     const question = questionDefinition?.question?.trim() || `Pertanyaan identifikasi ${step + 1}`;
     return {
@@ -213,15 +232,11 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
     const score = stageScore(progressByUid.get(student.uid), 'application');
     return score === null ? [] : [score];
   });
-  const reflections = reflectionSnapshots.flatMap((snapshot) =>
-    snapshot.docs.slice(0, MODULE_SAMPLE_LIMIT).map((document) => document.data())
-  );
-  const appActivities = applicationSnapshots.flatMap((snapshot) =>
-    snapshot.docs.slice(0, MODULE_SAMPLE_LIMIT).map((document) => document.data())
-  );
+  const reflections = Array.from(reflectionDocuments.values(), (document) => document.data());
+  const appActivities = applicationDocuments.map((document) => document.data());
   const reflectionConfidenceByUid = new Map<string, number>();
   reflections.forEach((reflection) => {
-    const userId = typeof reflection.userId === 'string' ? reflection.userId : '';
+    const userId = getStudentRecordOwner(reflection, studentUids) ?? '';
     const confidence = validConfidence(reflection.confidence ?? reflection.rating);
     if (!userId || confidence === null) return;
     const current = reflectionConfidenceByUid.get(userId);
@@ -231,17 +246,10 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   const progressStudents = students.map((student) => {
     const progress = progressByUid.get(student.uid);
     const completedStages = progress
-      ? new Set([
-        ...(Array.isArray(progress.completedStages)
-          ? progress.completedStages.filter((stage): stage is string => typeof stage === 'string')
-          : []),
-        ...(Array.isArray(progress.sintaksList)
-          ? progress.sintaksList.flatMap((stage) =>
-            stage && typeof stage === 'object' && 'status' in stage && 'sintaks' in stage
-              && stage.status === 'COMPLETED' && typeof stage.sintaks === 'string' ? [stage.sintaks] : []
-          )
-          : []),
-      ])
+      ? getCompletedModuleStages({
+        completedStages: progress.completedStages,
+        sintaksList: progress.sintaksList,
+      })
       : new Set<string>();
     return {
       uid: student.uid,
@@ -292,13 +300,17 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
       date: answer.date,
     })),
     ...appActivities.map((activity) => ({
-      studentName: studentByUid.get(typeof activity.userId === 'string' ? activity.userId : '')?.name ?? 'Siswa',
+      studentName: studentByUid.get(
+        getStudentRecordOwner(activity, studentUids) ?? ''
+      )?.name ?? 'Siswa',
       stage: 'Application',
       label: typeof activity.coachType === 'string' ? `Umpan balik: ${activity.coachType}` : 'Aktivitas tersimpan',
       date: timestampToIso(activity.timestamp ?? activity.localTimestamp),
     })),
     ...reflections.map((reflection) => ({
-      studentName: studentByUid.get(typeof reflection.userId === 'string' ? reflection.userId : '')?.name ?? 'Siswa',
+      studentName: studentByUid.get(
+        getStudentRecordOwner(reflection, studentUids) ?? ''
+      )?.name ?? 'Siswa',
       stage: 'Introspection',
       label: 'Refleksi tersimpan',
       date: timestampToIso(reflection.timestamp ?? reflection.submittedAt ?? reflection.createdAt),
@@ -322,10 +334,7 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
     pdfUrl: typeof comicData.pdfUrl === 'string' && comicData.pdfUrl.trim() ? comicData.pdfUrl : null,
   };
   const response: ModuleDetailResponse = {
-    limitations: [
-      ...(rosterMayBeTruncated ? [`Data mencakup maksimal ${MAX_MODULE_ROSTER} siswa pertama dalam roster; jumlah di bawah ini bukan total roster.`] : []),
-      ...(sampleMayBeTruncated ? [`Sebagian riwayat mencapai batas ${MODULE_SAMPLE_LIMIT} dokumen per query; metrik aktivitas, jawaban, atau refleksi adalah sampel.`] : []),
-    ],
+    limitations: [],
     comic,
     blueprint,
     summary: {
@@ -395,6 +404,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (result.response) return result.response;
     const data = result.data;
     if (!data) return NextResponse.json({ error: 'Data modul tidak tersedia.' }, { status: 404 });
+    const hasLearningEvidence = data.summary.startedCount > 0
+      || data.summary.answeredCount > 0
+      || data.summary.applicationActivityCount > 0
+      || data.summary.reflectionCount > 0
+      || data.summary.quizAverage !== null
+      || data.summary.argumentationAverage !== null
+      || data.summary.applicationAverage !== null;
+    if (!hasLearningEvidence) {
+      return NextResponse.json(
+        { error: 'Data pembelajaran belum cukup untuk meminta analisis AI.' },
+        { status: 422 }
+      );
+    }
     const difficultQuestions = data.questions
       .filter((question) => question.incorrectCount > 0)
       .slice(0, 5)

@@ -72,9 +72,14 @@ export interface ClassInsightFacts {
     studentsStarted: number;
     studentsCompletedAnyComic: number;
     studentsWithNoRecordedProgress: number;
+    studentsWithLowRecordedProgress: number;
+    studentsNeedingAttention: number;
+    studentsWithLearningActivity: number;
     averageRecordedProgress: number | null;
     recordedProgressCount: number;
   };
+  activityByType: Array<{ type: string; eventCount: number }>;
+  mostActiveStudents: Array<{ uid: string; name: string; eventCount: number }>;
   assessments: Array<{ type: string; averageScore: number; recordCount: number }>;
   comics: Array<{
     comicId: number;
@@ -278,9 +283,44 @@ export function buildClassInsightFacts(input: {
     ...progressRows.map(({ progress }) => progress.updatedAt),
   ].flatMap((value) => value && Number.isFinite(Date.parse(value)) ? [new Date(value)] : []);
   const learningActivities = input.activities.filter((activity) =>
-    ['lesson_started', 'lesson_completed', 'comic_started', 'comic_completed', 'reflection_submitted'].includes(activity.type)
+    [
+      'lesson_started',
+      'lesson_completed',
+      'comic_started',
+      'comic_completed',
+      'reflection_submitted',
+      'ai_tutor_question',
+    ].includes(activity.type)
   );
+  const activityCountsByType = new Map<string, number>();
+  learningActivities.forEach((activity) => {
+    activityCountsByType.set(
+      activity.type,
+      (activityCountsByType.get(activity.type) ?? 0) + 1
+    );
+  });
+  const activityByType = Array.from(activityCountsByType.entries())
+    .map(([type, eventCount]) => ({ type, eventCount }));
+  const activityCountsByUid = new Map<string, number>();
+  learningActivities.forEach((activity) => {
+    if (activity.userId) {
+      activityCountsByUid.set(activity.userId, (activityCountsByUid.get(activity.userId) ?? 0) + 1);
+    }
+  });
+  const mostActiveStudents = Array.from(activityCountsByUid.entries())
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 5)
+    .flatMap(([uid, eventCount]) => {
+      const student = input.students.find((candidate) => candidate.uid === uid);
+      return student ? [{ uid, name: student.name, eventCount }] : [];
+    });
   const activityByWeek = buildWeeklyActivityCounts(learningActivities, generatedAt);
+  const studentsWithLowRecordedProgress = input.students.filter((student) => {
+    const recorded = student.progress.filter((progress) =>
+      progress.comicId > 0 && progress.percentage !== null
+    );
+    return recorded.length >= 2 && roundedMean(recorded.map((progress) => progress.percentage as number)) < 40;
+  }).length;
   const limitations: string[] = [];
   if (!input.students.length) limitations.push('Tidak ada siswa dalam cakupan kewenangan guru.');
   if (!progressRows.length) limitations.push('Belum ada dokumen progress komik tersimpan untuk roster ini.');
@@ -329,9 +369,14 @@ export function buildClassInsightFacts(input: {
       studentsWithNoRecordedProgress: input.students.filter((student) =>
         !student.progress.some((progress) => progress.comicId > 0 && progress.percentage !== null)
       ).length,
+      studentsWithLowRecordedProgress,
+      studentsNeedingAttention: attentionStudents.length,
+      studentsWithLearningActivity: new Set(learningActivities.map((activity) => activity.userId)).size,
       averageRecordedProgress: recordedProgress.length ? roundedMean(recordedProgress) : null,
       recordedProgressCount: recordedProgress.length,
     },
+    activityByType,
+    mostActiveStudents,
     assessments,
     comics,
     difficulties,
@@ -343,7 +388,16 @@ export function buildClassInsightFacts(input: {
 
 export function buildClassInsightPrompt(facts: ClassInsightFacts): string {
   const aggregateOnly = {
-    roster: facts.scope.studentCount,
+    roster: {
+      totalStudents: facts.scope.studentCount,
+      started: facts.summary.studentsStarted,
+      completedAnyComic: facts.summary.studentsCompletedAnyComic,
+      withoutRecordedProgress: facts.summary.studentsWithNoRecordedProgress,
+      withLowRecordedProgress: facts.summary.studentsWithLowRecordedProgress,
+      needingAttention: facts.summary.studentsNeedingAttention,
+      averageRecordedProgress: facts.summary.averageRecordedProgress,
+      progressRecords: facts.summary.recordedProgressCount,
+    },
     modules: facts.comics.slice(0, 6).map((comic) => ({
       comicId: comic.comicId,
       started: comic.studentsStarted,
@@ -357,16 +411,23 @@ export function buildClassInsightPrompt(facts: ClassInsightFacts): string {
         rosterDenominator: stage.denominator,
       })),
     })),
-    classAverageRecordedProgress: facts.summary.averageRecordedProgress,
-    progressRecords: facts.summary.recordedProgressCount,
     classAssessments: facts.assessments,
+    activity: {
+      totalRecords: facts.scope.activityRecords,
+      learningRecords: facts.scope.learningActivityRecords,
+      participatingStudents: facts.summary.studentsWithLearningActivity,
+      byType: facts.activityByType,
+      mostActiveStudentEventCounts: facts.mostActiveStudents.map((student) => student.eventCount),
+      byWeek: facts.activityByWeek,
+    },
+    applicationRecords: facts.scope.applicationRecords,
+    reflectionRecords: facts.scope.reflectionRecords,
     difficulties: facts.difficulties.slice(0, 5).map((difficulty) => ({
       comicId: difficulty.comicId,
       step: difficulty.question,
       incorrectAnswers: difficulty.incorrectCount,
       judgedAnswers: difficulty.judgedAnswerCount,
     })),
-    activityByWeek: facts.activityByWeek,
     dataPeriod: facts.historyPeriod,
     truncated: facts.scope.sampleMayBeTruncated,
   };

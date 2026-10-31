@@ -1,7 +1,9 @@
 'use client';
 
+import Image from 'next/image';
+import { useState } from 'react';
 import { Card, ProgressBar, ProgressRing, Badge, Skeleton } from './ui';
-import type { ComicDocument, ComicProgressDocument } from '@/types/firestore';
+import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
 import type { CinaraiEvaluationProgress } from '@/types/evaluation';
 import type { AiInsight } from '../types';
 
@@ -12,18 +14,28 @@ interface ComicEntry {
 
 interface Props {
   uid: string;
+  profile: UserDocument | null;
   displayName: string;
   email: string;
+  username?: string;
+  nickname?: string;
+  photoURL?: string;
+  schoolId?: string;
   schoolName: string;
   classLevel: string | null;
   gradeLevel: number | null;
-  isActive: boolean;
+  isActive?: boolean;
+  gender?: string;
+  bio?: string;
+  createdAt?: unknown;
   comicProgress: ComicEntry[];
   evaluation: CinaraiEvaluationProgress | null;
   reflections: Record<string, unknown>[];
   activities: Record<string, unknown>[];
   applicationActivities: Record<string, unknown>[];
   identificationAnswers: Record<string, unknown>[];
+  moduleProgress: Record<string, unknown>[];
+  aiTutorChats: Record<string, unknown>[];
   insight: AiInsight | null;
   insightLoading: boolean;
   insightError: string | null;
@@ -36,18 +48,28 @@ interface Props {
 
 export function StudentDetail({
   uid,
+  profile,
   displayName,
   email,
+  username,
+  nickname,
+  photoURL,
+  schoolId,
   schoolName,
   classLevel,
   gradeLevel,
   isActive,
+  gender,
+  bio,
+  createdAt,
   comicProgress,
   evaluation,
   reflections,
   activities,
   applicationActivities,
   identificationAnswers,
+  moduleProgress,
+  aiTutorChats,
   insight,
   insightLoading,
   insightError,
@@ -57,7 +79,7 @@ export function StudentDetail({
   onGenerateInsight,
   onGeneratePdf,
 }: Props) {
-  void uid;
+  const [activityPage, setActivityPage] = useState(0);
   const recordedProgress = comicProgress.flatMap((entry) =>
     entry.progress ? [entry.progress.percentage] : []
   );
@@ -90,8 +112,14 @@ export function StudentDetail({
       date: firstValidDate(reflection, ['submittedAt', 'createdAt', 'timestamp', 'updatedAt']),
     })),
   ].filter((item): item is typeof item & { date: Date } => item.date !== null)
-    .sort((left, right) => right.date.getTime() - left.date.getTime())
-    .slice(0, 10);
+    .sort((left, right) => right.date.getTime() - left.date.getTime());
+  const activityPageSize = 10;
+  const activityPageCount = Math.max(1, Math.ceil(recentActivity.length / activityPageSize));
+  const additionalProfileFields = getAdditionalProfileFields(profile);
+  const visibleActivities = recentActivity.slice(
+    activityPage * activityPageSize,
+    (activityPage + 1) * activityPageSize
+  );
 
   return (
     <div className="space-y-4 animate-fade-in-up">
@@ -127,20 +155,21 @@ export function StudentDetail({
           {/* Identity */}
           <Card className="p-5">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-2xl font-black text-primary-700">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
+              {photoURL
+                ? <Image src={photoURL} alt="" width={64} height={64} unoptimized className="h-16 w-16 flex-shrink-0 rounded-full object-cover" />
+                : <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-2xl font-black text-primary-700">{displayName.charAt(0).toUpperCase()}</div>}
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-black text-neutral-900 truncate">{displayName}</h2>
                 <p className="text-sm text-neutral-500 truncate">{email}</p>
+                <p className="text-xs text-neutral-500 truncate">@{username?.trim() || 'Belum diisi'}</p>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   <Badge color="primary">{schoolName}</Badge>
                   {classLevel
                     ? <Badge color="secondary">{classLevel}</Badge>
                     : gradeLevel !== null && <Badge color="secondary">Kelas {gradeLevel}</Badge>}
-                  <Badge color={isActive ? 'accent' : 'error'}>
-                    {isActive ? 'Aktif' : 'Tidak Aktif'}
-                  </Badge>
+                  {isActive === undefined
+                    ? <Badge color="warning">Status akun belum diisi</Badge>
+                    : <Badge color={isActive ? 'accent' : 'error'}>{isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>}
                 </div>
               </div>
               <div className="flex-shrink-0 text-center">
@@ -156,6 +185,22 @@ export function StudentDetail({
                 </p>
               </div>
             </div>
+            <dl className="mt-4 grid gap-3 border-t border-neutral-100 pt-4 text-sm sm:grid-cols-2">
+              <ProfileValue label="UID siswa" value={uid} />
+              <ProfileValue label="Email" value={email} />
+              <ProfileValue label="Username" value={username} />
+              <ProfileValue label="Nama panggilan" value={nickname} />
+              <ProfileValue label="Jenis kelamin" value={gender} />
+              <ProfileValue label="Sekolah" value={schoolName} />
+              <ProfileValue label="ID sekolah" value={schoolId} />
+              <ProfileValue label="Kelas" value={classLevel || (gradeLevel ? `Kelas ${gradeLevel}` : undefined)} />
+              <ProfileValue label="Tanggal registrasi" value={formatTimestamp(createdAt)} />
+              <ProfileValue label="Terakhir login" value={formatTimestamp(profile?.lastLoginAt)} />
+              <ProfileValue label="Bio" value={bio} />
+              {additionalProfileFields.map(({ key, label, value }) => (
+                <ProfileValue key={key} label={label} value={value} />
+              ))}
+            </dl>
           </Card>
 
           {/* Comic progress */}
@@ -181,7 +226,7 @@ export function StudentDetail({
                       }
                     >
                       {!progress
-                        ? 'Belum ada data'
+                        ? 'Belum Mulai'
                         : progress.status === 'completed'
                         ? 'Selesai'
                         : `${progress.percentage ?? 0}%`}
@@ -191,7 +236,7 @@ export function StudentDetail({
                   {progress && (
                     <>
                       <p className="mt-1 text-xs text-neutral-400">
-                        Tahap terakhir: {progress.completedStage || '—'}
+                        Tahap terakhir: {progress.completedStage || 'Belum ada'} · Mulai: {formatTimestamp(progress.createdAt)} · Aktivitas terakhir: {formatTimestamp(progress.updatedAt)}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {progress.sintaksList?.map((stage) => (
@@ -219,6 +264,29 @@ export function StudentDetail({
             </ul>
           </Card>
 
+          <Card>
+            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
+              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Hasil belajar</p>
+              <h3 className="text-base font-black text-neutral-900">Jawaban, penerapan, dan refleksi</h3>
+            </div>
+            <div className="grid gap-4 p-5 md:grid-cols-3">
+              <LearningRecords title="Jawaban identifikasi" records={identificationAnswers} />
+              <LearningRecords title="Aktivitas penerapan" records={applicationActivities} />
+              <LearningRecords title="Refleksi" records={reflections} />
+            </div>
+          </Card>
+
+          <Card>
+            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
+              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Aktivitas tambahan</p>
+              <h3 className="text-base font-black text-neutral-900">Modul belajar dan AI Tutor</h3>
+            </div>
+            <div className="grid gap-4 p-5 md:grid-cols-2">
+              <LearningRecords title="Progres modul lain" records={moduleProgress} />
+              <LearningRecords title="Percakapan AI Tutor terbaru" records={aiTutorChats} />
+            </div>
+          </Card>
+
           {/* Stats row */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard emoji="📝" label="Refleksi" value={String(reflections.length)} />
@@ -239,17 +307,33 @@ export function StudentDetail({
               {!evaluation ? (
                 <p className="text-neutral-500">Belum ada dokumen evaluasi tersimpan.</p>
               ) : (
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  <p>Status: <strong>{evaluation.completed ? 'Selesai' : 'Dalam proses'}</strong></p>
-                  <p>Jawaban tersimpan: <strong>{Object.keys(evaluation.answers ?? {}).length}</strong></p>
-                  <p>Penilaian: <strong>
-                    {evaluation.grading?.status === 'graded' && typeof evaluation.grading.totalScore === 'number'
-                      ? `${evaluation.grading.totalScore}/40`
-                      : evaluation.grading?.status === 'pending'
-                        ? 'Menunggu penilaian'
-                        : 'Belum tersedia'}
-                  </strong></p>
-                </div>
+                <>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    <p>Status: <strong>{evaluation.completed ? 'Selesai' : 'Dalam proses'}</strong></p>
+                    <p>Jawaban tersimpan: <strong>{Object.keys(evaluation.answers ?? {}).length}</strong></p>
+                    <p>Penilaian: <strong>
+                      {evaluation.grading?.status === 'graded' && typeof evaluation.grading.totalScore === 'number'
+                        ? `${evaluation.grading.totalScore}/40`
+                        : evaluation.grading?.status === 'pending'
+                          ? 'Menunggu penilaian'
+                          : 'Belum tersedia'}
+                    </strong></p>
+                  </div>
+                  {Object.entries(evaluation.answers ?? {}).length > 0 && (
+                    <ul className="mt-4 space-y-2">
+                      {Object.entries(evaluation.answers).map(([challengeId, answer]) => (
+                        <li key={challengeId} className="rounded-lg bg-neutral-50 p-3">
+                          <p className="text-xs font-semibold text-neutral-500">
+                            Tantangan {challengeId.replace('challenge', '')}
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-800">
+                            {formatProfileValue(answer) ?? 'Belum diisi'}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </div>
           </Card>
@@ -261,7 +345,7 @@ export function StudentDetail({
             </div>
             {recentActivity.length ? (
               <ul className="divide-y divide-neutral-100">
-                {recentActivity.map((item) => (
+                {visibleActivities.map((item) => (
                   <li key={item.id} className="px-5 py-3">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                       <p className="text-sm font-semibold text-neutral-800">{item.title}</p>
@@ -275,6 +359,27 @@ export function StudentDetail({
               </ul>
             ) : (
               <p className="px-5 py-4 text-sm text-neutral-500">Belum ada aktivitas dengan timestamp valid.</p>
+            )}
+            {activityPageCount > 1 && (
+              <div className="flex items-center justify-between border-t border-neutral-100 px-5 py-3">
+                <button
+                  type="button"
+                  disabled={activityPage === 0}
+                  onClick={() => setActivityPage((page) => Math.max(0, page - 1))}
+                  className="min-h-10 rounded-lg border border-neutral-200 px-3 text-sm disabled:opacity-40"
+                >
+                  Sebelumnya
+                </button>
+                <span className="text-xs text-neutral-500">Halaman {activityPage + 1} dari {activityPageCount}</span>
+                <button
+                  type="button"
+                  disabled={activityPage + 1 >= activityPageCount}
+                  onClick={() => setActivityPage((page) => Math.min(activityPageCount - 1, page + 1))}
+                  className="min-h-10 rounded-lg border border-neutral-200 px-3 text-sm disabled:opacity-40"
+                >
+                  Berikutnya
+                </button>
+              </div>
             )}
           </Card>
 
@@ -339,6 +444,194 @@ export function StudentDetail({
 
 function textValue(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function formatTimestamp(value: unknown): string {
+  const date = value && typeof value === 'object' && 'toDate' in value
+    && typeof value.toDate === 'function'
+    ? value.toDate()
+    : value instanceof Date
+      ? value
+      : null;
+  return date instanceof Date && Number.isFinite(date.getTime())
+    ? date.toLocaleDateString('id-ID')
+    : 'Belum diisi';
+}
+
+function ProfileValue({ label, value }: { label: string; value: unknown }) {
+  const displayValue = formatProfileValue(value) ?? 'Belum diisi';
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-semibold text-neutral-500">{label}</dt>
+      <dd className="mt-1 break-words text-neutral-800">{displayValue}</dd>
+    </div>
+  );
+}
+
+const DISPLAYED_PROFILE_FIELDS = new Set([
+  'id', 'uid', 'email', 'displayName', 'username', 'nickname', 'gender', 'schoolName',
+  'schoolId', 'classLevel', 'gradeLevel', 'createdAt', 'updatedAt', 'lastLoginAt', 'bio',
+  'photoURL', 'avatar', 'role', 'isActive', 'duplicate', 'teacherUid',
+]);
+
+const PROFILE_FIELD_LABELS: Record<string, string> = {
+  attendanceNumber: 'Nomor absen',
+  attendanceNo: 'Nomor absen',
+  rollNumber: 'Nomor absen',
+  nomorAbsen: 'Nomor absen',
+  noAbsen: 'Nomor absen',
+  studentNumber: 'Nomor siswa',
+  studentNo: 'Nomor siswa',
+  nis: 'NIS',
+  nisn: 'NISN',
+};
+
+function getAdditionalProfileFields(profile: UserDocument | null) {
+  return Object.entries(profile ?? {})
+    .filter(([key, value]) => !DISPLAYED_PROFILE_FIELDS.has(key)
+      && value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => ({
+      key,
+      label: PROFILE_FIELD_LABELS[key] ?? key.replace(/([a-z0-9])([A-Z])/g, '$1 $2'),
+      value: formatProfileValue(value),
+    }))
+    .filter((entry): entry is typeof entry & { value: string } => entry.value !== null);
+}
+
+function formatProfileValue(value: unknown): string | null {
+  if (typeof value === 'string') return value.trim() || null;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value && typeof value === 'object' && 'toDate' in value
+    && typeof value.toDate === 'function') {
+    return formatTimestamp(value);
+  }
+  if (value && typeof value === 'object') {
+    const serialized = JSON.stringify(value);
+    return serialized === '{}' || serialized === '[]' ? null : serialized;
+  }
+  return null;
+}
+
+function LearningRecords({
+  title,
+  records,
+}: {
+  title: string;
+  records: Record<string, unknown>[];
+}) {
+  const [page, setPage] = useState(0);
+  const pageSize = 5;
+  const pageCount = Math.max(1, Math.ceil(records.length / pageSize));
+  const visible = records.slice(page * pageSize, (page + 1) * pageSize);
+
+  return (
+    <section className="min-w-0">
+      <h4 className="text-sm font-bold text-neutral-800">{title}</h4>
+      {visible.length ? (
+        <ul className="mt-2 space-y-2">
+          {visible.map((record, index) => (
+            <li key={String(record.id ?? `${title}:${page * pageSize + index}`)} className="rounded-lg bg-neutral-50 p-3 text-xs">
+              <p className="font-semibold text-neutral-800">{recordTitle(record, title)}</p>
+              {recordDetails(record, title).map((detail) => (
+                <p key={detail} className="mt-1 whitespace-pre-wrap break-words leading-5 text-neutral-600">{detail}</p>
+              ))}
+              <p className="mt-1 text-[10px] text-neutral-400">
+                {formatTimestamp(record.updatedAt ?? record.timestamp ?? record.createdAt)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 rounded-lg bg-neutral-50 p-3 text-xs text-neutral-500">Belum ada data.</p>
+      )}
+      {pageCount > 1 && (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="min-h-9 rounded border border-neutral-200 px-2 disabled:opacity-40">Sebelumnya</button>
+          <span className="text-[10px] text-neutral-500">{page + 1}/{pageCount}</span>
+          <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="min-h-9 rounded border border-neutral-200 px-2 disabled:opacity-40">Berikutnya</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function recordTitle(record: Record<string, unknown>, section: string): string {
+  if (section.includes('identifikasi')) return `Komik ${record.comicId ?? '—'} · Langkah ${record.step ?? '—'}`;
+  if (section.includes('penerapan')) return `Komik ${record.comicId ?? '—'} · Penerapan`;
+  if (section === 'Refleksi') return `Refleksi Komik ${record.comicId ?? record.moduleId ?? '—'}`;
+  if (section.includes('AI Tutor')) return textValue(record.title) ?? 'Percakapan AI Tutor';
+  return textValue(record.moduleId) ?? 'Progres modul';
+}
+
+function recordDetails(record: Record<string, unknown>, section: string): string[] {
+  if (section.includes('identifikasi')) {
+    const details = [
+      textValue(record.selectedAnswer) ? `Jawaban: ${textValue(record.selectedAnswer)}` : null,
+      textValue(record.reason) ? `Alasan: ${textValue(record.reason)}` : null,
+      textValue(record.note) ? `Catatan: ${textValue(record.note)}` : null,
+    ];
+    if (typeof record.isCorrect === 'boolean') details.push(`Ketepatan: ${record.isCorrect ? 'Benar' : 'Belum tepat'}`);
+    else if (typeof record.correct === 'boolean') details.push(`Ketepatan: ${record.correct ? 'Benar' : 'Belum tepat'}`);
+    if (typeof record.score === 'number') details.push(`Skor: ${record.score}`);
+    return [
+      ...details.filter((detail): detail is string => Boolean(detail)),
+      ...additionalRecordDetails(record, ['selectedAnswer', 'reason', 'note', 'isCorrect', 'correct', 'score']),
+    ];
+  }
+  if (section.includes('penerapan')) {
+    return [
+      textValue(record.selectedAnswer) ? `Jawaban: ${textValue(record.selectedAnswer)}` : null,
+      textValue(record.studentReason) ? `Alasan: ${textValue(record.studentReason)}` : null,
+      textValue(record.coachMessage) ? `Umpan balik: ${textValue(record.coachMessage)}` : null,
+      typeof record.score === 'number' ? `Skor: ${record.score}` : null,
+      ...additionalRecordDetails(record, ['selectedAnswer', 'studentReason', 'coachMessage', 'score']),
+    ].filter((detail): detail is string => Boolean(detail));
+  }
+  if (section === 'Refleksi') {
+    return [
+      textValue(record.reflectionText) ?? textValue(record.response),
+      typeof record.rating === 'number' ? `Penilaian: ${record.rating}` : null,
+      typeof record.confidence === 'number' ? `Keyakinan: ${record.confidence}` : null,
+      ...additionalRecordDetails(record, ['reflectionText', 'response', 'rating', 'confidence']),
+    ].filter((detail): detail is string => Boolean(detail));
+  }
+  if (section.includes('AI Tutor')) {
+    const messages = Array.isArray(record.messages) ? record.messages : [];
+    const question = [...messages].reverse().find((message) =>
+      message && typeof message === 'object' && 'role' in message && message.role === 'user'
+    );
+    const content = question && typeof question === 'object' && 'content' in question
+      && typeof question.content === 'string' ? question.content : null;
+    return [
+      typeof record.lastMessage === 'string' && record.lastMessage.trim()
+        ? `Pesan terakhir: ${record.lastMessage.trim()}`
+        : content ? `Pertanyaan terbaru: ${content}` : null,
+      `Jumlah pesan: ${messages.length}`,
+    ].filter((detail): detail is string => Boolean(detail));
+  }
+  return [
+    typeof record.status === 'string' ? `Status: ${record.status}` : null,
+    typeof record.score === 'number' ? `Skor: ${record.score}` : null,
+    typeof record.completedItems === 'number' && typeof record.totalItems === 'number'
+      ? `Item selesai: ${record.completedItems}/${record.totalItems}`
+      : null,
+    ...additionalRecordDetails(record, ['status', 'score', 'completedItems', 'totalItems', 'moduleId']),
+  ].filter((detail): detail is string => Boolean(detail));
+}
+
+function additionalRecordDetails(record: Record<string, unknown>, displayedFields: string[]): string[] {
+  const excludedFields = new Set([
+    'id', 'uid', 'userId', 'studentId', 'createdAt', 'updatedAt', 'timestamp',
+    'localTimestamp', 'occurredAt', 'submittedAt', 'comicId', 'moduleId',
+  ]);
+  const representedFields = new Set([...excludedFields, ...displayedFields]);
+  return Object.entries(record).flatMap(([field, value]) => {
+    if (representedFields.has(field) || value === undefined || value === null || value === '') return [];
+    const displayValue = formatProfileValue(value);
+    if (!displayValue) return [];
+    const label = field.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+    return [`${label}: ${displayValue}`];
+  });
 }
 
 function firstValidDate(record: Record<string, unknown>, fields: string[]): Date | null {

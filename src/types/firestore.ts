@@ -32,9 +32,11 @@ export interface UserDocument extends FirestoreBaseDocument {
   avatar?: string;
   photoURL?: string;
   role: UserRole;
+  schoolId?: string;
   schoolName?: string;
+  teacherUid?: string;
   gradeLevel?: number;
-  isActive: boolean;
+  isActive?: boolean;
   duplicate?: boolean;
   lastLoginAt?: FirestoreTimestamp;
 }

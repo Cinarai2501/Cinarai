@@ -59,6 +59,7 @@ export default function TeacherEvaluationReview({
   evaluation: CinaraiEvaluationProgress | null;
 }) {
   const { user } = useAuth();
+  const canGrade = user?.role === 'admin';
   const [scores, setScores] = useState<CinaraiEvaluationScores>(evaluation?.grading?.challengeScores ?? {});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -71,7 +72,7 @@ export default function TeacherEvaluationReview({
 
   const totalScore = getEvaluationScore(scores);
   const saveGrade = async () => {
-    if (!studentId || !user?.uid || totalScore === null) return;
+    if (!canGrade || !studentId || !user?.uid || totalScore === null) return;
     setSaveState('saving');
     setErrorMessage('');
     try {
@@ -110,7 +111,7 @@ export default function TeacherEvaluationReview({
             return <article key={challenge.id} className="rounded-xl border border-neutral-200 p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div><h3 className="font-extrabold text-neutral-900">{challenge.letter}. Tantangan {challenge.id.replace('challenge', '')} — {challenge.title}</h3><p className="mt-1 text-xs font-semibold text-neutral-500">Konstruk: {challenge.focus}</p></div>
-                <label className="flex shrink-0 items-center gap-2 text-sm font-bold text-neutral-700">Skor
+                {canGrade ? <label className="flex shrink-0 items-center gap-2 text-sm font-bold text-neutral-700">Skor
                   <select value={scores[challenge.id] ?? ''} onChange={(event) => {
                     const value = event.target.value;
                     setScores((current) => {
@@ -123,7 +124,7 @@ export default function TeacherEvaluationReview({
                   }} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100" aria-label={`Skor rubric tantangan ${challenge.id.replace('challenge', '')}`}>
                     <option value="">Pilih</option>{RUBRIC_LEVELS.map((level) => <option key={level.score} value={level.score}>{level.score} · {level.label}</option>)}
                   </select>
-                </label>
+                </label> : <p className="text-sm font-bold text-neutral-700">Skor: {scores[challenge.id] ?? 'Belum dinilai'}</p>}
               </div>
               <div className="mt-3 space-y-2">{Object.entries(answers ?? {}).map(([key, answer]) => {
                 const rendered = formatAnswer(challenge.id, key, answer);
@@ -136,7 +137,8 @@ export default function TeacherEvaluationReview({
 
         <div className="mt-4 flex flex-col gap-3 rounded-xl bg-primary-50 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-extrabold text-neutral-900">{totalScore === null ? 'Nilai total: lengkapi skor semua tantangan' : `Nilai total: ${totalScore} / 40`}</p>
-          <button type="button" onClick={() => void saveGrade()} disabled={totalScore === null || saveState === 'saving'} className="min-h-11 rounded-xl bg-primary-600 px-4 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">{saveState === 'saving' ? 'Menyimpan...' : saveState === 'saved' ? 'Penilaian tersimpan' : 'Simpan penilaian'}</button>
+          {canGrade && <button type="button" onClick={() => void saveGrade()} disabled={totalScore === null || saveState === 'saving'} className="min-h-11 rounded-xl bg-primary-600 px-4 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">{saveState === 'saving' ? 'Menyimpan...' : saveState === 'saved' ? 'Penilaian tersimpan' : 'Simpan penilaian'}</button>}
+          {!canGrade && <p className="text-sm text-neutral-600">Mode baca saja. Hanya admin yang dapat menyimpan penilaian.</p>}
         </div>
         {errorMessage && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{errorMessage}</p>}
       </>}

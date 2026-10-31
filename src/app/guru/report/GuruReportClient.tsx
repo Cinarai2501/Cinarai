@@ -5,10 +5,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 import { getAllComics } from '@/lib/comicRepository';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import {
+  collection,
+  documentId,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  where,
+  type QueryDocumentSnapshot,
+} from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
 import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
-import type { ActivityDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
+import { normalizeComicProgressDocuments } from '@/app/dashboard/guru/services/studentNormalization';
+import { isModuleProgressComplete } from '@/app/dashboard/guru/services/progressStatus';
+import type { ActivityDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import {
   escapeCsvValue,
   filterReportRows,
@@ -23,6 +35,34 @@ const defaultFilters: GuruReportFilters = {
   studentId: null,
   date: null,
 };
+
+async function readAllPages(
+  fetchPage: (cursor: QueryDocumentSnapshot | undefined, pageSize: number) => Promise<QueryDocumentSnapshot[]>,
+  pageSize = 200
+): Promise<QueryDocumentSnapshot[]> {
+  const documents: QueryDocumentSnapshot[] = [];
+  let cursor: QueryDocumentSnapshot | undefined;
+  while (true) {
+    const page = await fetchPage(cursor, pageSize);
+    documents.push(...page);
+    if (page.length < pageSize) return documents;
+    cursor = page[page.length - 1];
+  }
+}
+
+async function readStudentRecords(collectionName: string, ownerField: 'userId' | 'studentId', uids: string[]) {
+  if (!uids.length) return [];
+  return readAllPages(async (cursor, pageSize) => {
+    let recordsQuery = query(
+      collection(firestore, collectionName),
+      where(ownerField, 'in', uids),
+      orderBy(documentId()),
+      limit(pageSize)
+    );
+    if (cursor) recordsQuery = query(recordsQuery, startAfter(cursor));
+    return (await getDocs(recordsQuery)).docs;
+  });
+}
 
 export default function GuruReportClient() {
   const { user, loading } = useAuth();
@@ -42,12 +82,6 @@ export default function GuruReportClient() {
       setError('Sesi guru tidak valid. Silakan masuk kembali.');
       return;
     }
-    if (user.role === 'teacher' && !user.schoolName?.trim()) {
-      setIsLoading(false);
-      setError('Profil guru belum memiliki sekolah; laporan siswa tidak dapat diakses.');
-      return;
-    }
-
     let active = true;
 
     const loadReportData = async () => {
@@ -55,16 +89,21 @@ export default function GuruReportClient() {
       setError(null);
 
       try {
-        const studentFilters = [where('role', '==', 'student')];
-        if (user.role === 'teacher') {
-          studentFilters.push(where('schoolName', '==', user.schoolName?.trim() ?? ''));
-        }
-        const studentsSnapshot = await getDocs(query(collection(firestore, 'users'), ...studentFilters));
+        const studentDocuments = await readAllPages(async (cursor, pageSize) => {
+          let studentsQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'student'),
+            orderBy(documentId()),
+            limit(pageSize)
+          );
+          if (cursor) studentsQuery = query(studentsQuery, startAfter(cursor));
+          return (await getDocs(studentsQuery)).docs;
+        });
 
         if (!active) return;
 
         const students = normalizeStudentDocuments(
-          studentsSnapshot.docs
+          studentDocuments
             .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as UserDocument))
             .filter((student) => student.role === 'student')
         );
@@ -73,25 +112,23 @@ export default function GuruReportClient() {
         for (let index = 0; index < studentUids.length; index += 8) {
           studentChunks.push(studentUids.slice(index, index + 8));
         }
-        const [reflectionUserSnapshots, reflectionStudentSnapshots, activitySnapshots] = await Promise.all([
-          Promise.all(studentChunks.map((chunk) => getDocs(query(
-            collection(firestore, 'reflection'),
-            where('userId', 'in', chunk)
-          )))),
-          Promise.all(studentChunks.map((chunk) => getDocs(query(
-            collection(firestore, 'reflection'),
-            where('studentId', 'in', chunk)
-          )))),
-          Promise.all(studentChunks.map((chunk) => getDocs(query(
-            collection(firestore, 'activity'),
-            where('userId', 'in', chunk)
-          )))),
-        ]);
+        const reflectionUserSnapshots: QueryDocumentSnapshot[] = [];
+        const reflectionStudentSnapshots: QueryDocumentSnapshot[] = [];
+        const activitySnapshots: QueryDocumentSnapshot[] = [];
+        for (const chunk of studentChunks) {
+          const [userReflections, studentReflections, studentActivities] = await Promise.all([
+            readStudentRecords('reflection', 'userId', chunk),
+            readStudentRecords('reflection', 'studentId', chunk),
+            readStudentRecords('activity', 'userId', chunk),
+          ]);
+          reflectionUserSnapshots.push(...userReflections);
+          reflectionStudentSnapshots.push(...studentReflections);
+          activitySnapshots.push(...studentActivities);
+        }
         if (!active) return;
 
         const reflections = Array.from(new Map(
           [...reflectionUserSnapshots, ...reflectionStudentSnapshots]
-            .flatMap((snapshot) => snapshot.docs)
             .map((documentSnapshot) => [
               documentSnapshot.id,
               { id: documentSnapshot.id, ...documentSnapshot.data() } as ReflectionDocument,
@@ -99,17 +136,30 @@ export default function GuruReportClient() {
         ).values());
 
         const activities = activitySnapshots
-          .flatMap((snapshot) => snapshot.docs)
           .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ActivityDocument));
 
-        const progressSnapshots = await Promise.all(
-          students.map((student) => getDocs(collection(firestore, 'users', student.uid, 'progress')))
-        );
+        const progressSnapshots: QueryDocumentSnapshot[][] = [];
+        for (let offset = 0; offset < students.length; offset += 50) {
+          progressSnapshots.push(...await Promise.all(
+            students.slice(offset, offset + 50).map((student) => readAllPages(async (cursor, pageSize) => {
+              let progressQuery = query(
+                collection(firestore, 'users', student.uid, 'progress'),
+                orderBy(documentId()),
+                limit(pageSize)
+              );
+              if (cursor) progressQuery = query(progressQuery, startAfter(cursor));
+              return (await getDocs(progressQuery)).docs;
+            }))
+          ));
+        }
 
         const guruRows: GuruReportRow[] = students.flatMap((student, index) => {
-          const progressDocuments = progressSnapshots[index]?.docs
-            .map((documentSnapshot) => ({ id: documentSnapshot.id, ...documentSnapshot.data() } as ComicProgressDocument))
-            .filter((document) => typeof document.comicId === 'number');
+          const progressDocuments = normalizeComicProgressDocuments(
+            student.uid,
+            progressSnapshots[index]
+              ?.map((documentSnapshot) => ({ id: documentSnapshot.id, userId: student.uid, ...documentSnapshot.data() }))
+              ?? []
+          ).filter((document) => typeof document.comicId === 'number');
 
           return (progressDocuments ?? []).map((document) => {
             const comic = comicMap.get(document.comicId);
@@ -136,7 +186,7 @@ export default function GuruReportClient() {
               comicTitle: comic?.title ?? `Komik ${document.comicId}`,
               progress: Math.round(document.percentage ?? 0),
               value: Math.round((latestReflection?.rating ?? 0) * 20),
-              status: document.status === 'completed'
+              status: isModuleProgressComplete(document)
                 ? 'completed'
                 : document.status === 'in_progress' || (document.percentage ?? 0) > 0
                   ? 'in_progress'
