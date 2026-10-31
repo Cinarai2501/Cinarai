@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
+import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import type { AiInsight } from '../types';
 
 interface StudentInsightResponse {
@@ -39,7 +40,8 @@ export function useStudentAiInsight() {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/dashboard/guru', {
+      const endpoint = '/api/dashboard/guru';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -48,7 +50,7 @@ export function useStudentAiInsight() {
         body: JSON.stringify({ action: 'student-insight', studentUid: uid }),
         cache: 'no-store',
       });
-      const payload = await response.json() as { error?: string } | StudentInsightResponse;
+      const payload = await readJsonResponse<{ error?: string } | StudentInsightResponse>(response, endpoint);
       if (!response.ok) {
         throw new Error('error' in payload && payload.error
           ? payload.error

@@ -201,24 +201,25 @@ function serializeIdentificationAnswer(document: QueryDocumentSnapshot, ownerUid
   };
 }
 
-function serializeComic(document: DocumentSnapshot): ComicDocument {
+function serializeComic(document: DocumentSnapshot, comicId: number): ComicDocument {
   const data = document.data() as Partial<ComicDocument> | undefined;
+  const metadata = comicModules[comicId as keyof typeof comicModules]?.metadata;
   return {
     id: document.id,
-    comicId: data?.comicId ?? Number(document.id),
-    slug: data?.slug ?? document.id,
-    title: data?.title ?? document.id,
-    subtitle: data?.subtitle ?? '',
-    kelas: data?.kelas ?? '',
-    lokasi: data?.lokasi ?? '',
-    synopsis: data?.synopsis ?? '',
+    comicId: data?.comicId ?? metadata?.comicId ?? comicId,
+    slug: data?.slug ?? `comic-${comicId}`,
+    title: data?.title ?? metadata?.title ?? `Komik ${comicId}`,
+    subtitle: data?.subtitle ?? metadata?.subtitle ?? '',
+    kelas: data?.kelas ?? metadata?.classLevel ?? '',
+    lokasi: data?.lokasi ?? metadata?.location ?? '',
+    synopsis: data?.synopsis ?? metadata?.synopsis ?? '',
     characters: data?.characters ?? [],
-    learningTargets: data?.learningTargets ?? [],
+    learningTargets: data?.learningTargets ?? metadata?.learningTargets ?? [],
     estimatedMinutes: data?.estimatedMinutes ?? 0,
     pdfUrl: data?.pdfUrl ?? null,
-    coverUrl: data?.coverUrl ?? '',
-    thumbnailUrl: data?.thumbnailUrl ?? '',
-    order: data?.order ?? 0,
+    coverUrl: data?.coverUrl ?? metadata?.cover ?? '',
+    thumbnailUrl: data?.thumbnailUrl ?? metadata?.thumbnail ?? '',
+    order: data?.order ?? comicId,
     availability: data?.availability ?? 'ACTIVE',
     createdAt: data?.createdAt as ComicDocument['createdAt'],
     updatedAt: data?.updatedAt as ComicDocument['updatedAt'],
@@ -338,21 +339,6 @@ async function safeGetCollection<T>(label: string, operation: () => Promise<T>):
 export async function GET(request: NextRequest) {
   debug('[dashboard/guru] request received');
   try {
-    const envIssues = [
-      ['FIREBASE_PROJECT_ID', process.env.FIREBASE_PROJECT_ID],
-      ['FIREBASE_CLIENT_EMAIL', process.env.FIREBASE_CLIENT_EMAIL],
-      ['FIREBASE_PRIVATE_KEY', process.env.FIREBASE_PRIVATE_KEY],
-    ] as const;
-    const missingEnv = envIssues.filter(([, value]) => !value || value.trim().length === 0).map(([key]) => key);
-
-    if (missingEnv.length > 0) {
-      const message = adminInitializationError
-        ? adminInitializationError
-        : `Firebase Admin environment variables missing: ${missingEnv.join(', ')}`;
-      debug('[dashboard/guru] Firebase Admin env validation failed', { missingEnv, message });
-      return NextResponse.json(buildEmptyPayload(message, 'Firebase Admin unavailable'), { status: 503 });
-    }
-
     debug('[dashboard/guru] adminAuth present?', Boolean(adminAuth));
     if (!adminAuth) {
       const msg = adminInitializationError
@@ -438,7 +424,9 @@ export async function GET(request: NextRequest) {
       safeGetCollection('identification_answers', () =>
         readRecentStudentRecords(firestore, 'identification_answers', 'updatedAt', Array.from(studentUids))),
     ]);
-    const comics = comicsSnapshot.data?.map(serializeComic) ?? [];
+    const comics = comicsSnapshot.data?.map((document, index) =>
+      serializeComic(document, COMIC_IDS[index])
+    ) ?? [];
     const progressReferences = students.flatMap((student) =>
       COMIC_IDS.map((comicId) => ({
           uid: student.uid,
@@ -639,8 +627,7 @@ async function buildStudentInsightResponse(
 
   const comicSnapshots = await getComicCatalogSnapshots(firestore);
   const catalog = comicSnapshots
-    .filter((document) => document.exists)
-    .map((document) => serializeComic(document))
+    .map((document, index) => serializeComic(document, COMIC_IDS[index]))
     .filter((comic) => Number.isInteger(comic.comicId) && comic.comicId > 0)
     .sort((left, right) => left.comicId - right.comicId)
     .map((comic) => {
@@ -976,7 +963,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Identitas siswa tidak valid.' }, { status: 400 });
   }
   if (!adminAuth || !adminFirestore) {
-    return NextResponse.json({ error: 'Layanan dashboard belum tersedia.' }, { status: 503 });
+    return NextResponse.json({
+      error: adminInitializationError ?? 'Firebase Admin belum tersedia. Periksa konfigurasi server.',
+    }, { status: 503 });
   }
 
   const authorization = request.headers.get('authorization');
@@ -1026,8 +1015,7 @@ export async function POST(request: NextRequest) {
       studentSnapshot.map(serializeUser)
     );
     const comics = comicSnapshots
-      .filter((document) => document.exists)
-      .map((document) => serializeComic(document))
+      .map((document, index) => serializeComic(document, COMIC_IDS[index]))
       .filter((comic) => Number.isInteger(comic.comicId) && comic.comicId > 0)
       .sort((left, right) => left.comicId - right.comicId)
       .map((comic) => {

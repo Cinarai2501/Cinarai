@@ -1,11 +1,10 @@
+import 'server-only';
 import { initializeApp, cert, type App } from 'firebase-admin/app';
 import { getAuth, type Auth, type DecodedIdToken } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import type { ServiceAccount } from 'firebase-admin';
-import { validateEnv } from '@/lib/env.server';
-
-validateEnv();
+import { getFirebaseAdminConfig } from './adminConfig';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -34,67 +33,25 @@ let adminFirestore: Firestore | undefined = globalThisAny.__firebaseAdminFiresto
 let adminStorage: Storage | undefined = globalThisAny.__firebaseAdminStorage;
 let adminInitializationError: string | undefined = globalThisAny.__firebaseAdminInitializationError;
 
-function getRequiredEnvVar(name: string): string | undefined {
-  const value = process.env[name];
-  return value && value.trim().length > 0 ? value : undefined;
-}
-
-function parsePrivateKey(raw: string | undefined): string | null {
-  if (!raw) return null;
-  const normalized = raw.replace(/\\n/g, '\n');
-  return normalized.trim().length > 0 ? normalized : null;
-}
-
-function getInitializationErrorMessage(keys: Array<readonly [string, string | undefined]>): string | undefined {
-  const missing = keys
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
-
-  if (missing.length === 0) {
-    return undefined;
-  }
-
-  return `Firebase Admin initialization skipped. Missing required env vars: ${missing.join(', ')}`;
-}
-
 function initializeAdmin(): void {
   if (adminApp) {
     return;
   }
 
-  const projectId = getRequiredEnvVar('FIREBASE_PROJECT_ID');
-  const clientEmail = getRequiredEnvVar('FIREBASE_CLIENT_EMAIL');
-  const privateKeyRaw = getRequiredEnvVar('FIREBASE_PRIVATE_KEY');
-
-  const missingError = getInitializationErrorMessage([
-    ['FIREBASE_PROJECT_ID', projectId],
-    ['FIREBASE_CLIENT_EMAIL', clientEmail],
-    ['FIREBASE_PRIVATE_KEY', privateKeyRaw],
-  ]);
-
-  if (missingError) {
-    adminInitializationError = missingError;
+  const result = getFirebaseAdminConfig(process.env);
+  if (!result.ok) {
+    adminInitializationError = result.error;
     globalThisAny.__firebaseAdminInitializationError = adminInitializationError;
-    return;
-  }
-
-  const privateKey = parsePrivateKey(privateKeyRaw);
-  if (!privateKey) {
-    adminInitializationError = 'Firebase Admin initialization skipped. FIREBASE_PRIVATE_KEY is invalid or empty after newline normalization.';
-    globalThisAny.__firebaseAdminInitializationError = adminInitializationError;
+    console.error('[firebase-admin] initialization skipped:', adminInitializationError);
     return;
   }
 
   try {
-    const serviceAccount: ServiceAccount = {
-      projectId: projectId,
-      clientEmail: clientEmail,
-      privateKey: privateKey,
-    };
+    const serviceAccount: ServiceAccount = result.credentials;
 
     adminApp = initializeApp({
       credential: cert(serviceAccount),
-      projectId,
+      projectId: result.credentials.projectId,
     });
 
     adminAuth = getAuth(adminApp);
@@ -107,7 +64,8 @@ function initializeAdmin(): void {
     globalThisAny.__firebaseAdminStorage = adminStorage;
     globalThisAny.__firebaseAdminInitializationError = undefined;
   } catch (error) {
-    adminInitializationError = error instanceof Error ? error.message : 'Firebase Admin initialization failed.';
+    console.error('[firebase-admin] initialization failed:', error);
+    adminInitializationError = 'Firebase Admin initialization failed. Check server logs for details.';
     globalThisAny.__firebaseAdminInitializationError = adminInitializationError;
   }
 }

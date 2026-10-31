@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       debug('[api/auth/signup] Admin not initialized', { message });
       return NextResponse.json(
         { error: message, code: 'ADMIN_UNAVAILABLE' },
-        { status: 500 }
+        { status: 503 }
       );
     }
 

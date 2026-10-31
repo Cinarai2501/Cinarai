@@ -9,14 +9,7 @@ export async function GET() {
   // Client-required NEXT_PUBLIC_ variables
   const client = getClientEnv();
 
-  // Server-only required variables
-  const serverRequired = [
-    'FIREBASE_PROJECT_ID',
-    'FIREBASE_CLIENT_EMAIL',
-    'FIREBASE_PRIVATE_KEY',
-  ];
-
-  const allKeys = Array.from(new Set([...Object.keys(client), ...serverRequired]));
+  const allKeys = Object.keys(client);
 
   const result = allKeys.map((key) => {
     const present = typeof process.env[key] !== 'undefined' && process.env[key] !== '' && String(process.env[key]).trim().length > 0;
@@ -24,6 +17,13 @@ export async function GET() {
       name: key,
       status: present ? '✅ tersedia' : '❌ tidak tersedia',
     };
+  });
+  const hasAdminServiceAccount = Boolean(process.env.FIREBASE_ADMIN_SDK_KEY?.trim())
+    || ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY']
+      .every((key) => Boolean(process.env[key]?.trim()));
+  result.push({
+    name: 'Firebase Admin configuration',
+    status: hasAdminServiceAccount ? '✅ tersedia' : '❌ tidak tersedia',
   });
 
   return NextResponse.json({ variables: result }, { status: 200 });

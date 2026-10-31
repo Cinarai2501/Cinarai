@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import { auth, firestore } from '@/lib/firebase/client';
+import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import { getAllComics } from '@/lib/comicRepository';
 import { SINTAKS } from '@/types/progress';
 import type { CinaraiEvaluationProgress } from '@/types/evaluation';
@@ -281,7 +282,8 @@ export default function StudentDetailPage() {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/dashboard/guru', {
+      const endpoint = '/api/dashboard/guru';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -290,11 +292,11 @@ export default function StudentDetailPage() {
         body: JSON.stringify({ action: 'student-insight', studentUid: studentId }),
         cache: 'no-store',
       });
-      const payload = await response.json() as { error?: string } | {
+      const payload = await readJsonResponse<{ error?: string } | {
         ai: StudentInsightAiResult | null;
         aiError?: string | null;
         usage?: { provider?: string } | null;
-      };
+      }>(response, endpoint);
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'AI insight gagal dimuat.');
       }

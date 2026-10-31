@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase/client';
+import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import type { ComicDocument } from '@/types/firestore';
 import type { ModuleDetailResponse } from '../services/moduleAnalytics';
 import { Card, ProgressBar, Skeleton } from './ui';
@@ -33,13 +34,14 @@ export function ModuleDetail({ comic, onBack }: Props) {
         const firebaseUser = auth.currentUser;
         if (!firebaseUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
         const token = await firebaseUser.getIdToken();
-        const response = await fetch(`/api/dashboard/guru/modules/${comic.comicId}`, {
+        const endpoint = `/api/dashboard/guru/modules/${comic.comicId}`;
+        const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
-        const payload = await response.json() as ModuleDetailResponse | { error?: string };
+        const payload = await readJsonResponse<ModuleDetailResponse | { error?: string }>(response, endpoint);
         if (!response.ok) throw new Error('error' in payload && payload.error ? payload.error : 'Detail modul gagal dimuat.');
-        if (active) setData(payload as ModuleDetailResponse);
+        if (active && 'comic' in payload) setData(payload);
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Detail modul gagal dimuat.');
       } finally {
@@ -68,11 +70,12 @@ export function ModuleDetail({ comic, onBack }: Props) {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
       const token = await firebaseUser.getIdToken();
-      const response = await fetch(`/api/dashboard/guru/modules/${comic.comicId}`, {
+      const endpoint = `/api/dashboard/guru/modules/${comic.comicId}`;
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
-      const payload = await response.json() as { insight?: string; error?: string };
+      const payload = await readJsonResponse<{ insight?: string; error?: string }>(response, endpoint);
       if (!response.ok || !payload.insight) throw new Error(payload.error ?? 'Analisis AI gagal dibuat.');
       setInsight(payload.insight);
     } catch (generateError) {

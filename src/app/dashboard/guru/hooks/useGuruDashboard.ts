@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getCurrentUser } from '@/lib/firebase/auth';
+import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import { normalizeComicProgressDocuments, normalizeStudentDocuments } from '../services/studentNormalization';
 import { buildStudentRow, buildDashboardSummary } from '../services/studentUtils';
 import { deduplicateActivitiesById } from '../services/activityUtils';
@@ -189,12 +190,13 @@ export function useGuruDashboard() {
         const firebaseUser = getCurrentUser();
         if (!firebaseUser) throw new Error('Sesi guru tidak valid. Silakan masuk kembali.');
         const token = await firebaseUser.getIdToken();
-        const response = await fetch('/api/dashboard/guru', {
+        const endpoint = '/api/dashboard/guru';
+        const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
           cache: 'no-store',
         });
-        const payload = await response.json() as DashboardResponse;
+        const payload = await readJsonResponse<DashboardResponse>(response, endpoint);
         if (!response.ok || !payload.success) {
           throw new Error(payload.error || 'Data dashboard guru gagal dimuat.');
         }

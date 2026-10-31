@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { comicModules } from '@/features/comics';
-import { adminFirestore, verifyIdToken } from '@/lib/firebase/admin';
+import { adminFirestore, adminInitializationError, verifyIdToken } from '@/lib/firebase/admin';
 import { AiRouter, AiRouterTimeoutError } from '@/lib/ai/router';
 import { buildModuleBlueprint, getModuleStudentStatus } from '@/app/dashboard/guru/services/moduleAnalytics';
 import { getCompletedModuleStages } from '@/app/dashboard/guru/services/progressStatus';
@@ -57,7 +57,12 @@ function validConfidence(value: unknown): number | null {
 
 async function getScopedData(request: NextRequest, comicId: number, forAi = false) {
   if (!adminFirestore) {
-    return { response: NextResponse.json({ error: 'Layanan data dashboard belum tersedia.' }, { status: 503 }) };
+    return {
+      response: NextResponse.json(
+        { error: adminInitializationError ?? 'Firebase Admin belum tersedia. Periksa konfigurasi server.' },
+        { status: 503 }
+      ),
+    };
   }
   const authorization = request.headers.get('authorization');
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
@@ -100,8 +105,6 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
     })(),
   ]);
   const comicDoc = comicSnapshot;
-  if (!comicDoc.exists) return { response: NextResponse.json({ error: 'Komik tidak ditemukan di katalog.' }, { status: 404 }) };
-
   const rawStudents: UserDocument[] = studentDocuments.map((document) => {
     const data = document.data();
     return {
@@ -388,7 +391,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const result = await getScopedData(request, comicId);
     if (result.response) return result.response;
     return NextResponse.json(result.data);
-  } catch {
+  } catch (error) {
+    console.error('[dashboard/guru/modules] GET failed:', error);
     return NextResponse.json({ error: 'Data modul gagal dimuat.' }, { status: 500 });
   }
 }
@@ -452,6 +456,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (error instanceof AiRouterTimeoutError) {
       return NextResponse.json({ error: 'Batas waktu analisis AI modul terlampaui. Silakan coba kembali.' }, { status: 504 });
     }
+    console.error('[dashboard/guru/modules] POST failed:', error);
     return NextResponse.json({ error: 'Analisis AI modul gagal dibuat. Silakan coba kembali.' }, { status: 502 });
   }
 }

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
+import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import { Card, ProgressBar, Skeleton } from '../components/ui';
 import type { ClassInsightAiResult, ClassInsightFacts } from '../services/classInsight';
 import type { StudentRow } from '../types';
@@ -43,7 +44,8 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/dashboard/guru', {
+      const endpoint = '/api/dashboard/guru';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,7 +54,7 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
         body: JSON.stringify({ action: 'class-insight' }),
         cache: 'no-store',
       });
-      const payload = await response.json() as { error?: string } | ClassInsightResponse;
+      const payload = await readJsonResponse<{ error?: string } | ClassInsightResponse>(response, endpoint);
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'Analisis kelas gagal dimuat.');
       }
