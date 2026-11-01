@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import type { ComicDocument } from '@/types/firestore';
 import type { ModuleDetailResponse } from '../services/moduleAnalytics';
+import { releaseAiRequestLock, tryAcquireAiRequestLock } from '../ai/aiRequestLock';
 import { Card, ProgressBar, Skeleton } from './ui';
 
 interface Props {
@@ -23,7 +24,18 @@ export function ModuleDetail({ comic, onBack }: Props) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [insight, setInsight] = useState<string | null>(null);
+  const [insightGeneratedAt, setInsightGeneratedAt] = useState<string | null>(null);
+  const [insightFromCache, setInsightFromCache] = useState(false);
+  const [insightCacheWarning, setInsightCacheWarning] = useState<string | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const [page, setPage] = useState(0);
+  const aiRequestInFlight = useRef(false);
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = window.setTimeout(() => setRetryAfterSeconds((remaining) => Math.max(0, remaining - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [retryAfterSeconds]);
 
   useEffect(() => {
     let active = true;
@@ -62,10 +74,10 @@ export function ModuleDetail({ comic, onBack }: Props) {
   );
   const pageCount = Math.ceil((data?.students.length ?? 0) / STUDENTS_PER_PAGE);
 
-  const generateInsight = async () => {
+  const generateInsight = async (refresh = false) => {
+    if (aiLoading || retryAfterSeconds > 0 || !tryAcquireAiRequestLock(aiRequestInFlight)) return;
     setAiLoading(true);
     setAiError(null);
-    setInsight(null);
     try {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
@@ -73,14 +85,29 @@ export function ModuleDetail({ comic, onBack }: Props) {
       const endpoint = `/api/dashboard/guru/modules/${comic.comicId}`;
       const response = await fetch(endpoint, {
         method: 'POST',
+        body: JSON.stringify({ refresh }),
         headers: { Authorization: `Bearer ${token}` },
       });
-      const payload = await readJsonResponse<{ insight?: string; error?: string }>(response, endpoint);
+      if (response.status === 429) {
+        const retryAfter = Number(response.headers.get('Retry-After'));
+        setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
+      }
+      const payload = await readJsonResponse<{
+        insight?: string;
+        error?: string;
+        analysisGeneratedAt?: string;
+        cacheHit?: boolean;
+        cacheWarning?: string | null;
+      }>(response, endpoint);
       if (!response.ok || !payload.insight) throw new Error(payload.error ?? 'Analisis AI gagal dibuat.');
       setInsight(payload.insight);
+      setInsightGeneratedAt(payload.analysisGeneratedAt ?? null);
+      setInsightFromCache(payload.cacheHit === true);
+      setInsightCacheWarning(payload.cacheWarning ?? null);
     } catch (generateError) {
       setAiError(generateError instanceof Error ? generateError.message : 'Analisis AI gagal dibuat.');
     } finally {
+      releaseAiRequestLock(aiRequestInFlight);
       setAiLoading(false);
     }
   };
@@ -351,14 +378,31 @@ export function ModuleDetail({ comic, onBack }: Props) {
               </div>
               <button
                 type="button"
-                onClick={() => void generateInsight()}
-                disabled={aiLoading}
+                onClick={() => void generateInsight(Boolean(insight))}
+                disabled={aiLoading || retryAfterSeconds > 0}
                 className="min-h-11 rounded-xl bg-primary-600 px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {aiLoading ? 'Menganalisis…' : 'Buat analisis'}
+                {aiLoading
+                  ? 'Menganalisis…'
+                  : retryAfterSeconds > 0
+                    ? `Coba lagi dalam ${retryAfterSeconds} dtk`
+                    : insight
+                      ? 'Perbarui analisis'
+                      : 'Buat analisis'}
               </button>
             </div>
             {aiError && <p role="alert" className="mt-3 rounded-xl bg-error-50 p-3 text-sm text-error-700">{aiError}</p>}
+            {retryAfterSeconds > 0 && (
+              <p role="status" className="mt-2 text-xs text-neutral-600">Batas 5 permintaan per menit untuk modul ini.</p>
+            )}
+            {insightGeneratedAt && (
+              <p className="mt-2 text-[10px] text-neutral-500">
+                Terakhir dianalisis {formatDate(insightGeneratedAt)}{insightFromCache ? ' · cache, data belum berubah.' : '.'}
+              </p>
+            )}
+            {insightCacheWarning && (
+              <p role="status" className="mt-2 text-xs text-warning-800">{insightCacheWarning}</p>
+            )}
             {insight && <p className="mt-3 whitespace-pre-line rounded-xl bg-primary-50 p-3 text-sm leading-6 text-neutral-800">{insight}</p>}
           </Card>
         </>

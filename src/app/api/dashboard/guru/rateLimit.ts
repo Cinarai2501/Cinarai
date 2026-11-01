@@ -1,4 +1,10 @@
+import { createHash } from 'node:crypto';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+
+export type TeacherAiAnalysisScope = 'class' | 'student' | 'module';
+
+const DEFAULT_MAX_REQUESTS = 5;
+const DEFAULT_WINDOW_MS = 60_000;
 
 function timestampMillis(value: unknown): number | null {
   if (value instanceof Date) return value.getTime();
@@ -18,41 +24,69 @@ function timestampMillis(value: unknown): number | null {
   return null;
 }
 
-export function isTeacherAiRateLimited(
-  lastRequestedAt: unknown,
+export function getTeacherAiRateLimitState(
+  requestTimestamps: unknown,
   now: number,
-  cooldownMs: number,
-): boolean {
-  return getTeacherAiRateLimitRemainingSeconds(lastRequestedAt, now, cooldownMs) > 0;
+  maxRequests = DEFAULT_MAX_REQUESTS,
+  windowMs = DEFAULT_WINDOW_MS,
+): { remainingRequests: number; retryAfterSeconds: number; activeTimestamps: number[] } {
+  const activeTimestamps = (Array.isArray(requestTimestamps) ? requestTimestamps : [])
+    .map(timestampMillis)
+    .filter((timestamp): timestamp is number =>
+      timestamp !== null && timestamp <= now && now - timestamp < windowMs
+    )
+    .sort((left, right) => left - right);
+  if (activeTimestamps.length < maxRequests) {
+    return { remainingRequests: maxRequests - activeTimestamps.length, retryAfterSeconds: 0, activeTimestamps };
+  }
+  const oldest = activeTimestamps[Math.max(0, activeTimestamps.length - maxRequests)];
+  return {
+    remainingRequests: 0,
+    retryAfterSeconds: Math.max(1, Math.ceil((oldest + windowMs - now) / 1000)),
+    activeTimestamps,
+  };
 }
 
-export function getTeacherAiRateLimitRemainingSeconds(
-  lastRequestedAt: unknown,
-  now: number,
-  cooldownMs: number,
-): number {
-  const timestamp = timestampMillis(lastRequestedAt);
-  if (timestamp === null) return 0;
-  return Math.ceil(Math.max(0, cooldownMs - (now - timestamp)) / 1000);
+export function getTeacherAiRateLimitDocumentId(
+  scope: TeacherAiAnalysisScope,
+  targetUid?: string,
+): string {
+  const normalizedTarget = scope === 'student' || scope === 'module' ? targetUid?.trim() : '';
+  if ((scope === 'student' || scope === 'module') && !normalizedTarget) {
+    throw new Error(`Target wajib untuk scope analisis ${scope}.`);
+  }
+  return createHash('sha256')
+    .update(`${scope}:${normalizedTarget ?? ''}`)
+    .digest('hex');
 }
 
 export async function consumeTeacherAiRateLimit(
   firestore: Firestore,
   teacherUid: string,
-  cooldownMs: number,
-  now?: number,
+  scope: TeacherAiAnalysisScope,
+  targetUid?: string,
+  now = Date.now(),
+  maxRequests = DEFAULT_MAX_REQUESTS,
+  windowMs = DEFAULT_WINDOW_MS,
 ): Promise<number> {
-  const profileRef = firestore.collection('users').doc(teacherUid);
+  const rateLimitRef = firestore
+    .collection('users')
+    .doc(teacherUid)
+    .collection('guruAiRateLimits')
+    .doc(getTeacherAiRateLimitDocumentId(scope, targetUid));
   return firestore.runTransaction(async (transaction) => {
-    const profile = await transaction.get(profileRef);
-    if (!profile.exists) throw new Error('Profil guru tidak tersedia untuk menerapkan batas analisis AI.');
-    const remainingSeconds = getTeacherAiRateLimitRemainingSeconds(
-      profile.get('guruAiAnalysisLastRequestedAt'),
-      now ?? Date.now(),
-      cooldownMs,
+    const rateLimit = await transaction.get(rateLimitRef);
+    const state = getTeacherAiRateLimitState(
+      rateLimit.get('requestTimestamps'),
+      now,
+      maxRequests,
+      windowMs,
     );
-    if (remainingSeconds > 0) return remainingSeconds;
-    transaction.update(profileRef, { guruAiAnalysisLastRequestedAt: FieldValue.serverTimestamp() });
+    if (state.retryAfterSeconds > 0) return state.retryAfterSeconds;
+    transaction.set(rateLimitRef, {
+      requestTimestamps: [...state.activeTimestamps, now],
+      updatedAt: FieldValue.serverTimestamp(),
+    });
     return 0;
   });
 }

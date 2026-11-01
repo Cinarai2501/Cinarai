@@ -10,6 +10,7 @@ export type ModuleStudentStatus = 'not_started' | 'learning' | 'completed';
 export interface ModuleRosterSummary {
   studentCount: number;
   progressRecordCount: number;
+  averageProgress: number | null;
   startedCount: number;
   learningCount: number;
   completedCount: number;
@@ -109,13 +110,17 @@ export function getModuleProgress(student: StudentRow, comicId: number): ComicPr
 }
 
 export function getModuleRosterSummary(rows: StudentRow[], comicId: number): ModuleRosterSummary {
-  const students = rows.map((student) => ({
-    status: getModuleStudentStatus(getModuleProgress(student, comicId)),
+  const progressRecords = rows.map((student) => getModuleProgress(student, comicId));
+  const students = progressRecords.map((progress) => ({
+    status: getModuleStudentStatus(progress),
   }));
   const completedCount = students.filter(({ status }) => status === 'completed').length;
   return {
     studentCount: rows.length,
-    progressRecordCount: rows.filter((student) => getModuleProgress(student, comicId) !== null).length,
+    progressRecordCount: progressRecords.filter((progress) => progress !== null).length,
+    averageProgress: rows.length
+      ? Math.round(progressRecords.reduce((sum, progress) => sum + (progress?.percentage ?? 0), 0) / rows.length)
+      : null,
     startedCount: students.filter(({ status }) => status !== 'not_started').length,
     learningCount: students.filter(({ status }) => status === 'learning').length,
     completedCount,

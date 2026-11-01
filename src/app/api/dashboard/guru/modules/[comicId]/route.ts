@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { comicModules } from '@/features/comics';
+import { debug } from '@/lib/debug';
 import { adminFirestore, adminInitializationError, verifyIdToken } from '@/lib/firebase/admin';
-import { AiRouter, AiRouterTimeoutError } from '@/lib/ai/router';
+import { AiRouter, AiRouterError, AiRouterTimeoutError } from '@/lib/ai/router';
 import { buildModuleBlueprint, getModuleStudentStatus } from '@/app/dashboard/guru/services/moduleAnalytics';
 import { getCompletedModuleStages } from '@/app/dashboard/guru/services/progressStatus';
 import { getModuleProgressPercentage } from '@/app/dashboard/guru/services/progressStatus';
 import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
 import { consumeTeacherAiRateLimit } from '../../rateLimit';
+import { getAiSourceFingerprint, readTeacherAiCacheSafely, writeTeacherAiCache } from '../../aiCache';
 import { readAllPages } from '../../pagedQuery';
+import { readBoundedJsonBody } from '../../requestBody';
 import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
 import { logFirestoreQueryFailure, runFirestoreQuery } from '@/lib/firebase/firestoreDiagnostics';
 import type { ModuleDetailResponse } from '@/app/dashboard/guru/services/moduleAnalytics';
@@ -21,7 +24,6 @@ type RawDocument = Record<string, unknown> & { id: string };
 type Student = { uid: string; name: string; email: string };
 const MODULE_ROSTER_PAGE_SIZE = 200;
 const MODULE_SAMPLE_LIMIT = 150;
-const MODULE_AI_COOLDOWN_MS = 60_000;
 const MAX_MODULE_AI_PROMPT_CHARS = 8_000;
 
 function toRawDocument(id: string, data: Record<string, unknown>): RawDocument {
@@ -90,18 +92,17 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   if (role !== 'teacher' && role !== 'admin') {
     return { response: NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 }) };
   }
-  const retryAfterSeconds = forAi
-    ? await consumeTeacherAiRateLimit(firestore, uid, MODULE_AI_COOLDOWN_MS)
-    : 0;
-  if (retryAfterSeconds > 0) {
-    return {
-      response: NextResponse.json(
-        { error: `Analisis AI dibatasi satu kali per akun. Coba lagi dalam ${retryAfterSeconds} detik.` },
-        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
-      ),
-    };
+  if (forAi) {
+    const retryAfterSeconds = await consumeTeacherAiRateLimit(firestore, uid, 'module', String(comicId));
+    if (retryAfterSeconds > 0) {
+      return {
+        response: NextResponse.json(
+          { error: `Analisis modul ini dibatasi 5 kali per menit. Coba lagi dalam ${retryAfterSeconds} detik.` },
+          { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+        ),
+      };
+    }
   }
-
   const [comicSnapshot, studentDocuments] = await Promise.all([
     runFirestoreQuery({
       sdk: 'admin',
@@ -413,7 +414,27 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
       })),
     activities: activities.slice(0, 40),
   };
-  return { data: response };
+  const sourceFingerprint = forAi
+    ? getAiSourceFingerprint({
+      data: response,
+      sources: [
+        { path: comicDoc.ref.path, exists: comicDoc.exists, data: comicDoc.data() ?? null },
+        ...studentDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+        ...progressSnapshots.map((snapshot) => ({
+          path: snapshot.ref.path,
+          exists: snapshot.exists,
+          data: snapshot.data() ?? null,
+        })),
+        ...answerDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+        ...applicationDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+        ...[...reflectionDocuments.values()].map((document) => ({
+          path: document.ref.path,
+          data: document.data(),
+        })),
+      ],
+    })
+    : undefined;
+  return { data: response, teacherUid: uid, sourceFingerprint };
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -444,6 +465,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'ID komik tidak valid.' }, { status: 400 });
   }
   try {
+    const body = request.body
+      ? await readBoundedJsonBody(request, 16_384)
+      : { ok: true as const, value: {} };
+    if (!body.ok) {
+      return NextResponse.json({ error: 'Body permintaan analisis tidak valid.' }, { status: body.reason === 'too_large' ? 413 : 400 });
+    }
+    if (body.value !== null && typeof body.value === 'object'
+      && 'refresh' in body.value && typeof body.value.refresh !== 'boolean') {
+      return NextResponse.json({ error: 'Parameter pembaruan analisis tidak valid.' }, { status: 400 });
+    }
+    const forceRefresh = body.value !== null && typeof body.value === 'object'
+      && 'refresh' in body.value && body.value.refresh === true;
     const result = await getScopedData(request, comicId, true);
     if (result.response) return result.response;
     const data = result.data;
@@ -483,6 +516,42 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (prompt.length > MAX_MODULE_AI_PROMPT_CHARS) {
       return NextResponse.json({ error: 'Konteks modul melebihi batas aman untuk analisis AI.' }, { status: 413 });
     }
+    const firestore = adminFirestore;
+    if (!firestore) {
+      return NextResponse.json({
+        error: adminInitializationError ?? 'Firebase Admin belum tersedia. Periksa konfigurasi server.',
+      }, { status: 503 });
+    }
+    const sourceFingerprint = result.sourceFingerprint;
+    if (!sourceFingerprint) {
+      return NextResponse.json({ error: 'Fingerprint sumber analisis modul tidak tersedia.' }, { status: 500 });
+    }
+    let cacheWarning: string | null = null;
+    if (!forceRefresh) {
+      const cacheRead = await readTeacherAiCacheSafely(
+        firestore,
+        result.teacherUid,
+        'module',
+        String(comicId),
+        sourceFingerprint,
+      );
+      if (cacheRead.error) {
+        debug('[dashboard/guru] module AI cache read failed', {
+          message: cacheRead.error instanceof Error ? cacheRead.error.message : 'Unknown error',
+        });
+        cacheWarning = 'Cache tidak dapat dibaca; analisis baru dijalankan.';
+      }
+      const cached = cacheRead.cache;
+      if (cached && typeof cached.ai.insight === 'string') {
+        return NextResponse.json({
+          insight: cached.ai.insight,
+          provider: cached.provider,
+          analysisGeneratedAt: cached.generatedAt,
+          cacheHit: true,
+          cacheWarning: null,
+        });
+      }
+    }
     const resultFromAi = await AiRouter.createDefault().generate({
       prompt,
       systemPrompt: 'Kamu adalah asisten analisis pembelajaran CINARAI. Berikan insight berbasis data agregat saja. Jangan mengidentifikasi siswa.',
@@ -491,10 +560,53 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
     const insight = typeof resultFromAi.content === 'string' ? resultFromAi.content.trim().slice(0, 1800) : '';
     if (!insight) return NextResponse.json({ error: 'AI tidak menghasilkan analisis yang dapat digunakan.' }, { status: 502 });
-    return NextResponse.json({ insight, provider: resultFromAi.provider });
+    const analysisGeneratedAt = new Date().toISOString();
+    try {
+      await writeTeacherAiCache(
+        firestore,
+        result.teacherUid,
+        'module',
+        String(comicId),
+        sourceFingerprint,
+        { insight },
+        resultFromAi.provider,
+        analysisGeneratedAt,
+      );
+    } catch (cacheError) {
+      debug('[dashboard/guru] module AI cache write failed', {
+        message: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+      });
+      cacheWarning = [cacheWarning, 'Analisis berhasil dibuat, tetapi penyimpanan cache gagal.']
+        .filter(Boolean)
+        .join(' ');
+    }
+    return NextResponse.json({
+      insight,
+      provider: resultFromAi.provider,
+      analysisGeneratedAt,
+      cacheHit: false,
+      cacheWarning,
+    });
   } catch (error) {
     if (error instanceof AiRouterTimeoutError) {
-      return NextResponse.json({ error: 'Batas waktu analisis AI modul terlampaui. Silakan coba kembali.' }, { status: 504 });
+      return NextResponse.json({
+        error: 'Batas waktu analisis AI modul terlampaui. Fakta modul tetap dapat ditinjau.',
+      }, { status: 504 });
+    }
+    if (error instanceof AiRouterError && error.logs.some((entry) =>
+      /quota|rate.?limit|too many requests|http 429|resource exhausted/i.test(entry.reason ?? '')
+    )) {
+      return NextResponse.json(
+        { error: 'Kuota layanan AI sedang habis atau dibatasi oleh provider. Fakta modul tetap dapat ditinjau.' },
+        { status: 502 }
+      );
+    }
+    if (error instanceof AiRouterError) {
+      debug('[dashboard/guru] module AI provider failed', { attempts: error.logs.length });
+      return NextResponse.json(
+        { error: 'Provider AI gagal memproses analisis modul. Fakta modul tetap dapat ditinjau.' },
+        { status: 502 }
+      );
     }
     logFirestoreQueryFailure({
       sdk: 'admin',

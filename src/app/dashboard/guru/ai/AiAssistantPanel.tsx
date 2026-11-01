@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import { Card, ProgressBar, Skeleton } from '../components/ui';
+import { releaseAiRequestLock, tryAcquireAiRequestLock } from './aiRequestLock';
 import type { ClassInsightAiResult, ClassInsightFacts } from '../services/classInsight';
 import type { StudentRow } from '../types';
 import { IndividualStudentInsightPanel } from './IndividualStudentInsightPanel';
@@ -19,6 +20,9 @@ interface ClassInsightResponse {
     maxProviderAttempts: number;
     actualTokenUsageAvailable: false;
   } | null;
+  analysisGeneratedAt?: string;
+  cacheHit?: boolean;
+  cacheWarning?: string | null;
 }
 
 interface Props {
@@ -34,10 +38,16 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
   const [error, setError] = useState<string | null>(null);
   const requestStarted = useRef(false);
   const [mode, setMode] = useState<'class' | 'student'>('class');
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
 
-  const analyze = async () => {
-    if (requestStarted.current || analysis) return;
-    requestStarted.current = true;
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = window.setTimeout(() => setRetryAfterSeconds((remaining) => Math.max(0, remaining - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [retryAfterSeconds]);
+
+  const analyze = async (refresh = false) => {
+    if (loading || (analysis && !refresh) || !tryAcquireAiRequestLock(requestStarted)) return;
     setLoading(true);
     setError(null);
     try {
@@ -51,9 +61,13 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'class-insight' }),
+        body: JSON.stringify({ action: 'class-insight', refresh }),
         cache: 'no-store',
       });
+      if (response.status === 429) {
+        const retryAfter = Number(response.headers.get('Retry-After'));
+        setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
+      }
       const payload = await readJsonResponse<{ error?: string } | ClassInsightResponse>(response, endpoint);
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'Analisis kelas gagal dimuat.');
@@ -61,10 +75,10 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
       if (!('facts' in payload) || !payload.facts) throw new Error('Format data analisis tidak valid.');
       setAnalysis(payload);
     } catch (requestError) {
-      requestStarted.current = false;
+      releaseAiRequestLock(requestStarted);
       setError(requestError instanceof Error ? requestError.message : 'Analisis kelas gagal dimuat.');
-      setAnalysis(null);
     } finally {
+      requestStarted.current = false;
       setLoading(false);
     }
   };
@@ -106,11 +120,17 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
           </div>
           <button
             type="button"
-            onClick={() => void analyze()}
-            disabled={loading || dashboardLoading || studentCount === 0 || Boolean(analysis)}
+            onClick={() => void analyze(Boolean(analysis))}
+            disabled={loading || dashboardLoading || studentCount === 0 || retryAfterSeconds > 0}
             className="min-h-11 w-full flex-shrink-0 rounded-xl bg-primary-600 px-4 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            {loading ? 'Memuat data & menganalisis…' : analysis ? 'Snapshot analisis dimuat' : 'Analisis kelas'}
+            {loading
+              ? 'Memuat data & menganalisis…'
+              : retryAfterSeconds > 0
+                ? `Coba lagi dalam ${retryAfterSeconds} dtk`
+                : analysis
+                  ? 'Perbarui analisis'
+                  : 'Analisis kelas'}
           </button>
         </div>
 
@@ -137,7 +157,18 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
         )}
         {analysis && (
           <p className="mt-2 text-[10px] leading-5 text-neutral-500">
-            Analisis dibatasi satu kali per akun setiap 60 detik. Muat ulang dashboard setelah jeda tersebut untuk mengambil snapshot baru.
+            {analysis.analysisGeneratedAt
+              ? `Terakhir dianalisis ${formatDate(analysis.analysisGeneratedAt)}${analysis.cacheHit ? ' · menggunakan cache karena data belum berubah.' : '.'}`
+              : 'Hasil analisis berdasarkan data terbaru yang tersedia.'}
+            {analysis.cacheHit ? '' : ' Cache akan digunakan selama data sumber tidak berubah.'}
+          </p>
+        )}
+        {analysis?.cacheWarning && (
+          <p role="status" className="mt-2 text-xs text-warning-800">{analysis.cacheWarning}</p>
+        )}
+        {retryAfterSeconds > 0 && (
+          <p role="status" className="mt-2 text-xs text-neutral-600">
+            Batas 5 permintaan per menit untuk analisis kelas. Tombol coba lagi aktif setelah waktu tunggu.
           </p>
         )}
       </Card>
@@ -152,11 +183,18 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
       {analysis && !loading && (
         <>
           <FactsSummary facts={analysis.facts} />
-          <ComicMastery facts={analysis.facts} />
-          <LearningDifficulties facts={analysis.facts} />
-          <AttentionList facts={analysis.facts} onSelectStudent={onSelectStudent} />
-          <ActivityTrend facts={analysis.facts} />
           <AiInterpretation ai={analysis.ai} error={analysis.aiError} />
+          <details className="rounded-2xl border border-neutral-200 bg-white p-4">
+            <summary className="min-h-10 cursor-pointer text-sm font-bold text-neutral-800">
+              Rincian modul, kesulitan, pendampingan, dan aktivitas
+            </summary>
+            <div className="mt-3 space-y-3">
+              <ComicMastery facts={analysis.facts} />
+              <LearningDifficulties facts={analysis.facts} />
+              <AttentionList facts={analysis.facts} onSelectStudent={onSelectStudent} />
+              <ActivityTrend facts={analysis.facts} />
+            </div>
+          </details>
           <DataLimitations facts={analysis.facts} usage={analysis.usage} />
         </>
       )}

@@ -39,10 +39,14 @@ interface Props {
   insight: AiInsight | null;
   insightLoading: boolean;
   insightError: string | null;
+  insightRetryAfterSeconds: number;
+  insightGeneratedAt: string | null;
+  insightCacheHit: boolean;
+  insightCacheWarning: string | null;
   loading: boolean;
   error: string | null;
   onBack: () => void;
-  onGenerateInsight: () => void;
+  onGenerateInsight: (forceRefresh?: boolean) => void;
   onGeneratePdf: () => void;
 }
 
@@ -73,6 +77,10 @@ export function StudentDetail({
   insight,
   insightLoading,
   insightError,
+  insightRetryAfterSeconds,
+  insightGeneratedAt,
+  insightCacheHit,
+  insightCacheWarning,
   loading,
   error,
   onBack,
@@ -392,19 +400,34 @@ export function StudentDetail({
                 </p>
                 <h3 className="text-base font-black text-neutral-900">Analisis Siswa 🤖</h3>
               </div>
-              {!insight && (
-                <button
-                  onClick={onGenerateInsight}
-                  disabled={insightLoading}
-                  className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60 transition-colors"
-                >
-                  {insightLoading ? 'Menganalisis…' : 'Analisis'}
-                </button>
-              )}
+              <button
+                onClick={() => onGenerateInsight(Boolean(insight))}
+                disabled={insightLoading || insightRetryAfterSeconds > 0}
+                className="min-h-10 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+              >
+                {insightLoading
+                  ? 'Menganalisis…'
+                  : insightRetryAfterSeconds > 0
+                    ? `Coba lagi dalam ${insightRetryAfterSeconds} dtk`
+                    : insight
+                      ? 'Perbarui analisis'
+                      : 'Analisis'}
+              </button>
             </div>
 
             {insightError && (
               <p className="text-sm text-error-600 bg-error-50 rounded-xl px-4 py-3">{insightError}</p>
+            )}
+            {insightCacheWarning && (
+              <p role="status" className="text-xs text-warning-800">{insightCacheWarning}</p>
+            )}
+            {insightRetryAfterSeconds > 0 && (
+              <p role="status" className="text-xs text-neutral-600">Batas 5 permintaan per menit untuk siswa ini.</p>
+            )}
+            {insightGeneratedAt && (
+              <p className="text-[10px] text-neutral-500">
+                Terakhir dianalisis {formatTimestamp(insightGeneratedAt)}{insightCacheHit ? ' · cache, data belum berubah.' : '.'}
+              </p>
             )}
 
             {insightLoading && (

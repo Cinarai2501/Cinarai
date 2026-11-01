@@ -86,16 +86,19 @@ test('completion requires every persisted CINARAI stage and uses all roster stud
   assert.equal(summary.startedCount, 1);
   assert.equal(summary.learningCount, 0);
   assert.equal(summary.completedCount, 1);
+  assert.equal(summary.averageProgress, 50);
   assert.equal(summary.completionRate, 50);
 });
 
 test('missing progress and an empty roster remain distinct', () => {
   const missing = getModuleRosterSummary([makeStudent([])], 1);
   assert.equal(missing.progressRecordCount, 0);
+  assert.equal(missing.averageProgress, 0);
   assert.equal(missing.startedCount, 0);
   assert.equal(missing.completionRate, 0);
   assert.equal(getModuleStudentStatus(null), 'not_started');
   assert.equal(getModuleRosterSummary([], 1).completionRate, null);
+  assert.equal(getModuleRosterSummary([], 1).averageProgress, null);
 });
 
 test('counts actual progress records separately from the full roster denominator', () => {
@@ -106,6 +109,7 @@ test('counts actual progress records separately from the full roster denominator
 
   assert.equal(summary.studentCount, 2);
   assert.equal(summary.progressRecordCount, 1);
+  assert.equal(summary.averageProgress, 0);
   assert.equal(summary.startedCount, 0);
 });
 

@@ -36,8 +36,9 @@ import type {
   StudentInsightReflection,
 } from '@/app/dashboard/guru/services/studentInsight';
 import { comicModules } from '@/features/comics';
-import { AiRouter, AiRouterTimeoutError } from '@/lib/ai/router';
+import { AiRouter, AiRouterError, AiRouterTimeoutError } from '@/lib/ai/router';
 import { consumeTeacherAiRateLimit } from './rateLimit';
+import { getAiSourceFingerprint, readTeacherAiCacheSafely, writeTeacherAiCache } from './aiCache';
 import { readAllPages } from './pagedQuery';
 import { readBoundedJsonBody } from './requestBody';
 import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
@@ -49,12 +50,18 @@ import type { DocumentSnapshot, Query, QueryDocumentSnapshot } from 'firebase-ad
 const DASHBOARD_ROSTER_PAGE_SIZE = 200;
 const CLASS_INSIGHT_SAMPLE_LIMIT = 150;
 const CLASS_INSIGHT_CHUNK_SIZE = 10;
-const CLASS_INSIGHT_COOLDOWN_MS = 60_000;
 const STUDENT_INSIGHT_SAMPLE_LIMIT = 150;
 const MAX_AI_PROMPT_CHARS = 12_000;
 const COMIC_IDS = [1, 2, 3, 4, 5, 6] as const;
 const RECENT_RECORD_CHUNK_SIZE = 10;
 const RECENT_RECORDS_PER_QUERY = 20;
+
+function isProviderQuotaExceeded(error: unknown): boolean {
+  const quotaPattern = /quota|rate.?limit|too many requests|http 429|resource exhausted/i;
+  return error instanceof AiRouterError
+    ? error.logs.some((entry) => quotaPattern.test(entry.reason ?? ''))
+    : error instanceof Error && quotaPattern.test(error.message);
+}
 
 type DashboardRoutePayload = {
   success: boolean;
@@ -646,7 +653,9 @@ function readStudentSubcollection(
 async function buildStudentInsightResponse(
   firestore: AdminFirestore,
   teacherRole: unknown,
+  teacherUid: string,
   studentUid: string,
+  forceRefresh: boolean,
 ): Promise<NextResponse> {
   const directProfile = await runFirestoreQuery({
     sdk: 'admin',
@@ -926,6 +935,68 @@ async function buildStudentInsightResponse(
     });
   }
   const maxOutputTokens = 450;
+  const sourceFingerprint = getAiSourceFingerprint({
+    facts,
+    sources: [
+      ...progressSnapshots.map((snapshot) => ({
+        path: snapshot.ref.path,
+        exists: snapshot.exists,
+        data: snapshot.data() ?? null,
+      })),
+      ...comicSnapshots.map((snapshot) => ({
+        path: snapshot.ref.path,
+        exists: snapshot.exists,
+        data: snapshot.data() ?? null,
+      })),
+      ...answers.map((document) => ({ path: document.ref.path, data: document.data() })),
+      ...activities.map((document) => ({ path: document.ref.path, data: document.data() })),
+      ...applications.map((document) => ({ path: document.ref.path, data: document.data() })),
+      ...reflections.map((document) => ({ path: document.ref.path, data: document.data() })),
+      ...supplementaryProgress.map((document) => ({ path: document.ref.path, data: document.data() })),
+      ...aiTutorChats.map((document) => ({ path: document.ref.path, data: document.data() })),
+      { path: directProfile.ref.path, data: directProfile.data() ?? null },
+      ...comicSnapshots.map((snapshot) => ({
+        path: snapshot.ref.path,
+        exists: snapshot.exists,
+        data: snapshot.data() ?? null,
+      })),
+    ],
+  });
+  let cacheWarning: string | null = null;
+  if (!forceRefresh) {
+    const cacheRead = await readTeacherAiCacheSafely(
+      firestore,
+      teacherUid,
+      'student',
+      studentUid,
+      sourceFingerprint,
+    );
+    if (cacheRead.error) {
+      debug('[dashboard/guru] individual AI cache read failed', {
+        message: cacheRead.error instanceof Error ? cacheRead.error.message : 'Unknown error',
+      });
+      cacheWarning = 'Cache tidak dapat dibaca; analisis baru dijalankan.';
+    }
+    const cached = cacheRead.cache;
+    if (cached) {
+      return NextResponse.json({
+        student: profile,
+        facts,
+        ai: cached.ai,
+        aiError: null,
+        analysisGeneratedAt: cached.generatedAt,
+        cacheHit: true,
+        cacheWarning: null,
+        usage: {
+          provider: cached.provider ?? undefined,
+          estimatedInputTokens: Math.ceil(prompt.length / 4),
+          maxOutputTokens,
+          maxProviderAttempts: 4,
+          actualTokenUsageAvailable: false,
+        },
+      });
+    }
+  }
   try {
     const response = await AiRouter.createDefault().generate({
       prompt,
@@ -943,6 +1014,7 @@ async function buildStudentInsightResponse(
         facts,
         ai: null,
         aiError: 'Respons AI tidak memenuhi format atau referensi bukti yang tervalidasi.',
+        cacheWarning,
         usage: {
           provider: response.provider,
           estimatedInputTokens: Math.ceil(prompt.length / 4),
@@ -952,11 +1024,34 @@ async function buildStudentInsightResponse(
         },
       });
     }
+    const analysisGeneratedAt = new Date().toISOString();
+    try {
+      await writeTeacherAiCache(
+        firestore,
+        teacherUid,
+        'student',
+        studentUid,
+        sourceFingerprint,
+        { ...ai },
+        response.provider,
+        analysisGeneratedAt,
+      );
+    } catch (cacheError) {
+      debug('[dashboard/guru] individual AI cache write failed', {
+        message: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+      });
+      cacheWarning = [cacheWarning, 'Analisis berhasil dibuat, tetapi penyimpanan cache gagal.']
+        .filter(Boolean)
+        .join(' ');
+    }
     return NextResponse.json({
       student: profile,
       facts,
       ai,
       aiError: null,
+      analysisGeneratedAt,
+      cacheHit: false,
+      cacheWarning,
       usage: {
         provider: response.provider,
         estimatedInputTokens: Math.ceil(prompt.length / 4),
@@ -970,13 +1065,17 @@ async function buildStudentInsightResponse(
       message: error instanceof Error ? error.message : 'Unknown error',
     });
     const timedOut = error instanceof AiRouterTimeoutError;
+    const providerQuotaExceeded = isProviderQuotaExceeded(error);
     return NextResponse.json({
       student: profile,
       facts,
       ai: null,
       aiError: timedOut
         ? 'Batas waktu analisis AI terlampaui. Fakta tersimpan tetap dapat ditinjau.'
-        : 'Layanan AI tidak tersedia. Fakta tersimpan tetap dapat ditinjau.',
+        : providerQuotaExceeded
+          ? 'Kuota layanan AI sedang habis atau dibatasi oleh provider. Fakta tersimpan tetap dapat ditinjau.'
+          : 'Layanan AI gagal memproses permintaan. Fakta tersimpan tetap dapat ditinjau.',
+      cacheWarning,
       usage: {
         estimatedInputTokens: Math.ceil(prompt.length / 4),
         maxOutputTokens,
@@ -1007,6 +1106,10 @@ export async function POST(request: NextRequest) {
   const requestedStudentUid = 'studentUid' in requestBody && typeof requestBody.studentUid === 'string'
     ? requestBody.studentUid.trim()
     : '';
+  if ('refresh' in requestBody && typeof requestBody.refresh !== 'boolean') {
+    return NextResponse.json({ error: 'Parameter pembaruan analisis tidak valid.' }, { status: 400 });
+  }
+  const forceRefresh = 'refresh' in requestBody && requestBody.refresh === true;
   if (requestBody.action === 'student-insight'
     && (!requestedStudentUid || requestedStudentUid.length > 128 || /[\u0000-\u001f]/.test(requestedStudentUid))) {
     return NextResponse.json({ error: 'Identitas siswa tidak valid.' }, { status: 400 });
@@ -1043,15 +1146,23 @@ export async function POST(request: NextRequest) {
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 });
     }
-    const retryAfterSeconds = await consumeTeacherAiRateLimit(firestore, decodedToken.uid, CLASS_INSIGHT_COOLDOWN_MS);
+    const analysisScope = requestBody.action === 'student-insight' ? 'student' : 'class';
+    const rateLimitTarget = requestBody.action === 'student-insight' ? requestedStudentUid : undefined;
+    const retryAfterSeconds = await consumeTeacherAiRateLimit(
+      firestore,
+      teacherUid,
+      analysisScope,
+      rateLimitTarget,
+    );
     if (retryAfterSeconds > 0) {
+      const label = analysisScope === 'student' ? 'individu untuk siswa ini' : 'kelas';
       return NextResponse.json(
-        { error: `Analisis AI dibatasi satu kali per akun. Coba lagi dalam ${retryAfterSeconds} detik.` },
+        { error: `Analisis ${label} dibatasi 5 kali per menit. Coba lagi dalam ${retryAfterSeconds} detik.` },
         { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
       );
     }
     if (requestBody.action === 'student-insight') {
-      return buildStudentInsightResponse(firestore, role, requestedStudentUid);
+      return buildStudentInsightResponse(firestore, role, teacherUid, requestedStudentUid, forceRefresh);
     }
 
     const studentQuery = firestore.collection('users').where('role', '==', 'student');
@@ -1192,6 +1303,7 @@ export async function POST(request: NextRequest) {
     const activities: ClassInsightActivity[] = [];
     const reflections: ClassInsightReflection[] = [];
     const applications: ClassInsightApplication[] = [];
+    const sourceRecords: Array<{ path: string; data: Record<string, unknown> }> = [];
     const readStudentRecords = (collectionName: string, uidChunk: string[]) =>
       Promise.all((['userId', 'studentId'] as const).map((ownerField) =>
         readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
@@ -1227,6 +1339,12 @@ export async function POST(request: NextRequest) {
         readStudentRecords('reflection', uidChunk),
       ]);
 
+      sourceRecords.push(
+        ...answerDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+        ...activityDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+        ...applicationDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+        ...reflectionDocuments.map((document) => ({ path: document.ref.path, data: document.data() })),
+      );
       answerDocuments.forEach((document) => {
         const data = document.data();
         const userId = stringValue(data.userId) ?? stringValue(data.studentId);
@@ -1326,6 +1444,57 @@ export async function POST(request: NextRequest) {
       });
     }
     const maxOutputTokens = 300;
+    const sourceFingerprint = getAiSourceFingerprint({
+      facts,
+      sources: [
+        ...progressSnapshots.map((snapshot) => ({
+          path: snapshot.ref.path,
+          exists: snapshot.exists,
+          data: snapshot.data() ?? null,
+        })),
+        ...comicSnapshots.map((snapshot) => ({
+          path: snapshot.ref.path,
+          exists: snapshot.exists,
+          data: snapshot.data() ?? null,
+        })),
+        ...studentSnapshot.map((snapshot) => ({ path: snapshot.ref.path, data: snapshot.data() })),
+        ...sourceRecords,
+      ],
+    });
+    let cacheWarning: string | null = null;
+    if (!forceRefresh) {
+      const cacheRead = await readTeacherAiCacheSafely(
+        firestore,
+        teacherUid,
+        'class',
+        undefined,
+        sourceFingerprint,
+      );
+      if (cacheRead.error) {
+        debug('[dashboard/guru] class AI cache read failed', {
+          message: cacheRead.error instanceof Error ? cacheRead.error.message : 'Unknown error',
+        });
+        cacheWarning = 'Cache tidak dapat dibaca; analisis baru dijalankan.';
+      }
+      const cached = cacheRead.cache;
+      if (cached) {
+        return NextResponse.json({
+          facts,
+          ai: cached.ai,
+          aiError: null,
+          analysisGeneratedAt: cached.generatedAt,
+          cacheHit: true,
+          cacheWarning: null,
+          usage: {
+            provider: cached.provider ?? undefined,
+            estimatedInputTokens: Math.ceil(prompt.length / 4),
+            maxOutputTokens,
+            maxProviderAttempts: 4,
+            actualTokenUsageAvailable: false,
+          },
+        });
+      }
+    }
     try {
       const response = await AiRouter.createDefault().generate({
         prompt,
@@ -1339,6 +1508,7 @@ export async function POST(request: NextRequest) {
           facts,
           ai: null,
           aiError: 'Respons AI tidak memenuhi format analisis yang tervalidasi.',
+          cacheWarning,
           usage: {
             provider: response.provider,
             estimatedInputTokens: Math.ceil(prompt.length / 4),
@@ -1348,10 +1518,33 @@ export async function POST(request: NextRequest) {
           },
         });
       }
+      const analysisGeneratedAt = new Date().toISOString();
+      try {
+        await writeTeacherAiCache(
+          firestore,
+          teacherUid,
+          'class',
+          undefined,
+          sourceFingerprint,
+          { ...ai },
+          response.provider,
+          analysisGeneratedAt,
+        );
+      } catch (cacheError) {
+        debug('[dashboard/guru] class AI cache write failed', {
+          message: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+        });
+        cacheWarning = [cacheWarning, 'Analisis berhasil dibuat, tetapi penyimpanan cache gagal.']
+          .filter(Boolean)
+          .join(' ');
+      }
       return NextResponse.json({
         facts,
         ai,
         aiError: null,
+        analysisGeneratedAt,
+        cacheHit: false,
+        cacheWarning,
         usage: {
           provider: response.provider,
           estimatedInputTokens: Math.ceil(prompt.length / 4),
@@ -1365,12 +1558,16 @@ export async function POST(request: NextRequest) {
         errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
       });
       const timedOut = error instanceof AiRouterTimeoutError;
+      const providerQuotaExceeded = isProviderQuotaExceeded(error);
       return NextResponse.json({
         facts,
         ai: null,
         aiError: timedOut
           ? 'Batas waktu analisis AI terlampaui. Fakta kelas berhasil dihitung; coba lagi nanti.'
-          : 'Layanan AI tidak tersedia. Fakta kelas berhasil dihitung; coba lagi nanti.',
+          : providerQuotaExceeded
+            ? 'Kuota layanan AI sedang habis atau dibatasi oleh provider. Fakta kelas berhasil dihitung; coba lagi nanti.'
+            : 'Layanan AI gagal memproses permintaan. Fakta kelas berhasil dihitung; coba lagi nanti.',
+        cacheWarning,
         usage: {
           estimatedInputTokens: Math.ceil(prompt.length / 4),
           maxOutputTokens,

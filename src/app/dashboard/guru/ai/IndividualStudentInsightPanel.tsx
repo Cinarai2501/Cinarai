@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import type { StudentRow } from '../types';
 import { Card, ProgressBar, Skeleton } from '../components/ui';
+import { releaseAiRequestLock, tryAcquireAiRequestLock } from './aiRequestLock';
 import type { StudentInsightAiResult, StudentInsightEvidence, StudentInsightFacts } from '../services/studentInsight';
 
 interface StudentInsightResponse {
@@ -26,6 +27,9 @@ interface StudentInsightResponse {
     maxProviderAttempts: number;
     actualTokenUsageAvailable: false;
   } | null;
+  analysisGeneratedAt?: string;
+  cacheHit?: boolean;
+  cacheWarning?: string | null;
 }
 
 type ReportSection = 'summary' | 'capabilities' | 'activity' | 'recommendations';
@@ -46,6 +50,13 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
   const [error, setError] = useState<string | null>(null);
   const [reviewedRecommendations, setReviewedRecommendations] = useState<Set<number>>(new Set());
   const requestStarted = useRef(false);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = window.setTimeout(() => setRetryAfterSeconds((remaining) => Math.max(0, remaining - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [retryAfterSeconds]);
 
   const selectedStudent = students.find((student) => student.uid === selectedUid) ?? null;
   const matches = !selectedUid && search.trim()
@@ -60,21 +71,20 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
     : [];
 
   const selectStudent = (student: StudentRow) => {
-    requestStarted.current = false;
+    if (loading) return;
     setSelectedUid(student.uid);
     setSearch(student.displayName);
     setReport(null);
     setSection('summary');
     setError(null);
     setReviewedRecommendations(new Set());
+    setRetryAfterSeconds(0);
   };
 
-  const generate = async () => {
-    if (!selectedUid || requestStarted.current) return;
-    requestStarted.current = true;
+  const generate = async (refresh = false) => {
+    if (!selectedUid || loading || (report && !refresh) || !tryAcquireAiRequestLock(requestStarted)) return;
     setLoading(true);
     setError(null);
-    setReport(null);
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error('Sesi login tidak tersedia. Silakan masuk kembali.');
@@ -86,9 +96,13 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'student-insight', studentUid: selectedUid }),
+        body: JSON.stringify({ action: 'student-insight', studentUid: selectedUid, refresh }),
         cache: 'no-store',
       });
+      if (response.status === 429) {
+        const retryAfter = Number(response.headers.get('Retry-After'));
+        setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
+      }
       const payload = await readJsonResponse<{ error?: string } | StudentInsightResponse>(response, endpoint);
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'Analisis individu gagal dimuat.');
@@ -98,9 +112,9 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
       }
       setReport(payload);
     } catch (requestError) {
-      requestStarted.current = false;
       setError(requestError instanceof Error ? requestError.message : 'Analisis individu gagal dimuat.');
     } finally {
+      releaseAiRequestLock(requestStarted);
       setLoading(false);
     }
   };
@@ -131,6 +145,7 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
         <input
           id="student-insight-search"
           value={search}
+          disabled={loading}
           onChange={(event) => {
             setSearch(event.target.value);
             if (selectedUid) {
@@ -142,7 +157,7 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
           }}
           placeholder="Ketik identitas siswa…"
           autoComplete="off"
-          className="min-h-11 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+          className="min-h-11 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 disabled:bg-neutral-100"
         />
         {matches.length > 0 && (
           <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-neutral-200 bg-white p-1 shadow-lg">
@@ -150,8 +165,9 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
               <li key={student.uid}>
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => selectStudent(student)}
-                  className="min-h-12 w-full rounded-lg px-3 py-2 text-left hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
+                  className="min-h-12 w-full rounded-lg px-3 py-2 text-left hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span className="block truncate text-sm font-bold text-neutral-900">{student.displayName || 'Siswa'}</span>
                   <span className="block truncate text-xs text-neutral-600">{student.email || 'Email tidak tersedia'}</span>
@@ -183,15 +199,29 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
           </div>
           <button
             type="button"
-            onClick={() => void generate()}
-            disabled={loading || Boolean(report)}
+            onClick={() => void generate(Boolean(report))}
+            disabled={loading || retryAfterSeconds > 0}
             className="min-h-11 w-full flex-shrink-0 rounded-xl bg-primary-700 px-4 text-sm font-bold text-white hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            {loading ? 'Mengambil bukti & menganalisis…' : report ? 'Analisis tersedia' : 'Buat analisis'}
+            {loading
+              ? 'Mengambil bukti & menganalisis…'
+              : retryAfterSeconds > 0
+                ? `Coba lagi dalam ${retryAfterSeconds} dtk`
+                : report
+                  ? 'Perbarui analisis'
+                  : 'Buat analisis'}
           </button>
         </div>
       )}
+      {retryAfterSeconds > 0 && (
+        <p role="status" className="mt-2 text-xs text-neutral-600">
+          Batas 5 permintaan per menit untuk siswa ini. Coba lagi setelah hitung mundur selesai.
+        </p>
+      )}
       {error && <p role="alert" className="mt-3 rounded-xl bg-error-50 p-3 text-sm text-error-700">{error}</p>}
+      {report?.cacheWarning && (
+        <p role="status" className="mt-2 text-xs text-warning-800">{report.cacheWarning}</p>
+      )}
       {loading && (
         <div className="mt-3 space-y-2" aria-label="Memuat analisis individu">
           <Skeleton className="h-20 rounded-xl" />
@@ -209,9 +239,11 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
               {!report.student.classLevel && report.student.gradeLevel !== null ? ` · Kelas ${report.student.gradeLevel}` : ''}
             </p>
             <p className="mt-1 text-[10px] text-neutral-500">
-              Snapshot {formatDate(report.facts.generatedAt)} · Periode bukti {report.facts.dataPeriod.from && report.facts.dataPeriod.to
+              Terakhir dianalisis {report.analysisGeneratedAt ? formatDate(report.analysisGeneratedAt) : formatDate(report.facts.generatedAt)}
+              {report.cacheHit ? ' · cache (data belum berubah)' : ''}
+              <span className="block">Periode bukti {report.facts.dataPeriod.from && report.facts.dataPeriod.to
                 ? `${formatDate(report.facts.dataPeriod.from)} – ${formatDate(report.facts.dataPeriod.to)}`
-                : 'tidak tersedia'}
+                : 'tidak tersedia'}</span>
             </p>
           </div>
 
@@ -256,8 +288,8 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
             </summary>
             <EvidenceList evidence={report.facts.evidence} />
             <div className="mt-2 space-y-1 text-xs leading-5 text-neutral-600">
-              <p>Query dibatasi {report.facts.sample.limitPerQuery} dokumen per sumber; hasil sampel terpotong: {report.facts.sample.mayBeTruncated ? 'ya' : 'tidak'}.</p>
-              <p>Pemanggilan analisis dibatasi satu kali per akun guru setiap 60 detik.</p>
+              <p>Data dibaca per halaman hingga seluruh sumber tersedia; halaman berisi maksimal {report.facts.sample.limitPerQuery} dokumen.</p>
+              <p>Analisis dibatasi 5 permintaan per menit untuk UID siswa ini.</p>
               <p>Data tidak dikirim sebagai jawaban/refleksi mentah. Progress tahap bukan bukti penguasaan.</p>
               {report.facts.limitations.map((limitation) => <p key={limitation}>• {limitation}</p>)}
               {report.usage && (

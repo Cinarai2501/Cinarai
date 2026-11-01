@@ -34,6 +34,21 @@ test('keeps distinct Firebase UIDs even when emails match', () => {
   assert.deepEqual(normalizeStudentDocuments(users).map(({ uid }) => uid), ['student-a', 'student-b']);
 });
 
+test('keeps students with matching names as distinct UID-based records', () => {
+  const users: UserDocument[] = [
+    { uid: 'student-a', displayName: 'Ayu', email: 'ayu-a@example.test', role: 'student' },
+    { uid: 'student-b', displayName: 'Ayu', email: 'ayu-b@example.test', role: 'student' },
+  ];
+
+  assert.deepEqual(
+    normalizeStudentDocuments(users).map(({ uid, displayName }) => ({ uid, displayName })),
+    [
+      { uid: 'student-a', displayName: 'Ayu' },
+      { uid: 'student-b', displayName: 'Ayu' },
+    ],
+  );
+});
+
 test('includes every student-role document without school or teacher assignment and merges duplicate UIDs', () => {
   const users: UserDocument[] = [
     { uid: 'student-a', email: 'a@example.test', role: 'student', duplicate: true },

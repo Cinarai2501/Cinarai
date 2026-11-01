@@ -23,6 +23,7 @@ export default function GuruDashboardPage() {
   const studentFilter = useStudentFilter(rows, comics.length);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [tab, setTab] = useState<GuruDashboardTab>('overview');
+  const [moduleToOpen, setModuleToOpen] = useState<number | null>(null);
 
   const detail = useStudentDetail(selectedUid ?? '', comics);
   const aiInsight = useStudentAiInsight();
@@ -46,12 +47,22 @@ export default function GuruDashboardPage() {
       aiInsight.reset();
       setSelectedUid(null);
     }
+    setModuleToOpen(null);
     setTab(nextTab);
   };
 
-  const handleGenerateInsight = () => {
+  const handleOpenModule = (comicId: number) => {
+    if (selectedUid) {
+      aiInsight.reset();
+      setSelectedUid(null);
+    }
+    setModuleToOpen(comicId);
+    setTab('modules');
+  };
+
+  const handleGenerateInsight = (forceRefresh = false) => {
     if (!detail.student || detail.student.uid !== selectedUid) return;
-    void aiInsight.generate(detail.student.uid);
+    void aiInsight.generate(detail.student.uid, forceRefresh);
   };
 
   const handleGeneratePdf = () => {
@@ -60,13 +71,11 @@ export default function GuruDashboardPage() {
     printStudentReport(row, comics, aiInsight.insight);
   };
 
-  const topStudents = [...rows].sort((a, b) => b.averageProgress - a.averageProgress);
-
   return (
     <div className="min-h-[100dvh] overflow-x-hidden bg-[#f0f7ff]">
       <GuruHeader summary={summary} loading={loading} />
 
-      <main className="mx-auto max-w-5xl px-3 py-3 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-6 sm:py-5">
+      <main className="mx-auto max-w-5xl px-3 py-3 pb-[calc(96px+env(safe-area-inset-bottom))] sm:px-6 sm:py-5">
         {error && (
           <div role="alert" className="mb-3 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
             <p className="font-bold">Sebagian data dashboard tidak dapat dimuat.</p>
@@ -106,6 +115,10 @@ export default function GuruDashboardPage() {
             insight={aiInsight.insight}
             insightLoading={aiInsight.loading}
             insightError={aiInsight.error}
+            insightRetryAfterSeconds={aiInsight.retryAfterSeconds}
+            insightGeneratedAt={aiInsight.analysisGeneratedAt}
+            insightCacheHit={aiInsight.cacheHit}
+            insightCacheWarning={aiInsight.cacheWarning}
             loading={detail.loading}
             error={detail.error}
             onBack={handleBack}
@@ -116,7 +129,6 @@ export default function GuruDashboardPage() {
           <DashboardOverview
             summary={summary}
             rows={rows}
-            topStudents={topStudents}
             comics={comics}
             recentActivities={recentActivities}
             recentActivityLoading={recentActivityLoading}
@@ -125,6 +137,7 @@ export default function GuruDashboardPage() {
             onOpenAi={() => handleTabChange('ai')}
             onOpenStudents={() => handleTabChange('students')}
             onOpenModules={() => handleTabChange('modules')}
+            onOpenModule={handleOpenModule}
           />
         ) : tab === 'students' ? (
           <StudentDirectory
@@ -152,7 +165,13 @@ export default function GuruDashboardPage() {
             onSelectStudent={handleSelectStudent}
           />
         ) : (
-          <ModuleDirectory comics={comics} rows={rows} loading={loading} />
+          <ModuleDirectory
+            key={moduleToOpen ?? 'directory'}
+            comics={comics}
+            rows={rows}
+            loading={loading}
+            initialComicId={moduleToOpen}
+          />
         )}
       </main>
       <GuruBottomNav activeTab={tab} onTabChange={handleTabChange} onLogout={handleLogout} />
