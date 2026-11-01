@@ -9,6 +9,7 @@ export type ModuleStudentStatus = 'not_started' | 'learning' | 'completed';
 
 export interface ModuleRosterSummary {
   studentCount: number;
+  progressRecordCount: number;
   startedCount: number;
   learningCount: number;
   completedCount: number;
@@ -114,6 +115,7 @@ export function getModuleRosterSummary(rows: StudentRow[], comicId: number): Mod
   const completedCount = students.filter(({ status }) => status === 'completed').length;
   return {
     studentCount: rows.length,
+    progressRecordCount: rows.filter((student) => getModuleProgress(student, comicId) !== null).length,
     startedCount: students.filter(({ status }) => status !== 'not_started').length,
     learningCount: students.filter(({ status }) => status === 'learning').length,
     completedCount,

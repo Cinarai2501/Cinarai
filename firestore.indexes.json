@@ -1,21 +1,24 @@
 {
   "indexes": [
     {
-      "collectionId": "users",
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "displayName", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "users",
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "schoolName", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "users",
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" },
@@ -23,84 +26,120 @@
       ]
     },
     {
-      "collectionId": "activity",
+      "collectionGroup": "activity",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "occurredAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "application_activity",
+      "collectionGroup": "activity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "occurredAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "application_activity",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "application_activity",
+      "collectionGroup": "application_activity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "application_activity",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "localTimestamp", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "reflection",
+      "collectionGroup": "reflection",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "reflection",
+      "collectionGroup": "reflection",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "studentId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "identification_answers",
+      "collectionGroup": "identification_answers",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "identification_answers",
+      "collectionGroup": "identification_answers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "identification_answers",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "identification_answers",
+      "collectionGroup": "identification_answers",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "studentId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "application_activity",
+      "collectionGroup": "application_activity",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "application_activity",
+      "collectionGroup": "application_activity",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "studentId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "reflection",
+      "collectionGroup": "reflection",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionId": "reflection",
+      "collectionGroup": "reflection",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "studentId", "order": "ASCENDING" },
         { "fieldPath": "comicId", "order": "ASCENDING" }

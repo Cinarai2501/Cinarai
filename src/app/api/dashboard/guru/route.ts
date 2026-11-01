@@ -41,6 +41,7 @@ import { consumeTeacherAiRateLimit } from './rateLimit';
 import { readAllPages } from './pagedQuery';
 import { readBoundedJsonBody } from './requestBody';
 import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
+import { logFirestoreQueryFailure, runFirestoreQuery, type FirestoreQueryDiagnostic } from '@/lib/firebase/firestoreDiagnostics';
 import type { ActivityDocument, ComicDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import { FieldPath } from 'firebase-admin/firestore';
 import type { DocumentSnapshot, Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
@@ -300,38 +301,21 @@ function buildPayloadFromCollections(payload: {
   };
 }
 
-async function safeGetCollection<T>(label: string, operation: () => Promise<T>): Promise<{ ok: boolean; data: T | null; error?: string }> {
-  const queryDescription = operation.toString();
-  debug(`[dashboard/guru] starting query for collection: ${label}`, {
-    path: `/dashboard/guru/${label}`,
-    query: queryDescription,
+async function safeGetCollection<T>(context: FirestoreQueryDiagnostic, operation: () => Promise<T>): Promise<{ ok: boolean; data: T | null; error?: string }> {
+  debug('[dashboard/guru] starting Firestore operation', {
+    ...context,
     status: 'running',
   });
 
   try {
     const data = await operation();
-    debug(`[dashboard/guru] finished query for collection: ${label}`, {
-      path: `/dashboard/guru/${label}`,
-      query: queryDescription,
+    debug('[dashboard/guru] finished Firestore operation', {
+      ...context,
       status: 'success',
     });
     return { ok: true, data };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code) : 'n/a';
-
-    debug(`[dashboard/guru] Firestore query failed for ${label}`, {
-      path: `/dashboard/guru/${label}`,
-      query: queryDescription,
-      status: 'failed',
-      error: message,
-      code,
-    });
-
-    if (error instanceof Error) {
-      debug(error.stack);
-    }
-
+    logFirestoreQueryFailure(context, error);
     throw error;
   }
 }
@@ -373,14 +357,22 @@ export async function GET(request: NextRequest) {
     let role: string | undefined;
 
     try {
-      const profileSnapshot = await adminFirestore.collection('users').doc(uid).get();
+      const profileFirestore = adminFirestore;
+      const profileSnapshot = await runFirestoreQuery({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru teacher profile lookup',
+        collection: 'users',
+        queryScope: 'COLLECTION',
+      }, () => profileFirestore.collection('users').doc(uid).get());
       if (profileSnapshot.exists) {
         const userData = profileSnapshot.data() as Record<string, unknown> | undefined;
         role = typeof userData?.role === 'string' ? userData.role : undefined;
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      debug('[dashboard/guru] Failed to fetch user profile', { error: message, uid });
+      debug('[dashboard/guru] Failed to fetch teacher profile', {
+        errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
+      });
       return NextResponse.json(buildEmptyPayload('Failed to fetch user profile', message), { status: 500 });
     }
 
@@ -401,12 +393,24 @@ export async function GET(request: NextRequest) {
           let studentQuery = firestore.collection('users').where('role', '==', 'student');
           studentQuery = studentQuery.orderBy(FieldPath.documentId()).limit(pageSize);
           if (cursor) studentQuery = studentQuery.startAfter(cursor);
-          const page = await safeGetCollection('users page', () => studentQuery.get());
+          const page = await safeGetCollection({
+            sdk: 'admin',
+            operation: 'GET /api/dashboard/guru roster page',
+            collection: 'users',
+            queryScope: 'COLLECTION',
+            where: [{ field: 'role', operator: '==' }],
+            orderBy: [{ field: '__name__', direction: 'ASC' }],
+          }, () => studentQuery.get());
           return page.data?.docs ?? [];
         },
         DASHBOARD_ROSTER_PAGE_SIZE,
       ),
-      safeGetCollection('comics', async () => getComicCatalogSnapshots(firestore)),
+      safeGetCollection({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru comic catalog document reads',
+        collection: 'comics',
+        queryScope: 'COLLECTION',
+      }, async () => getComicCatalogSnapshots(firestore)),
     ]);
 
     debug('[dashboard/guru] collection queries completed, mapping documents');
@@ -415,13 +419,33 @@ export async function GET(request: NextRequest) {
     const students = normalizeStudentDocuments(rawStudents);
     const studentUids = new Set(students.map((student) => student.uid));
     const [reflectionsSnapshot, activitySnapshot, applicationSnapshot, answersSnapshot] = await Promise.all([
-      safeGetCollection('reflection', () =>
+      safeGetCollection({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru recent reflection records',
+        collection: 'reflection',
+        queryScope: 'COLLECTION',
+      }, () =>
         readRecentStudentRecords(firestore, 'reflection', 'createdAt', Array.from(studentUids))),
-      safeGetCollection('activity', () =>
+      safeGetCollection({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru recent activity records',
+        collection: 'activity',
+        queryScope: 'COLLECTION',
+      }, () =>
         readRecentStudentRecords(firestore, 'activity', 'occurredAt', Array.from(studentUids))),
-      safeGetCollection('application_activity', () =>
+      safeGetCollection({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru recent application activity records',
+        collection: 'application_activity',
+        queryScope: 'COLLECTION',
+      }, () =>
         readRecentStudentRecords(firestore, 'application_activity', 'timestamp', Array.from(studentUids))),
-      safeGetCollection('identification_answers', () =>
+      safeGetCollection({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru recent identification answers',
+        collection: 'identification_answers',
+        queryScope: 'COLLECTION',
+      }, () =>
         readRecentStudentRecords(firestore, 'identification_answers', 'updatedAt', Array.from(studentUids))),
     ]);
     const comics = comicsSnapshot.data?.map((document, index) =>
@@ -436,7 +460,12 @@ export async function GET(request: NextRequest) {
     const progressByUid = new Map<string, Array<{ id: string; userId: string; [field: string]: unknown }>>();
     for (let offset = 0; offset < progressReferences.length; offset += 100) {
       const batch = progressReferences.slice(offset, offset + 100);
-      const snapshots = await safeGetCollection('scoped progress', async () =>
+      const snapshots = await safeGetCollection({
+        sdk: 'admin',
+        operation: 'GET /api/dashboard/guru scoped progress document reads',
+        collection: 'users/{uid}/progress',
+        queryScope: 'COLLECTION',
+      }, async () =>
         firestore.getAll(...batch.map(({ reference }) => reference))
       );
       snapshots.data?.forEach((snapshot, index) => {
@@ -482,9 +511,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    debug('[dashboard/guru] Unhandled route error', { error: message });
-    if (error instanceof Error) debug(error.stack);
-    // If we have context about collection failure, it should have been logged in safeGetCollection
+    debug('[dashboard/guru] Unhandled route error', {
+      errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
+    });
     return NextResponse.json(buildEmptyPayload('Dashboard guru gagal memuat data', message), { status: 500 });
   }
 }
@@ -546,11 +575,18 @@ async function readRecentStudentRecords(
     }))
   );
   const snapshots = await Promise.all(queries.map(({ uids, ownerField }) =>
-    firestore.collection(collectionName)
+    runFirestoreQuery({
+      sdk: 'admin',
+      operation: `GET /api/dashboard/guru recent ${collectionName}:${ownerField}`,
+      collection: collectionName,
+      queryScope: 'COLLECTION',
+      where: [{ field: ownerField, operator: 'in' }],
+      orderBy: [{ field: timestampField, direction: 'DESC' }],
+    }, () => firestore.collection(collectionName)
       .where(ownerField, 'in', uids)
       .orderBy(timestampField, 'desc')
       .limit(RECENT_RECORDS_PER_QUERY)
-      .get()
+      .get())
   ));
   const documents = new Map<string, QueryDocumentSnapshot>();
   snapshots.flatMap((snapshot) => snapshot.docs).forEach((document) => {
@@ -568,7 +604,14 @@ function readStudentRecords(firestore: AdminFirestore, collectionName: string, u
         .orderBy(FieldPath.documentId())
         .limit(pageSize);
       if (cursor) recordsQuery = recordsQuery.startAfter(cursor);
-      return (await recordsQuery.get()).docs;
+      return (await runFirestoreQuery({
+        sdk: 'admin',
+        operation: `POST /api/dashboard/guru student insight ${collectionName}:${ownerField}`,
+        collection: collectionName,
+        queryScope: 'COLLECTION',
+        where: [{ field: ownerField, operator: '==' }],
+        orderBy: [{ field: '__name__', direction: 'ASC' }],
+      }, () => recordsQuery.get())).docs;
     }, STUDENT_INSIGHT_SAMPLE_LIMIT)
   )).then((groups) => {
     const records = new Map<string, QueryDocumentSnapshot>();
@@ -590,7 +633,13 @@ function readStudentSubcollection(
     let recordsQuery: Query = firestore.collection('users').doc(uid).collection(collectionName);
     recordsQuery = recordsQuery.orderBy(FieldPath.documentId()).limit(pageSize);
     if (cursor) recordsQuery = recordsQuery.startAfter(cursor);
-    return (await recordsQuery.get()).docs;
+    return (await runFirestoreQuery({
+      sdk: 'admin',
+      operation: `POST /api/dashboard/guru student insight ${collectionName} subcollection page`,
+      collection: `users/{uid}/${collectionName}`,
+      queryScope: 'COLLECTION',
+      orderBy: [{ field: '__name__', direction: 'ASC' }],
+    }, () => recordsQuery.get())).docs;
   }, STUDENT_INSIGHT_SAMPLE_LIMIT);
 }
 
@@ -599,18 +648,13 @@ async function buildStudentInsightResponse(
   teacherRole: unknown,
   studentUid: string,
 ): Promise<NextResponse> {
-  const scopedStudentQuery = firestore.collection('users')
-    .where('role', '==', 'student')
-    .where('uid', '==', studentUid)
-    .limit(10);
-  const [directProfile, matchingProfiles] = await Promise.all([
-    firestore.collection('users').doc(studentUid).get(),
-    scopedStudentQuery.get(),
-  ]);
-  const candidates = [
-    ...(directProfile.exists ? [directProfile] : []),
-    ...matchingProfiles.docs,
-  ];
+  const directProfile = await runFirestoreQuery({
+    sdk: 'admin',
+    operation: 'POST /api/dashboard/guru student insight profile lookup',
+    collection: 'users',
+    queryScope: 'COLLECTION',
+  }, () => firestore.collection('users').doc(studentUid).get());
+  const candidates = directProfile.exists ? [directProfile] : [];
   const scopedDocuments = candidates.filter((document) => {
     const data = document.data();
     return isStudentAllowedForInsight({
@@ -651,7 +695,12 @@ async function buildStudentInsightResponse(
     firestore.collection('users').doc(studentUid).collection('progress').doc('evaluation-cinarai'),
   ];
   const progressSnapshots = progressReferences.length
-    ? await firestore.getAll(...progressReferences)
+    ? await runFirestoreQuery({
+      sdk: 'admin',
+      operation: 'POST /api/dashboard/guru student insight progress document reads',
+      collection: 'users/{uid}/progress',
+      queryScope: 'COLLECTION',
+    }, () => firestore.getAll(...progressReferences))
     : [];
   const progress: StudentInsightProgress[] = [];
   let evaluationScore: number | null = null;
@@ -982,17 +1031,23 @@ export async function POST(request: NextRequest) {
 
   try {
     const firestore = adminFirestore;
-    const profileSnapshot = await firestore.collection('users').doc(decodedToken.uid).get();
+    const teacherUid = decodedToken.uid;
+    const profileSnapshot = await runFirestoreQuery({
+      sdk: 'admin',
+      operation: 'POST /api/dashboard/guru teacher profile lookup',
+      collection: 'users',
+      queryScope: 'COLLECTION',
+    }, () => firestore.collection('users').doc(teacherUid).get());
     const profile = profileSnapshot.data();
     const role = profile?.role;
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 });
     }
-    const rateLimited = await consumeTeacherAiRateLimit(firestore, decodedToken.uid, CLASS_INSIGHT_COOLDOWN_MS);
-    if (rateLimited) {
+    const retryAfterSeconds = await consumeTeacherAiRateLimit(firestore, decodedToken.uid, CLASS_INSIGHT_COOLDOWN_MS);
+    if (retryAfterSeconds > 0) {
       return NextResponse.json(
-        { error: 'Analisis AI dibatasi satu kali per akun setiap 60 detik. Coba lagi setelah jeda tersebut.' },
-        { status: 429, headers: { 'Retry-After': '60' } }
+        { error: `Analisis AI dibatasi satu kali per akun. Coba lagi dalam ${retryAfterSeconds} detik.` },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
       );
     }
     if (requestBody.action === 'student-insight') {
@@ -1005,7 +1060,14 @@ export async function POST(request: NextRequest) {
         async (cursor, pageSize) => {
           let pageQuery = studentQuery.orderBy(FieldPath.documentId()).limit(pageSize);
           if (cursor) pageQuery = pageQuery.startAfter(cursor);
-          return (await pageQuery.get()).docs;
+          return (await runFirestoreQuery({
+            sdk: 'admin',
+            operation: 'POST /api/dashboard/guru class insight roster page',
+            collection: 'users',
+            queryScope: 'COLLECTION',
+            where: [{ field: 'role', operator: '==' }],
+            orderBy: [{ field: '__name__', direction: 'ASC' }],
+          }, () => pageQuery.get())).docs;
         },
         DASHBOARD_ROSTER_PAGE_SIZE,
       ),
@@ -1039,7 +1101,12 @@ export async function POST(request: NextRequest) {
     ]);
     const progressSnapshots = [];
     for (let offset = 0; offset < progressReferences.length; offset += 100) {
-      progressSnapshots.push(...await firestore.getAll(...progressReferences.slice(offset, offset + 100)));
+      progressSnapshots.push(...await runFirestoreQuery({
+        sdk: 'admin',
+        operation: 'POST /api/dashboard/guru class insight progress document reads',
+        collection: 'users/{uid}/progress',
+        queryScope: 'COLLECTION',
+      }, () => firestore.getAll(...progressReferences.slice(offset, offset + 100))));
     }
     const progressByStudent = new Map<string, ClassInsightProgress[]>();
     const evaluationScores = new Map<string, number>();
@@ -1132,7 +1199,13 @@ export async function POST(request: NextRequest) {
             .where(ownerField, 'in', uidChunk)
             .limit(pageSize);
           if (cursor) query = query.startAfter(cursor);
-          return (await query.get()).docs;
+          return (await runFirestoreQuery({
+            sdk: 'admin',
+            operation: `POST /api/dashboard/guru class insight ${collectionName}:${ownerField}`,
+            collection: collectionName,
+            queryScope: 'COLLECTION',
+            where: [{ field: ownerField, operator: 'in' }],
+          }, () => query.get())).docs;
         }, CLASS_INSIGHT_SAMPLE_LIMIT)
       )).then((groups) => {
         const documents = new Map<string, QueryDocumentSnapshot>();
@@ -1289,8 +1362,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       debug('[dashboard/guru] class AI analysis failed', {
-        uid: decodedToken.uid,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
       });
       const timedOut = error instanceof AiRouterTimeoutError;
       return NextResponse.json({
@@ -1309,8 +1381,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     debug('[dashboard/guru] class insight data failed', {
-      uid: decodedToken.uid,
-      message: error instanceof Error ? error.message : 'Unknown error',
+      errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
     });
     return NextResponse.json({ error: 'Data analisis kelas gagal dimuat.' }, { status: 500 });
   }

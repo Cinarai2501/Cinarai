@@ -9,6 +9,7 @@ import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/student
 import { consumeTeacherAiRateLimit } from '../../rateLimit';
 import { readAllPages } from '../../pagedQuery';
 import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
+import { logFirestoreQueryFailure, runFirestoreQuery } from '@/lib/firebase/firestoreDiagnostics';
 import type { ModuleDetailResponse } from '@/app/dashboard/guru/services/moduleAnalytics';
 import type { UserDocument } from '@/types/firestore';
 import { FieldPath, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
@@ -78,29 +79,49 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   }
 
   const firestore = adminFirestore;
-  const profile = await firestore.collection('users').doc(uid).get();
+  const profile = await runFirestoreQuery({
+    sdk: 'admin',
+    operation: 'GET /api/dashboard/guru/modules/[comicId] teacher profile lookup',
+    collection: 'users',
+    queryScope: 'COLLECTION',
+  }, () => firestore.collection('users').doc(uid).get());
   const profileData = profile.data();
   const role = profileData?.role;
   if (role !== 'teacher' && role !== 'admin') {
     return { response: NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 }) };
   }
-  if (forAi && await consumeTeacherAiRateLimit(firestore, uid, MODULE_AI_COOLDOWN_MS)) {
+  const retryAfterSeconds = forAi
+    ? await consumeTeacherAiRateLimit(firestore, uid, MODULE_AI_COOLDOWN_MS)
+    : 0;
+  if (retryAfterSeconds > 0) {
     return {
       response: NextResponse.json(
-        { error: 'Analisis AI dibatasi satu kali per akun setiap 60 detik. Coba lagi setelah jeda tersebut.' },
-        { status: 429, headers: { 'Retry-After': '60' } }
+        { error: `Analisis AI dibatasi satu kali per akun. Coba lagi dalam ${retryAfterSeconds} detik.` },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
       ),
     };
   }
 
   const [comicSnapshot, studentDocuments] = await Promise.all([
-    firestore.collection('comics').doc(`comic-${comicId}`).get(),
+    runFirestoreQuery({
+      sdk: 'admin',
+      operation: 'GET /api/dashboard/guru/modules/[comicId] comic lookup',
+      collection: 'comics',
+      queryScope: 'COLLECTION',
+    }, () => firestore.collection('comics').doc(`comic-${comicId}`).get()),
     (() => {
       const query = firestore.collection('users').where('role', '==', 'student');
       return readAllPages<QueryDocumentSnapshot>(async (cursor, pageSize) => {
         let pageQuery = query.orderBy(FieldPath.documentId()).limit(pageSize);
         if (cursor) pageQuery = pageQuery.startAfter(cursor);
-        return (await pageQuery.get()).docs;
+        return (await runFirestoreQuery({
+          sdk: 'admin',
+          operation: 'GET /api/dashboard/guru/modules/[comicId] roster page',
+          collection: 'users',
+          queryScope: 'COLLECTION',
+          where: [{ field: 'role', operator: '==' }],
+          orderBy: [{ field: '__name__', direction: 'ASC' }],
+        }, () => pageQuery.get())).docs;
       }, MODULE_ROSTER_PAGE_SIZE);
     })(),
   ]);
@@ -128,7 +149,12 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   );
   const progressSnapshots = [];
   for (let offset = 0; offset < progressRefs.length; offset += 100) {
-    progressSnapshots.push(...await firestore.getAll(...progressRefs.slice(offset, offset + 100)));
+    progressSnapshots.push(...await runFirestoreQuery({
+      sdk: 'admin',
+      operation: 'GET /api/dashboard/guru/modules/[comicId] scoped progress document reads',
+      collection: 'users/{uid}/progress',
+      queryScope: 'COLLECTION',
+    }, () => firestore.getAll(...progressRefs.slice(offset, offset + 100))));
   }
   const progressByUid = new Map<string, RawDocument>();
   progressSnapshots.forEach((snapshot, index) => {
@@ -154,7 +180,16 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
           .where('comicId', '==', collectionName === 'reflection' ? String(comicId) : comicId)
           .limit(pageSize);
         if (cursor) recordsQuery = recordsQuery.startAfter(cursor);
-        return (await recordsQuery.get()).docs;
+        return (await runFirestoreQuery({
+          sdk: 'admin',
+          operation: `GET /api/dashboard/guru/modules/[comicId] ${collectionName}:${ownerField}`,
+          collection: collectionName,
+          queryScope: 'COLLECTION',
+          where: [
+            { field: ownerField, operator: 'in' },
+            { field: 'comicId', operator: '==' },
+          ],
+        }, () => recordsQuery.get())).docs;
       }, MODULE_SAMPLE_LIMIT)
     )).then((groups) => {
       const records = new Map<string, QueryDocumentSnapshot>();
@@ -392,7 +427,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (result.response) return result.response;
     return NextResponse.json(result.data);
   } catch (error) {
-    console.error('[dashboard/guru/modules] GET failed:', error);
+    logFirestoreQueryFailure({
+      sdk: 'admin',
+      operation: 'GET /api/dashboard/guru/modules/[comicId]',
+      collection: 'dashboard-guru-module',
+      queryScope: 'COLLECTION',
+    }, error);
     return NextResponse.json({ error: 'Data modul gagal dimuat.' }, { status: 500 });
   }
 }
@@ -456,7 +496,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (error instanceof AiRouterTimeoutError) {
       return NextResponse.json({ error: 'Batas waktu analisis AI modul terlampaui. Silakan coba kembali.' }, { status: 504 });
     }
-    console.error('[dashboard/guru/modules] POST failed:', error);
+    logFirestoreQueryFailure({
+      sdk: 'admin',
+      operation: 'POST /api/dashboard/guru/modules/[comicId]',
+      collection: 'dashboard-guru-module',
+      queryScope: 'COLLECTION',
+    }, error);
     return NextResponse.json({ error: 'Analisis AI modul gagal dibuat. Silakan coba kembali.' }, { status: 502 });
   }
 }

@@ -222,7 +222,8 @@ export function useGuruDashboard() {
               ...progress,
               id: progress.id ?? `comic-${progress.comicId}`,
             }))
-          )
+          ),
+          comics.length
         ));
         const summary = buildDashboardSummary(rows, comics.length);
         const studentUids = new Set(students.map((student) => student.uid));

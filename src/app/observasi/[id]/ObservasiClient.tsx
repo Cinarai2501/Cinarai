@@ -81,6 +81,7 @@ export default function ObservasiClient({ comicId }: ObservasiClientProps) {
           hubunganMatematika: formData.hubunganMatematika,
         },
         timestamp: serverTimestamp(),
+        createdAt: serverTimestamp(),
         status: 'completed',
         prompt: 'Observasi',
         response: JSON.stringify({

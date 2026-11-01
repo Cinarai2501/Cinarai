@@ -11,6 +11,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
+import { logFirestoreQueryFailure, runFirestoreQuery } from '@/lib/firebase/firestoreDiagnostics';
 import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
 import { deduplicateActivitiesById } from './activityUtils';
 import { getStudentRecordOwner } from './studentRecordOwnership';
@@ -95,6 +96,14 @@ export function subscribeRecentGuruActivities(
           emit();
         },
         (error) => {
+          logFirestoreQueryFailure({
+            sdk: 'client',
+            operation: `subscribeRecentGuruActivities:${source}:${userField}`,
+            collection: collectionName,
+            queryScope: 'COLLECTION',
+            where: [{ field: userField, operator: 'in' }],
+            orderBy: [{ field: timestampField, direction: 'DESC' }],
+          }, error);
           sources.set(key, []);
           ready.add(key);
           onError(error);
@@ -180,7 +189,16 @@ export function subscribeStudents(
       });
       onData(raw);
     },
-    onError
+    (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: 'subscribeStudents',
+        collection: 'users',
+        queryScope: 'COLLECTION',
+        where: [{ field: 'role', operator: '==' }],
+      }, error);
+      onError(error);
+    }
   );
 }
 
@@ -192,12 +210,26 @@ export function subscribeComics(
   return onSnapshot(
     q,
     (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() } as ComicDocument))),
-    onError
+    (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: 'subscribeComics',
+        collection: 'comics',
+        queryScope: 'COLLECTION',
+        orderBy: [{ field: 'order', direction: 'ASC' }],
+      }, error);
+      onError(error);
+    }
   );
 }
 
 export async function fetchStudentProgress(uid: string): Promise<ComicProgressDocument[]> {
-  const snap = await getDocs(collection(firestore, 'users', uid, 'progress'));
+  const snap = await runFirestoreQuery({
+    sdk: 'client',
+    operation: 'fetchStudentProgress',
+    collection: 'users/{uid}/progress',
+    queryScope: 'COLLECTION',
+  }, () => getDocs(collection(firestore, 'users', uid, 'progress')));
   return snap.docs.map((d) => ({ id: d.id, userId: uid, ...d.data() } as ComicProgressDocument));
 }
 
@@ -222,7 +254,15 @@ export function subscribeStudentProgress(
     collection(firestore, 'users', uid, 'progress'),
     (snap) =>
       onData(snap.docs.map((d) => ({ id: d.id, userId: uid, ...d.data() }))),
-    onError
+    (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: 'subscribeStudentProgress',
+        collection: 'users/{uid}/progress',
+        queryScope: 'COLLECTION',
+      }, error);
+      onError(error);
+    }
   );
 }
 
@@ -234,7 +274,15 @@ export function subscribeStudentModuleProgress(
   return onSnapshot(
     collection(firestore, 'users', uid, 'learning-module-progress'),
     (snap) => onData(snap.docs.map((document) => ({ id: document.id, ...document.data() }))),
-    onError
+    (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: 'subscribeStudentModuleProgress',
+        collection: 'users/{uid}/learning-module-progress',
+        queryScope: 'COLLECTION',
+      }, error);
+      onError(error);
+    }
   );
 }
 
@@ -251,7 +299,16 @@ export function subscribeStudentAiTutorChats(
   return onSnapshot(
     chatsQuery,
     (snap) => onData(snap.docs.map((document) => ({ id: document.id, ...document.data() }))),
-    onError
+    (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: 'subscribeStudentAiTutorChats',
+        collection: 'users/{uid}/aiTutorChats',
+        queryScope: 'COLLECTION',
+        orderBy: [{ field: 'updatedAt', direction: 'DESC' }],
+      }, error);
+      onError(error);
+    }
   );
 }
 
@@ -275,7 +332,15 @@ export function subscribeStudentDoc(
         email: typeof data.email === 'string' ? data.email : '',
       } as UserDocument);
     },
-    onError
+    (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: 'subscribeStudentDoc',
+        collection: 'users/{uid}',
+        queryScope: 'COLLECTION',
+      }, error);
+      onError(error);
+    }
   );
 }
 
@@ -308,6 +373,13 @@ function subscribeStudentRecords(
       emit();
     },
     (error) => {
+      logFirestoreQueryFailure({
+        sdk: 'client',
+        operation: `subscribeStudentRecords:${collectionName}:${field}`,
+        collection: collectionName,
+        queryScope: 'COLLECTION',
+        where: [{ field, operator: '==' }],
+      }, error);
       sourceRecords.set(field, new Map());
       ready.add(field);
       onError(error);
@@ -352,7 +424,13 @@ export function subscribeStudentIdentificationAnswers(
 export async function fetchStudentRecords(collectionName: string, uid: string, timestampField: string) {
   const ownerFields = ['userId', 'studentId'] as const;
   const snapshots = await Promise.all(ownerFields.map((field) =>
-    getDocs(query(collection(firestore, collectionName), where(field, '==', uid)))
+    runFirestoreQuery({
+      sdk: 'client',
+      operation: `fetchStudentRecords:${field}`,
+      collection: collectionName,
+      queryScope: 'COLLECTION',
+      where: [{ field, operator: '==' }],
+    }, () => getDocs(query(collection(firestore, collectionName), where(field, '==', uid))))
   ));
   const records = new Map<string, Record<string, unknown>>();
   snapshots.flatMap((snapshot) => snapshot.docs).forEach((document) => {
@@ -375,6 +453,11 @@ export async function fetchStudentActivities(uid: string) {
 }
 
 export async function fetchStudentDoc(uid: string): Promise<UserDocument | null> {
-  const snapshot = await getDoc(doc(firestore, 'users', uid));
+  const snapshot = await runFirestoreQuery({
+    sdk: 'client',
+    operation: 'fetchStudentDoc',
+    collection: 'users',
+    queryScope: 'COLLECTION',
+  }, () => getDoc(doc(firestore, 'users', uid)));
   return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } as UserDocument : null;
 }

@@ -91,10 +91,22 @@ test('completion requires every persisted CINARAI stage and uses all roster stud
 
 test('missing progress and an empty roster remain distinct', () => {
   const missing = getModuleRosterSummary([makeStudent([])], 1);
+  assert.equal(missing.progressRecordCount, 0);
   assert.equal(missing.startedCount, 0);
   assert.equal(missing.completionRate, 0);
   assert.equal(getModuleStudentStatus(null), 'not_started');
   assert.equal(getModuleRosterSummary([], 1).completionRate, null);
+});
+
+test('counts actual progress records separately from the full roster denominator', () => {
+  const summary = getModuleRosterSummary([
+    makeStudent([makeProgress('not_started', 0)]),
+    makeStudent([]),
+  ], 1);
+
+  assert.equal(summary.studentCount, 2);
+  assert.equal(summary.progressRecordCount, 1);
+  assert.equal(summary.startedCount, 0);
 });
 
 test('all six implemented modules expose stage blueprint counts from their own content', () => {

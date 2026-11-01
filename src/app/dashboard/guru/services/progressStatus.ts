@@ -39,8 +39,7 @@ export function getCompletedModuleStages(progress: ModuleProgressEvidence): Set<
 
 export function getModuleProgressPercentage(progress: ModuleProgressEvidence): number {
   const completedStages = getCompletedModuleStages(progress);
-  const hasStageEvidence = Array.isArray(progress.completedStages) || Array.isArray(progress.sintaksList);
-  if (hasStageEvidence || progress.status === 'completed') {
+  if (completedStages.size > 0) {
     return calculatePercentage(completedStages.size);
   }
   return typeof progress.percentage === 'number' && Number.isFinite(progress.percentage)

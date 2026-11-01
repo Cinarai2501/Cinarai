@@ -48,7 +48,7 @@ function facts(overrides: Partial<Parameters<typeof buildClassInsightFacts>[0]> 
 
 test('empty class data remains unavailable and does not manufacture progress or history', () => {
   const result = facts();
-  assert.equal(result.summary.averageRecordedProgress, null);
+  assert.equal(result.summary.averageProgress, null);
   assert.equal(result.summary.recordedProgressCount, 0);
   assert.equal(result.historyPeriod.from, null);
   assert.equal(result.summary.studentsWithNoRecordedProgress, 0);
@@ -65,7 +65,7 @@ test('sampled class roster is disclosed as an analysis limitation', () => {
   assert.ok(result.limitations.some((item) => item.includes('maksimal 100 siswa')));
 });
 
-test('comic mastery uses roster denominator and excludes missing progress from average', () => {
+test('comic mastery uses the full roster as denominator and treats missing progress as zero', () => {
   const completeStages = ['Cover', 'Contextualization', 'Identification', 'Navigation', 'Argumentation', 'Resolution', 'Application', 'Introspection'];
   const result = facts({
     students: [
@@ -86,15 +86,28 @@ test('comic mastery uses roster denominator and excludes missing progress from a
     }],
   });
   assert.equal(result.scope.studentCount, 3);
-  assert.equal(result.summary.averageRecordedProgress, 50);
+  assert.equal(result.summary.averageProgress, 33);
   assert.equal(result.summary.recordedProgressCount, 2);
   assert.equal(result.summary.studentsStarted, 1);
   assert.equal(result.summary.studentsCompletedAnyComic, 1);
   assert.equal(result.comics[0].studentsCompleted, 1);
   assert.equal(result.comics[0].studentsStarted, 1);
+  assert.equal(result.comics[0].averageProgress, 33);
   assert.equal(result.comics[0].progressRecordCount, 2);
   assert.equal(result.comics[0].stages.find((stage) => stage.name === 'Identification')?.denominator, 3);
   assert.equal(result.assessments.find((assessment) => assessment.type === 'quiz')?.averageScore, 80);
+});
+
+test('missing progress has a zero cohort average but remains distinguishable from a record', () => {
+  const result = facts({
+    students: [student('student-without-progress')],
+    comics: [{ comicId: 1, title: 'Komik 1', stages: [] }],
+  });
+
+  assert.equal(result.summary.averageProgress, 0);
+  assert.equal(result.summary.recordedProgressCount, 0);
+  assert.equal(result.comics[0].averageProgress, 0);
+  assert.equal(result.comics[0].progressRecordCount, 0);
 });
 
 test('difficulty frequencies ignore answers without a saved answer key', () => {

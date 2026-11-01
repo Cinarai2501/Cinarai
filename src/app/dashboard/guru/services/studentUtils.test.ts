@@ -73,7 +73,31 @@ test('uses explicit placeholders for missing profile fields and retains students
   assert.equal(getStudentLearningStatus(row, 6), 'not_started');
 });
 
-test('does not infer module completion from a 100% percentage alone', () => {
+test('zero-percent progress documents are distinguishable from absent progress but both remain not started', () => {
+  const initialized = normalizeComicProgressDocuments('student-initialized', Array.from({ length: 6 }, (_, index) => ({
+    id: `comic-${index + 1}`,
+    comicId: index + 1,
+    percentage: 0,
+    status: 'not_started',
+    currentStage: 'Cover',
+    completedStages: [],
+    stageData: {},
+  })));
+  const initializedRow = buildStudentRow({
+    uid: 'student-initialized',
+    role: 'student',
+  } as UserDocument, initialized, 6);
+  const absentRow = buildStudentRow({
+    uid: 'student-absent',
+    role: 'student',
+  } as UserDocument, [], 6);
+
+  assert.equal(getStudentLearningStatus(initializedRow, 6), 'not_started');
+  assert.equal(getStudentLearningStatus(absentRow, 6), 'not_started');
+  assert.equal(buildDashboardSummary([initializedRow, absentRow], 6).progressDocuments, 6);
+});
+
+test('preserves stored percentages when stage arrays are empty without inferring completion', () => {
   const progress = normalizeComicProgressDocuments('student-a', [{
     id: 'comic-1',
     comicId: 1,
@@ -83,10 +107,33 @@ test('does not infer module completion from a 100% percentage alone', () => {
     sintaksList: [],
   }]);
 
-  assert.equal(progress[0].percentage, 0);
+  assert.equal(progress[0].percentage, 100);
   assert.equal(progress[0].status, 'in_progress');
   assert.equal(getStudentLearningStatus(student('student-a', { progressList: progress }), 6), 'attention');
   assert.equal(isModuleProgressComplete(progress[0]), false);
+});
+
+test('preserves low nonzero legacy percentages as learning evidence', () => {
+  for (const percentage of [2, 10, 21, 29]) {
+    const [progress] = normalizeComicProgressDocuments('student-legacy', [{
+      id: 'comic-1',
+      comicId: 1,
+      percentage,
+      status: 'not_started',
+      completedStages: [],
+      sintaksList: [],
+      currentStage: 'Cover',
+    }]);
+
+    assert.equal(progress.percentage, percentage);
+    assert.equal(getModuleStudentStatus(progress), 'learning');
+    assert.equal(isModuleProgressComplete(progress), false);
+    const row = buildStudentRow({
+      uid: 'student-legacy',
+      role: 'student',
+    } as UserDocument, [progress], 6);
+    assert.equal(getStudentLearningStatus(row, 6), 'attention');
+  }
 });
 
 test('only Cover completion is learning progress, not module completion', () => {
@@ -142,7 +189,7 @@ test('stored completed status without complete-stage evidence is not trusted', (
   }]);
 
   assert.equal(progress.status, 'in_progress');
-  assert.equal(progress.percentage, 0);
+  assert.equal(progress.percentage, 100);
   assert.equal(isModuleProgressComplete(progress), false);
 
   const [unmarkedProgress] = normalizeComicProgressDocuments('student-unmarked', [{
@@ -152,7 +199,7 @@ test('stored completed status without complete-stage evidence is not trusted', (
     percentage: 100,
   }]);
   assert.equal(unmarkedProgress.status, 'in_progress');
-  assert.equal(unmarkedProgress.percentage, 0);
+  assert.equal(unmarkedProgress.percentage, 100);
 });
 
 test('empty progress remains unavailable and invalid status is not learning evidence', () => {
@@ -303,21 +350,43 @@ test('searches email and sorts by completed comics', () => {
   assert.deepEqual(result.map(({ uid }) => uid), ['student-a']);
 });
 
-test('excludes unavailable progress records from the recorded-progress average', () => {
+test('averages all roster students and treats missing comic progress as zero', () => {
   const progress = [{
     comicId: 1,
     completedStage: '',
     completedPages: 0,
-    percentage: 80,
+    percentage: 100,
     status: 'in_progress' as const,
     sintaksList: [],
     updatedAt: {} as ComicProgressDocument['updatedAt'],
   }];
-  const summary = buildDashboardSummary([
-    student('student-with-data', { progressList: progress, averageProgress: 80 }),
-    student('student-without-data'),
-  ], 6);
+  const rows = [
+    buildStudentRow({ uid: 'student-with-data', role: 'student' } as UserDocument, progress, 6),
+    buildStudentRow({ uid: 'student-without-data', role: 'student' } as UserDocument, [], 6),
+  ];
+  const summary = buildDashboardSummary(rows, 6);
 
+  assert.equal(rows[0].averageProgress, 17);
+  assert.equal(rows[1].averageProgress, 0);
   assert.equal(summary.totalStudents, 2);
-  assert.equal(summary.averageProgress, 80);
+  assert.equal(summary.progressDocuments, 1);
+  assert.equal(summary.averageProgress, 8);
+});
+
+test('one completed comic among sixteen students is averaged across all 96 roster slots', () => {
+  const rows = Array.from({ length: 16 }, (_, index) => buildStudentRow(
+    { uid: `student-${index}`, role: 'student' } as UserDocument,
+    index === 0 ? [{
+      comicId: 1,
+      completedStage: '',
+      completedPages: 0,
+      percentage: 100,
+      status: 'in_progress',
+      sintaksList: [],
+      updatedAt: {} as ComicProgressDocument['updatedAt'],
+    }] : [],
+    6,
+  ));
+
+  assert.equal(buildDashboardSummary(rows, 6).averageProgress, 1);
 });

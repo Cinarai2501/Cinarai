@@ -18,6 +18,7 @@ interface StudentInsightResponse {
 export function useStudentAiInsight() {
   const selectedUid = useRef<string | null>(null);
   const requestId = useRef(0);
+  const requestInFlight = useRef(false);
   const [insight, setInsight] = useState<AiInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,8 @@ export function useStudentAiInsight() {
   };
 
   const generate = async (uid: string) => {
-    if (!uid || selectedUid.current !== uid) return;
+    if (!uid || selectedUid.current !== uid || requestInFlight.current) return;
+    requestInFlight.current = true;
     const currentRequest = ++requestId.current;
     setLoading(true);
     setError(null);
@@ -81,6 +83,7 @@ export function useStudentAiInsight() {
         setError(requestError instanceof Error ? requestError.message : 'Analisis individu gagal dimuat.');
       }
     } finally {
+      requestInFlight.current = false;
       if (selectedUid.current === uid && requestId.current === currentRequest) setLoading(false);
     }
   };

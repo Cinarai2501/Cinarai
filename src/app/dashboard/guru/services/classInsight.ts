@@ -75,7 +75,7 @@ export interface ClassInsightFacts {
     studentsWithLowRecordedProgress: number;
     studentsNeedingAttention: number;
     studentsWithLearningActivity: number;
-    averageRecordedProgress: number | null;
+    averageProgress: number | null;
     recordedProgressCount: number;
   };
   activityByType: Array<{ type: string; eventCount: number }>;
@@ -86,7 +86,7 @@ export interface ClassInsightFacts {
     title: string;
     studentsStarted: number;
     studentsCompleted: number;
-    averageRecordedProgress: number | null;
+    averageProgress: number | null;
     progressRecordCount: number;
     assessmentSummaries: Array<{ type: string; averageScore: number; recordCount: number }>;
     stages: Array<{ name: string; completedStudents: number; denominator: number }>;
@@ -142,7 +142,10 @@ export function buildClassInsightFacts(input: {
   const allProgressRows = input.students.flatMap((student) =>
     student.progress.map((progress) => ({ student, progress }))
   );
-  const progressRows = allProgressRows.filter(({ progress }) => progress.comicId > 0);
+  const comicIds = new Set(input.comics.map((comic) => comic.comicId));
+  const isTrackedProgress = (progress: ClassInsightProgress) =>
+    progress.comicId > 0 && (comicIds.size === 0 || comicIds.has(progress.comicId));
+  const progressRows = allProgressRows.filter(({ progress }) => isTrackedProgress(progress));
   const recordedProgress = progressRows.flatMap(({ progress }) =>
     progress.percentage === null ? [] : [progress.percentage]
   );
@@ -167,10 +170,10 @@ export function buildClassInsightFacts(input: {
         progress.status === 'learning' || progress.status === 'in_progress' || progress.status === 'completed'
       ).length,
       studentsCompleted: completions.length,
-      averageRecordedProgress: moduleRows.some(({ progress }) => progress.percentage !== null)
-        ? roundedMean(moduleRows.flatMap(({ progress }) => progress.percentage === null ? [] : [progress.percentage]))
+      averageProgress: input.students.length
+        ? Math.round(moduleRows.reduce((sum, { progress }) => sum + (progress.percentage ?? 0), 0) / input.students.length)
         : null,
-      progressRecordCount: moduleRows.filter(({ progress }) => progress.percentage !== null).length,
+      progressRecordCount: moduleRows.length,
       assessmentSummaries: Array.from(assessmentGroups.entries()).map(([type, scores]) => ({
         type,
         averageScore: roundedMean(scores),
@@ -316,9 +319,7 @@ export function buildClassInsightFacts(input: {
     });
   const activityByWeek = buildWeeklyActivityCounts(learningActivities, generatedAt);
   const studentsWithLowRecordedProgress = input.students.filter((student) => {
-    const recorded = student.progress.filter((progress) =>
-      progress.comicId > 0 && progress.percentage !== null
-    );
+    const recorded = student.progress.filter((progress) => isTrackedProgress(progress) && progress.percentage !== null);
     return recorded.length >= 2 && roundedMean(recorded.map((progress) => progress.percentage as number)) < 40;
   }).length;
   const limitations: string[] = [];
@@ -367,12 +368,14 @@ export function buildClassInsightFacts(input: {
         .filter(({ progress }) => progress.status === 'completed')
         .map(({ student }) => student.uid)).size,
       studentsWithNoRecordedProgress: input.students.filter((student) =>
-        !student.progress.some((progress) => progress.comicId > 0 && progress.percentage !== null)
+        !student.progress.some((progress) => isTrackedProgress(progress) && progress.percentage !== null)
       ).length,
       studentsWithLowRecordedProgress,
       studentsNeedingAttention: attentionStudents.length,
       studentsWithLearningActivity: new Set(learningActivities.map((activity) => activity.userId)).size,
-      averageRecordedProgress: recordedProgress.length ? roundedMean(recordedProgress) : null,
+      averageProgress: input.students.length && input.comics.length
+        ? Math.round(recordedProgress.reduce((sum, progress) => sum + progress, 0) / (input.students.length * input.comics.length))
+        : null,
       recordedProgressCount: recordedProgress.length,
     },
     activityByType,
@@ -395,14 +398,14 @@ export function buildClassInsightPrompt(facts: ClassInsightFacts): string {
       withoutRecordedProgress: facts.summary.studentsWithNoRecordedProgress,
       withLowRecordedProgress: facts.summary.studentsWithLowRecordedProgress,
       needingAttention: facts.summary.studentsNeedingAttention,
-      averageRecordedProgress: facts.summary.averageRecordedProgress,
+      averageProgress: facts.summary.averageProgress,
       progressRecords: facts.summary.recordedProgressCount,
     },
     modules: facts.comics.slice(0, 6).map((comic) => ({
       comicId: comic.comicId,
       started: comic.studentsStarted,
       completed: comic.studentsCompleted,
-      averageRecordedProgress: comic.averageRecordedProgress,
+      averageProgress: comic.averageProgress,
       recordedProgressCount: comic.progressRecordCount,
       assessments: comic.assessmentSummaries,
       stageCompletion: comic.stages.map((stage) => ({

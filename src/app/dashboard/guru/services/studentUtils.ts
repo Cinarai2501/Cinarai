@@ -4,12 +4,14 @@ import { getModuleStudentStatus, isModuleProgressComplete } from './progressStat
 
 export function buildStudentRow(
   user: UserDocument,
-  progressList: ComicProgressDocument[]
+  progressList: ComicProgressDocument[],
+  totalComics = progressList.length,
 ): StudentRow {
+  const progressDenominator = Math.max(0, totalComics);
   const avg =
-    progressList.length > 0
+    progressDenominator > 0
       ? Math.round(
-          progressList.reduce((s, p) => s + (p.percentage ?? 0), 0) / progressList.length
+          progressList.reduce((s, p) => s + (p.percentage ?? 0), 0) / progressDenominator
         )
       : 0;
   const completedComicIds = new Set(progressList
@@ -141,10 +143,12 @@ export function buildDashboardSummary(rows: StudentRow[], totalComics: number) {
     totalStudents > 0 && totalComics > 0
       ? Math.min(100, Math.round((totalCompleted / (totalStudents * totalComics)) * 100))
       : 0;
-  const rowsWithProgress = rows.filter((row) => row.progressList.length > 0);
   const averageProgress =
-    rowsWithProgress.length > 0
-      ? Math.round(rowsWithProgress.reduce((sum, row) => sum + row.averageProgress, 0) / rowsWithProgress.length)
+    totalStudents > 0 && totalComics > 0
+      ? Math.round(rows.reduce(
+        (sum, row) => sum + row.progressList.reduce((progressSum, progress) => progressSum + (progress.percentage ?? 0), 0),
+        0
+      ) / (totalStudents * totalComics))
       : 0;
   return {
     totalStudents,

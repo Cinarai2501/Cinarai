@@ -173,7 +173,7 @@ function FactsSummary({ facts }: { facts: ClassInsightFacts }) {
       <SectionHeading
         eyebrow="Fakta terukur"
         title="Ringkasan kondisi kelas"
-        description={`Snapshot ${formatDate(measuredAt.toISOString())}. Progress rata-rata hanya menghitung ${summary.recordedProgressCount} dokumen progress yang memiliki nilai tersimpan.`}
+        description={`Snapshot ${formatDate(measuredAt.toISOString())}. Rata-rata dihitung dari seluruh siswa dan komik; ${summary.recordedProgressCount} dokumen memiliki nilai progress tersimpan.`}
       />
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Metric label="Siswa dalam cakupan" value={facts.scope.studentCount} />
@@ -182,12 +182,12 @@ function FactsSummary({ facts }: { facts: ClassInsightFacts }) {
         <Metric label="Tanpa progress tercatat" value={summary.studentsWithNoRecordedProgress} />
       </div>
       <div className="mt-2 rounded-xl bg-primary-50 p-3">
-        <p className="text-xs font-semibold text-primary-700">Rata-rata progress tersimpan</p>
+        <p className="text-xs font-semibold text-primary-700">Rata-rata progress seluruh siswa</p>
         <p className="mt-1 text-2xl font-black text-primary-900">
-          {summary.averageRecordedProgress === null ? 'Belum tersedia' : `${summary.averageRecordedProgress}%`}
+          {summary.averageProgress === null ? 'Belum tersedia' : `${summary.averageProgress}%`}
         </p>
         <p className="mt-1 text-[11px] leading-5 text-neutral-600">
-          Rata-rata dari progress komik tersimpan; bukan ukuran penguasaan materi.
+          Komik tanpa progress bernilai 0%; ini bukan ukuran penguasaan materi.
         </p>
       </div>
       {facts.assessments.length > 0 && (
@@ -230,11 +230,11 @@ function ComicMastery({ facts }: { facts: ClassInsightFacts }) {
                   </p>
                 </div>
                 <span className="flex-shrink-0 text-xs font-bold text-primary-700">
-                  {comic.averageRecordedProgress === null ? '—' : `${comic.averageRecordedProgress}%`}
+                  {comic.averageProgress === null ? '—' : `${comic.averageProgress}%`}
                 </span>
               </div>
-              {comic.averageRecordedProgress !== null && (
-                <ProgressBar value={comic.averageRecordedProgress} className="mt-2" />
+              {comic.averageProgress !== null && (
+                <ProgressBar value={comic.averageProgress} className="mt-2" />
               )}
               <p className="mt-1 text-[10px] text-neutral-500">
                 Progress tercatat: {comic.progressRecordCount}/{facts.scope.studentCount} siswa

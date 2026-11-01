@@ -23,22 +23,36 @@ export function isTeacherAiRateLimited(
   now: number,
   cooldownMs: number,
 ): boolean {
+  return getTeacherAiRateLimitRemainingSeconds(lastRequestedAt, now, cooldownMs) > 0;
+}
+
+export function getTeacherAiRateLimitRemainingSeconds(
+  lastRequestedAt: unknown,
+  now: number,
+  cooldownMs: number,
+): number {
   const timestamp = timestampMillis(lastRequestedAt);
-  return timestamp !== null && now - timestamp < cooldownMs;
+  if (timestamp === null) return 0;
+  return Math.ceil(Math.max(0, cooldownMs - (now - timestamp)) / 1000);
 }
 
 export async function consumeTeacherAiRateLimit(
   firestore: Firestore,
   teacherUid: string,
   cooldownMs: number,
-  now = Date.now(),
-): Promise<boolean> {
+  now?: number,
+): Promise<number> {
   const profileRef = firestore.collection('users').doc(teacherUid);
   return firestore.runTransaction(async (transaction) => {
     const profile = await transaction.get(profileRef);
     if (!profile.exists) throw new Error('Profil guru tidak tersedia untuk menerapkan batas analisis AI.');
-    if (isTeacherAiRateLimited(profile.get('guruAiAnalysisLastRequestedAt'), now, cooldownMs)) return true;
+    const remainingSeconds = getTeacherAiRateLimitRemainingSeconds(
+      profile.get('guruAiAnalysisLastRequestedAt'),
+      now ?? Date.now(),
+      cooldownMs,
+    );
+    if (remainingSeconds > 0) return remainingSeconds;
     transaction.update(profileRef, { guruAiAnalysisLastRequestedAt: FieldValue.serverTimestamp() });
-    return false;
+    return 0;
   });
 }
