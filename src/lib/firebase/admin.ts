@@ -74,13 +74,13 @@ initializeAdmin();
 
 export { adminApp, adminAuth, adminFirestore, adminStorage, adminInitializationError };
 
-export const verifyIdToken = async (token: string): Promise<DecodedIdToken | null> => {
+export const verifyIdToken = async (token: string, checkRevoked = false): Promise<DecodedIdToken | null> => {
   if (!adminAuth) {
     return null;
   }
 
   try {
-    return await adminAuth.verifyIdToken(token);
+    return await adminAuth.verifyIdToken(token, checkRevoked);
   } catch {
     return null;
   }

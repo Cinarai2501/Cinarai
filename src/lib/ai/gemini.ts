@@ -1,13 +1,6 @@
-import { summarizeResponseBody } from './provider';
+import { AiProviderError, createAiProviderHttpError } from './provider';
+import type { AiProviderErrorCode } from './provider';
 import type { AiProvider, AiProviderConfig, AiRequestPayload, AiResponse } from './provider';
-
-function createProviderError(message: string, statusCode?: number): Error & { statusCode?: number } {
-  const error = new Error(message) as Error & { statusCode?: number };
-  if (typeof statusCode === 'number') {
-    error.statusCode = statusCode;
-  }
-  return error;
-}
 
 export class GeminiProvider implements AiProvider {
   public readonly name = 'gemini' as const;
@@ -17,31 +10,44 @@ export class GeminiProvider implements AiProvider {
   async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying Gemini...');
-    console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
-
     if (!apiKey) {
-      console.error('[AI Provider] Gemini failed: GEMINI_API_KEY is not configured');
-      throw createProviderError('GEMINI_API_KEY is not configured');
+      throw new AiProviderError('Gemini API key is not configured');
     }
 
     try {
       console.warn('[AI Provider] Request sent');
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.config.model ?? 'gemini-2.0-flash'}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${this.config.model ?? 'gemini-3.6-flash'}:generateContent`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
+          },
           signal,
           body: JSON.stringify({
+            ...(payload.systemPrompt
+              ? { systemInstruction: { parts: [{ text: payload.systemPrompt }] } }
+              : {}),
             contents: [
               {
                 role: 'user',
-                parts: [{ text: `${payload.systemPrompt ? `${payload.systemPrompt}\n\n` : ''}${payload.prompt}` }],
+                parts: [{ text: payload.prompt }],
               },
             ],
             generationConfig: {
               temperature: payload.temperature ?? 0.7,
               maxOutputTokens: payload.maxTokens ?? 220,
+              ...(this.config.model?.startsWith('gemini-3') || !this.config.model
+                ? {
+                  thinkingConfig: {
+                    thinkingLevel: payload.metadata?.aiHealthCheck === true
+                      || payload.metadata?.aiThinkingLevel === 'MINIMAL'
+                      ? 'MINIMAL'
+                      : 'LOW',
+                  },
+                }
+                : {}),
             },
           }),
         },
@@ -51,30 +57,69 @@ export class GeminiProvider implements AiProvider {
       console.warn(`[AI Provider] Status Code = ${response.status}`);
 
       const rawBody = await response.text();
-      console.warn(`[AI Provider] Response Body = ${summarizeResponseBody(rawBody)}`);
-
       if (!response.ok) {
-        console.error(`[AI Provider] Gemini failed: ${rawBody}`);
-        throw createProviderError(`HTTP ${response.status}: ${rawBody || response.statusText}`, response.status);
+        throw createAiProviderHttpError(response, rawBody);
       }
 
       let data: unknown;
       try {
         data = JSON.parse(rawBody) as {
-          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+          candidates?: Array<{
+            finishReason?: string;
+            content?: { parts?: Array<{ text?: string }> };
+          }>;
+          promptFeedback?: { blockReason?: string };
         };
       } catch (error) {
-        console.error('[AI Provider] Gemini parsing failed', error);
-        throw createProviderError(`Parsing failed. Expected response with candidates content. Actual response: ${summarizeResponseBody(rawBody)}`);
+        if (error instanceof SyntaxError) {
+          throw new AiProviderError('Gemini returned an invalid response body', undefined, undefined, 'provider');
+        }
+        throw error;
       }
 
       console.warn('[AI Provider] Parsing Result = success');
-      const parsed = data as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+      const parsed = data as {
+        candidates?: Array<{
+          finishReason?: string;
+          content?: { parts?: Array<{ text?: string }> };
+        }>;
+        promptFeedback?: { blockReason?: string };
+      };
       const content = parsed.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('').trim();
+      if (parsed.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+        throw new AiProviderError(
+          'Gemini reached the output token limit',
+          undefined,
+          undefined,
+          'provider',
+          undefined,
+          'MAX_TOKENS',
+        );
+      }
 
       if (!content) {
-        console.error('[AI Provider] Gemini failed: empty content after parsing');
-        throw createProviderError(`Parsing failed. Expected response with text content. Actual response: ${summarizeResponseBody(parsed)}`);
+        const safeCodes = new Set<AiProviderErrorCode>([
+          'NO_CANDIDATE',
+          'MAX_TOKENS',
+          'SAFETY',
+          'RECITATION',
+          'BLOCKLIST',
+          'PROHIBITED_CONTENT',
+          'STOP',
+        ]);
+        const rawCode = parsed.promptFeedback?.blockReason ?? parsed.candidates?.[0]?.finishReason ?? 'NO_CANDIDATE';
+        const normalizedCode = rawCode.trim().toUpperCase().replace(/[\s-]+/g, '_');
+        const diagnosticCode = safeCodes.has(normalizedCode as AiProviderErrorCode)
+          ? normalizedCode as AiProviderErrorCode
+          : 'NO_CANDIDATE';
+        throw new AiProviderError(
+          'Gemini returned an empty response',
+          undefined,
+          undefined,
+          'provider',
+          undefined,
+          diagnosticCode,
+        );
       }
 
       console.warn('[AI Provider] Success');
@@ -84,7 +129,7 @@ export class GeminiProvider implements AiProvider {
         raw: parsed,
       };
     } catch (error) {
-      console.error('[AI Provider] Gemini failed', error);
+      console.error('[AI Provider] Gemini request failed');
       throw error;
     }
   }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AiRouter } from '@/lib/ai/router';
 import type { AiRequestPayload } from '@/lib/ai/provider';
+import { getAiRequestAccess, checkAuthenticatedAiRateLimit } from '@/lib/ai/serverRequestAccess';
+import { aiRateLimitErrorResponse, aiRequestAccessErrorResponse } from '@/lib/ai/requestAccess';
+import { readBoundedJsonBody } from '@/app/api/dashboard/guru/requestBody';
+import { validateApplicationRequest } from '@/lib/ai/requestValidation';
 
 export const runtime = 'nodejs';
 
@@ -106,12 +110,27 @@ function parseCoachResponse(raw: string): RespBody | null {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = (await request.json()) as ReqBody;
-    if (!body.jawabanSiswa || !body.jawabanAlasan) {
-      return NextResponse.json({ error: 'jawabanSiswa and jawabanAlasan are required' }, { status: 400 });
-    }
+  const access = await getAiRequestAccess(request, ['student']);
+  if (!access.ok) return aiRequestAccessErrorResponse(access);
 
+  const contentLength = Number(request.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > 16_384) {
+    return NextResponse.json({ error: 'Body permintaan melebihi batas ukuran.' }, { status: 413 });
+  }
+  const parsedBody = await readBoundedJsonBody(request, 16_384);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      { error: parsedBody.reason === 'too_large' ? 'Body permintaan melebihi batas ukuran.' : 'Body permintaan tidak valid.' },
+      { status: parsedBody.reason === 'too_large' ? 413 : 400 },
+    );
+  }
+  const validated = validateApplicationRequest(parsedBody.value);
+  if (!validated.ok) return NextResponse.json({ error: validated.error }, { status: 400 });
+  const rateLimit = await checkAuthenticatedAiRateLimit(access.uid);
+  if (!rateLimit.ok) return aiRateLimitErrorResponse(rateLimit);
+
+  try {
+    const body = validated.value;
     const router = AiRouter.createDefault();
     const payload: AiRequestPayload = {
       prompt: buildPrompt(body),
@@ -140,7 +159,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ...fallback, provider: response.provider });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown AI error';
-    return NextResponse.json({ error: message }, { status: 502 });
+    console.error('[ai/application] provider request failed', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    return NextResponse.json({ error: 'AI Coach sedang mengalami gangguan. Coba lagi nanti.' }, { status: 502 });
   }
 }

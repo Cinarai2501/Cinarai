@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import RobotMascot from '@/components/ai/RobotMascot';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 import type { ArgumentationLearningObject } from '@/features/learning-engine/stages/Argumentation/data/argumentationQuestions';
 
 type FeedbackLevel = 'SANGAT_BAIK' | 'HAMPIR_BENAR' | 'PERLU_PERBAIKAN';
@@ -140,7 +141,7 @@ export default function Comic3ArgumentationStage({
     try {
       const response = await fetch('/api/ai/argumentation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: question.question,
           studentAnswer: answer,

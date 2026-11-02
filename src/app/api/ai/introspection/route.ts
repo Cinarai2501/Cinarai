@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AiRouter } from '@/lib/ai/router';
 import { packageContent as comic3Package } from '@/features/comics/comic-3/content/packageContent';
 import type { AiRequestPayload } from '@/lib/ai/provider';
+import { getAiRequestAccess, checkAuthenticatedAiRateLimit } from '@/lib/ai/serverRequestAccess';
+import { aiRateLimitErrorResponse, aiRequestAccessErrorResponse } from '@/lib/ai/requestAccess';
+import { readBoundedJsonBody } from '@/app/api/dashboard/guru/requestBody';
+import { validateIntrospectionRequest } from '@/lib/ai/requestValidation';
 
 export const runtime = 'nodejs';
 
@@ -166,11 +170,27 @@ function parseResponse(raw: string): IntrospectionResponseBody | null {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await getAiRequestAccess(request, ['student']);
+  if (!access.ok) return aiRequestAccessErrorResponse(access);
+
+  const contentLength = Number(request.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > 16_384) {
+    return NextResponse.json({ error: 'Body permintaan melebihi batas ukuran.' }, { status: 413 });
+  }
+  const parsedBody = await readBoundedJsonBody(request, 16_384);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      { error: parsedBody.reason === 'too_large' ? 'Body permintaan melebihi batas ukuran.' : 'Body permintaan tidak valid.' },
+      { status: parsedBody.reason === 'too_large' ? 413 : 400 },
+    );
+  }
+  const validated = validateIntrospectionRequest(parsedBody.value);
+  if (!validated.ok) return NextResponse.json({ error: validated.error }, { status: 400 });
+  const rateLimit = await checkAuthenticatedAiRateLimit(access.uid);
+  if (!rateLimit.ok) return aiRateLimitErrorResponse(rateLimit);
+
   try {
-    const body = (await request.json()) as IntrospectionRequestBody;
-    if (!body.reflectionText || !body.reflectionText.trim()) {
-      return NextResponse.json({ error: 'reflectionText is required' }, { status: 400 });
-    }
+    const body = validated.value as IntrospectionRequestBody;
 
     const router = AiRouter.createDefault();
     const payload: AiRequestPayload = {
@@ -193,7 +213,9 @@ export async function POST(request: NextRequest) {
       { status: 502 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown AI error';
-    return NextResponse.json({ error: message }, { status: 502 });
+    console.error('[ai/introspection] provider request failed', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    return NextResponse.json({ error: 'Analisis refleksi sedang mengalami gangguan. Coba lagi nanti.' }, { status: 502 });
   }
 }

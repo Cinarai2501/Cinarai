@@ -20,6 +20,7 @@ import {
 import DashboardPage from '@/components/dashboard/DashboardPage';
 import { useAuth } from '@/hooks/useAuth';
 import { firestore } from '@/lib/firebase/client';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 
 type Message = {
   id: string;
@@ -356,7 +357,7 @@ export default function DashboardSiswaAiTutorPage() {
       }));
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: text.trim(),
           context: {

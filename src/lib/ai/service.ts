@@ -83,7 +83,6 @@ interface GenerateTutorResponseOptions {
 }
 
 interface GenerateStudentInsightOptions {
-  retryCount?: number;
   router?: Pick<AiRouter, 'generate'>;
 }
 
@@ -105,21 +104,24 @@ function getAverageProgress(progressDocuments: StudentInsightContext['progressDo
 }
 
 function buildFallbackStudentInsight(context: StudentInsightContext): StudentInsightResponse {
-  const averageProgress = getAverageProgress(context.progressDocuments);
-  const latestStage = context.progressDocuments.find((document) => document.completedStage)?.completedStage ?? 'Identifikasi';
-  const weakestStage = averageProgress < 50 ? latestStage : 'Identifikasi';
-  const bestStage = averageProgress >= 70 ? 'Refleksi' : 'Observasi';
-  const hasLowRatings = context.reflections.some((reflection) => typeof reflection.rating === 'number' && reflection.rating < 3);
+  const measuredProgress = context.progressDocuments.filter((document) =>
+    typeof document.percentage === 'number'
+    && Number.isFinite(document.percentage)
+    && document.percentage >= 0
+    && document.percentage <= 100
+  );
+  const averageProgress = getAverageProgress(measuredProgress);
 
   return {
-    capabilitySummary: `${context.studentName} memiliki kemampuan numerasi ${averageProgress >= 70 ? 'cukup baik' : averageProgress >= 40 ? 'berkembang' : 'masih perlu pendampingan'} dengan rata-rata progres ${averageProgress}%.`,
-    weakestStage: weakestStage,
-    bestStage: bestStage,
-    errorPattern: hasLowRatings ? 'Cenderung membuat kesalahan saat memecahkan soal yang membutuhkan penjelasan alasan.' : 'Belum ada pola kesalahan yang sangat jelas dari data yang tersedia.',
-    teacherRecommendation: averageProgress < 50 ? 'Fokus pada bimbingan intensif dan latihan sederhana di tahap awal.' : 'Fokus pada bagian yang belum konsisten dan lanjutkan latihan bertahap.',
-    remedial: 'Berikan latihan singkat, contoh soal bertahap, dan pantau satu tahap per sesi.',
-    enrichment: 'Tingkatkan pemahaman melalui tantangan numerasi berbasis konteks dan refleksi mandiri.',
-    fallbackUsed: true,
+    capabilitySummary: measuredProgress.length
+      ? `Progress penyelesaian yang tercatat rata-rata ${averageProgress}% pada ${measuredProgress.length} modul. Data ini belum cukup untuk menyimpulkan penguasaan numerasi.`
+      : 'Data progress terukur belum tersedia; kemampuan siswa belum dapat disimpulkan.',
+    weakestStage: 'Belum dapat ditentukan dari data yang tersedia.',
+    bestStage: 'Belum dapat ditentukan dari data yang tersedia.',
+    errorPattern: 'Pola kesalahan belum dapat ditentukan tanpa bukti jawaban atau asesmen.',
+    teacherRecommendation: 'Tinjau jawaban dan asesmen tersimpan sebelum menentukan dukungan belajar.',
+    remedial: 'Kebutuhan remedial belum dapat ditentukan dari data yang tersedia.',
+    enrichment: 'Kebutuhan pengayaan belum dapat ditentukan dari data yang tersedia.',
   };
 }
 
@@ -168,8 +170,7 @@ export function buildStudentInsightPrompt(context: StudentInsightContext): strin
 
   return [
     'Analisis AI untuk guru tentang perkembangan siswa.',
-    `Nama siswa: ${context.studentName}`,
-    `Email: ${context.email || '—'}`,
+    'Jangan meminta atau menyimpulkan identitas siswa.',
     '',
     'Data progress komik:',
     progressSummary,
@@ -198,7 +199,6 @@ export async function generateStudentInsight(
   context: StudentInsightContext,
   options?: GenerateStudentInsightOptions,
 ): Promise<StudentInsightResponse> {
-  const retryCount = options?.retryCount ?? 2;
   const router = options?.router ?? AiRouter.createDefault();
   const payload: AiRequestPayload = {
     prompt: buildStudentInsightPrompt(context),
@@ -207,20 +207,20 @@ export async function generateStudentInsight(
     maxTokens: 320,
   };
 
-  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
-    try {
-      const response = await router.generate(payload) as AiResponse;
-      const parsed = parseStudentInsightResponse(response.content);
-      if (parsed) {
-        return {
-          ...parsed,
-          provider: response.provider,
-          fallbackUsed: false,
-        };
-      }
-    } catch (error) {
-      console.error('[generateStudentInsight] AI request failed', error);
+  try {
+    const response = await router.generate(payload) as AiResponse;
+    const parsed = parseStudentInsightResponse(response.content);
+    if (parsed) {
+      return {
+        ...parsed,
+        provider: response.provider,
+        fallbackUsed: response.fallbackUsed === true,
+      };
     }
+  } catch (error) {
+    console.error('[generateStudentInsight] AI request failed', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
   }
 
   return buildFallbackStudentInsight(context);
@@ -284,12 +284,6 @@ export async function generateTutorResponse(
   providerOverride?: Pick<AiProvider, 'generate'>,
   options?: GenerateTutorResponseOptions,
 ): Promise<TutorResponse> {
-  console.warn('[generateTutorResponse] generateTutorResponse() start');
-  console.warn('[generateTutorResponse] Navigation -> generateTutorResponse()', {
-    moduleName: context.moduleName,
-    question: context.question,
-  });
-
   const router = AiRouter.createDefault();
   const useComic3Prompt = context.comicTitle?.trim() === COMIC3_TITLE;
   const comic3Instruction = useComic3Prompt ? COMIC3_TUTOR_INSTRUCTION : '';
@@ -319,11 +313,11 @@ export async function generateTutorResponse(
       ].filter(Boolean).join('; ') || '- Tidak ada konteks objek AR.',
     })}`,
     temperature: 0.7,
-    maxTokens: 220,
+    maxTokens: 320,
+    metadata: { aiThinkingLevel: 'MINIMAL' },
   };
 
   try {
-    console.warn('[generateTutorResponse] generateTutorResponse() -> router');
     const routingRouter = options?.router
       ? options.router
       : providerOverride
@@ -331,13 +325,6 @@ export async function generateTutorResponse(
         : router;
     const response = await routingRouter.generate(payload) as AiResponse;
     const normalizedAnswer = typeof response?.content === 'string' ? response.content.trim() : '';
-
-    console.warn('[generateTutorResponse] provider used:', response?.provider);
-    console.warn('[generateTutorResponse] response length:', normalizedAnswer.length);
-    console.warn('[generateTutorResponse] service returned:', {
-      provider: response?.provider,
-      answerLength: normalizedAnswer.length,
-    });
 
     if (!normalizedAnswer) {
       const fallback = 'Seluruh layanan AI sedang tidak tersedia.';
@@ -347,18 +334,18 @@ export async function generateTutorResponse(
       return { answer: fallback };
     }
 
-    console.warn('[generateTutorResponse] generateTutorResponse() end');
     return {
       answer: normalizedAnswer,
       provider: response.provider,
     };
   } catch (error) {
-    console.warn('[generateTutorResponse] generateTutorResponse() end with error');
     const message = error instanceof Error ? error.message : 'Unknown AI error';
     const friendlyMessage = message.includes('Seluruh layanan AI sedang tidak tersedia')
       ? 'Seluruh layanan AI sedang tidak tersedia.'
       : 'Seluruh layanan AI sedang tidak tersedia.';
-    console.error('[generateTutorResponse] AI request failed', error);
+    console.error('[generateTutorResponse] AI request failed', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
 
     if (options?.throwOnError) {
       throw new Error(friendlyMessage);
@@ -369,4 +356,3 @@ export async function generateTutorResponse(
     };
   }
 }
-

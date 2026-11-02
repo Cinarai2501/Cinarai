@@ -1,13 +1,5 @@
-import { summarizeResponseBody } from './provider';
+import { AiProviderError, createAiProviderHttpError } from './provider';
 import type { AiProvider, AiProviderConfig, AiRequestPayload, AiResponse } from './provider';
-
-function createProviderError(message: string, statusCode?: number): Error & { statusCode?: number } {
-  const error = new Error(message) as Error & { statusCode?: number };
-  if (typeof statusCode === 'number') {
-    error.statusCode = statusCode;
-  }
-  return error;
-}
 
 export class OpenRouterProvider implements AiProvider {
   public readonly name = 'openrouter' as const;
@@ -17,11 +9,8 @@ export class OpenRouterProvider implements AiProvider {
   async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying OpenRouter...');
-    console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
-
     if (!apiKey) {
-      console.error('[AI Provider] OpenRouter failed: OPENROUTER_API_KEY is not configured');
-      throw createProviderError('OPENROUTER_API_KEY is not configured');
+      throw new AiProviderError('OpenRouter API key is not configured');
     }
 
     try {
@@ -50,11 +39,8 @@ export class OpenRouterProvider implements AiProvider {
       console.warn(`[AI Provider] Status Code = ${response.status}`);
 
       const rawBody = await response.text();
-      console.warn(`[AI Provider] Response Body = ${summarizeResponseBody(rawBody)}`);
-
       if (!response.ok) {
-        console.error(`[AI Provider] OpenRouter failed: ${rawBody}`);
-        throw createProviderError(`HTTP ${response.status}: ${rawBody || response.statusText}`, response.status);
+        throw createAiProviderHttpError(response, rawBody);
       }
 
       let data: unknown;
@@ -63,8 +49,10 @@ export class OpenRouterProvider implements AiProvider {
           choices?: Array<{ message?: { content?: string } }>;
         };
       } catch (error) {
-        console.error('[AI Provider] OpenRouter parsing failed', error);
-        throw createProviderError(`Parsing failed. Expected response with chat completion. Actual response: ${summarizeResponseBody(rawBody)}`);
+        if (error instanceof SyntaxError) {
+          throw new AiProviderError('OpenRouter returned an invalid response body', undefined, undefined, 'provider');
+        }
+        throw error;
       }
 
       console.warn('[AI Provider] Parsing Result = success');
@@ -72,8 +60,7 @@ export class OpenRouterProvider implements AiProvider {
       const content = parsed.choices?.[0]?.message?.content?.trim();
 
       if (!content) {
-        console.error('[AI Provider] OpenRouter failed: empty content after parsing');
-        throw createProviderError(`Parsing failed. Expected response with text content. Actual response: ${summarizeResponseBody(parsed)}`);
+        throw new AiProviderError('OpenRouter returned an empty response', undefined, undefined, 'provider');
       }
 
       console.warn('[AI Provider] Success');
@@ -83,7 +70,7 @@ export class OpenRouterProvider implements AiProvider {
         raw: parsed,
       };
     } catch (error) {
-      console.error('[AI Provider] OpenRouter failed', error);
+      console.error('[AI Provider] OpenRouter request failed');
       throw error;
     }
   }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 import { getFirestoreDocument, queryFirestoreCollection } from '@/services/firestore';
 import { fetchComicById } from '@/services/comicFirestoreService';
 import type { Comic } from '@/types/comic';
@@ -146,7 +147,7 @@ export default function AiTutorClient({ comicId }: AiTutorClientProps) {
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: trimmed,
           context: {

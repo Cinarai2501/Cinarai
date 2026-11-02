@@ -9,6 +9,7 @@ import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { buildResolutionTutorExplanation, type ResolutionMission } from './resolutionStage.helpers';
 import RobotMascot from '@/components/ai/RobotMascot';
 import { stopGlobalTts, useGlobalTts } from '@/lib/tts/globalTts';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 
 function getTutorFallback(mission: ResolutionMission, isCorrect: boolean, attempt: number = 0): string {
   if (mission.comicId === 6) {
@@ -337,7 +338,7 @@ function MissionCard({
     try {
       const response = await fetch('/api/ai/resolution', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           selected,
           attempt: attempts,

@@ -54,6 +54,8 @@ test('generateTutorResponse falls back to a friendly message when AI returns no 
 });
 
 test('generateTutorResponse uses an injected router result when provided', async () => {
+  let maxTokens: number | undefined;
+  let thinkingLevel: unknown;
   const response = await generateTutorResponse(
     {
       moduleName: 'Bangun Ruang',
@@ -71,19 +73,27 @@ test('generateTutorResponse uses an injected router result when provided', async
     {
       throwOnError: false,
       router: {
-        generate: async () => ({ provider: 'groq', content: 'Jawaban dari router' }),
+        generate: async (payload) => {
+          maxTokens = payload.maxTokens;
+          thinkingLevel = payload.metadata?.aiThinkingLevel;
+          return { provider: 'groq', content: 'Jawaban dari router' };
+        },
       },
     },
   );
 
   assert.equal(response.answer, 'Jawaban dari router');
   assert.equal(response.provider, 'groq');
+  assert.equal(maxTokens, 320);
+  assert.equal(thinkingLevel, 'MINIMAL');
 });
 
 test('buildStudentInsightPrompt includes the expected student analysis sections', () => {
+  const studentName = 'STUDENT_NAME_PRIVATE';
+  const studentEmail = 'student-private@example.com';
   const prompt = buildStudentInsightPrompt({
-    studentName: 'Ayu',
-    email: 'ayu@example.com',
+    studentName,
+    email: studentEmail,
     progressDocuments: [{ comicId: 1, percentage: 60, status: 'in_progress', completedStage: 'Identifikasi' }],
     reflections: [{ rating: 4, stage: 'application' }],
     activities: [{ title: 'Komik dimulai', description: 'Mulai komik 1', occurredAt: undefined }],
@@ -96,9 +106,12 @@ test('buildStudentInsightPrompt includes the expected student analysis sections'
   assert.match(prompt, /Rekomendasi guru/i);
   assert.match(prompt, /Remedial/i);
   assert.match(prompt, /Pengayaan/i);
+  assert.doesNotMatch(prompt, new RegExp(studentName));
+  assert.doesNotMatch(prompt, new RegExp(studentEmail));
 });
 
-test('generateStudentInsight falls back to a local summary when AI is unavailable', async () => {
+test('student insight fallback reports evidence without inferring ability or stages', async () => {
+  let requestCount = 0;
   const result = await generateStudentInsight(
     {
       studentName: 'Ayu',
@@ -107,12 +120,79 @@ test('generateStudentInsight falls back to a local summary when AI is unavailabl
       reflections: [],
       activities: [],
     },
-    { retryCount: 1, router: { generate: async () => ({ provider: 'gemini', content: '' }) } },
+    { router: { generate: async () => {
+      requestCount += 1;
+      return { provider: 'gemini', content: '' };
+    } } },
   );
 
-  assert.match(result.capabilitySummary, /Ayu/i);
-  assert.match(result.weakestStage, /Identifikasi/i);
-  assert.match(result.teacherRecommendation, /fokus/i);
+  assert.equal(requestCount, 1);
+  assert.match(result.capabilitySummary, /rata-rata 60%/i);
+  assert.match(result.capabilitySummary, /belum cukup untuk menyimpulkan/i);
+  assert.match(result.weakestStage, /belum dapat ditentukan/i);
+  assert.match(result.bestStage, /belum dapat ditentukan/i);
+  assert.match(result.errorPattern, /belum dapat ditentukan/i);
+  assert.equal(result.fallbackUsed, undefined);
+});
+
+test('student insight without measured progress does not treat an empty profile as failure', async () => {
+  const result = await generateStudentInsight(
+    {
+      studentName: 'Ayu',
+      email: 'ayu@example.com',
+      progressDocuments: [],
+      reflections: [],
+      activities: [],
+    },
+    { router: { generate: async () => ({ provider: 'gemini', content: '' }) } },
+  );
+
+  assert.match(result.capabilitySummary, /belum tersedia/i);
+  assert.match(result.capabilitySummary, /belum dapat disimpulkan/i);
+  assert.match(result.remedial, /belum dapat ditentukan/i);
+  assert.match(result.enrichment, /belum dapat ditentukan/i);
+});
+
+test('AI Tutor logs do not include the learner question or provider error details', async () => {
+  const privateQuestion = 'PRIVATE_LEARNER_QUESTION';
+  const privateError = 'PRIVATE_PROVIDER_RESPONSE';
+  const logs: unknown[][] = [];
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => logs.push(args);
+
+  try {
+    const response = await generateTutorResponse(
+      {
+        moduleName: 'Bangun Ruang',
+        identification: [],
+        objectInfo: {
+          location: 'Kelas',
+          classLevel: '5',
+          synopsis: 'Belajar bangun ruang',
+          learningTargets: ['Mengamati'],
+        },
+        observationAnswers: {},
+        question: privateQuestion,
+      },
+      undefined,
+      {
+        router: {
+          generate: async () => {
+            throw new Error(privateError);
+          },
+        },
+      },
+    );
+
+    assert.match(response.answer, /layanan AI sedang tidak tersedia/i);
+  } finally {
+    console.error = originalError;
+  }
+
+  const serializedLogs = JSON.stringify(logs);
+  assert.doesNotMatch(serializedLogs, new RegExp(privateQuestion));
+  assert.doesNotMatch(serializedLogs, new RegExp(privateError));
+  assert.match(serializedLogs, /errorName/);
 });
 
 test('buildTutorPrompt prioritizes explicit short-answer instructions from the user', () => {

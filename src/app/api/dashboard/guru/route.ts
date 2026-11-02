@@ -37,7 +37,8 @@ import type {
 } from '@/app/dashboard/guru/services/studentInsight';
 import { comicModules } from '@/features/comics';
 import { AiRouter, AiRouterError, AiRouterTimeoutError } from '@/lib/ai/router';
-import { consumeTeacherAiRateLimit } from './rateLimit';
+import { runTeacherAiAnalysis } from './rateLimit';
+import { INTERNAL_AI_RATE_LIMIT_CODE } from '@/lib/ai/rateLimitResponse';
 import { getAiSourceFingerprint, readTeacherAiCacheSafely, writeTeacherAiCache } from './aiCache';
 import { readAllPages } from './pagedQuery';
 import { readBoundedJsonBody } from './requestBody';
@@ -355,7 +356,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(buildEmptyPayload('Unauthorized: token not provided', 'Unauthorized'), { status: 401 });
     }
 
-    const decodedToken = await verifyIdToken(token);
+    const decodedToken = await verifyIdToken(token, true);
     if (!decodedToken?.uid) {
       return NextResponse.json(buildEmptyPayload('Unauthorized: invalid token', 'Unauthorized'), { status: 401 });
     }
@@ -373,6 +374,9 @@ export async function GET(request: NextRequest) {
       }, () => profileFirestore.collection('users').doc(uid).get());
       if (profileSnapshot.exists) {
         const userData = profileSnapshot.data() as Record<string, unknown> | undefined;
+        if (userData?.isActive === false) {
+          return NextResponse.json(buildEmptyPayload('Akun tidak aktif.', 'Forbidden'), { status: 403 });
+        }
         role = typeof userData?.role === 'string' ? userData.role : undefined;
       }
     } catch (error) {
@@ -998,16 +1002,42 @@ async function buildStudentInsightResponse(
     }
   }
   try {
-    const response = await AiRouter.createDefault().generate({
-      prompt,
-      systemPrompt: 'Anda membantu guru meninjau bukti belajar seorang siswa. Input berisi agregat pendidikan yang diminimalkan. Jangan menebak identitas, mengarang fakta, atau menyimpulkan motivasi, emosi, kepribadian, maupun sebab psikologis. Progress tahap bukan bukti penguasaan. Setiap klaim dan saran wajib merujuk evidence key yang tersedia.',
-      temperature: 0.2,
-      maxTokens: maxOutputTokens,
-    });
-    const ai = parseStudentInsightResponse(
-      response.content,
-      new Set(getStudentInsightPromptEvidence(facts).map((item) => item.key))
+    const requestTimestamp = Date.now();
+    const permittedEvidenceKeys = new Set(
+      getStudentInsightPromptEvidence(facts).map((item) => item.key)
     );
+    const execution = await runTeacherAiAnalysis(
+      firestore,
+      teacherUid,
+      'student',
+      studentUid,
+      null,
+      async () => {
+        const response = await AiRouter.createDefault().generate({
+          prompt,
+          systemPrompt: 'Anda membantu guru meninjau bukti belajar seorang siswa. Input berisi agregat pendidikan yang diminimalkan. Jangan menebak identitas, mengarang fakta, atau menyimpulkan motivasi, emosi, kepribadian, maupun sebab psikologis. Progress tahap bukan bukti penguasaan. Setiap klaim dan saran wajib merujuk evidence key yang tersedia.',
+          temperature: 0.2,
+          maxTokens: maxOutputTokens,
+        });
+        return {
+          response,
+          ai: parseStudentInsightResponse(response.content, permittedEvidenceKeys),
+        };
+      },
+      requestTimestamp,
+      (result) => result.ai !== null,
+    );
+    if (execution.kind === 'rate-limited') {
+      return NextResponse.json(
+        {
+          error: `Batas permintaan internal analisis individu untuk siswa ini tercapai. Coba lagi dalam ${execution.retryAfterSeconds} detik.`,
+          code: INTERNAL_AI_RATE_LIMIT_CODE,
+        },
+        { status: 429, headers: { 'Retry-After': String(execution.retryAfterSeconds) } },
+      );
+    }
+    if (execution.kind !== 'generated') throw new Error('Hasil analisis individu tidak terduga.');
+    const { response, ai } = execution.value;
     if (!ai) {
       return NextResponse.json({
         student: profile,
@@ -1017,6 +1047,7 @@ async function buildStudentInsightResponse(
         cacheWarning,
         usage: {
           provider: response.provider,
+          fallbackUsed: response.fallbackUsed === true,
           estimatedInputTokens: Math.ceil(prompt.length / 4),
           maxOutputTokens,
           maxProviderAttempts: 4,
@@ -1054,6 +1085,7 @@ async function buildStudentInsightResponse(
       cacheWarning,
       usage: {
         provider: response.provider,
+        fallbackUsed: response.fallbackUsed === true,
         estimatedInputTokens: Math.ceil(prompt.length / 4),
         maxOutputTokens,
         maxProviderAttempts: 4,
@@ -1126,7 +1158,7 @@ export async function POST(request: NextRequest) {
 
   let decodedToken: Awaited<ReturnType<typeof verifyIdToken>>;
   try {
-    decodedToken = await verifyIdToken(token);
+    decodedToken = await verifyIdToken(token, true);
   } catch {
     return NextResponse.json({ error: 'Sesi tidak valid.' }, { status: 401 });
   }
@@ -1143,23 +1175,11 @@ export async function POST(request: NextRequest) {
     }, () => firestore.collection('users').doc(teacherUid).get());
     const profile = profileSnapshot.data();
     const role = profile?.role;
+    if (profile?.isActive === false) {
+      return NextResponse.json({ error: 'Akun tidak aktif.' }, { status: 403 });
+    }
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 });
-    }
-    const analysisScope = requestBody.action === 'student-insight' ? 'student' : 'class';
-    const rateLimitTarget = requestBody.action === 'student-insight' ? requestedStudentUid : undefined;
-    const retryAfterSeconds = await consumeTeacherAiRateLimit(
-      firestore,
-      teacherUid,
-      analysisScope,
-      rateLimitTarget,
-    );
-    if (retryAfterSeconds > 0) {
-      const label = analysisScope === 'student' ? 'individu untuk siswa ini' : 'kelas';
-      return NextResponse.json(
-        { error: `Analisis ${label} dibatasi 5 kali per menit. Coba lagi dalam ${retryAfterSeconds} detik.` },
-        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
-      );
     }
     if (requestBody.action === 'student-insight') {
       return buildStudentInsightResponse(firestore, role, teacherUid, requestedStudentUid, forceRefresh);
@@ -1496,13 +1516,36 @@ export async function POST(request: NextRequest) {
       }
     }
     try {
-      const response = await AiRouter.createDefault().generate({
-        prompt,
-        systemPrompt: 'Anda membantu guru mengambil keputusan pembelajaran. Data hanyalah agregat anonim dari Firestore. Jangan mengidentifikasi siswa, menambah fakta, atau menyimpulkan sifat psikologis. Jika bukti lemah, katakan demikian.',
-        temperature: 0.2,
-        maxTokens: maxOutputTokens,
-      });
-      const ai = parseClassInsightResponse(response.content);
+      const requestTimestamp = Date.now();
+      const execution = await runTeacherAiAnalysis(
+        firestore,
+        teacherUid,
+        'class',
+        undefined,
+        null,
+        async () => {
+          const response = await AiRouter.createDefault().generate({
+            prompt,
+            systemPrompt: 'Anda membantu guru mengambil keputusan pembelajaran. Data hanyalah agregat anonim dari Firestore. Jangan mengidentifikasi siswa, menambah fakta, atau menyimpulkan sifat psikologis. Jika bukti lemah, katakan demikian.',
+            temperature: 0.2,
+            maxTokens: maxOutputTokens,
+          });
+          return { response, ai: parseClassInsightResponse(response.content) };
+        },
+        requestTimestamp,
+        (result) => result.ai !== null,
+      );
+      if (execution.kind === 'rate-limited') {
+        return NextResponse.json(
+          {
+            error: `Batas permintaan internal analisis kelas tercapai. Coba lagi dalam ${execution.retryAfterSeconds} detik.`,
+            code: INTERNAL_AI_RATE_LIMIT_CODE,
+          },
+          { status: 429, headers: { 'Retry-After': String(execution.retryAfterSeconds) } },
+        );
+      }
+      if (execution.kind !== 'generated') throw new Error('Hasil analisis kelas tidak terduga.');
+      const { response, ai } = execution.value;
       if (!ai) {
         return NextResponse.json({
           facts,
@@ -1511,6 +1554,7 @@ export async function POST(request: NextRequest) {
           cacheWarning,
           usage: {
             provider: response.provider,
+            fallbackUsed: response.fallbackUsed === true,
             estimatedInputTokens: Math.ceil(prompt.length / 4),
             maxOutputTokens,
             maxProviderAttempts: 4,
@@ -1547,6 +1591,7 @@ export async function POST(request: NextRequest) {
         cacheWarning,
         usage: {
           provider: response.provider,
+          fallbackUsed: response.fallbackUsed === true,
           estimatedInputTokens: Math.ceil(prompt.length / 4),
           maxOutputTokens,
           maxProviderAttempts: 4,

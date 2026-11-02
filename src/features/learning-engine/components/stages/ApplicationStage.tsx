@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { debug } from '@/lib/debug';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/client';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
@@ -96,7 +97,6 @@ export default function ApplicationStage() {
   const options = useMemo(() => shuffle(applicationConfig.options.map((option) => option.value)), [applicationConfig.options]);
   const currentCard = useMemo(() => applicationConfig.cards?.find((card) => card.id === selectedCardId) ?? applicationConfig.cards?.[0] ?? null, [applicationConfig.cards, selectedCardId]);
   const isComic1Application = comic.id === 1;
-  const isComic5Application = comic.id === 5;
   const isComic6Application = comic.id === 6;
   const hasCards = Boolean(applicationConfig.cards?.length);
   const completedCardCount = applicationConfig.cards?.filter((card) => cardResults[card.id]).length ?? 0;
@@ -252,19 +252,6 @@ export default function ApplicationStage() {
         setCardExplanations((previous) => ({ ...previous, [currentCard.id]: studentReason }));
         setCardResults((previous) => {
           const nextResults = { ...previous, [currentCard.id]: answerIsCorrect };
-          if (isComic5Application) {
-            debug('[KOMIK5 APPLICATION]', {
-              cardId: currentCard.id,
-              question: currentCard.description,
-              selectedAnswer,
-              expectedAnswer,
-              acceptableAnswers: currentCard.acceptableAnswers ?? [],
-              explanation: studentReason,
-              explanationLength: studentReason.trim().length,
-              isCorrect: answerIsCorrect,
-              cardResults: nextResults,
-            });
-          }
           return nextResults;
         });
       }
@@ -284,20 +271,13 @@ export default function ApplicationStage() {
     };
 
     setAttemptCount(currentAttempt);
-    if (isComic5Application) {
-      debug('[KOMIK5 APPLICATION] tutor request', {
-        cardId: currentCard?.id ?? null,
-        payload: payloadBody,
-      });
-    }
-
     let aiTimeout: number | undefined;
     try {
       const controller = new AbortController();
       aiTimeout = window.setTimeout(() => controller.abort(), 15_000);
       const response = await fetch('/api/ai/application', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify(payloadBody),
         signal: controller.signal,
       });
@@ -319,12 +299,6 @@ export default function ApplicationStage() {
 
       setCoachMessage(message);
       setCoachSummary(summary);
-      if (isComic5Application) {
-        debug('[KOMIK5 APPLICATION] tutor response', {
-          cardId: currentCard?.id ?? null,
-          response: data,
-        });
-      }
       if (isComic1Application) {
         setAnswerSubmitted(true);
       }
@@ -344,7 +318,9 @@ export default function ApplicationStage() {
 
       await logApplicationActivity(activityPayload);
     } catch (error) {
-      console.error('[ApplicationStage] AI Coach request failed', error);
+      console.error('[ApplicationStage] AI Coach request failed', {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      });
       setAiError('AI Coach sedang tidak tersedia. Coba lagi nanti.');
       if (isComic1Application) {
         setAnswerSubmitted(true);

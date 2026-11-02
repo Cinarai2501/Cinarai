@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import RobotMascot from '@/components/ai/RobotMascot';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { ComicAssetEntry } from '@/services/comic-assets/types';
 import { getShapeKnowledgeEntry, buildShapeKnowledgeContext } from '@/features/learning-engine/stages/Identification/services/shapeKnowledge';
@@ -148,7 +149,7 @@ export function ObjectAITutor({
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: trimmed,
           context: {

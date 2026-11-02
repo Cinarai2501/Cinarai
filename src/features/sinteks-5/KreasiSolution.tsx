@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 import { loadComicProgress, saveComicProgress, type ComicProgressStageData } from '@/services/comicProgress';
 import DrawingCanvas from '@/features/quiz/komik-6/components/DrawingCanvas';
 
@@ -207,7 +208,7 @@ export default function KreasiSolution() {
     try {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...(await getAiAuthorizationHeader()), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question,
           context: {

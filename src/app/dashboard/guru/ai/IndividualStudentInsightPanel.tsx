@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
+import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
 import type { StudentRow } from '../types';
 import { Card, ProgressBar, Skeleton } from '../components/ui';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from './aiRequestLock';
@@ -22,6 +23,7 @@ interface StudentInsightResponse {
   aiError: string | null;
   usage: {
     provider?: string;
+    fallbackUsed?: boolean;
     estimatedInputTokens: number;
     maxOutputTokens: number;
     maxProviderAttempts: number;
@@ -99,11 +101,8 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
         body: JSON.stringify({ action: 'student-insight', studentUid: selectedUid, refresh }),
         cache: 'no-store',
       });
-      if (response.status === 429) {
-        const retryAfter = Number(response.headers.get('Retry-After'));
-        setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
-      }
       const payload = await readJsonResponse<{ error?: string } | StudentInsightResponse>(response, endpoint);
+      setRetryAfterSeconds(getInternalAiRetryAfter(response, payload));
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'Analisis individu gagal dimuat.');
       }
@@ -289,8 +288,10 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
             <EvidenceList evidence={report.facts.evidence} />
             <div className="mt-2 space-y-1 text-xs leading-5 text-neutral-600">
               <p>Data dibaca per halaman hingga seluruh sumber tersedia; halaman berisi maksimal {report.facts.sample.limitPerQuery} dokumen.</p>
-              <p>Analisis dibatasi 5 permintaan per menit untuk UID siswa ini.</p>
               <p>Data tidak dikirim sebagai jawaban/refleksi mentah. Progress tahap bukan bukti penguasaan.</p>
+              {report.usage?.fallbackUsed && (
+                <p>Analisis berhasil menggunakan layanan AI alternatif setelah provider utama terganggu.</p>
+              )}
               {report.facts.limitations.map((limitation) => <p key={limitation}>• {limitation}</p>)}
               {report.usage && (
                 <p>

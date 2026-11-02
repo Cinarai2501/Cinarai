@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
+import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
 import { Card, ProgressBar, Skeleton } from '../components/ui';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from './aiRequestLock';
 import type { ClassInsightAiResult, ClassInsightFacts } from '../services/classInsight';
@@ -15,6 +16,7 @@ interface ClassInsightResponse {
   aiError: string | null;
   usage: {
     provider?: string;
+    fallbackUsed?: boolean;
     estimatedInputTokens: number;
     maxOutputTokens: number;
     maxProviderAttempts: number;
@@ -64,11 +66,8 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
         body: JSON.stringify({ action: 'class-insight', refresh }),
         cache: 'no-store',
       });
-      if (response.status === 429) {
-        const retryAfter = Number(response.headers.get('Retry-After'));
-        setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
-      }
       const payload = await readJsonResponse<{ error?: string } | ClassInsightResponse>(response, endpoint);
+      setRetryAfterSeconds(getInternalAiRetryAfter(response, payload));
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'Analisis kelas gagal dimuat.');
       }
@@ -166,9 +165,14 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
         {analysis?.cacheWarning && (
           <p role="status" className="mt-2 text-xs text-warning-800">{analysis.cacheWarning}</p>
         )}
+        {analysis?.usage?.fallbackUsed && (
+          <p role="status" className="mt-2 text-xs text-neutral-600">
+            Analisis berhasil menggunakan layanan AI alternatif setelah provider utama terganggu.
+          </p>
+        )}
         {retryAfterSeconds > 0 && (
           <p role="status" className="mt-2 text-xs text-neutral-600">
-            Batas 5 permintaan per menit untuk analisis kelas. Tombol coba lagi aktif setelah waktu tunggu.
+            Batas permintaan internal untuk analisis kelas tercapai. Tombol coba lagi aktif setelah jatah tersedia.
           </p>
         )}
       </Card>

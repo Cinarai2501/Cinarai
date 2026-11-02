@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AiRouter } from '@/lib/ai/router';
 import type { AiRequestPayload } from '@/lib/ai/provider';
+import { getAiRequestAccess, checkAuthenticatedAiRateLimit } from '@/lib/ai/serverRequestAccess';
+import { aiRateLimitErrorResponse, aiRequestAccessErrorResponse } from '@/lib/ai/requestAccess';
+import { readBoundedJsonBody } from '@/app/api/dashboard/guru/requestBody';
+import { validateArgumentationRequest } from '@/lib/ai/requestValidation';
 
 export const runtime = 'nodejs';
 
@@ -433,13 +437,27 @@ function parseArgumentationResponse(raw: string): ArgumentationResponse | null {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await getAiRequestAccess(request, ['student']);
+  if (!access.ok) return aiRequestAccessErrorResponse(access);
+
+  const contentLength = Number(request.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > 16_384) {
+    return NextResponse.json({ error: 'Body permintaan melebihi batas ukuran.' }, { status: 413 });
+  }
+  const parsedBody = await readBoundedJsonBody(request, 16_384);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      { error: parsedBody.reason === 'too_large' ? 'Body permintaan melebihi batas ukuran.' : 'Body permintaan tidak valid.' },
+      { status: parsedBody.reason === 'too_large' ? 413 : 400 },
+    );
+  }
+  const validated = validateArgumentationRequest(parsedBody.value);
+  if (!validated.ok) return NextResponse.json({ error: validated.error }, { status: 400 });
+  const rateLimit = await checkAuthenticatedAiRateLimit(access.uid);
+  if (!rateLimit.ok) return aiRateLimitErrorResponse(rateLimit);
+
   try {
-    const body = (await request.json()) as ArgumentationRequestBody;
-
-    if (!body.question || !body.studentAnswer) {
-      return NextResponse.json({ error: 'question and studentAnswer are required' }, { status: 400 });
-    }
-
+    const body = validated.value;
     const router = AiRouter.createDefault();
     const payload: AiRequestPayload = {
       prompt: buildArgumentationPrompt(body),
@@ -471,7 +489,9 @@ export async function POST(request: NextRequest) {
       provider: response?.provider,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown AI error';
-    return NextResponse.json({ error: message }, { status: 502 });
+    console.error('[ai/argumentation] provider request failed', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
+    return NextResponse.json({ error: 'Analisis argumentasi sedang mengalami gangguan. Coba lagi nanti.' }, { status: 502 });
   }
 }

@@ -1,13 +1,5 @@
-import { summarizeResponseBody } from './provider';
+import { AiProviderError, createAiProviderHttpError } from './provider';
 import type { AiProvider, AiProviderConfig, AiRequestPayload, AiResponse } from './provider';
-
-function createProviderError(message: string, statusCode?: number): Error & { statusCode?: number } {
-  const error = new Error(message) as Error & { statusCode?: number };
-  if (typeof statusCode === 'number') {
-    error.statusCode = statusCode;
-  }
-  return error;
-}
 
 export class GroqProvider implements AiProvider {
   public readonly name = 'groq' as const;
@@ -17,11 +9,8 @@ export class GroqProvider implements AiProvider {
   async generate(payload: AiRequestPayload, signal?: AbortSignal): Promise<AiResponse> {
     const apiKey = this.config.apiKey?.trim();
     console.warn('[AI Provider] Trying Groq...');
-    console.warn(`[AI Provider] API Key = ${apiKey ? 'FOUND' : 'NOT FOUND'}`);
-
     if (!apiKey) {
-      console.error('[AI Provider] Groq failed: GROQ_API_KEY is not configured');
-      throw createProviderError('GROQ_API_KEY is not configured');
+      throw new AiProviderError('Groq API key is not configured');
     }
 
     try {
@@ -48,11 +37,8 @@ export class GroqProvider implements AiProvider {
       console.warn(`[AI Provider] Status Code = ${response.status}`);
 
       const rawBody = await response.text();
-      console.warn(`[AI Provider] Response Body = ${summarizeResponseBody(rawBody)}`);
-
       if (!response.ok) {
-        console.error(`[AI Provider] Groq failed: ${rawBody}`);
-        throw createProviderError(`HTTP ${response.status}: ${rawBody || response.statusText}`, response.status);
+        throw createAiProviderHttpError(response, rawBody);
       }
 
       let data: unknown;
@@ -61,8 +47,10 @@ export class GroqProvider implements AiProvider {
           choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }>;
         };
       } catch (error) {
-        console.error('[AI Provider] Groq parsing failed', error);
-        throw createProviderError(`Parsing failed. Expected response with chat completion. Actual response: ${summarizeResponseBody(rawBody)}`);
+        if (error instanceof SyntaxError) {
+          throw new AiProviderError('Groq returned an invalid response body', undefined, undefined, 'provider');
+        }
+        throw error;
       }
 
       console.warn('[AI Provider] Parsing Result = success');
@@ -74,8 +62,7 @@ export class GroqProvider implements AiProvider {
           : '';
 
       if (!content?.trim()) {
-        console.error('[AI Provider] Groq failed: empty content after parsing');
-        throw createProviderError(`Parsing failed. Expected response with text content. Actual response: ${summarizeResponseBody(parsed)}`);
+        throw new AiProviderError('Groq returned an empty response', undefined, undefined, 'provider');
       }
 
       console.warn('[AI Provider] Success');
@@ -85,7 +72,7 @@ export class GroqProvider implements AiProvider {
         raw: parsed,
       };
     } catch (error) {
-      console.error('[AI Provider] Groq failed', error);
+      console.error('[AI Provider] Groq request failed');
       throw error;
     }
   }

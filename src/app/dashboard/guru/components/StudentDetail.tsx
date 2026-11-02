@@ -421,6 +421,11 @@ export function StudentDetail({
             {insightCacheWarning && (
               <p role="status" className="text-xs text-warning-800">{insightCacheWarning}</p>
             )}
+            {insight?.fallbackUsed && (
+              <p role="status" className="text-xs text-neutral-600">
+                Analisis berhasil menggunakan layanan AI alternatif setelah provider utama terganggu.
+              </p>
+            )}
             {insightRetryAfterSeconds > 0 && (
               <p role="status" className="text-xs text-neutral-600">Batas 5 permintaan per menit untuk siswa ini.</p>
             )}

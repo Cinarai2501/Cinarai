@@ -7,7 +7,8 @@ import { buildModuleBlueprint, getModuleStudentStatus } from '@/app/dashboard/gu
 import { getCompletedModuleStages } from '@/app/dashboard/guru/services/progressStatus';
 import { getModuleProgressPercentage } from '@/app/dashboard/guru/services/progressStatus';
 import { normalizeStudentDocuments } from '@/app/dashboard/guru/services/studentNormalization';
-import { consumeTeacherAiRateLimit } from '../../rateLimit';
+import { runTeacherAiAnalysis } from '../../rateLimit';
+import { INTERNAL_AI_RATE_LIMIT_CODE } from '@/lib/ai/rateLimitResponse';
 import { getAiSourceFingerprint, readTeacherAiCacheSafely, writeTeacherAiCache } from '../../aiCache';
 import { readAllPages } from '../../pagedQuery';
 import { readBoundedJsonBody } from '../../requestBody';
@@ -73,7 +74,7 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
 
   let uid: string;
   try {
-    const decoded = await verifyIdToken(token);
+    const decoded = await verifyIdToken(token, true);
     if (!decoded?.uid) return { response: NextResponse.json({ error: 'Sesi tidak valid.' }, { status: 401 }) };
     uid = decoded.uid;
   } catch {
@@ -89,19 +90,11 @@ async function getScopedData(request: NextRequest, comicId: number, forAi = fals
   }, () => firestore.collection('users').doc(uid).get());
   const profileData = profile.data();
   const role = profileData?.role;
+  if (profileData?.isActive === false) {
+    return { response: NextResponse.json({ error: 'Akun tidak aktif.' }, { status: 403 }) };
+  }
   if (role !== 'teacher' && role !== 'admin') {
     return { response: NextResponse.json({ error: 'Akun ini tidak memiliki akses guru.' }, { status: 403 }) };
-  }
-  if (forAi) {
-    const retryAfterSeconds = await consumeTeacherAiRateLimit(firestore, uid, 'module', String(comicId));
-    if (retryAfterSeconds > 0) {
-      return {
-        response: NextResponse.json(
-          { error: `Analisis modul ini dibatasi 5 kali per menit. Coba lagi dalam ${retryAfterSeconds} detik.` },
-          { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
-        ),
-      };
-    }
   }
   const [comicSnapshot, studentDocuments] = await Promise.all([
     runFirestoreQuery({
@@ -552,12 +545,32 @@ export async function POST(request: NextRequest, context: RouteContext) {
         });
       }
     }
-    const resultFromAi = await AiRouter.createDefault().generate({
-      prompt,
-      systemPrompt: 'Kamu adalah asisten analisis pembelajaran CINARAI. Berikan insight berbasis data agregat saja. Jangan mengidentifikasi siswa.',
-      temperature: 0.2,
-      maxTokens: 220,
-    });
+    const requestTimestamp = Date.now();
+    const execution = await runTeacherAiAnalysis(
+      firestore,
+      result.teacherUid,
+      'module',
+      String(comicId),
+      null,
+      () => AiRouter.createDefault().generate({
+        prompt,
+        systemPrompt: 'Kamu adalah asisten analisis pembelajaran CINARAI. Berikan insight berbasis data agregat saja. Jangan mengidentifikasi siswa.',
+        temperature: 0.2,
+        maxTokens: 220,
+      }),
+      requestTimestamp,
+    );
+    if (execution.kind === 'rate-limited') {
+      return NextResponse.json(
+        {
+          error: `Batas permintaan internal analisis modul tercapai. Coba lagi dalam ${execution.retryAfterSeconds} detik.`,
+          code: INTERNAL_AI_RATE_LIMIT_CODE,
+        },
+        { status: 429, headers: { 'Retry-After': String(execution.retryAfterSeconds) } },
+      );
+    }
+    if (execution.kind !== 'generated') throw new Error('Hasil analisis modul tidak terduga.');
+    const resultFromAi = execution.value;
     const insight = typeof resultFromAi.content === 'string' ? resultFromAi.content.trim().slice(0, 1800) : '';
     if (!insight) return NextResponse.json({ error: 'AI tidak menghasilkan analisis yang dapat digunakan.' }, { status: 502 });
     const analysisGeneratedAt = new Date().toISOString();
@@ -583,6 +596,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({
       insight,
       provider: resultFromAi.provider,
+      fallbackUsed: resultFromAi.fallbackUsed === true,
       analysisGeneratedAt,
       cacheHit: false,
       cacheWarning,
@@ -597,7 +611,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       /quota|rate.?limit|too many requests|http 429|resource exhausted/i.test(entry.reason ?? '')
     )) {
       return NextResponse.json(
-        { error: 'Kuota layanan AI sedang habis atau dibatasi oleh provider. Fakta modul tetap dapat ditinjau.' },
+        {
+          error: 'Kuota layanan AI sedang habis atau dibatasi oleh provider. Fakta modul tetap dapat ditinjau.',
+          code: 'AI_PROVIDER_RATE_LIMIT',
+        },
         { status: 502 }
       );
     }

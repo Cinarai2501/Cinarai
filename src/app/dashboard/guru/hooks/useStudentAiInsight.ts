@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
+import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from '../ai/aiRequestLock';
 import type { AiInsight } from '../types';
 
@@ -13,7 +14,7 @@ interface StudentInsightResponse {
     recommendations: Array<{ category: string; text: string }>;
   } | null;
   aiError?: string | null;
-  usage?: { provider?: string } | null;
+  usage?: { provider?: string; fallbackUsed?: boolean } | null;
   analysisGeneratedAt?: string;
   cacheHit?: boolean;
   cacheWarning?: string | null;
@@ -69,13 +70,10 @@ export function useStudentAiInsight() {
         body: JSON.stringify({ action: 'student-insight', studentUid: uid, refresh: forceRefresh }),
         cache: 'no-store',
       });
-      if (response.status === 429) {
-        const retryAfter = Number(response.headers.get('Retry-After'));
-        if (selectedUid.current === uid && requestId.current === currentRequest) {
-          setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
-        }
-      }
       const payload = await readJsonResponse<{ error?: string } | StudentInsightResponse>(response, endpoint);
+      if (selectedUid.current === uid && requestId.current === currentRequest) {
+        setRetryAfterSeconds(getInternalAiRetryAfter(response, payload));
+      }
       if (!response.ok) {
         throw new Error('error' in payload && payload.error
           ? payload.error
@@ -99,6 +97,7 @@ export function useStudentAiInsight() {
           .filter((item) => item.category === 'activity' || item.category === 'next_check')
           .map((item) => item.text).join(' ') || 'Belum ada rekomendasi pengayaan berbasis bukti.',
         provider: payload.usage?.provider,
+        fallbackUsed: payload.usage?.fallbackUsed === true,
       };
       if (selectedUid.current === uid && requestId.current === currentRequest) {
         setInsight(mappedInsight);

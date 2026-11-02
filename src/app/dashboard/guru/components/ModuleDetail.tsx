@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
+import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
 import type { ComicDocument } from '@/types/firestore';
 import type { ModuleDetailResponse } from '../services/moduleAnalytics';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from '../ai/aiRequestLock';
@@ -27,6 +28,7 @@ export function ModuleDetail({ comic, onBack }: Props) {
   const [insightGeneratedAt, setInsightGeneratedAt] = useState<string | null>(null);
   const [insightFromCache, setInsightFromCache] = useState(false);
   const [insightCacheWarning, setInsightCacheWarning] = useState<string | null>(null);
+  const [insightUsedFallback, setInsightUsedFallback] = useState(false);
   const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const [page, setPage] = useState(0);
   const aiRequestInFlight = useRef(false);
@@ -88,22 +90,22 @@ export function ModuleDetail({ comic, onBack }: Props) {
         body: JSON.stringify({ refresh }),
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.status === 429) {
-        const retryAfter = Number(response.headers.get('Retry-After'));
-        setRetryAfterSeconds(Number.isFinite(retryAfter) ? Math.max(1, retryAfter) : 1);
-      }
       const payload = await readJsonResponse<{
         insight?: string;
         error?: string;
+        code?: string;
         analysisGeneratedAt?: string;
         cacheHit?: boolean;
         cacheWarning?: string | null;
+        fallbackUsed?: boolean;
       }>(response, endpoint);
+      setRetryAfterSeconds(getInternalAiRetryAfter(response, payload));
       if (!response.ok || !payload.insight) throw new Error(payload.error ?? 'Analisis AI gagal dibuat.');
       setInsight(payload.insight);
       setInsightGeneratedAt(payload.analysisGeneratedAt ?? null);
       setInsightFromCache(payload.cacheHit === true);
       setInsightCacheWarning(payload.cacheWarning ?? null);
+      setInsightUsedFallback(payload.fallbackUsed === true);
     } catch (generateError) {
       setAiError(generateError instanceof Error ? generateError.message : 'Analisis AI gagal dibuat.');
     } finally {
@@ -393,7 +395,7 @@ export function ModuleDetail({ comic, onBack }: Props) {
             </div>
             {aiError && <p role="alert" className="mt-3 rounded-xl bg-error-50 p-3 text-sm text-error-700">{aiError}</p>}
             {retryAfterSeconds > 0 && (
-              <p role="status" className="mt-2 text-xs text-neutral-600">Batas 5 permintaan per menit untuk modul ini.</p>
+              <p role="status" className="mt-2 text-xs text-neutral-600">Batas permintaan internal untuk modul ini tercapai.</p>
             )}
             {insightGeneratedAt && (
               <p className="mt-2 text-[10px] text-neutral-500">
@@ -402,6 +404,11 @@ export function ModuleDetail({ comic, onBack }: Props) {
             )}
             {insightCacheWarning && (
               <p role="status" className="mt-2 text-xs text-warning-800">{insightCacheWarning}</p>
+            )}
+            {insightUsedFallback && (
+              <p role="status" className="mt-2 text-xs text-neutral-600">
+                Analisis berhasil menggunakan layanan AI alternatif setelah provider utama terganggu.
+              </p>
             )}
             {insight && <p className="mt-3 whitespace-pre-line rounded-xl bg-primary-50 p-3 text-sm leading-6 text-neutral-800">{insight}</p>}
           </Card>
