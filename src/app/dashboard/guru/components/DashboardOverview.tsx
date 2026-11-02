@@ -1,35 +1,45 @@
 'use client';
 
-import { Card, ProgressBar, Skeleton } from './ui';
+import Image from 'next/image';
+import { Avatar, Button, Card, EmptyState, LoadingState, ProgressBar, SectionHeader, Skeleton, StatCard } from './ui';
 import { getModuleRosterSummary } from '../services/moduleAnalytics';
 import { getStudentLearningStatus } from '../services/studentUtils';
 import type { DashboardSummary, StudentRow } from '../types';
 import type { ComicDocument } from '@/types/firestore';
-import type { GuruRecentActivity } from '../services/firestoreService';
 
 interface Props {
   summary: DashboardSummary;
   rows: StudentRow[];
   comics: ComicDocument[];
-  recentActivities: GuruRecentActivity[];
-  recentActivityLoading: boolean;
   loading: boolean;
   onSelectStudent: (uid: string) => void;
-  onOpenAi: () => void;
   onOpenStudents: () => void;
   onOpenModules: () => void;
   onOpenModule: (comicId: number) => void;
 }
 
+const moduleCovers: Record<number, string> = {
+  1: '/assets/dashboard/home/covers/cover-komik-1.png',
+  2: '/assets/dashboard/home/covers/cover-komik-2.png',
+  3: '/assets/dashboard/home/covers/cover-komik-3.png',
+  4: '/assets/dashboard/home/covers/cover-komik-4.png',
+  5: '/assets/dashboard/home/covers/cover-komik-5.png',
+  6: '/comics/komik-6/cover.png',
+};
+
+const stats = [
+  { key: 'totalStudents', label: 'Total siswa', icon: '👥', tone: 'brand' },
+  { key: 'learningStudents', label: 'Sedang belajar', icon: '📘', tone: 'info' },
+  { key: 'studentsCompleted', label: 'Tuntas', icon: '✓', tone: 'success' },
+  { key: 'attentionStudents', label: 'Perlu perhatian', icon: '!', tone: 'warning' },
+] as const;
+
 export function DashboardOverview({
   summary,
   rows,
   comics,
-  recentActivities,
-  recentActivityLoading,
   loading,
   onSelectStudent,
-  onOpenAi,
   onOpenStudents,
   onOpenModules,
   onOpenModule,
@@ -41,233 +51,129 @@ export function DashboardOverview({
 
   if (loading) {
     return (
-      <div className="space-y-3" aria-label="Memuat ringkasan dashboard">
-        <Skeleton className="h-36 rounded-2xl" />
-        <Skeleton className="h-56 rounded-2xl" />
-        <Skeleton className="h-36 rounded-2xl" />
-      </div>
+      <LoadingState label="Memuat ringkasan dashboard">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {stats.map((item) => <Skeleton key={item.key} className="h-24 rounded-2xl" />)}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,1fr)]">
+            <Skeleton className="h-72 rounded-2xl" />
+            <Skeleton className="h-72 rounded-2xl" />
+          </div>
+        </div>
+      </LoadingState>
     );
   }
 
-  const validatedActivities = recentActivities.flatMap((activity) => {
-    const date = toDate(activity.timestamp);
-    return date ? [{ activity, date }] : [];
-  }).slice(0, 5);
-
   return (
-    <div className="space-y-3">
-      <Card className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-primary-700">Ringkasan pembelajaran</p>
-            <p className="mt-1 text-sm leading-5 text-neutral-700">
-              {rows.length === 0
-                ? 'Belum ada siswa dalam roster.'
-                : attentionStudents.length > 0
-                  ? `${summary.attentionStudents} siswa memenuhi kriteria perlu perhatian (progress di bawah 40% dengan bukti belajar).`
-                  : 'Tidak ada siswa yang saat ini memenuhi kriteria perlu perhatian.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenAi}
-            className="min-h-10 flex-shrink-0 rounded-xl bg-primary-600 px-3 text-xs font-bold text-white transition hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700"
-          >
-            Detail AI <span aria-hidden="true">→</span>
-          </button>
-        </div>
-
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <SummaryMetric
-            label="Rata-rata progress"
-            value={summary.totalStudents && summary.totalComics ? `${summary.averageProgress}%` : '—'}
+    <div className="space-y-4">
+      <section aria-label="Statistik siswa" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((item) => (
+          <StatCard
+            key={item.key}
+            icon={item.icon}
+            label={item.label}
+            value={summary[item.key]}
+            tone={item.tone}
+            className="min-h-[104px] p-4 sm:p-5"
           />
-          <SummaryMetric
-            label="Tingkat penyelesaian"
-            value={summary.totalStudents && summary.totalComics ? `${summary.completionRate}%` : '—'}
+        ))}
+      </section>
+
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,1fr)]">
+        <Card className="order-2 min-w-0 p-4 sm:p-5 lg:order-1">
+          <SectionHeader
+            title="Progress modul"
+            action={<Button variant="ghost" className="px-2 text-xs" onClick={onOpenModules}>Lihat semua modul →</Button>}
           />
-          <SummaryMetric label="Perlu perhatian" value={summary.attentionStudents} />
-        </div>
-      </Card>
+          {comics.length ? (
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+              {comics.slice(0, 4).map((comic) => {
+                const moduleSummary = getModuleRosterSummary(rows, comic.comicId);
+                const classProgress = moduleSummary.averageProgress;
+                const cover = moduleCovers[comic.comicId];
+                return (
+                  <li key={comic.id ?? comic.comicId} className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => onOpenModule(comic.comicId)}
+                      className="group w-full overflow-hidden rounded-2xl border border-ui-border bg-white text-left transition hover:border-brand-200 hover:bg-brand-50/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
+                      aria-label={`Buka detail ${comic.title || `Komik ${comic.comicId}`}`}
+                    >
+                      <div className="flex h-24 items-center justify-center overflow-hidden bg-brand-100">
+                        {cover ? (
+                          <Image
+                            src={cover}
+                            alt=""
+                            width={240}
+                            height={120}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <span className="text-4xl" aria-hidden="true">📚</span>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-ink">
+                            {comic.title || `Komik ${comic.comicId}`}
+                          </span>
+                          <span className="flex-shrink-0 text-sm font-black text-brand-700">
+                            {classProgress === null ? '—' : `${classProgress}%`}
+                          </span>
+                        </div>
+                        <ProgressBar value={classProgress ?? 0} className="mt-2" />
+                        <span className="mt-2 flex min-h-8 items-center justify-between gap-2 text-xs font-bold text-brand-700">
+                          Detail Modul <span aria-hidden="true">→</span>
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <EmptyState className="mt-3">Modul akan tampil setelah katalog tersedia.</EmptyState>
+          )}
+        </Card>
 
-      <Card className="p-4 sm:p-5">
-        <SectionHeader title="Progress modul" action="Semua modul" onAction={onOpenModules} />
-        {comics.length ? (
-          <ul className="divide-y divide-neutral-100">
-            {comics.slice(0, 6).map((comic) => {
-              const moduleSummary = getModuleRosterSummary(rows, comic.comicId);
-              const classProgress = moduleSummary.averageProgress;
-              return (
-                <li key={comic.id ?? comic.comicId}>
-                  <button
-                    type="button"
-                    onClick={() => onOpenModule(comic.comicId)}
-                    className="w-full py-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
-                    aria-label={`Buka detail ${comic.title || `Komik ${comic.comicId}`}`}
-                  >
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="min-w-0 truncate text-sm font-semibold text-neutral-800">
-                        {comic.title || `Komik ${comic.comicId}`}
-                      </span>
-                      <span className="flex-shrink-0 text-xs font-bold text-primary-700">
-                        {classProgress === null ? '—' : `${classProgress}%`}
-                      </span>
-                    </span>
-                    <span className="mt-1.5 flex items-center gap-2">
-                      <ProgressBar value={classProgress ?? 0} className="h-1.5 flex-1 [&>div]:h-1.5" />
-                      <span className="w-24 flex-shrink-0 text-right text-[10px] text-neutral-500">
-                        {moduleSummary.progressRecordCount}/{rows.length} siswa
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="rounded-xl bg-neutral-50 px-3 py-4 text-sm text-neutral-600">Katalog enam komik belum tersedia.</p>
-        )}
-        {rows.length > 0 && (
-          <p className="mt-2 text-[10px] text-neutral-500">Progress kelas menggunakan seluruh roster; siswa tanpa dokumen progress dihitung 0%.</p>
-        )}
-      </Card>
-
-      <Card className="p-4 sm:p-5">
-        <SectionHeader
-          title="Siswa perlu perhatian"
-          action="Lihat semua siswa"
-          onAction={onOpenStudents}
-        />
-        {attentionStudents.length ? (
-          <ul className="divide-y divide-neutral-100">
-            {attentionStudents.map((student) => (
-              <li key={student.uid}>
-                <div className="flex min-h-14 items-center gap-3 py-2">
-                  <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-warning-50 text-sm font-bold text-warning-700">
-                    {student.displayName.charAt(0).toUpperCase()}
-                  </span>
+        <Card className="order-1 min-w-0 p-4 sm:p-5 lg:order-2">
+          <SectionHeader
+            title="Siswa perlu perhatian"
+            action={<Button variant="ghost" className="px-2 text-xs" onClick={onOpenStudents}>Semua siswa →</Button>}
+          />
+          {attentionStudents.length ? (
+            <ul className="mt-2 divide-y divide-ui-border">
+              {attentionStudents.map((student) => (
+                <li key={student.uid} className="flex min-h-[68px] items-center gap-3 py-2.5">
+                  <Avatar name={student.displayName} className="bg-warning-50 text-warning-800" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-neutral-900">{student.displayName}</p>
-                    <p className="text-xs text-neutral-600">
+                    <p className="truncate text-sm font-bold text-ink">{student.displayName}</p>
+                    <p className="mt-0.5 text-xs text-secondary-content">
                       {student.progressList.length ? `${student.averageProgress}% progress` : 'Progress belum tersedia'}
-                      {' · '}{statusLabel(getStudentLearningStatus(student, summary.totalComics))}
                     </p>
+                    <span className="mt-1 inline-flex rounded-full bg-warning-50 px-2 py-0.5 text-[10px] font-semibold text-warning-800">
+                      Perlu perhatian
+                    </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => onSelectStudent(student.uid)}
-                    className="min-h-10 flex-shrink-0 rounded-lg px-2 text-xs font-bold text-primary-700 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
+                    className="min-h-11 flex-shrink-0 rounded-lg px-2 text-xs font-bold text-brand-700 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
                     aria-label={`Lihat detail ${student.displayName}`}
                   >
                     Detail
                   </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="rounded-xl bg-neutral-50 px-3 py-4 text-sm text-neutral-600">
-            {rows.length ? 'Tidak ada siswa yang memenuhi kriteria perhatian saat ini.' : 'Daftar siswa akan muncul setelah data tersedia.'}
-          </p>
-        )}
-      </Card>
-
-      <Card className="p-4 sm:p-5">
-        <div className="mb-2">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Aktivitas tersimpan</p>
-          <h2 className="text-base font-black text-neutral-900">Terbaru</h2>
-        </div>
-        {recentActivityLoading ? (
-          <div className="space-y-2" aria-label="Memuat aktivitas terbaru">
-            <Skeleton className="h-10 rounded-lg" />
-            <Skeleton className="h-10 rounded-lg" />
-          </div>
-        ) : validatedActivities.length ? (
-          <ul className="divide-y divide-neutral-100">
-            {validatedActivities.map(({ activity, date }) => {
-              const studentName = rows.find((student) => student.uid === activity.userId)?.displayName;
-              return (
-                <li key={activity.id} className="flex items-center justify-between gap-3 py-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-neutral-800">{activity.title}</p>
-                    <p className="truncate text-xs text-neutral-500">{studentName || 'Siswa'}</p>
-                  </div>
-                  <time className="flex-shrink-0 text-right text-[10px] text-neutral-500" dateTime={date.toISOString()}>
-                    {date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                    <span className="block">{date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </time>
                 </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="rounded-xl bg-neutral-50 px-3 py-3 text-sm text-neutral-600">
-            Belum ada aktivitas dengan timestamp valid yang tersimpan.
-          </p>
-        )}
-      </Card>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState className="mt-3">
+              {rows.length ? 'Tidak ada siswa yang perlu perhatian saat ini.' : 'Belum ada siswa dalam daftar.'}
+            </EmptyState>
+          )}
+        </Card>
+      </div>
     </div>
   );
-}
-
-function SummaryMetric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="min-w-0 rounded-xl bg-neutral-50 px-2.5 py-2">
-      <p className="truncate text-base font-black text-neutral-900">{value}</p>
-      <p className="text-[10px] leading-4 text-neutral-600">{label}</p>
-    </div>
-  );
-}
-
-function SectionHeader({
-  title,
-  action,
-  onAction,
-}: {
-  title: string;
-  action: string;
-  onAction: () => void;
-}) {
-  return (
-    <div className="mb-1 flex items-center justify-between gap-2">
-      <h2 className="text-base font-black text-neutral-900">{title}</h2>
-      <button
-        type="button"
-        onClick={onAction}
-        className="min-h-10 flex-shrink-0 rounded-lg px-2 text-xs font-bold text-primary-700 hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
-      >
-        {action} <span aria-hidden="true">→</span>
-      </button>
-    </div>
-  );
-}
-
-function statusLabel(status: ReturnType<typeof getStudentLearningStatus>): string {
-  switch (status) {
-    case 'attention': return 'Perlu perhatian';
-    case 'completed': return 'Tuntas';
-    case 'learning': return 'Sedang belajar';
-    case 'not_started': return 'Belum mulai';
-  }
-}
-
-function toDate(value: unknown): Date | null {
-  if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
-  if (typeof value === 'string' || typeof value === 'number') {
-    const normalized = typeof value === 'number' && value < 1_000_000_000_000 ? value * 1000 : value;
-    const date = new Date(normalized);
-    return Number.isFinite(date.getTime()) ? date : null;
-  }
-  if (typeof value === 'object' && value !== null) {
-    const timestamp = value as { toDate?: () => Date; seconds?: number; nanoseconds?: number };
-    if (typeof timestamp.toDate === 'function') {
-      const date = timestamp.toDate();
-      return date instanceof Date && Number.isFinite(date.getTime()) ? date : null;
-    }
-    if (typeof timestamp.seconds === 'number') {
-      const date = new Date(timestamp.seconds * 1000 + (timestamp.nanoseconds ?? 0) / 1_000_000);
-      return Number.isFinite(date.getTime()) ? date : null;
-    }
-  }
-  return null;
 }

@@ -9,7 +9,7 @@ export const STUDENT_PAGE_SIZE = 20;
 export function useStudentFilter(rows: StudentRow[], totalComics: number) {
   const [search, setSearchValue] = useState('');
   const [status, setStatusValue] = useState<StudentStatusFilter>('all');
-  const [sortKey, setSortKey] = useState<'name' | 'progress' | 'completed'>('name');
+  const [sortKey, setSortKey] = useState<'name' | 'progress'>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
 
@@ -32,7 +32,7 @@ export function useStudentFilter(rows: StudentRow[], totalComics: number) {
     setStatusValue(value);
     setPage(1);
   };
-  const toggleSort = (key: typeof sortKey) => {
+  const toggleSort = (key: 'name' | 'progress') => {
     if (sortKey === key) setSortDir((direction) => (direction === 'asc' ? 'desc' : 'asc'));
     else {
       setSortKey(key);

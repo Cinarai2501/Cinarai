@@ -19,7 +19,7 @@ const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((mod
 
 export default function GuruDashboardPage() {
   const { logout } = useAuth();
-  const { comics, rows, summary, recentActivities, recentActivityLoading, loading, error } = useGuruDashboard();
+  const { comics, rows, summary, loading, error } = useGuruDashboard();
   const studentFilter = useStudentFilter(rows, comics.length);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [tab, setTab] = useState<GuruDashboardTab>('overview');
@@ -72,10 +72,10 @@ export default function GuruDashboardPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] overflow-x-hidden bg-[#f0f7ff]">
-      <GuruHeader summary={summary} loading={loading} />
+    <div className="guru-dashboard-shell min-h-[100dvh] overflow-x-hidden bg-canvas text-ink lg:pl-64">
+      <GuruHeader />
 
-      <main className="mx-auto max-w-5xl px-3 py-3 pb-[calc(96px+env(safe-area-inset-bottom))] sm:px-6 sm:py-5">
+      <main className="mx-auto max-w-[1440px] px-3 py-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 lg:px-8 lg:pb-8">
         {error && (
           <div role="alert" className="mb-3 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
             <p className="font-bold">Sebagian data dashboard tidak dapat dimuat.</p>
@@ -130,11 +130,8 @@ export default function GuruDashboardPage() {
             summary={summary}
             rows={rows}
             comics={comics}
-            recentActivities={recentActivities}
-            recentActivityLoading={recentActivityLoading}
             loading={loading}
             onSelectStudent={handleSelectStudent}
-            onOpenAi={() => handleTabChange('ai')}
             onOpenStudents={() => handleTabChange('students')}
             onOpenModules={() => handleTabChange('modules')}
             onOpenModule={handleOpenModule}
@@ -171,6 +168,7 @@ export default function GuruDashboardPage() {
             rows={rows}
             loading={loading}
             initialComicId={moduleToOpen}
+            onSelectStudent={handleSelectStudent}
           />
         )}
       </main>

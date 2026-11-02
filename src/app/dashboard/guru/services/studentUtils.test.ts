@@ -233,7 +233,7 @@ test('empty progress remains unavailable and invalid status is not learning evid
   assert.equal(getModuleStudentStatus(progress), 'not_started');
 });
 
-test('filters by class and status and sorts with UID as a stable tie-breaker', () => {
+test('filters by name and status and sorts with UID as a stable tie-breaker', () => {
   const rows = [
     student('student-b', {
       displayName: 'Ayu',
@@ -251,13 +251,22 @@ test('filters by class and status and sorts with UID as a stable tie-breaker', (
   ];
 
   const result = filterAndSortStudents(rows, {
-    search: 'kelas iv',
+    search: 'ayu',
     status: 'attention',
     sortKey: 'name',
     sortDir: 'asc',
     totalComics: 6,
   });
   assert.deepEqual(result.map(({ uid }) => uid), ['student-a', 'student-b']);
+
+  const emailSearch = filterAndSortStudents(rows, {
+    search: 'ayu@example',
+    status: 'all',
+    sortKey: 'name',
+    sortDir: 'asc',
+    totalComics: 6,
+  });
+  assert.deepEqual(emailSearch, []);
 });
 
 test('marks a student complete only when all expected comic records are completed', () => {
@@ -349,20 +358,20 @@ test('classifies no-data, learning, attention and completion consistently in fil
   assert.equal(summary.learningStudents, 1);
 });
 
-test('searches email and sorts by completed comics', () => {
+test('sorts by completed comics for service consumers', () => {
   const rows = [
     student('student-a', { email: 'ayu@example.test', completedComics: 2 }),
     student('student-b', { email: 'budi@example.test', completedComics: 5 }),
   ];
   const result = filterAndSortStudents(rows, {
-    search: 'ayu@example',
+    search: '',
     status: 'all',
     sortKey: 'completed',
     sortDir: 'desc',
     totalComics: 6,
   });
 
-  assert.deepEqual(result.map(({ uid }) => uid), ['student-a']);
+  assert.deepEqual(result.map(({ uid }) => uid), ['student-b', 'student-a']);
 });
 
 test('averages all roster students and treats missing comic progress as zero', () => {

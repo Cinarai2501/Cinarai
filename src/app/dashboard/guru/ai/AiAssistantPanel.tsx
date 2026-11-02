@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
-import { Card, ProgressBar, Skeleton } from '../components/ui';
+import { Card, EmptyState, LoadingState, ProgressBar, Skeleton } from '../components/ui';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from './aiRequestLock';
 import type { ClassInsightAiResult, ClassInsightFacts } from '../services/classInsight';
 import type { StudentRow } from '../types';
@@ -90,7 +90,7 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
           role="tab"
           aria-selected={mode === 'class'}
           onClick={() => setMode('class')}
-          className={`min-h-11 rounded-lg px-3 text-sm font-bold ${mode === 'class' ? 'bg-primary-600 text-white' : 'text-neutral-700'}`}
+          className={`min-h-11 rounded-lg px-3 text-sm font-bold ${mode === 'class' ? 'bg-brand-700 text-white' : 'text-secondary-content'}`}
         >
           Analisis kelas
         </button>
@@ -99,7 +99,7 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
           role="tab"
           aria-selected={mode === 'student'}
           onClick={() => setMode('student')}
-          className={`min-h-11 rounded-lg px-3 text-sm font-bold ${mode === 'student' ? 'bg-primary-600 text-white' : 'text-neutral-700'}`}
+          className={`min-h-11 rounded-lg px-3 text-sm font-bold ${mode === 'student' ? 'bg-brand-700 text-white' : 'text-secondary-content'}`}
         >
           Analisis individu
         </button>
@@ -111,9 +111,9 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
       <Card className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary-600">AI Assistant</p>
-            <h2 className="text-lg font-black text-neutral-900">Insight pembelajaran kelas</h2>
-            <p className="mt-1 text-xs leading-5 text-neutral-600">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700">AI Assistant</p>
+            <h2 className="guru-section-title">Insight pembelajaran kelas</h2>
+            <p className="mt-1 text-xs leading-5 text-secondary-content">
               Fakta dihitung dari seluruh roster siswa, progress, asesmen, refleksi, dan aktivitas yang tersedia.
             </p>
           </div>
@@ -121,7 +121,7 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
             type="button"
             onClick={() => void analyze(Boolean(analysis))}
             disabled={loading || dashboardLoading || studentCount === 0 || retryAfterSeconds > 0}
-            className="min-h-11 w-full flex-shrink-0 rounded-xl bg-primary-600 px-4 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="min-h-11 w-full flex-shrink-0 rounded-xl bg-brand-700 px-4 text-sm font-bold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {loading
               ? 'Memuat data & menganalisis…'
@@ -139,23 +139,25 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
           </p>
         )}
         {dashboardLoading && (
-          <div className="mt-4 space-y-2" aria-label="Memuat data dashboard">
-            <Skeleton className="h-4 w-full rounded" />
-            <Skeleton className="h-4 w-4/5 rounded" />
-          </div>
+          <LoadingState label="Memuat data dashboard">
+            <div className="mt-4 space-y-2">
+              <Skeleton className="h-4 w-full rounded" />
+              <Skeleton className="h-4 w-4/5 rounded" />
+            </div>
+          </LoadingState>
         )}
         {!dashboardLoading && studentCount === 0 && (
-          <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-600">
+          <p className="mt-3 rounded-xl bg-canvas p-3 text-sm text-secondary-content">
             Belum ada siswa dalam cakupan. Analisis tidak dijalankan dan tidak ada pemanggilan model AI.
           </p>
         )}
         {!analysis && !loading && !error && studentCount > 0 && (
-          <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm leading-5 text-neutral-600">
+          <p className="mt-3 rounded-xl bg-canvas p-3 text-sm leading-5 text-secondary-content">
             Pilih analisis untuk mengambil snapshot terbaru. Fakta kelas ditampilkan terpisah dari interpretasi dan rekomendasi AI.
           </p>
         )}
         {analysis && (
-          <p className="mt-2 text-[10px] leading-5 text-neutral-500">
+          <p className="mt-2 text-[10px] leading-5 text-secondary-content">
             {analysis.analysisGeneratedAt
               ? `Terakhir dianalisis ${formatDate(analysis.analysisGeneratedAt)}${analysis.cacheHit ? ' · menggunakan cache karena data belum berubah.' : '.'}`
               : 'Hasil analisis berdasarkan data terbaru yang tersedia.'}
@@ -166,30 +168,32 @@ export function AiAssistantPanel({ students, studentCount, dashboardLoading, onS
           <p role="status" className="mt-2 text-xs text-warning-800">{analysis.cacheWarning}</p>
         )}
         {analysis?.usage?.fallbackUsed && (
-          <p role="status" className="mt-2 text-xs text-neutral-600">
+          <p role="status" className="mt-2 text-xs text-secondary-content">
             Analisis berhasil menggunakan layanan AI alternatif setelah provider utama terganggu.
           </p>
         )}
         {retryAfterSeconds > 0 && (
-          <p role="status" className="mt-2 text-xs text-neutral-600">
+          <p role="status" className="mt-2 text-xs text-secondary-content">
             Batas permintaan internal untuk analisis kelas tercapai. Tombol coba lagi aktif setelah jatah tersedia.
           </p>
         )}
       </Card>
 
       {loading && (
-        <div className="space-y-3">
-          <Skeleton className="h-36 rounded-2xl" />
-          <Skeleton className="h-52 rounded-2xl" />
-        </div>
+        <LoadingState label="Menyiapkan analisis kelas">
+          <div className="space-y-3">
+            <Skeleton className="h-36 rounded-2xl" />
+            <Skeleton className="h-52 rounded-2xl" />
+          </div>
+        </LoadingState>
       )}
 
       {analysis && !loading && (
         <>
           <FactsSummary facts={analysis.facts} />
           <AiInterpretation ai={analysis.ai} error={analysis.aiError} />
-          <details className="rounded-2xl border border-neutral-200 bg-white p-4">
-            <summary className="min-h-10 cursor-pointer text-sm font-bold text-neutral-800">
+          <details className="rounded-2xl border border-ui-border bg-white p-4">
+            <summary className="min-h-11 cursor-pointer text-sm font-bold text-ink">
               Rincian modul, kesulitan, pendampingan, dan aktivitas
             </summary>
             <div className="mt-3 space-y-3">
@@ -223,29 +227,29 @@ function FactsSummary({ facts }: { facts: ClassInsightFacts }) {
         <Metric label="Tuntas ≥1 komik" value={summary.studentsCompletedAnyComic} />
         <Metric label="Tanpa progress tercatat" value={summary.studentsWithNoRecordedProgress} />
       </div>
-      <div className="mt-2 rounded-xl bg-primary-50 p-3">
-        <p className="text-xs font-semibold text-primary-700">Rata-rata progress seluruh siswa</p>
-        <p className="mt-1 text-2xl font-black text-primary-900">
+      <div className="mt-2 rounded-xl bg-brand-50 p-3">
+        <p className="text-xs font-semibold text-brand-700">Rata-rata progress seluruh siswa</p>
+        <p className="mt-1 text-2xl font-black text-brand-900">
           {summary.averageProgress === null ? 'Belum tersedia' : `${summary.averageProgress}%`}
         </p>
-        <p className="mt-1 text-[11px] leading-5 text-neutral-600">
+        <p className="mt-1 text-[11px] leading-5 text-secondary-content">
           Komik tanpa progress bernilai 0%; ini bukan ukuran penguasaan materi.
         </p>
       </div>
       {facts.assessments.length > 0 && (
         <div className="mt-3">
-          <h3 className="text-sm font-bold text-neutral-800">Skor asesmen yang tersimpan</h3>
+          <h3 className="text-sm font-bold text-ink">Skor asesmen yang tersimpan</h3>
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
             {facts.assessments.map((assessment) => (
-              <li key={assessment.type} className="flex items-center justify-between gap-2 rounded-xl bg-neutral-50 p-3">
-                <span className="text-xs text-neutral-700">{assessment.type}</span>
-                <span className="flex-shrink-0 text-sm font-black text-neutral-900">
-                  {assessment.averageScore} <span className="text-[10px] font-normal text-neutral-500">({assessment.recordCount} nilai)</span>
+              <li key={assessment.type} className="flex items-center justify-between gap-2 rounded-xl bg-canvas p-3">
+                <span className="text-xs text-secondary-content">{assessment.type}</span>
+                <span className="flex-shrink-0 text-sm font-black text-ink">
+                  {assessment.averageScore} <span className="text-[10px] font-normal text-secondary-content">({assessment.recordCount} nilai)</span>
                 </span>
               </li>
             ))}
           </ul>
-          <p className="mt-1 text-[10px] text-neutral-500">Skor ditampilkan terpisah sesuai jenisnya; skala antarasesmen tidak diasumsikan sama.</p>
+          <p className="mt-1 text-[10px] text-secondary-content">Skor ditampilkan terpisah sesuai jenisnya; skala antarasesmen tidak diasumsikan sama.</p>
         </div>
       )}
     </Card>
@@ -263,36 +267,36 @@ function ComicMastery({ facts }: { facts: ClassInsightFacts }) {
       {facts.comics.length ? (
         <ul className="mt-3 space-y-2">
           {facts.comics.map((comic) => (
-            <li key={comic.comicId} className="rounded-xl border border-neutral-100 p-3">
+            <li key={comic.comicId} className="rounded-xl border border-ui-border p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="break-words text-sm font-bold text-neutral-900">Komik {comic.comicId}: {comic.title}</h3>
-                  <p className="mt-1 text-[11px] text-neutral-600">
+                  <h3 className="break-words text-sm font-bold text-ink">Komik {comic.comicId}: {comic.title}</h3>
+                  <p className="mt-1 text-[11px] text-secondary-content">
                     Mulai {comic.studentsStarted} · Tuntas seluruh tahap {comic.studentsCompleted} dari {facts.scope.studentCount}
                   </p>
                 </div>
-                <span className="flex-shrink-0 text-xs font-bold text-primary-700">
+                <span className="flex-shrink-0 text-xs font-bold text-brand-700">
                   {comic.averageProgress === null ? '—' : `${comic.averageProgress}%`}
                 </span>
               </div>
               {comic.averageProgress !== null && (
                 <ProgressBar value={comic.averageProgress} className="mt-2" />
               )}
-              <p className="mt-1 text-[10px] text-neutral-500">
+              <p className="mt-1 text-[10px] text-secondary-content">
                 Progress tercatat: {comic.progressRecordCount}/{facts.scope.studentCount} siswa
               </p>
               {comic.assessmentSummaries.length > 0 && (
-                <p className="mt-2 text-[11px] leading-5 text-neutral-600">
+                <p className="mt-2 text-[11px] leading-5 text-secondary-content">
                   {comic.assessmentSummaries.map((assessment) =>
                     `${assessment.type}: rata-rata ${assessment.averageScore} (${assessment.recordCount} nilai)`
                   ).join(' · ')}
                 </p>
               )}
               <details className="mt-2">
-                <summary className="min-h-9 cursor-pointer text-xs font-bold text-primary-700">Rincian tahap tersimpan</summary>
+                <summary className="min-h-11 cursor-pointer text-xs font-bold text-brand-700">Rincian tahap tersimpan</summary>
                 <ul className="mt-1 grid grid-cols-2 gap-1">
                   {comic.stages.map((stage) => (
-                    <li key={stage.name} className="rounded-lg bg-neutral-50 px-2 py-1.5 text-[10px] text-neutral-700">
+                    <li key={stage.name} className="rounded-lg bg-canvas px-2 py-1.5 text-[10px] text-secondary-content">
                       {stage.name}: {stage.completedStudents}/{stage.denominator}
                     </li>
                   ))}
@@ -319,15 +323,15 @@ function LearningDifficulties({ facts }: { facts: ClassInsightFacts }) {
       {facts.difficulties.length ? (
         <ul className="mt-3 space-y-2">
           {facts.difficulties.map((difficulty) => (
-            <li key={`${difficulty.comicId}:${difficulty.question}`} className="rounded-xl bg-amber-50 p-3">
+            <li key={`${difficulty.comicId}:${difficulty.question}`} className="rounded-xl bg-warning-50 p-3">
               <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 text-sm font-semibold text-neutral-800">{difficulty.question}</p>
-                <span className="flex-shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-amber-800">
+                <p className="min-w-0 text-sm font-semibold text-ink">{difficulty.question}</p>
+                <span className="flex-shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-warning-800">
                   {difficulty.incorrectCount} keliru
                 </span>
               </div>
-              <p className="mt-1 text-xs text-neutral-600">Komik {difficulty.comicId}: {difficulty.comicTitle}</p>
-              <p className="text-[10px] text-neutral-500">
+              <p className="mt-1 text-xs text-secondary-content">Komik {difficulty.comicId}: {difficulty.comicTitle}</p>
+              <p className="text-[10px] text-secondary-content">
                 {difficulty.incorrectCount}/{difficulty.judgedAnswerCount} jawaban yang dapat dinilai
               </p>
             </li>
@@ -351,17 +355,17 @@ function AttentionList({ facts, onSelectStudent }: { facts: ClassInsightFacts; o
       {facts.attentionStudents.length ? (
         <ul className="mt-3 space-y-2">
           {facts.attentionStudents.map((student) => (
-            <li key={student.uid} className="rounded-xl border border-amber-100 bg-amber-50 p-3">
+            <li key={student.uid} className="rounded-xl border border-warning-100 bg-warning-50 p-3">
               <button
                 type="button"
                 onClick={() => onSelectStudent(student.uid)}
-                className="min-h-9 text-left text-sm font-bold text-primary-800 underline decoration-primary-300 underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
+                className="min-h-11 text-left text-sm font-bold text-brand-800 underline decoration-brand-300 underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
               >
                 {student.name}
               </button>
               <ul className="mt-1 space-y-1">
                 {student.reasons.map((reason) => (
-                  <li key={reason} className="text-xs leading-5 text-neutral-700">• {reason}</li>
+                  <li key={reason} className="text-xs leading-5 text-secondary-content">• {reason}</li>
                 ))}
               </ul>
             </li>
@@ -388,16 +392,16 @@ function ActivityTrend({ facts }: { facts: ClassInsightFacts }) {
         <div className="mt-3 space-y-2">
           {facts.activityByWeek.map((week) => (
             <div key={week.weekStarting} className="grid grid-cols-[4.5rem_1fr_2rem] items-center gap-2">
-              <span className="text-[10px] text-neutral-600">{formatWeek(week.weekStarting)}</span>
+              <span className="text-[10px] text-secondary-content">{formatWeek(week.weekStarting)}</span>
               <ProgressBar value={(week.eventCount / max) * 100} />
-              <span className="text-right text-xs font-bold text-neutral-800">{week.eventCount}</span>
+              <span className="text-right text-xs font-bold text-ink">{week.eventCount}</span>
             </div>
           ))}
         </div>
       ) : (
         <EmptyNotice text="Belum ada activity bertimestamp; tren aktivitas tidak dapat dibuat." />
       )}
-      <p className="mt-3 text-[10px] leading-5 text-neutral-500">
+      <p className="mt-3 text-[10px] leading-5 text-secondary-content">
         Struktur progress saat ini hanya menyimpan status terkini, bukan snapshot historis. Karena itu tren progress dari waktu ke waktu belum dapat dihitung.
       </p>
     </Card>
@@ -419,17 +423,17 @@ function AiInterpretation({ ai, error }: { ai: ClassInsightAiResult | null; erro
       )}
       {ai ? (
         <div className="mt-3 space-y-3">
-          <div className="rounded-xl bg-primary-50 p-3">
-            <h3 className="text-xs font-bold text-primary-700">Interpretasi AI</h3>
-            <p className="mt-1 text-sm leading-6 text-neutral-800">{ai.interpretation}</p>
+          <div className="rounded-xl bg-brand-50 p-3">
+            <h3 className="text-xs font-bold text-brand-700">Interpretasi AI</h3>
+            <p className="mt-1 text-sm leading-6 text-ink">{ai.interpretation}</p>
           </div>
           {ai.recommendations.length > 0 ? (
-            <div className="rounded-xl bg-green-50 p-3">
-              <h3 className="text-xs font-bold text-green-800">Strategi yang dapat dicoba</h3>
+            <div className="rounded-xl bg-success-50 p-3">
+              <h3 className="text-xs font-bold text-success-800">Strategi yang dapat dicoba</h3>
               <ol className="mt-2 space-y-2">
                 {ai.recommendations.map((recommendation, index) => (
-                  <li key={`${index}:${recommendation}`} className="flex gap-2 text-sm leading-5 text-neutral-800">
-                    <span className="font-black text-green-800">{index + 1}.</span>
+                  <li key={`${index}:${recommendation}`} className="flex gap-2 text-sm leading-5 text-ink">
+                    <span className="font-black text-success-800">{index + 1}.</span>
                     <span>{recommendation}</span>
                   </li>
                 ))}
@@ -439,7 +443,7 @@ function AiInterpretation({ ai, error }: { ai: ClassInsightAiResult | null; erro
             <EmptyNotice text="Model tidak memberikan rekomendasi yang tervalidasi." />
           )}
           {ai.limitations.length > 0 && (
-            <ul className="space-y-1 text-xs leading-5 text-neutral-600">
+            <ul className="space-y-1 text-xs leading-5 text-secondary-content">
               {ai.limitations.map((limitation) => <li key={limitation}>• {limitation}</li>)}
             </ul>
           )}
@@ -455,10 +459,10 @@ function DataLimitations({ facts, usage }: { facts: ClassInsightFacts; usage: Cl
   return (
     <Card className="p-4">
       <details>
-        <summary className="min-h-9 cursor-pointer text-sm font-bold text-neutral-800">
+        <summary className="min-h-11 cursor-pointer text-sm font-bold text-ink">
           Periode, cakupan data &amp; keterbatasan
         </summary>
-        <div className="mt-2 space-y-2 text-xs leading-5 text-neutral-600">
+        <div className="mt-2 space-y-2 text-xs leading-5 text-secondary-content">
           <p>Data dihitung pada: {formatDate(facts.generatedAt)}.</p>
           <p>
             Periode riwayat bertimestamp: {facts.historyPeriod.from && facts.historyPeriod.to
@@ -484,24 +488,24 @@ function DataLimitations({ facts, usage }: { facts: ClassInsightFacts; usage: Cl
 function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-primary-600">{eyebrow}</p>
-      <h3 className="mt-0.5 text-base font-black text-neutral-900">{title}</h3>
-      <p className="mt-1 text-xs leading-5 text-neutral-600">{description}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-brand-700">{eyebrow}</p>
+      <h3 className="guru-card-title mt-0.5">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-secondary-content">{description}</p>
     </div>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl bg-neutral-50 p-3">
-      <p className="text-lg font-black text-neutral-900">{value}</p>
-      <p className="text-[10px] leading-4 text-neutral-600">{label}</p>
+    <div className="rounded-xl bg-canvas p-3">
+      <p className="text-lg font-black text-ink">{value}</p>
+      <p className="text-[10px] leading-4 text-secondary-content">{label}</p>
     </div>
   );
 }
 
 function EmptyNotice({ text }: { text: string }) {
-  return <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm leading-5 text-neutral-600">{text}</p>;
+  return <EmptyState className="mt-3 text-left">{text}</EmptyState>;
 }
 
 function formatDate(value: string): string {

@@ -99,17 +99,7 @@ export function filterAndSortStudents(
     .filter((student) => {
       if (!matchesStudentStatus(student, options.status, options.totalComics)) return false;
       if (!q) return true;
-      const searchableValues = [
-        student.uid,
-        student.displayName,
-        student.email,
-        student.username ?? '',
-        student.nickname ?? '',
-        student.schoolName,
-        student.classLevel ?? '',
-        student.gradeLevel === null ? '' : `kelas ${student.gradeLevel}`,
-      ];
-      return searchableValues.some((value) => value.toLocaleLowerCase('id').includes(q));
+      return student.displayName.toLocaleLowerCase('id').includes(q);
     })
     .sort((left, right) => {
       const comparison = options.sortKey === 'name'

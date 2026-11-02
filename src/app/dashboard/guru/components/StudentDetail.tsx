@@ -2,9 +2,11 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { Card, ProgressBar, ProgressRing, Badge, Skeleton } from './ui';
+import { Avatar, Button, Card, ErrorState, LoadingState, ProgressBar, ProgressRing, Badge, Skeleton, StatCard } from './ui';
 import type { ComicDocument, ComicProgressDocument, UserDocument } from '@/types/firestore';
 import type { CinaraiEvaluationProgress } from '@/types/evaluation';
+import { SINTAKS } from '@/types/progress';
+import { getCompletedModuleStages, getModuleStudentStatus, isModuleProgressComplete } from '../services/progressStatus';
 import type { AiInsight } from '../types';
 
 interface ComicEntry {
@@ -88,12 +90,32 @@ export function StudentDetail({
   onGeneratePdf,
 }: Props) {
   const [activityPage, setActivityPage] = useState(0);
-  const recordedProgress = comicProgress.flatMap((entry) =>
-    entry.progress ? [entry.progress.percentage] : []
-  );
+  const recordedProgress = comicProgress.flatMap((entry) => {
+    const percentage = entry.progress?.percentage;
+    return typeof percentage === 'number' && Number.isFinite(percentage) && percentage >= 0 && percentage <= 100
+      ? [percentage]
+      : [];
+  });
   const avgProgress = recordedProgress.length
     ? Math.round(recordedProgress.reduce((sum, percentage) => sum + percentage, 0) / recordedProgress.length)
     : null;
+  const startedComics = comicProgress.filter(({ progress }) => getModuleStudentStatus(progress) !== 'not_started').length;
+  const completedComics = comicProgress.filter(({ progress }) => progress && isModuleProgressComplete(progress)).length;
+  const completedStageCount = comicProgress.reduce(
+    (sum, { progress }) => sum + (progress ? getCompletedModuleStages(progress).size : 0),
+    0
+  );
+  const trackedStageCount = comicProgress.filter(({ progress }) => progress !== null).length * SINTAKS.length;
+  const learningStatus = startedComics === 0
+    ? 'Belum mulai'
+    : completedComics === comicProgress.length && comicProgress.length > 0
+      ? 'Tuntas'
+      : avgProgress !== null && avgProgress < 40
+        ? 'Perlu perhatian'
+        : 'Sedang belajar';
+  const judgedAnswerCount = identificationAnswers.filter((answer) =>
+    textValue(answer.selectedAnswer) && textValue(answer.correctAnswer)
+  ).length;
   const recentActivity = [
     ...activities.map((activity, index) => ({
       id: `activity:${String(activity.id ?? index)}`,
@@ -130,340 +152,384 @@ export function StudentDetail({
   );
 
   return (
-    <div className="space-y-4 animate-fade-in-up">
-      {/* Back + actions */}
-      <div className="flex items-center justify-between gap-3">
-        <button
+    <div className="mx-auto max-w-[1440px] space-y-4 animate-fade-in-up">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button
+          type="button"
+          variant="secondary"
           onClick={onBack}
-          className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm border border-neutral-200 hover:bg-neutral-50 transition-colors"
         >
-          ← Kembali
-        </button>
-        <button
+          <span aria-hidden="true">←</span> Kembali ke siswa
+        </Button>
+        <Button
+          type="button"
           onClick={onGeneratePdf}
-          className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition-colors"
         >
-          📄 Unduh PDF
-        </button>
+          Unduh laporan PDF
+        </Button>
       </div>
 
       {error && (
-        <div role="alert" className="rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
-          Data siswa tidak seluruhnya dapat dimuat: {error}
-        </div>
+        <ErrorState title="Data siswa tidak seluruhnya dapat dimuat." message={error} />
       )}
 
       {loading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-32 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
-        </div>
+        <LoadingState label="Memuat detail siswa">
+          <div className="space-y-4">
+            <Skeleton className="h-36 rounded-2xl" />
+            <Skeleton className="h-28 rounded-2xl" />
+            <Skeleton className="h-64 rounded-2xl" />
+          </div>
+        </LoadingState>
       ) : (
         <>
-          {/* Identity */}
-          <Card className="p-5">
-            <div className="flex items-center gap-4">
-              {photoURL
-                ? <Image src={photoURL} alt="" width={64} height={64} unoptimized className="h-16 w-16 flex-shrink-0 rounded-full object-cover" />
-                : <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-2xl font-black text-primary-700">{displayName.charAt(0).toUpperCase()}</div>}
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-black text-neutral-900 truncate">{displayName}</h2>
-                <p className="text-sm text-neutral-500 truncate">{email}</p>
-                <p className="text-xs text-neutral-500 truncate">@{username?.trim() || 'Belum diisi'}</p>
-                <div className="mt-1.5 flex flex-wrap gap-2">
-                  <Badge color="primary">{schoolName}</Badge>
-                  {classLevel
-                    ? <Badge color="secondary">{classLevel}</Badge>
-                    : gradeLevel !== null && <Badge color="secondary">Kelas {gradeLevel}</Badge>}
-                  {isActive === undefined
-                    ? <Badge color="warning">Status akun belum diisi</Badge>
-                    : <Badge color={isActive ? 'accent' : 'error'}>{isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>}
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-r from-brand-100 via-white to-brand-50 p-4 sm:p-6">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-4">
+                  <Avatar name={displayName} src={photoURL} size="lg" className="ring-4 ring-white" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-brand-700">Profil siswa</p>
+                    <h2 className="guru-page-title truncate">{displayName}</h2>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {(classLevel || gradeLevel !== null) && (
+                        <Badge color="info">{classLevel || `Kelas ${gradeLevel}`}</Badge>
+                      )}
+                      <Badge color={learningStatus === 'Tuntas' ? 'accent' : learningStatus === 'Perlu perhatian' ? 'warning' : 'primary'}>
+                        {learningStatus}
+                      </Badge>
+                      {schoolName !== 'Belum diisi' && <span className="text-xs text-secondary-content">{schoolName}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-white bg-white/80 p-3 sm:min-w-48">
+                  {avgProgress === null ? (
+                    <div className="grid h-14 w-14 flex-shrink-0 place-items-center rounded-full border-4 border-ui-border text-sm font-bold text-secondary-content">—</div>
+                  ) : (
+                    <ProgressRing value={avgProgress} size={56} stroke={5} />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-secondary-content">Progress belajar</p>
+                    <p className="text-sm font-bold text-ink">
+                      {avgProgress === null ? 'Belum ada data' : `${avgProgress}% rata-rata tercatat`}
+                    </p>
+                    <p className="text-[11px] text-secondary-content">{recordedProgress.length} dari {comicProgress.length} komik</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex-shrink-0 text-center">
-                {avgProgress === null ? (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-neutral-200 text-lg font-bold text-neutral-400">
-                    —
-                  </div>
+              <details className="mt-4 border-t border-brand-100 pt-3">
+              <summary className="min-h-11 cursor-pointer text-xs font-bold text-brand-800">Informasi profil lainnya</summary>
+                <dl className="mt-3 grid gap-3 rounded-xl bg-white/80 p-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                  <ProfileValue label="UID siswa" value={uid} />
+                  <ProfileValue label="Email" value={email} />
+                  <ProfileValue label="Username" value={username} />
+                  <ProfileValue label="Nama panggilan" value={nickname} />
+                  <ProfileValue label="Jenis kelamin" value={gender} />
+                  <ProfileValue label="Sekolah" value={schoolName} />
+                  <ProfileValue label="ID sekolah" value={schoolId} />
+                  <ProfileValue label="Kelas" value={classLevel || (gradeLevel ? `Kelas ${gradeLevel}` : undefined)} />
+                  <ProfileValue label="Tanggal registrasi" value={formatTimestamp(createdAt)} />
+                  <ProfileValue label="Terakhir login" value={formatTimestamp(profile?.lastLoginAt)} />
+                  <ProfileValue label="Bio" value={bio} />
+                  <ProfileValue label="Status akun" value={isActive === undefined ? undefined : isActive ? 'Aktif' : 'Tidak aktif'} />
+                  {additionalProfileFields.map(({ key, label, value }) => (
+                    <ProfileValue key={key} label={label} value={value} />
+                  ))}
+                </dl>
+              </details>
+            </div>
+          </Card>
+
+          <section aria-label="Ringkasan perkembangan" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <StatCard icon="↗" label="Progress belajar" value={avgProgress === null ? '—' : `${avgProgress}%`} />
+            <StatCard icon="📖" label="Komik dimulai" value={`${startedComics}/${comicProgress.length}`} tone="info" />
+            <StatCard icon="✓" label="Komik selesai" value={`${completedComics}/${comicProgress.length}`} tone="success" />
+            <StatCard icon="◎" label="Tahap selesai" value={trackedStageCount ? `${completedStageCount}/${trackedStageCount}` : '—'} tone="warning" />
+          </section>
+
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.9fr)]">
+            <div className="min-w-0 space-y-4">
+              <Card className="overflow-hidden">
+                <SectionHeading eyebrow="Perkembangan pembelajaran" title="Progress setiap komik" />
+                {comicProgress.length ? (
+                  <ul className="divide-y divide-ui-border">
+                    {comicProgress.map(({ comic, progress }) => {
+                      const completedStages = progress ? getCompletedModuleStages(progress) : new Set<string>();
+                      const percentage = typeof progress?.percentage === 'number'
+                        && Number.isFinite(progress.percentage)
+                        && progress.percentage >= 0
+                        && progress.percentage <= 100
+                        ? progress.percentage
+                        : null;
+                      const status = getModuleStudentStatus(progress);
+                      return (
+                        <li key={comic.comicId} className="p-4 sm:p-5">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="grid h-11 w-11 flex-shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-50 text-xl text-brand-700">
+                              {comic.thumbnailUrl || comic.coverUrl ? (
+                                <Image
+                                  src={comic.thumbnailUrl || comic.coverUrl}
+                                  alt=""
+                                  width={44}
+                                  height={44}
+                                  unoptimized
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span aria-hidden="true">📘</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <h4 className="truncate text-sm font-bold text-ink">{comic.title || `Komik ${comic.comicId}`}</h4>
+                                <span className="flex-shrink-0 text-sm font-black text-brand-700">
+                                  {percentage === null ? '—' : `${Math.round(percentage)}%`}
+                                </span>
+                              </div>
+                              <p className="mt-0.5 text-xs text-secondary-content">
+                                {status === 'completed' ? 'Tuntas' : status === 'learning' ? 'Sedang belajar' : 'Belum mulai'}
+                                {progress && ` · ${completedStages.size}/${SINTAKS.length} tahap selesai`}
+                              </p>
+                            </div>
+                          </div>
+                          {percentage !== null && <ProgressBar value={percentage} className="mt-3" />}
+                          {progress && (
+                            <>
+                              <div className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-8">
+                                {SINTAKS.map((stage) => {
+                                  const completed = completedStages.has(stage);
+                                  const current = progress.sintaksList?.some((item) =>
+                                    item.sintaks === stage && item.status === 'CURRENT'
+                                  ) ?? false;
+                                  return (
+                                    <span
+                                      key={stage}
+                                      title={stage}
+                                      className={`min-w-0 rounded-lg px-1 py-1.5 text-center text-[9px] font-semibold leading-3 sm:text-[10px] ${
+                                        completed
+                                          ? 'bg-accent-50 text-accent-800'
+                                          : current
+                                            ? 'bg-brand-50 text-brand-800 ring-1 ring-brand-200'
+                                            : 'bg-canvas text-secondary-content'
+                                      }`}
+                                    >
+                                      <span className="block">{completed ? '✓' : current ? '•' : '·'}</span>
+                                      <span className="block truncate">{stage}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                              <details className="mt-2">
+                                <summary className="min-h-11 cursor-pointer text-[11px] font-semibold text-secondary-content">Waktu aktivitas komik</summary>
+                                <p className="text-xs text-secondary-content">
+                                  Tahap terakhir: {progress.completedStage || 'Belum ada'} · Mulai: {formatTimestamp(progress.createdAt)} · Aktivitas terakhir: {formatTimestamp(progress.updatedAt)}
+                                </p>
+                              </details>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 ) : (
-                  <ProgressRing value={avgProgress} size={64} stroke={5} />
+                  <p className="p-4 text-sm text-secondary-content">Data komik belum tersedia.</p>
                 )}
-                <p className="mt-1 text-[10px] font-medium text-neutral-500">
-                  {avgProgress === null ? 'Belum ada data' : `${recordedProgress.length}/${comicProgress.length} komik`}
-                </p>
-              </div>
-            </div>
-            <dl className="mt-4 grid gap-3 border-t border-neutral-100 pt-4 text-sm sm:grid-cols-2">
-              <ProfileValue label="UID siswa" value={uid} />
-              <ProfileValue label="Email" value={email} />
-              <ProfileValue label="Username" value={username} />
-              <ProfileValue label="Nama panggilan" value={nickname} />
-              <ProfileValue label="Jenis kelamin" value={gender} />
-              <ProfileValue label="Sekolah" value={schoolName} />
-              <ProfileValue label="ID sekolah" value={schoolId} />
-              <ProfileValue label="Kelas" value={classLevel || (gradeLevel ? `Kelas ${gradeLevel}` : undefined)} />
-              <ProfileValue label="Tanggal registrasi" value={formatTimestamp(createdAt)} />
-              <ProfileValue label="Terakhir login" value={formatTimestamp(profile?.lastLoginAt)} />
-              <ProfileValue label="Bio" value={bio} />
-              {additionalProfileFields.map(({ key, label, value }) => (
-                <ProfileValue key={key} label={label} value={value} />
-              ))}
-            </dl>
-          </Card>
+              </Card>
 
-          {/* Comic progress */}
-          <Card>
-            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Progress</p>
-              <h3 className="text-base font-black text-neutral-900">Semua Komik 📚</h3>
-            </div>
-            <ul className="divide-y divide-neutral-50">
-              {comicProgress.map(({ comic, progress }) => (
-                <li key={comic.comicId} className="px-5 py-3.5">
-                  <div className="flex items-center justify-between gap-3 mb-1.5">
-                    <p className="text-sm font-semibold text-neutral-800 truncate flex-1">
-                      {comic.title}
-                    </p>
-                    <Badge
-                      color={
-                        !progress
-                          ? 'warning'
-                          : progress.status === 'completed'
-                          ? 'accent'
-                          : 'primary'
-                      }
+              <Card className="overflow-hidden">
+                <SectionHeading eyebrow="Aktivitas belajar" title="Riwayat aktivitas" />
+                {recentActivity.length ? (
+                  <ul className="divide-y divide-ui-border">
+                    {visibleActivities.map((item) => (
+                      <li key={item.id} className="flex gap-3 px-4 py-3 sm:px-5">
+                        <span className="mt-1 grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-bold text-brand-700" aria-hidden="true">•</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                            <p className="break-words text-sm font-semibold text-ink">{item.title}</p>
+                            <time className="text-xs text-secondary-content" dateTime={item.date.toISOString()}>
+                              {item.date.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </time>
+                          </div>
+                          {item.description && <p className="mt-1 break-words text-sm leading-5 text-secondary-content">{item.description}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="p-4 text-sm text-secondary-content">Belum ada aktivitas belajar dengan waktu yang dapat ditampilkan.</p>
+                )}
+                {activityPageCount > 1 && (
+                  <div className="flex items-center justify-between gap-2 border-t border-ui-border px-4 py-3 sm:px-5">
+                    <button
+                      type="button"
+                      disabled={activityPage === 0}
+                      onClick={() => setActivityPage((page) => Math.max(0, page - 1))}
+                      className="min-h-11 rounded-lg border border-ui-border px-3 text-sm disabled:opacity-40"
                     >
-                      {!progress
-                        ? 'Belum Mulai'
-                        : progress.status === 'completed'
-                        ? 'Selesai'
-                        : `${progress.percentage ?? 0}%`}
-                    </Badge>
+                      Sebelumnya
+                    </button>
+                    <span className="text-xs text-secondary-content">Halaman {activityPage + 1} dari {activityPageCount}</span>
+                    <button
+                      type="button"
+                      disabled={activityPage + 1 >= activityPageCount}
+                      onClick={() => setActivityPage((page) => Math.min(activityPageCount - 1, page + 1))}
+                      className="min-h-11 rounded-lg border border-ui-border px-3 text-sm disabled:opacity-40"
+                    >
+                      Berikutnya
+                    </button>
                   </div>
-                  {progress && <ProgressBar value={progress.percentage ?? 0} />}
-                  {progress && (
-                    <>
-                      <p className="mt-1 text-xs text-neutral-400">
-                        Tahap terakhir: {progress.completedStage || 'Belum ada'} · Mulai: {formatTimestamp(progress.createdAt)} · Aktivitas terakhir: {formatTimestamp(progress.updatedAt)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {progress.sintaksList?.map((stage) => (
-                          <span
-                            key={stage.sintaks}
-                            className={`rounded px-2 py-1 text-[11px] ${
-                              stage.status === 'COMPLETED'
-                                ? 'bg-success-50 text-success-700'
-                                : stage.status === 'CURRENT'
-                                  ? 'bg-primary-50 text-primary-700'
-                                  : 'bg-neutral-50 text-neutral-400'
-                            }`}
-                          >
-                            {stage.sintaks}
-                          </span>
-                        ))}
-                      </div>
-                    </>
+                )}
+              </Card>
+
+              <Card className="p-4 sm:p-5">
+                <SectionHeading eyebrow="Refleksi siswa" title="Catatan refleksi" />
+                <div className="mt-3">
+                  <LearningRecords title="Refleksi" records={reflections} />
+                </div>
+              </Card>
+            </div>
+
+            <aside className="min-w-0 space-y-4">
+              <Card className="overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ui-border px-4 py-4 sm:px-5">
+                  <div>
+                    <p className="text-xs font-semibold text-brand-700">Analisis perkembangan</p>
+                    <h3 className="guru-section-title">Insight siswa</h3>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => onGenerateInsight(Boolean(insight))}
+                    className="w-full sm:w-auto"
+                    disabled={insightLoading || insightRetryAfterSeconds > 0}
+                  >
+                    {insightLoading
+                      ? 'Menganalisis…'
+                      : insightRetryAfterSeconds > 0
+                        ? `Coba lagi ${insightRetryAfterSeconds} dtk`
+                        : insight
+                          ? 'Perbarui analisis'
+                          : 'Buat analisis'}
+                  </Button>
+                </div>
+                <div className="space-y-3 p-4 sm:p-5">
+                  {insightError && (
+                    <p role="alert" className="rounded-xl bg-error-50 px-3 py-2.5 text-sm text-error-700">{insightError}</p>
                   )}
-                </li>
-              ))}
-              {comicProgress.length === 0 && (
-                <li className="px-5 py-4 text-sm text-neutral-500">Metadata komik belum tersedia.</li>
-              )}
-            </ul>
-          </Card>
+                  {insightCacheWarning && (
+                    <p role="status" className="rounded-lg bg-warning-50 p-2 text-xs text-warning-800">{insightCacheWarning}</p>
+                  )}
+                  {insight?.fallbackUsed && (
+                    <p role="status" className="text-xs text-secondary-content">Analisis tersedia melalui layanan AI alternatif.</p>
+                  )}
+                  {insightGeneratedAt && (
+                    <p className="text-[11px] text-secondary-content">
+                      Dianalisis {formatTimestamp(insightGeneratedAt)}{insightCacheHit ? ' · data belum berubah.' : '.'}
+                    </p>
+                  )}
+                  {insightLoading && (
+                    <div className="space-y-2" aria-label="Memuat analisis siswa">
+                      <Skeleton className="h-20 rounded-xl" />
+                      <Skeleton className="h-16 rounded-xl" />
+                    </div>
+                  )}
+                  {insight && !insightLoading ? (
+                    <div className="space-y-3">
+                      {insight.capabilitySummary.trim() && (
+                        <InsightRow label="Ringkasan kondisi" value={insight.capabilitySummary} tone="primary" />
+                      )}
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {insight.bestStage !== 'Lihat temuan berbasis bukti' && (
+                          <InsightRow label="Kekuatan belajar" value={insight.bestStage} tone="success" />
+                        )}
+                        {insight.weakestStage !== 'Lihat temuan berbasis bukti' && (
+                          <InsightRow label="Fokus bimbingan" value={insight.weakestStage} tone="warning" />
+                        )}
+                        {insight.errorPattern.trim() && (
+                          <InsightRow label="Kesulitan utama" value={insight.errorPattern} tone="warning" />
+                        )}
+                      </div>
+                      {insight.teacherRecommendation.trim() && (
+                        <div className="rounded-xl border border-brand-100 bg-brand-50/70 p-3">
+                          <p className="text-xs font-bold text-brand-900">Saran tindak lanjut guru</p>
+                          <p className="mt-1 break-words text-sm leading-5 text-ink">{insight.teacherRecommendation}</p>
+                        </div>
+                      )}
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {insight.remedial.trim() && <InsightRow label="Dukungan belajar" value={insight.remedial} tone="neutral" />}
+                        {insight.enrichment.trim() && <InsightRow label="Pengayaan" value={insight.enrichment} tone="neutral" />}
+                      </div>
+                      <p className="text-[11px] leading-5 text-secondary-content">
+                        Ringkasan AI adalah bahan pertimbangan, bukan penilaian atau diagnosis. Cocokkan dengan bukti belajar dan pengamatan guru.
+                      </p>
+                    </div>
+                  ) : !insightLoading && !insightError ? (
+                    <p className="rounded-xl bg-canvas p-3 text-sm leading-5 text-secondary-content">
+                      Buat analisis untuk meninjau kemampuan dan dukungan belajar berdasarkan data siswa yang tersedia.
+                    </p>
+                  ) : null}
+                </div>
+              </Card>
 
-          <Card>
-            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Hasil belajar</p>
-              <h3 className="text-base font-black text-neutral-900">Jawaban, penerapan, dan refleksi</h3>
-            </div>
-            <div className="grid gap-4 p-5 md:grid-cols-3">
-              <LearningRecords title="Jawaban identifikasi" records={identificationAnswers} />
-              <LearningRecords title="Aktivitas penerapan" records={applicationActivities} />
-              <LearningRecords title="Refleksi" records={reflections} />
-            </div>
-          </Card>
-
-          <Card>
-            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Aktivitas tambahan</p>
-              <h3 className="text-base font-black text-neutral-900">Modul belajar dan AI Tutor</h3>
-            </div>
-            <div className="grid gap-4 p-5 md:grid-cols-2">
-              <LearningRecords title="Progres modul lain" records={moduleProgress} />
-              <LearningRecords title="Percakapan AI Tutor terbaru" records={aiTutorChats} />
-            </div>
-          </Card>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatCard emoji="📝" label="Refleksi" value={String(reflections.length)} />
-            <StatCard emoji="⚡" label="Aktivitas" value={String(activities.length)} />
-            <StatCard
-              emoji="✅"
-              label="Komik Selesai"
-              value={String(comicProgress.filter((e) => e.progress?.status === 'completed').length)}
-            />
+              <Card className="p-4 sm:p-5">
+                <SectionHeading eyebrow="Dasar peninjauan" title="Bukti belajar tersedia" />
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <EvidenceMetric label="Progress komik" value={`${recordedProgress.length}/${comicProgress.length}`} />
+                  <EvidenceMetric label="Jawaban dapat dinilai" value={String(judgedAnswerCount)} />
+                  <EvidenceMetric label="Aktivitas tercatat" value={String(activities.length)} />
+                  <EvidenceMetric label="Refleksi tersimpan" value={String(reflections.length)} />
+                </div>
+                <p className="mt-3 text-xs leading-5 text-secondary-content">
+                  Perkembangan tahap dan aktivitas menunjukkan catatan belajar, bukan bukti tunggal penguasaan atau karakter siswa.
+                </p>
+              </Card>
+            </aside>
           </div>
 
-          <Card>
-            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Evaluasi</p>
-              <h3 className="text-base font-black text-neutral-900">Evaluasi CINARAI</h3>
-            </div>
-            <div className="px-5 py-4 text-sm text-neutral-700">
-              {!evaluation ? (
-                <p className="text-neutral-500">Belum ada dokumen evaluasi tersimpan.</p>
-              ) : (
-                <>
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    <p>Status: <strong>{evaluation.completed ? 'Selesai' : 'Dalam proses'}</strong></p>
-                    <p>Jawaban tersimpan: <strong>{Object.keys(evaluation.answers ?? {}).length}</strong></p>
-                    <p>Penilaian: <strong>
-                      {evaluation.grading?.status === 'graded' && typeof evaluation.grading.totalScore === 'number'
-                        ? `${evaluation.grading.totalScore}/40`
-                        : evaluation.grading?.status === 'pending'
-                          ? 'Menunggu penilaian'
-                          : 'Belum tersedia'}
-                    </strong></p>
-                  </div>
-                  {Object.entries(evaluation.answers ?? {}).length > 0 && (
-                    <ul className="mt-4 space-y-2">
-                      {Object.entries(evaluation.answers).map(([challengeId, answer]) => (
-                        <li key={challengeId} className="rounded-lg bg-neutral-50 p-3">
-                          <p className="text-xs font-semibold text-neutral-500">
-                            Tantangan {challengeId.replace('challenge', '')}
-                          </p>
-                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-800">
-                            {formatProfileValue(answer) ?? 'Belum diisi'}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-            </div>
-          </Card>
-
-          <Card>
-            <div className="px-5 pt-4 pb-3 border-b border-neutral-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">Linimasa</p>
-              <h3 className="text-base font-black text-neutral-900">Aktivitas terbaru</h3>
-            </div>
-            {recentActivity.length ? (
-              <ul className="divide-y divide-neutral-100">
-                {visibleActivities.map((item) => (
-                  <li key={item.id} className="px-5 py-3">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                      <p className="text-sm font-semibold text-neutral-800">{item.title}</p>
-                      <time className="text-xs text-neutral-400" dateTime={item.date.toISOString()}>
-                        {item.date.toLocaleString('id-ID')}
-                      </time>
+          <details className="rounded-2xl border border-ui-border bg-white shadow-sm">
+            <summary className="min-h-14 cursor-pointer px-4 py-4 text-sm font-bold text-ink sm:px-5">
+              Hasil belajar dan data pendukung lainnya
+            </summary>
+            <div className="space-y-4 border-t border-ui-border p-4 sm:p-5">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <LearningRecords title="Jawaban identifikasi" records={identificationAnswers} />
+                <LearningRecords title="Aktivitas penerapan" records={applicationActivities} />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <LearningRecords title="Progres modul lain" records={moduleProgress} />
+                <LearningRecords title="Percakapan AI Tutor terbaru" records={aiTutorChats} />
+              </div>
+              <section className="rounded-xl border border-ui-border p-4">
+                <h3 className="text-sm font-bold text-ink">Evaluasi CINARAI</h3>
+                {!evaluation ? (
+                  <p className="mt-2 text-sm text-secondary-content">Belum ada dokumen evaluasi tersimpan.</p>
+                ) : (
+                  <>
+                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-sm text-secondary-content">
+                      <p>Status: <strong>{evaluation.completed ? 'Selesai' : 'Dalam proses'}</strong></p>
+                      <p>Jawaban tersimpan: <strong>{Object.keys(evaluation.answers ?? {}).length}</strong></p>
+                      <p>Penilaian: <strong>
+                        {evaluation.grading?.status === 'graded' && typeof evaluation.grading.totalScore === 'number'
+                          ? `${evaluation.grading.totalScore}/40`
+                          : evaluation.grading?.status === 'pending'
+                            ? 'Menunggu penilaian'
+                            : 'Belum tersedia'}
+                      </strong></p>
                     </div>
-                    {item.description && <p className="mt-1 text-sm text-neutral-600">{item.description}</p>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="px-5 py-4 text-sm text-neutral-500">Belum ada aktivitas dengan timestamp valid.</p>
-            )}
-            {activityPageCount > 1 && (
-              <div className="flex items-center justify-between border-t border-neutral-100 px-5 py-3">
-                <button
-                  type="button"
-                  disabled={activityPage === 0}
-                  onClick={() => setActivityPage((page) => Math.max(0, page - 1))}
-                  className="min-h-10 rounded-lg border border-neutral-200 px-3 text-sm disabled:opacity-40"
-                >
-                  Sebelumnya
-                </button>
-                <span className="text-xs text-neutral-500">Halaman {activityPage + 1} dari {activityPageCount}</span>
-                <button
-                  type="button"
-                  disabled={activityPage + 1 >= activityPageCount}
-                  onClick={() => setActivityPage((page) => Math.min(activityPageCount - 1, page + 1))}
-                  className="min-h-10 rounded-lg border border-neutral-200 px-3 text-sm disabled:opacity-40"
-                >
-                  Berikutnya
-                </button>
-              </div>
-            )}
-          </Card>
-
-          {/* AI Insight */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-                  AI Assistant
-                </p>
-                <h3 className="text-base font-black text-neutral-900">Analisis Siswa 🤖</h3>
-              </div>
-              <button
-                onClick={() => onGenerateInsight(Boolean(insight))}
-                disabled={insightLoading || insightRetryAfterSeconds > 0}
-                className="min-h-10 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-              >
-                {insightLoading
-                  ? 'Menganalisis…'
-                  : insightRetryAfterSeconds > 0
-                    ? `Coba lagi dalam ${insightRetryAfterSeconds} dtk`
-                    : insight
-                      ? 'Perbarui analisis'
-                      : 'Analisis'}
-              </button>
-            </div>
-
-            {insightError && (
-              <p className="text-sm text-error-600 bg-error-50 rounded-xl px-4 py-3">{insightError}</p>
-            )}
-            {insightCacheWarning && (
-              <p role="status" className="text-xs text-warning-800">{insightCacheWarning}</p>
-            )}
-            {insight?.fallbackUsed && (
-              <p role="status" className="text-xs text-neutral-600">
-                Analisis berhasil menggunakan layanan AI alternatif setelah provider utama terganggu.
-              </p>
-            )}
-            {insightRetryAfterSeconds > 0 && (
-              <p role="status" className="text-xs text-neutral-600">Batas 5 permintaan per menit untuk siswa ini.</p>
-            )}
-            {insightGeneratedAt && (
-              <p className="text-[10px] text-neutral-500">
-                Terakhir dianalisis {formatTimestamp(insightGeneratedAt)}{insightCacheHit ? ' · cache, data belum berubah.' : '.'}
-              </p>
-            )}
-
-            {insightLoading && (
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full rounded" />
-                <Skeleton className="h-4 w-3/4 rounded" />
-                <Skeleton className="h-4 w-5/6 rounded" />
-              </div>
-            )}
-
-            {insight && !insightLoading && (
-              <div className="space-y-3 text-sm">
-                <InsightRow label="Kemampuan" value={insight.capabilitySummary} />
-                <InsightRow label="Tahap Terbaik" value={insight.bestStage} />
-                <InsightRow label="Tahap Terlemah" value={insight.weakestStage} />
-                <InsightRow label="Pola Kesalahan" value={insight.errorPattern} />
-                <InsightRow label="Rekomendasi" value={insight.teacherRecommendation} />
-                <InsightRow label="Remedial" value={insight.remedial} />
-                <InsightRow label="Pengayaan" value={insight.enrichment} />
-                {insight.provider && (
-                  <p className="text-xs text-neutral-400 pt-1">Provider: {insight.provider}</p>
+                    {Object.entries(evaluation.answers ?? {}).length > 0 && (
+                      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {Object.entries(evaluation.answers).map(([challengeId, answer]) => (
+                          <li key={challengeId} className="min-w-0 rounded-lg bg-canvas p-3">
+                            <p className="text-xs font-semibold text-secondary-content">Tantangan {challengeId.replace('challenge', '')}</p>
+                            <p className="mt-1 break-words text-sm text-ink">{formatProfileValue(answer) ?? 'Belum diisi'}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 )}
-              </div>
-            )}
-
-            {!insight && !insightLoading && !insightError && (
-              <p className="text-sm text-neutral-400">
-                Klik &ldquo;Analisis&rdquo; untuk mendapatkan insight AI tentang perkembangan siswa ini.
-              </p>
-            )}
-          </Card>
+              </section>
+            </div>
+          </details>
         </>
       )}
     </div>
@@ -475,13 +541,8 @@ function textValue(value: unknown): string | null {
 }
 
 function formatTimestamp(value: unknown): string {
-  const date = value && typeof value === 'object' && 'toDate' in value
-    && typeof value.toDate === 'function'
-    ? value.toDate()
-    : value instanceof Date
-      ? value
-      : null;
-  return date instanceof Date && Number.isFinite(date.getTime())
+  const date = firstValidDate({ value }, ['value']);
+  return date
     ? date.toLocaleDateString('id-ID')
     : 'Belum diisi';
 }
@@ -490,8 +551,8 @@ function ProfileValue({ label, value }: { label: string; value: unknown }) {
   const displayValue = formatProfileValue(value) ?? 'Belum diisi';
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-semibold text-neutral-500">{label}</dt>
-      <dd className="mt-1 break-words text-neutral-800">{displayValue}</dd>
+      <dt className="text-xs font-semibold text-secondary-content">{label}</dt>
+      <dd className="mt-1 break-words text-ink">{displayValue}</dd>
     </div>
   );
 }
@@ -554,29 +615,34 @@ function LearningRecords({
 
   return (
     <section className="min-w-0">
-      <h4 className="text-sm font-bold text-neutral-800">{title}</h4>
+      <h4 className="text-sm font-bold text-ink">{title}</h4>
       {visible.length ? (
         <ul className="mt-2 space-y-2">
-          {visible.map((record, index) => (
-            <li key={String(record.id ?? `${title}:${page * pageSize + index}`)} className="rounded-lg bg-neutral-50 p-3 text-xs">
-              <p className="font-semibold text-neutral-800">{recordTitle(record, title)}</p>
-              {recordDetails(record, title).map((detail) => (
-                <p key={detail} className="mt-1 whitespace-pre-wrap break-words leading-5 text-neutral-600">{detail}</p>
-              ))}
-              <p className="mt-1 text-[10px] text-neutral-400">
-                {formatTimestamp(record.updatedAt ?? record.timestamp ?? record.createdAt)}
-              </p>
-            </li>
-          ))}
+          {visible.map((record, index) => {
+            const date = firstValidDate(record, ['updatedAt', 'timestamp', 'createdAt', 'occurredAt', 'submittedAt']);
+            return (
+              <li key={String(record.id ?? `${title}:${page * pageSize + index}`)} className="rounded-lg bg-canvas p-3 text-xs">
+                <p className="font-semibold text-ink">{recordTitle(record, title)}</p>
+                {recordDetails(record, title).map((detail) => (
+                  <p key={detail} className="mt-1 whitespace-pre-wrap break-words leading-5 text-secondary-content">{detail}</p>
+                ))}
+                {date && (
+                  <time className="mt-1 block text-[10px] text-secondary-content" dateTime={date.toISOString()}>
+                    {date.toLocaleDateString('id-ID', { dateStyle: 'medium' })}
+                  </time>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
-        <p className="mt-2 rounded-lg bg-neutral-50 p-3 text-xs text-neutral-500">Belum ada data.</p>
+        <p className="mt-2 rounded-lg bg-canvas p-3 text-xs text-secondary-content">Belum ada data.</p>
       )}
       {pageCount > 1 && (
         <div className="mt-2 flex items-center justify-between gap-2">
-          <button type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="min-h-9 rounded border border-neutral-200 px-2 disabled:opacity-40">Sebelumnya</button>
-          <span className="text-[10px] text-neutral-500">{page + 1}/{pageCount}</span>
-          <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="min-h-9 rounded border border-neutral-200 px-2 disabled:opacity-40">Berikutnya</button>
+          <button type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="min-h-11 rounded-lg border border-ui-border px-3 text-xs font-semibold disabled:opacity-40">Sebelumnya</button>
+          <span className="text-[10px] text-secondary-content">{page + 1}/{pageCount}</span>
+          <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="min-h-11 rounded-lg border border-ui-border px-3 text-xs font-semibold disabled:opacity-40">Berikutnya</button>
         </div>
       )}
     </section>
@@ -686,23 +752,43 @@ function firstValidDate(record: Record<string, unknown>, fields: string[]): Date
   return null;
 }
 
-function StatCard({ emoji, label, value }: { emoji: string; label: string; value: string }) {
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <Card className="p-4 flex items-center gap-3">
-      <span className="text-2xl">{emoji}</span>
-      <div>
-        <p className="text-lg font-black text-neutral-900">{value}</p>
-        <p className="text-xs text-neutral-500">{label}</p>
-      </div>
-    </Card>
+    <div className="border-b border-ui-border px-4 py-4 sm:px-5">
+      <p className="text-[11px] font-semibold text-brand-700">{eyebrow}</p>
+      <h3 className="guru-section-title mt-0.5">{title}</h3>
+    </div>
   );
 }
 
-function InsightRow({ label, value }: { label: string; value: string }) {
+function EvidenceMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-neutral-50 px-4 py-3">
-      <p className="text-xs font-bold text-neutral-500 mb-0.5">{label}</p>
-      <p className="text-sm text-neutral-800 leading-relaxed">{value}</p>
+    <div className="min-w-0 rounded-xl bg-canvas p-3">
+      <p className="break-words text-[11px] leading-4 text-secondary-content">{label}</p>
+      <p className="mt-1 text-lg font-black text-ink">{value}</p>
+    </div>
+  );
+}
+
+function InsightRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: 'primary' | 'success' | 'warning' | 'neutral';
+}) {
+  const toneStyles = {
+    primary: 'border-brand-100 bg-brand-50/70',
+    success: 'border-accent-100 bg-accent-50/70',
+    warning: 'border-warning-100 bg-warning-50/70',
+    neutral: 'border-ui-border bg-canvas',
+  };
+  return (
+    <div className={`min-w-0 rounded-xl border p-3 ${toneStyles[tone]}`}>
+      <p className="text-xs font-bold text-secondary-content">{label}</p>
+      <p className="mt-1 break-words text-sm leading-5 text-ink">{value}</p>
     </div>
   );
 }
