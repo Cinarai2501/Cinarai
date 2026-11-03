@@ -43,6 +43,10 @@ import { getAiSourceFingerprint, readTeacherAiCacheSafely, writeTeacherAiCache }
 import { readAllPages } from './pagedQuery';
 import { readBoundedJsonBody } from './requestBody';
 import { getStudentRecordOwner } from '@/app/dashboard/guru/services/studentRecordOwnership';
+import {
+  DashboardFirestoreQueryError,
+  getDashboardServerFailure,
+} from '@/app/dashboard/guru/services/dashboardState';
 import { logFirestoreQueryFailure, runFirestoreQuery, type FirestoreQueryDiagnostic } from '@/lib/firebase/firestoreDiagnostics';
 import type { ActivityDocument, ComicDocument, ComicProgressDocument, ReflectionDocument, UserDocument } from '@/types/firestore';
 import { FieldPath } from 'firebase-admin/firestore';
@@ -68,6 +72,7 @@ type DashboardRoutePayload = {
   success: boolean;
   message?: string;
   error?: string;
+  code?: 'firestore_error' | 'authentication_error' | 'api_error';
   students: UserDocument[];
   comics: ComicDocument[];
   progressDocuments: ComicProgressDocument[];
@@ -324,8 +329,18 @@ async function safeGetCollection<T>(context: FirestoreQueryDiagnostic, operation
     return { ok: true, data };
   } catch (error) {
     logFirestoreQueryFailure(context, error);
-    throw error;
+    throw new DashboardFirestoreQueryError();
   }
+}
+
+function dashboardErrorResponse(
+  status: number,
+  code: 'firestore_error' | 'authentication_error' | 'api_error',
+  message: string,
+) {
+  const payload = buildEmptyPayload(message, message);
+  payload.code = code;
+  return NextResponse.json(payload, { status });
 }
 
 export async function GET(request: NextRequest) {
@@ -333,32 +348,51 @@ export async function GET(request: NextRequest) {
   try {
     debug('[dashboard/guru] adminAuth present?', Boolean(adminAuth));
     if (!adminAuth) {
-      const msg = adminInitializationError
-        ? adminInitializationError
-        : 'Admin Auth not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment.';
-      debug('[dashboard/guru] Admin Auth unavailable', { message: msg });
-      return NextResponse.json(buildEmptyPayload(msg, 'Admin Auth unavailable'), { status: 503 });
+      debug('[dashboard/guru] Admin Auth unavailable');
+      return dashboardErrorResponse(
+        503,
+        'api_error',
+        'Layanan dashboard belum siap. Silakan coba lagi.',
+      );
     }
 
     debug('[dashboard/guru] adminFirestore present?', Boolean(adminFirestore));
     if (!adminFirestore) {
-      const msg = adminInitializationError
-        ? adminInitializationError
-        : 'Admin Firestore not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment.';
-      debug('[dashboard/guru] Admin Firestore unavailable', { message: msg });
-      return NextResponse.json(buildEmptyPayload(msg, 'Admin Firestore unavailable'), { status: 503 });
+      debug('[dashboard/guru] Admin Firestore unavailable');
+      return dashboardErrorResponse(
+        503,
+        'firestore_error',
+        'Data dashboard belum dapat diambil dari Firestore. Silakan coba lagi.',
+      );
     }
 
     const headerValue = request.headers.get('authorization');
     const token = headerValue?.startsWith('Bearer ') ? headerValue.slice(7) : null;
 
     if (!token) {
-      return NextResponse.json(buildEmptyPayload('Unauthorized: token not provided', 'Unauthorized'), { status: 401 });
+      return dashboardErrorResponse(
+        401,
+        'authentication_error',
+        'Sesi guru tidak valid. Silakan masuk kembali.',
+      );
     }
 
-    const decodedToken = await verifyIdToken(token, true);
+    let decodedToken: Awaited<ReturnType<typeof verifyIdToken>>;
+    try {
+      decodedToken = await verifyIdToken(token, true);
+    } catch {
+      return dashboardErrorResponse(
+        401,
+        'authentication_error',
+        'Sesi guru tidak valid. Silakan masuk kembali.',
+      );
+    }
     if (!decodedToken?.uid) {
-      return NextResponse.json(buildEmptyPayload('Unauthorized: invalid token', 'Unauthorized'), { status: 401 });
+      return dashboardErrorResponse(
+        401,
+        'authentication_error',
+        'Sesi guru tidak valid. Silakan masuk kembali.',
+      );
     }
 
     const uid = decodedToken.uid;
@@ -375,25 +409,32 @@ export async function GET(request: NextRequest) {
       if (profileSnapshot.exists) {
         const userData = profileSnapshot.data() as Record<string, unknown> | undefined;
         if (userData?.isActive === false) {
-          return NextResponse.json(buildEmptyPayload('Akun tidak aktif.', 'Forbidden'), { status: 403 });
+          return dashboardErrorResponse(403, 'authentication_error', 'Akun guru tidak aktif.');
         }
         role = typeof userData?.role === 'string' ? userData.role : undefined;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
       debug('[dashboard/guru] Failed to fetch teacher profile', {
         errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
       });
-      return NextResponse.json(buildEmptyPayload('Failed to fetch user profile', message), { status: 500 });
+      return dashboardErrorResponse(
+        503,
+        'firestore_error',
+        'Profil guru belum dapat diverifikasi dari Firestore. Silakan coba lagi.',
+      );
     }
 
     if (role !== 'teacher' && role !== 'admin') {
-      return NextResponse.json(buildEmptyPayload('Akun ini bukan akun guru.', 'Forbidden'), { status: 403 });
+      return dashboardErrorResponse(403, 'authentication_error', 'Akun ini tidak memiliki akses dashboard guru.');
     }
     const firestore = adminFirestore;
     if (!firestore) {
       debug('[dashboard/guru] Firestore client unavailable before querying collections');
-      return NextResponse.json(buildEmptyPayload('Firestore client unavailable', 'Firestore unavailable'), { status: 503 });
+      return dashboardErrorResponse(
+        503,
+        'firestore_error',
+        'Data dashboard belum dapat diambil dari Firestore. Silakan coba lagi.',
+      );
     }
 
     // Run queries sequentially with logging so we can capture the exact failing step and stack
@@ -521,11 +562,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
     debug('[dashboard/guru] Unhandled route error', {
       errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown',
     });
-    return NextResponse.json(buildEmptyPayload('Dashboard guru gagal memuat data', message), { status: 500 });
+    const failure = getDashboardServerFailure(error);
+    return dashboardErrorResponse(failure.status, failure.kind, failure.message);
   }
 }
 

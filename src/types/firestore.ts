@@ -169,9 +169,9 @@ export interface ApplicationActivityDocument extends FirestoreBaseDocument {
   selectedAnswer: string;
   studentReason: string;
   attempt: number;
-  coachType: string;
-  coachMessage: string;
-  coachSummary: {
+  coachType?: string;
+  coachMessage?: string;
+  coachSummary?: {
     mastered: string[];
     needsImprovement: string[];
     nextPractice: string[];

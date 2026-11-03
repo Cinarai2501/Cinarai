@@ -19,7 +19,7 @@ const AiAssistantPanel = dynamic(() => import('./ai/AiAssistantPanel').then((mod
 
 export default function GuruDashboardPage() {
   const { logout } = useAuth();
-  const { comics, rows, summary, loading, error } = useGuruDashboard();
+  const { comics, rows, summary, loading, error, dataState, hasLoaded, retry } = useGuruDashboard();
   const studentFilter = useStudentFilter(rows, comics.length);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [tab, setTab] = useState<GuruDashboardTab>('overview');
@@ -76,10 +76,13 @@ export default function GuruDashboardPage() {
       <GuruHeader />
 
       <main className="mx-auto max-w-[1440px] px-3 py-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 lg:px-8 lg:pb-8">
-        {error && (
+        {error && (selectedUid || (tab !== 'overview' && tab !== 'students')) && (
           <div role="alert" className="mb-3 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
-            <p className="font-bold">Sebagian data dashboard tidak dapat dimuat.</p>
+            <p className="font-bold">Data dashboard belum dapat diperbarui.</p>
             <p className="mt-1 break-words">{error}</p>
+            <button type="button" onClick={retry} className="mt-3 min-h-11 rounded-lg bg-error-700 px-4 text-sm font-bold text-white">
+              Coba lagi
+            </button>
           </div>
         )}
 
@@ -131,6 +134,10 @@ export default function GuruDashboardPage() {
             rows={rows}
             comics={comics}
             loading={loading}
+            hasLoaded={hasLoaded}
+            dataState={dataState}
+            error={error}
+            onRetry={retry}
             onSelectStudent={handleSelectStudent}
             onOpenStudents={() => handleTabChange('students')}
             onOpenModules={() => handleTabChange('modules')}
@@ -141,6 +148,9 @@ export default function GuruDashboardPage() {
             rows={studentFilter.visible}
             totalCount={studentFilter.filtered.length}
             loading={loading}
+            hasLoaded={hasLoaded}
+            error={error}
+            onRetry={retry}
             search={studentFilter.search}
             onSearch={studentFilter.setSearch}
             status={studentFilter.status}

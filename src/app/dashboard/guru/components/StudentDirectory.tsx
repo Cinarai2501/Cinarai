@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, Card, EmptyState, LoadingState, ProgressBar, SearchInput, Skeleton, StatusBadge } from './ui';
+import { Avatar, Button, Card, EmptyState, LoadingState, ProgressBar, SearchInput, Skeleton, StatusBadge } from './ui';
 import type { StudentRow, StudentStatusFilter } from '../types';
 import { getStudentLearningStatus } from '../services/studentUtils';
 
@@ -8,6 +8,9 @@ interface Props {
   rows: StudentRow[];
   totalCount: number;
   loading: boolean;
+  hasLoaded: boolean;
+  error: string | null;
+  onRetry: () => void;
   search: string;
   onSearch: (value: string) => void;
   status: StudentStatusFilter;
@@ -34,6 +37,9 @@ export function StudentDirectory({
   rows,
   totalCount,
   loading,
+  hasLoaded,
+  error,
+  onRetry,
   search,
   onSearch,
   status,
@@ -55,7 +61,7 @@ export function StudentDirectory({
               <h2 className="guru-section-title">Daftar siswa</h2>
           </div>
           <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
-            {totalCount} siswa
+            {hasLoaded ? totalCount : '—'} siswa
           </span>
         </div>
 
@@ -106,7 +112,15 @@ export function StudentDirectory({
         </div>
       </div>
 
-      {loading ? (
+      {error && (
+        <div role="alert" className="mx-4 mt-4 rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 sm:mx-5">
+          <p className="font-bold">Daftar siswa belum dapat diperbarui.</p>
+          <p className="mt-1">{error}</p>
+          <Button className="mt-3" onClick={onRetry}>Coba lagi</Button>
+        </div>
+      )}
+
+      {loading && !hasLoaded ? (
         <LoadingState label="Memuat daftar siswa">
           <ul className="divide-y divide-ui-border">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -120,10 +134,17 @@ export function StudentDirectory({
             ))}
           </ul>
         </LoadingState>
+      ) : error && !hasLoaded ? (
+        <EmptyState className="mx-4 my-5">
+          <p className="font-semibold text-ink">Daftar siswa gagal dimuat.</p>
+          <p className="mt-1 text-sm text-secondary-content">Periksa koneksi, lalu coba lagi.</p>
+        </EmptyState>
       ) : totalCount === 0 ? (
         <EmptyState className="mx-4 my-5">
           <p className="font-semibold text-ink">
-            {search || status !== 'all' ? 'Tidak ada siswa yang cocok dengan pencarian atau filter.' : 'Belum ada data siswa.'}
+            {search || status !== 'all'
+              ? 'Tidak ada siswa yang cocok dengan pencarian atau filter.'
+              : hasLoaded ? 'Belum ada data siswa.' : 'Daftar siswa belum dimuat.'}
           </p>
           {(search || status !== 'all') && (
             <p className="mt-1 text-sm text-secondary-content">Coba ubah kata kunci atau pilih filter lain.</p>

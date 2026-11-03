@@ -3,11 +3,14 @@
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { debug } from '@/lib/debug';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/client';
 import { getAiAuthorizationHeader } from '@/lib/ai/clientRequest';
 import { useAuth } from '@/hooks/useAuth';
 import { loadComicProgress, saveComicProgress } from '@/services/comicProgress';
+import {
+  releaseApplicationActivity,
+  saveApplicationActivity,
+  updateApplicationActivity,
+} from '../../services/applicationActivityService';
 import { useLearningEngine } from '../../hooks/useLearningEngine';
 import { areApplicationCardsCompleted, isApplicationAnswerCorrect } from './applicationAnswer';
 
@@ -47,23 +50,6 @@ function shuffle<T>(array: ReadonlyArray<T>): T[] {
   return result;
 }
 
-function getLocalApplicationKey(comicId: number) {
-  return `cinarai.application.activity.${comicId}`;
-}
-
-function saveLocalApplicationActivity(comicId: number, payload: Record<string, unknown>) {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const key = getLocalApplicationKey(comicId);
-    const stored = JSON.parse(window.localStorage.getItem(key) ?? '[]') as Record<string, unknown>[];
-    stored.push(payload);
-    window.localStorage.setItem(key, JSON.stringify(stored));
-  } catch (error) {
-    console.warn('[ApplicationStage] Gagal menyimpan cache lokal', error);
-  }
-}
-
 export default function ApplicationStage() {
   const { comic, comicModule, setCanAdvance, completeAndAdvance } = useLearningEngine();
   const { user } = useAuth();
@@ -91,6 +77,7 @@ export default function ApplicationStage() {
   const [coachMessage, setCoachMessage] = useState<string | null>(null);
   const [coachSummary, setCoachSummary] = useState<CoachSummary | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [activityNotice, setActivityNotice] = useState<string | null>(null);
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   const [attemptCount, setAttemptCount] = useState(0);
   const [hasHydratedProgress, setHasHydratedProgress] = useState(false);
@@ -192,35 +179,11 @@ export default function ApplicationStage() {
 
   
 
-  const logApplicationActivity = async (payload: Record<string, unknown>) => {
-    const localPayload = {
-      ...payload,
-      timestamp: new Date().toISOString(),
-      synced: false,
-    };
-
-    if (!user?.uid) {
-      saveLocalApplicationActivity(comic.id, localPayload);
-      return;
-    }
-
-    try {
-      await addDoc(collection(firestore, 'application_activity'), {
-        ...payload,
-        timestamp: serverTimestamp(),
-        localTimestamp: localPayload.timestamp,
-        synced: true,
-      });
-    } catch (error) {
-      console.warn('[ApplicationStage] Firestore sync failed, storing locally', error);
-      saveLocalApplicationActivity(comic.id, localPayload);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setIsThinking(true);
     setAiError(null);
+    setActivityNotice(null);
     setCoachMessage(null);
     setCoachSummary(null);
 
@@ -236,17 +199,7 @@ export default function ApplicationStage() {
       const localFeedback = answerIsCorrect
         ? 'Jawabanmu benar! Kamu berhasil menerapkan konsep dari komik pada situasi baru.'
         : 'Jawabanmu belum tepat. Perhatikan kembali ciri bentuk pada situasi baru, lalu coba lagi.';
-      const fallbackMessage = answerIsCorrect
-        ? `Bagus! ${currentCard?.title ?? 'Pilihanmu'} cocok dengan ${expectedAnswer ?? 'bentuk yang dipelajari'}. Coba sebutkan ciri bentuk yang membuatmu yakin.`
-        : `Perhatikan kembali ${currentCard?.title ?? 'benda ini'}. Bandingkan jumlah sisi, sudut, dan panjang sisi dengan ${expectedAnswer ?? 'bentuk yang dipelajari'}, lalu coba pilih bentuk yang paling sesuai.`;
-      const fallbackSummary: CoachSummary = {
-        mastered: answerIsCorrect ? ['Menghubungkan benda sehari-hari dengan bangun datar'] : ['Mau mencoba menjelaskan pilihan dengan alasan'],
-        needsImprovement: answerIsCorrect ? ['Menjelaskan ciri bentuk dengan lebih lengkap'] : ['Membandingkan ciri bentuk sebelum memilih jawaban'],
-        nextPractice: answerIsCorrect ? ['Sebutkan sisi atau sudut yang kamu amati'] : ['Amati sisi, sudut, dan bentuk benda sekali lagi'],
-      };
       setIsAnswerCorrect(answerIsCorrect);
-      setCoachMessage(fallbackMessage);
-      setCoachSummary(fallbackSummary);
       if (currentCard) {
         setCardAnswers((previous) => ({ ...previous, [currentCard.id]: selectedAnswer }));
         setCardExplanations((previous) => ({ ...previous, [currentCard.id]: studentReason }));
@@ -271,6 +224,39 @@ export default function ApplicationStage() {
     };
 
     setAttemptCount(currentAttempt);
+    let activityId: string | null = null;
+    let activityPersisted = false;
+    let activityIdentityAssociated = false;
+    try {
+      const savedActivity = saveApplicationActivity({
+        userId: user?.uid ?? null,
+        deferSync: true,
+        data: {
+          comicId: comic.id,
+          selectedAnswer: selectedAnswer.join(', '),
+          studentReason,
+          attempt: currentAttempt,
+          arViewed: arViewedFlag,
+          explorationCompleted: explorationCompletedFlag,
+          localTimestamp: new Date().toISOString(),
+        },
+      });
+      activityId = savedActivity.id;
+      activityPersisted = savedActivity.persisted;
+      activityIdentityAssociated = savedActivity.identityAssociated;
+      if (!savedActivity.identityAssociated) {
+        setActivityNotice(savedActivity.persisted
+          ? 'Jawaban tersimpan di perangkat ini, tetapi akun belum terverifikasi. Aktivitas tidak akan dikirim ke akun lain.'
+          : 'Identitas akun belum tersedia dan penyimpanan lokal gagal. Aktivitas mungkin hilang jika halaman ditutup.');
+      } else if (!savedActivity.persisted) {
+        setActivityNotice('Aktivitas tercatat sementara di sesi ini, tetapi penyimpanan lokal tidak tersedia. Tetap buka halaman sampai sinkronisasi selesai.');
+      } else if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        setActivityNotice('Aktivitas tersimpan dan akan disinkronkan saat koneksi internet kembali.');
+      }
+    } catch {
+      setActivityNotice('Aktivitas belum dapat disimpan ke antrean lokal. Kamu tetap dapat melanjutkan, tetapi jawaban ini mungkin tidak tercatat.');
+    }
+
     let aiTimeout: number | undefined;
     try {
       const controller = new AbortController();
@@ -288,14 +274,21 @@ export default function ApplicationStage() {
       }
 
       const data = (await response.json()) as Partial<CoachResponse>;
-      const message = typeof data.message === 'string'
-        ? data.message
-        : 'AI Coach sementara tidak tersedia. Coba lagi nanti.';
-      const summary = data.summary ?? {
-        mastered: [],
-        needsImprovement: [],
-        nextPractice: [],
-      };
+      if (!data
+        || !['positive', 'constructive', 'neutral'].includes(data.coachType ?? '')
+        || typeof data.message !== 'string'
+        || !data.message.trim()
+        || !data.summary
+        || !Array.isArray(data.summary.mastered)
+        || !data.summary.mastered.every((item) => typeof item === 'string')
+        || !Array.isArray(data.summary.needsImprovement)
+        || !data.summary.needsImprovement.every((item) => typeof item === 'string')
+        || !Array.isArray(data.summary.nextPractice)
+        || !data.summary.nextPractice.every((item) => typeof item === 'string')) {
+        throw new Error('Invalid AI Coach response.');
+      }
+      const message = data.message.trim();
+      const summary = data.summary;
 
       setCoachMessage(message);
       setCoachSummary(summary);
@@ -303,36 +296,33 @@ export default function ApplicationStage() {
         setAnswerSubmitted(true);
       }
 
-      const activityPayload = {
-        userId: user?.uid ?? 'anonymous',
-        comicId: comic.id,
-        selectedAnswer: selectedAnswer.join(', '),
-        studentReason,
-        attempt: currentAttempt,
-        arViewed: arViewedFlag,
-        explorationCompleted: explorationCompletedFlag,
-        coachType: data.coachType ?? 'neutral',
-        coachMessage: message,
-        coachSummary: summary,
-      };
-
-      await logApplicationActivity(activityPayload);
+      if (activityId) {
+        try {
+          const updatedActivity = updateApplicationActivity(activityId, user?.uid ?? null, {
+            coachType: data.coachType,
+            coachMessage: message,
+            coachSummary: summary,
+          });
+          if (!updatedActivity.persisted && updatedActivity.identityAssociated) {
+            setActivityNotice('Jawaban tercatat, tetapi umpan balik AI belum tersimpan untuk sinkronisasi.');
+          }
+        } catch {
+          setActivityNotice('Jawaban tercatat, tetapi umpan balik AI belum tersimpan untuk sinkronisasi.');
+        }
+      }
     } catch (error) {
       console.error('[ApplicationStage] AI Coach request failed', {
         errorName: error instanceof Error ? error.name : 'UnknownError',
       });
       setAiError('AI Coach sedang tidak tersedia. Coba lagi nanti.');
-      if (isComic1Application) {
-        setAnswerSubmitted(true);
-        setCoachMessage('Jawabanmu sudah diterima. Sambil menunggu AI Tutor tersedia kembali, coba jelaskan bentuk yang kamu lihat dengan memperhatikan jumlah sisi, rusuk, atau titik sudutnya.');
-        setCoachSummary({
-          mastered: ['Berani menyampaikan pengamatan dan alasan'],
-          needsImprovement: ['Menghubungkan ciri bentuk dengan objek yang diamati'],
-          nextPractice: ['Amati kembali gambar dan sebutkan ciri bentuk yang paling terlihat'],
-        });
+      if (activityPersisted) {
+        setActivityNotice(activityIdentityAssociated
+          ? 'Jawabanmu tetap tercatat di antrean aktivitas. AI Coach tidak tersedia saat ini; sinkronisasi akan dilanjutkan otomatis.'
+          : 'Jawaban tersimpan di perangkat ini, tetapi akun belum terverifikasi sehingga aktivitas tidak akan dikirim ke akun lain.');
       }
     } finally {
       if (aiTimeout !== undefined) window.clearTimeout(aiTimeout);
+      if (activityId) releaseApplicationActivity(activityId, user?.uid ?? null);
       setIsThinking(false);
     }
   };
@@ -543,6 +533,11 @@ export default function ApplicationStage() {
           {aiError && (
             <div className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
               {aiError}
+            </div>
+          )}
+          {activityNotice && (
+            <div role="status" className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {activityNotice}
             </div>
           )}
         </div>

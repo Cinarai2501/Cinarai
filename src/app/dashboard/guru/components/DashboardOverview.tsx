@@ -6,12 +6,17 @@ import { getModuleRosterSummary } from '../services/moduleAnalytics';
 import { getStudentLearningStatus } from '../services/studentUtils';
 import type { DashboardSummary, StudentRow } from '../types';
 import type { ComicDocument } from '@/types/firestore';
+import type { DashboardDataState } from '../services/dashboardState';
 
 interface Props {
   summary: DashboardSummary;
   rows: StudentRow[];
   comics: ComicDocument[];
   loading: boolean;
+  hasLoaded: boolean;
+  dataState: DashboardDataState;
+  error: string | null;
+  onRetry: () => void;
   onSelectStudent: (uid: string) => void;
   onOpenStudents: () => void;
   onOpenModules: () => void;
@@ -39,6 +44,10 @@ export function DashboardOverview({
   rows,
   comics,
   loading,
+  hasLoaded,
+  dataState,
+  error,
+  onRetry,
   onSelectStudent,
   onOpenStudents,
   onOpenModules,
@@ -49,7 +58,7 @@ export function DashboardOverview({
     .sort((left, right) => left.averageProgress - right.averageProgress)
     .slice(0, 3);
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <LoadingState label="Memuat ringkasan dashboard">
         <div className="space-y-4">
@@ -65,8 +74,52 @@ export function DashboardOverview({
     );
   }
 
+  if (error && !hasLoaded) {
+    return (
+      <div role="alert">
+        <Card className="p-5">
+          <p className="font-bold text-error-700">Dashboard gagal memuat data.</p>
+          <p className="mt-1 text-sm text-error-700">{error}</p>
+          <Button className="mt-3" onClick={onRetry}>Coba lagi</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (dataState === 'empty' && !loading) {
+    return (
+      <div className="space-y-4">
+        {error && (
+          <div role="alert" className="rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
+            <p className="font-bold">Data dashboard belum dapat diperbarui.</p>
+            <p className="mt-1">{error}</p>
+            <Button className="mt-3" onClick={onRetry}>Coba lagi</Button>
+          </div>
+        )}
+        <Card>
+          <EmptyState>
+            <p className="font-semibold text-ink">Belum ada siswa terdaftar.</p>
+            <p className="mt-1 text-sm text-secondary-content">Siswa akan tampil setelah terdaftar sebagai student.</p>
+          </EmptyState>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {error && (
+        <div role="alert" className="rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
+          <p className="font-bold">Data dashboard belum dapat diperbarui.</p>
+          <p className="mt-1">{error}</p>
+          <Button className="mt-3" onClick={onRetry}>Coba lagi</Button>
+        </div>
+      )}
+      {dataState === 'insufficient_data' && (
+        <p role="status" className="rounded-2xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800">
+          Data siswa tersedia, tetapi belum ada progress pembelajaran yang cukup untuk analisis.
+        </p>
+      )}
       <section aria-label="Statistik siswa" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((item) => (
           <StatCard

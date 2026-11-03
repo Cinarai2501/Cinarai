@@ -7,6 +7,15 @@ import { readJsonResponse } from '@/lib/api/readJsonResponse';
 import { normalizeComicProgressDocuments, normalizeStudentDocuments } from '../services/studentNormalization';
 import { buildStudentRow, buildDashboardSummary } from '../services/studentUtils';
 import { deduplicateActivitiesById } from '../services/activityUtils';
+import {
+  completeDashboardRequest,
+  failDashboardRequest,
+  getDashboardDataState,
+  getDashboardResponseError,
+  type DashboardRequestError,
+  type DashboardDataState,
+  type DashboardErrorKind,
+} from '../services/dashboardState';
 import type {
   ActivityDocument,
   ComicDocument,
@@ -26,6 +35,10 @@ interface GuruDashboardState {
   recentActivityLoading: boolean;
   loading: boolean;
   error: string | null;
+  errorKind: DashboardErrorKind | null;
+  dataState: DashboardDataState;
+  hasLoaded: boolean;
+  ownerUid: string | null;
 }
 
 function createInitialState(): GuruDashboardState {
@@ -38,12 +51,17 @@ function createInitialState(): GuruDashboardState {
     recentActivityLoading: true,
     loading: true,
     error: null,
+    errorKind: null,
+    dataState: 'loading',
+    hasLoaded: false,
+    ownerUid: null,
   };
 }
 
 interface DashboardResponse {
   success?: boolean;
   error?: string;
+  code?: string;
   students?: UserDocument[];
   comics?: ComicDocument[];
   progressDocuments?: ComicProgressDocument[];
@@ -165,6 +183,7 @@ export function useGuruDashboard() {
   const userUid = user?.uid;
   const userRole = user?.role;
   const [state, setState] = useState<GuruDashboardState>(createInitialState);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (authLoading) {
@@ -172,24 +191,50 @@ export function useGuruDashboard() {
       return;
     }
     if (!userUid || (userRole !== 'teacher' && userRole !== 'admin')) {
-      setState({
+      setState(failDashboardRequest({
         ...createInitialState(),
-        loading: false,
-        recentActivityLoading: false,
-        error: 'Sesi guru tidak valid. Silakan masuk kembali.',
-      });
+        ownerUid: userUid ?? null,
+      }, {
+        kind: 'authentication_error',
+        message: 'Sesi guru tidak valid. Silakan masuk kembali.',
+      }));
       return;
     }
 
     let active = true;
     const controller = new AbortController();
-    setState(createInitialState());
+    setState((previous) => {
+      const base = previous.ownerUid === userUid
+        ? previous
+        : { ...createInitialState(), ownerUid: userUid };
+      return {
+        ...base,
+        loading: true,
+        recentActivityLoading: true,
+        error: null,
+        errorKind: null,
+        dataState: 'loading',
+      };
+    });
 
     const loadDashboard = async () => {
       try {
         const firebaseUser = getCurrentUser();
-        if (!firebaseUser) throw new Error('Sesi guru tidak valid. Silakan masuk kembali.');
-        const token = await firebaseUser.getIdToken();
+        if (!firebaseUser) {
+          throw {
+            kind: 'authentication_error',
+            message: 'Sesi guru tidak valid. Silakan masuk kembali.',
+          };
+        }
+        let token: string;
+        try {
+          token = await firebaseUser.getIdToken();
+        } catch {
+          throw {
+            kind: 'authentication_error',
+            message: 'Sesi guru tidak valid. Silakan masuk kembali.',
+          };
+        }
         const endpoint = '/api/dashboard/guru';
         const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
@@ -198,13 +243,20 @@ export function useGuruDashboard() {
         });
         const payload = await readJsonResponse<DashboardResponse>(response, endpoint);
         if (!response.ok || !payload.success) {
-          throw new Error(payload.error || 'Data dashboard guru gagal dimuat.');
+          throw getDashboardResponseError(response.status, payload);
+        }
+        if (!Array.isArray(payload.students) || !Array.isArray(payload.comics)
+          || !Array.isArray(payload.progressDocuments)) {
+          throw {
+            kind: 'api_error',
+            message: 'Respons dashboard tidak lengkap. Silakan coba lagi.',
+          };
         }
 
-        const students = normalizeStudentDocuments(payload.students ?? []);
-        const comics = payload.comics ?? [];
+        const students = normalizeStudentDocuments(payload.students);
+        const comics = payload.comics;
         const progressByUid = new Map<string, ComicProgressDocument[]>();
-        (payload.progressDocuments ?? []).forEach((progress) => {
+        payload.progressDocuments.forEach((progress) => {
           const uid = progress.userId?.trim();
           if (!uid) return;
           const documents = progressByUid.get(uid) ?? [];
@@ -227,6 +279,10 @@ export function useGuruDashboard() {
         ));
         const summary = buildDashboardSummary(rows, comics.length);
         const studentUids = new Set(students.map((student) => student.uid));
+        const rosterProgressCount = students.reduce(
+          (count, student) => count + (progressByUid.get(student.uid)?.length ?? 0),
+          0,
+        );
         const recentActivities = buildRecentActivities(
           payload.activities ?? [],
           payload.reflections ?? [],
@@ -234,12 +290,9 @@ export function useGuruDashboard() {
           payload.identificationAnswers ?? [],
           studentUids
         );
-        const partialErrors = Object.values(payload.errors ?? {}).filter(
-          (message): message is string => Boolean(message)
-        );
-
         if (active) {
-          setState({
+          setState(completeDashboardRequest({
+            ownerUid: userUid,
             students,
             comics,
             rows,
@@ -247,17 +300,31 @@ export function useGuruDashboard() {
             recentActivities,
             recentActivityLoading: false,
             loading: false,
-            error: partialErrors.length ? partialErrors.join(' ') : null,
-          });
+            error: null,
+            errorKind: null,
+            dataState: 'loading',
+            hasLoaded: false,
+          }, getDashboardDataState(students.length, rosterProgressCount)));
         }
       } catch (error) {
         if (!active || (error instanceof Error && error.name === 'AbortError')) return;
-        setState((previous) => ({
-          ...previous,
-          loading: false,
-          recentActivityLoading: false,
-          error: error instanceof Error ? error.message : 'Data dashboard guru gagal dimuat.',
-        }));
+        const requestError: DashboardRequestError = error && typeof error === 'object'
+          && 'kind' in error && 'message' in error
+          && (error.kind === 'firestore_error' || error.kind === 'authentication_error' || error.kind === 'api_error')
+          && typeof error.message === 'string'
+          ? { kind: error.kind, message: error.message }
+          : {
+            kind: 'api_error' as const,
+            message: error instanceof Error && error.message
+              ? error.message
+              : 'Dashboard gagal memuat data. Silakan coba lagi.',
+          };
+        setState((previous) => {
+          const current = previous.ownerUid === userUid
+            ? previous
+            : { ...createInitialState(), ownerUid: userUid };
+          return failDashboardRequest(current, requestError);
+        });
       }
     };
 
@@ -266,7 +333,7 @@ export function useGuruDashboard() {
       active = false;
       controller.abort();
     };
-  }, [authLoading, userRole, userUid]);
+  }, [authLoading, retryCount, userRole, userUid]);
 
-  return state;
+  return { ...state, retry: () => setRetryCount((count) => count + 1) };
 }

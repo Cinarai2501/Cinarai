@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { SnackbarProvider } from '@/context/SnackbarContext';
 import { logAiProviderStartupStatus } from '@/lib/ai/debug';
+import { ApplicationActivitySync } from '@/features/learning-engine/components/ApplicationActivitySync';
 
 export const metadata: Metadata = {
   title: 'CINARAI - Critical Numeracy with AR & AI',
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <SnackbarProvider>
+            <ApplicationActivitySync />
             {children}
           </SnackbarProvider>
         </AuthProvider>
