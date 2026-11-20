@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 
-export type TeacherAiAnalysisScope = 'class' | 'student' | 'module';
+export type TeacherAiAnalysisScope = 'class' | 'module';
 
 const DEFAULT_MAX_REQUESTS = 5;
 const DEFAULT_WINDOW_MS = 60_000;
@@ -86,8 +86,8 @@ export function getTeacherAiRateLimitDocumentId(
   scope: TeacherAiAnalysisScope,
   targetUid?: string,
 ): string {
-  const normalizedTarget = scope === 'student' || scope === 'module' ? targetUid?.trim() : '';
-  if ((scope === 'student' || scope === 'module') && !normalizedTarget) {
+  const normalizedTarget = scope === 'module' ? targetUid?.trim() : '';
+  if (scope === 'module' && !normalizedTarget) {
     throw new Error(`Target wajib untuk scope analisis ${scope}.`);
   }
   return createHash('sha256')

@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { AiRouter, AiRouterError, AiRouterNonRetryableError } from '@/lib/ai/router';
+import { AiProviderError } from '@/lib/ai/provider';
+import type { AiProvider } from '@/lib/ai/provider';
 import {
   buildStudentInsightFacts,
   buildStudentInsightPrompt,
+  getStudentInsightAiErrorMessage,
+  generateStudentInsightIfAuthorized,
   getStudentInsightPromptEvidence,
   isStudentAllowedForInsight,
   parseStudentInsightResponse,
@@ -28,6 +33,90 @@ test('student insight authorization permits verified teacher/admin roles for eve
     role: 'student',
   }, 'student-uid', 'teacher'), true);
   assert.equal(isStudentAllowedForInsight(studentProfile, 'student-uid', 'student'), false);
+});
+
+test('individual analysis succeeds immediately on consecutive requests', async () => {
+  let requestCount = 0;
+  const profile = { uid: 'student-uid', role: 'student' };
+  const generate = async () => ++requestCount;
+
+  const first = await generateStudentInsightIfAuthorized(profile, 'student-uid', 'teacher', generate);
+  const second = await generateStudentInsightIfAuthorized(profile, 'student-uid', 'teacher', generate);
+
+  assert.deepEqual(first, { kind: 'generated', value: 1 });
+  assert.deepEqual(second, { kind: 'generated', value: 2 });
+  assert.equal(requestCount, 2);
+});
+
+test('unauthorized student analysis returns before calling an AI provider', async () => {
+  let providerCalls = 0;
+  const result = await generateStudentInsightIfAuthorized(
+    { uid: 'student-a', role: 'student' },
+    'student-b',
+    'teacher',
+    async () => {
+      providerCalls += 1;
+      return 'unexpected';
+    },
+  );
+
+  assert.deepEqual(result, { kind: 'unauthorized' });
+  assert.equal(providerCalls, 0);
+});
+
+test('all provider failures return a safe friendly error, with specific quota and configuration messages', () => {
+  assert.equal(
+    getStudentInsightAiErrorMessage(new AiRouterError('internal', [])),
+    'Semua layanan AI sedang tidak tersedia. Silakan coba lagi.',
+  );
+  assert.equal(
+    getStudentInsightAiErrorMessage(new AiRouterError('internal', [{
+      provider: 'gemini',
+      status: 'failed',
+      failureCategory: 'rate_limited',
+    }])),
+    'Provider AI sedang membatasi permintaan. Silakan coba lagi.',
+  );
+  assert.equal(
+    getStudentInsightAiErrorMessage(new AiRouterError('internal', [{
+      provider: 'gemini',
+      status: 'failed',
+      failureCategory: 'quota_exhausted',
+    }])),
+    'Kuota layanan AI sedang habis. Silakan coba lagi nanti.',
+  );
+  assert.equal(
+    getStudentInsightAiErrorMessage(new AiRouterNonRetryableError([])),
+    'Konfigurasi layanan AI tidak valid. Hubungi administrator.',
+  );
+});
+
+test('all four provider failures produce the friendly individual-analysis error', async () => {
+  const attempts: string[] = [];
+  const providers: AiProvider[] = (['gemini', 'groq', 'openrouter', 'openai'] as const).map((name) => ({
+    name,
+    generate: async () => {
+      attempts.push(name);
+      throw new AiProviderError('provider unavailable', 503, undefined, 'provider');
+    },
+  }));
+  const router = new AiRouter(providers, {
+    info() {},
+    warn() {},
+    error() {},
+  });
+
+  await assert.rejects(
+    router.generate({ prompt: 'Analisis individu' }),
+    (error: unknown) => {
+      assert.equal(
+        getStudentInsightAiErrorMessage(error),
+        'Semua layanan AI sedang tidak tersedia. Silakan coba lagi.',
+      );
+      return true;
+    },
+  );
+  assert.deepEqual(attempts, ['gemini', 'groq', 'openrouter', 'openai']);
 });
 
 function facts(overrides: Partial<Parameters<typeof buildStudentInsightFacts>[0]> = {}) {

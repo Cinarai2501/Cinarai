@@ -41,7 +41,6 @@ interface Props {
   insight: AiInsight | null;
   insightLoading: boolean;
   insightError: string | null;
-  insightRetryAfterSeconds: number;
   insightGeneratedAt: string | null;
   insightCacheHit: boolean;
   insightCacheWarning: string | null;
@@ -79,7 +78,6 @@ export function StudentDetail({
   insight,
   insightLoading,
   insightError,
-  insightRetryAfterSeconds,
   insightGeneratedAt,
   insightCacheHit,
   insightCacheWarning,
@@ -400,15 +398,13 @@ export function StudentDetail({
                     type="button"
                     onClick={() => onGenerateInsight(Boolean(insight))}
                     className="w-full sm:w-auto"
-                    disabled={insightLoading || insightRetryAfterSeconds > 0}
+                    disabled={insightLoading}
                   >
                     {insightLoading
                       ? 'Menganalisis…'
-                      : insightRetryAfterSeconds > 0
-                        ? `Coba lagi ${insightRetryAfterSeconds} dtk`
-                        : insight
-                          ? 'Perbarui analisis'
-                          : 'Buat analisis'}
+                      : insight
+                        ? 'Buat analisis lagi'
+                        : 'Buat analisis'}
                   </Button>
                 </div>
                 <div className="space-y-3 p-4 sm:p-5">

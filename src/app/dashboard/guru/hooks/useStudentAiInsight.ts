@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
-import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from '../ai/aiRequestLock';
 import type { AiInsight } from '../types';
 
@@ -27,16 +26,9 @@ export function useStudentAiInsight() {
   const [insight, setInsight] = useState<AiInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const [analysisGeneratedAt, setAnalysisGeneratedAt] = useState<string | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
   const [cacheWarning, setCacheWarning] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (retryAfterSeconds <= 0) return;
-    const timer = window.setTimeout(() => setRetryAfterSeconds((remaining) => Math.max(0, remaining - 1)), 1000);
-    return () => window.clearTimeout(timer);
-  }, [retryAfterSeconds]);
 
   const reset = (uid: string | null = null) => {
     selectedUid.current = uid;
@@ -44,7 +36,6 @@ export function useStudentAiInsight() {
     setInsight(null);
     setLoading(false);
     setError(null);
-    setRetryAfterSeconds(0);
     setAnalysisGeneratedAt(null);
     setCacheHit(false);
     setCacheWarning(null);
@@ -71,9 +62,6 @@ export function useStudentAiInsight() {
         cache: 'no-store',
       });
       const payload = await readJsonResponse<{ error?: string } | StudentInsightResponse>(response, endpoint);
-      if (selectedUid.current === uid && requestId.current === currentRequest) {
-        setRetryAfterSeconds(getInternalAiRetryAfter(response, payload));
-      }
       if (!response.ok) {
         throw new Error('error' in payload && payload.error
           ? payload.error
@@ -119,7 +107,6 @@ export function useStudentAiInsight() {
     insight,
     loading,
     error,
-    retryAfterSeconds,
     analysisGeneratedAt,
     cacheHit,
     cacheWarning,

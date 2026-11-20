@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { readJsonResponse } from '@/lib/api/readJsonResponse';
-import { getInternalAiRetryAfter } from '@/lib/ai/rateLimitResponse';
 import type { StudentRow } from '../types';
 import { Card, LoadingState, ProgressBar, SearchInput, Skeleton } from '../components/ui';
 import { releaseAiRequestLock, tryAcquireAiRequestLock } from './aiRequestLock';
@@ -54,13 +53,6 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
   const [error, setError] = useState<string | null>(null);
   const [reviewedRecommendations, setReviewedRecommendations] = useState<Set<number>>(new Set());
   const requestStarted = useRef(false);
-  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
-
-  useEffect(() => {
-    if (retryAfterSeconds <= 0) return;
-    const timer = window.setTimeout(() => setRetryAfterSeconds((remaining) => Math.max(0, remaining - 1)), 1000);
-    return () => window.clearTimeout(timer);
-  }, [retryAfterSeconds]);
 
   const selectedStudent = students.find((student) => student.uid === selectedUid) ?? null;
   const matches = !selectedUid && search.trim()
@@ -78,7 +70,6 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
     setSection('summary');
     setError(null);
     setReviewedRecommendations(new Set());
-    setRetryAfterSeconds(0);
   };
 
   const generate = async (refresh = false) => {
@@ -100,7 +91,6 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
         cache: 'no-store',
       });
       const payload = await readJsonResponse<{ error?: string } | StudentInsightResponse>(response, endpoint);
-      setRetryAfterSeconds(getInternalAiRetryAfter(response, payload));
       if (!response.ok) {
         throw new Error('error' in payload && payload.error ? payload.error : 'Analisis individu gagal dimuat.');
       }
@@ -192,23 +182,16 @@ export function IndividualStudentInsightPanel({ students }: { students: StudentR
           <button
             type="button"
             onClick={() => void generate(Boolean(report))}
-            disabled={loading || retryAfterSeconds > 0}
+            disabled={loading}
             className="min-h-11 w-full flex-shrink-0 rounded-xl bg-brand-700 px-4 text-sm font-bold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {loading
               ? 'Mengambil bukti & menganalisis…'
-              : retryAfterSeconds > 0
-                ? `Coba lagi dalam ${retryAfterSeconds} dtk`
-                : report
-                  ? 'Perbarui analisis'
-                  : 'Buat analisis'}
+              : report
+                ? 'Buat analisis lagi'
+                : 'Buat analisis'}
           </button>
         </div>
-      )}
-      {retryAfterSeconds > 0 && (
-        <p role="status" className="mt-2 text-xs text-secondary-content">
-          Batas 5 permintaan per menit untuk siswa ini. Coba lagi setelah hitung mundur selesai.
-        </p>
       )}
       {error && <p role="alert" className="mt-3 rounded-xl bg-error-50 p-3 text-sm text-error-700">{error}</p>}
       {report?.cacheWarning && (

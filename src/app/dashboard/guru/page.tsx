@@ -118,7 +118,6 @@ export default function GuruDashboardPage() {
             insight={aiInsight.insight}
             insightLoading={aiInsight.loading}
             insightError={aiInsight.error}
-            insightRetryAfterSeconds={aiInsight.retryAfterSeconds}
             insightGeneratedAt={aiInsight.analysisGeneratedAt}
             insightCacheHit={aiInsight.cacheHit}
             insightCacheWarning={aiInsight.cacheWarning}
