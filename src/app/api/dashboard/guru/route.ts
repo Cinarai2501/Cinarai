@@ -16,7 +16,9 @@ import { getCompletedModuleStages, getModuleProgressPercentage } from '@/app/das
 import {
   buildStudentInsightFacts,
   buildStudentInsightPrompt,
+  getStudentInsightAiErrorMessage,
   getStudentInsightPromptEvidence,
+  generateStudentInsightIfAuthorized,
   isStudentAllowedForInsight,
   parseStudentInsightResponse,
 } from '@/app/dashboard/guru/services/studentInsight';
@@ -1043,16 +1045,13 @@ async function buildStudentInsightResponse(
     }
   }
   try {
-    const requestTimestamp = Date.now();
     const permittedEvidenceKeys = new Set(
       getStudentInsightPromptEvidence(facts).map((item) => item.key)
     );
-    const execution = await runTeacherAiAnalysis(
-      firestore,
-      teacherUid,
-      'student',
+    const execution = await generateStudentInsightIfAuthorized(
+      { uid: student.uid, role: 'student' },
       studentUid,
-      null,
+      teacherRole,
       async () => {
         const response = await AiRouter.createDefault().generate({
           prompt,
@@ -1065,19 +1064,10 @@ async function buildStudentInsightResponse(
           ai: parseStudentInsightResponse(response.content, permittedEvidenceKeys),
         };
       },
-      requestTimestamp,
-      (result) => result.ai !== null,
     );
-    if (execution.kind === 'rate-limited') {
-      return NextResponse.json(
-        {
-          error: `Batas permintaan internal analisis individu untuk siswa ini tercapai. Coba lagi dalam ${execution.retryAfterSeconds} detik.`,
-          code: INTERNAL_AI_RATE_LIMIT_CODE,
-        },
-        { status: 429, headers: { 'Retry-After': String(execution.retryAfterSeconds) } },
-      );
+    if (execution.kind === 'unauthorized') {
+      return NextResponse.json({ error: 'Siswa tidak ditemukan dalam cakupan kewenangan akun ini.' }, { status: 404 });
     }
-    if (execution.kind !== 'generated') throw new Error('Hasil analisis individu tidak terduga.');
     const { response, ai } = execution.value;
     if (!ai) {
       return NextResponse.json({
@@ -1137,17 +1127,11 @@ async function buildStudentInsightResponse(
     debug('[dashboard/guru] individual AI analysis failed', {
       message: error instanceof Error ? error.message : 'Unknown error',
     });
-    const timedOut = error instanceof AiRouterTimeoutError;
-    const providerQuotaExceeded = isProviderQuotaExceeded(error);
     return NextResponse.json({
       student: profile,
       facts,
       ai: null,
-      aiError: timedOut
-        ? 'Batas waktu analisis AI terlampaui. Fakta tersimpan tetap dapat ditinjau.'
-        : providerQuotaExceeded
-          ? 'Kuota layanan AI sedang habis atau dibatasi oleh provider. Fakta tersimpan tetap dapat ditinjau.'
-          : 'Layanan AI gagal memproses permintaan. Fakta tersimpan tetap dapat ditinjau.',
+      aiError: getStudentInsightAiErrorMessage(error),
       cacheWarning,
       usage: {
         estimatedInputTokens: Math.ceil(prompt.length / 4),

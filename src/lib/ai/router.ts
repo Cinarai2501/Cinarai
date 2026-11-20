@@ -218,7 +218,7 @@ export class AiRouter {
     if (this.groups.length === 0) {
       this.logger.error('[ai-router] No AI providers configured.');
       this.logger.error('[ai-router] Checked environment variables: GEMINI_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY');
-      throw new AiRouterError('Seluruh layanan AI sedang tidak tersedia.', logs);
+      throw new AiRouterError('Semua layanan AI sedang tidak tersedia. Silakan coba lagi.', logs);
     }
 
     for (const [index, group] of this.groups.entries()) {
@@ -276,6 +276,18 @@ export class AiRouter {
           throw error;
         }
 
+        if (error instanceof AiProviderError
+          && getFailureCategory(error) === 'invalid_key') {
+          logs.push({
+            provider: group.name,
+            status: 'failed',
+            reason: 'Invalid provider configuration',
+            failureCategory: 'invalid_key',
+          });
+          this.logRequestDiagnostics('failed', startedAt, providersTried, keyAttemptCount, logs);
+          throw new AiRouterNonRetryableError(logs);
+        }
+
         const statusCode = error instanceof AiProviderError ? error.statusCode : undefined;
         const reason = error instanceof AiProviderError && error.failureReasons?.length
           ? error.failureReasons.join(', ')
@@ -301,7 +313,7 @@ export class AiRouter {
 
     this.logger.error('[AI Router] All providers failed.');
     this.logRequestDiagnostics('failed', startedAt, providersTried, keyAttemptCount, logs);
-    throw new AiRouterError('Seluruh layanan AI sedang tidak tersedia.', logs);
+    throw new AiRouterError('Semua layanan AI sedang tidak tersedia. Silakan coba lagi.', logs);
   }
 
   private logRequestDiagnostics(
@@ -488,6 +500,15 @@ export class AiRouter {
             : Math.min(MAX_RATE_LIMIT_BACKOFF_MS, 1_000 * 2 ** (state.failureCount - 1));
           const retryAfterMs = error instanceof AiProviderError ? error.retryAfterMs : undefined;
           state.retryAt = Date.now() + (retryAfterMs ?? backoff);
+          keyFailureReasons.push(failureReason);
+          throw new AiProviderError(
+            `Provider ${group.name} is rate-limited`,
+            statusCode,
+            retryAfterMs,
+            failureType,
+            [failureReason],
+            error instanceof AiProviderError ? error.providerErrorCode : undefined,
+          );
         } else if (statusCode === 403 || statusCode === 404) {
           const failureType = error instanceof AiProviderError
             ? getAiProviderFailureCategory(statusCode, error.providerErrorCode)

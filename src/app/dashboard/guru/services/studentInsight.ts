@@ -1,3 +1,5 @@
+import { AiRouterError, AiRouterNonRetryableError, AiRouterTimeoutError } from '@/lib/ai/router';
+
 export type StudentInsightRecommendationCategory =
   | 'review'
   | 'activity'
@@ -91,6 +93,37 @@ export function isStudentAllowedForInsight(
   return profile.role === 'student'
     && profileUid === requestedUid
     && (teacherRole === 'admin' || teacherRole === 'teacher');
+}
+
+export function getStudentInsightAiErrorMessage(error: unknown): string {
+  if (error instanceof AiRouterTimeoutError) {
+    return 'Batas waktu analisis AI terlampaui. Fakta tersimpan tetap dapat ditinjau.';
+  }
+  if (error instanceof AiRouterError) {
+    if (error.logs.some((entry) => entry.failureCategory === 'quota_exhausted')) {
+      return 'Kuota layanan AI sedang habis. Silakan coba lagi nanti.';
+    }
+    if (error.logs.some((entry) => entry.failureCategory === 'rate_limited')) {
+      return 'Provider AI sedang membatasi permintaan. Silakan coba lagi.';
+    }
+    if (error instanceof AiRouterNonRetryableError) {
+      return 'Konfigurasi layanan AI tidak valid. Hubungi administrator.';
+    }
+    return 'Semua layanan AI sedang tidak tersedia. Silakan coba lagi.';
+  }
+  return 'Analisis AI gagal diproses. Silakan coba lagi.';
+}
+
+export async function generateStudentInsightIfAuthorized<T>(
+  profile: { uid?: unknown; id?: string; role?: unknown; duplicate?: unknown },
+  requestedUid: string,
+  teacherRole: unknown,
+  generate: () => Promise<T>,
+): Promise<{ kind: 'unauthorized' } | { kind: 'generated'; value: T }> {
+  if (!isStudentAllowedForInsight(profile, requestedUid, teacherRole)) {
+    return { kind: 'unauthorized' };
+  }
+  return { kind: 'generated', value: await generate() };
 }
 
 export interface StudentInsightEvaluationResponse {

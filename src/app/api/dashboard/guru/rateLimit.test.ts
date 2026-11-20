@@ -66,24 +66,15 @@ test('AI rate limit permits five requests per minute in an analysis scope', () =
   assert.equal(getTeacherAiRateLimitState([...timestamps, now], now).retryAfterSeconds, 56);
 });
 
-test('class, student UID, and module scopes do not lock one another', async () => {
+test('class and module rate limits remain independently scoped', async () => {
   const { firestore } = createFakeFirestore();
   const now = Date.parse('2026-10-30T12:00:00.000Z');
   for (let request = 0; request < 5; request += 1) {
-    assert.equal(await consumeTeacherAiRateLimit(firestore, 'teacher-uid', 'student', 'student-uid-1', now), 0);
+    assert.equal(await consumeTeacherAiRateLimit(firestore, 'teacher-uid', 'class', undefined, now), 0);
   }
 
   const generate = async () => 'generated';
   const classResult = await runTeacherAiAnalysis(firestore, 'teacher-uid', 'class', undefined, null, generate, now);
-  const anotherStudent = await runTeacherAiAnalysis(
-    firestore,
-    'teacher-uid',
-    'student',
-    'student-uid-2',
-    null,
-    generate,
-    now,
-  );
   const moduleResult = await runTeacherAiAnalysis(
     firestore,
     'teacher-uid',
@@ -94,20 +85,12 @@ test('class, student UID, and module scopes do not lock one another', async () =
     now,
   );
 
-  assert.equal(classResult.kind, 'generated');
-  assert.equal(anotherStudent.kind, 'generated');
+  assert.equal(classResult.kind, 'rate-limited');
   assert.equal(moduleResult.kind, 'generated');
-  assert.equal(
-    (await runTeacherAiAnalysis(firestore, 'teacher-uid', 'student', 'student-uid-1', null, generate, now)).kind,
-    'rate-limited',
-  );
 
   const classScope = getTeacherAiRateLimitDocumentId('class');
-  const studentOne = getTeacherAiRateLimitDocumentId('student', 'student-uid-1');
-  const studentTwo = getTeacherAiRateLimitDocumentId('student', 'student-uid-2');
 
-  assert.notEqual(classScope, studentOne);
-  assert.notEqual(studentOne, studentTwo);
+  assert.notEqual(classScope, getTeacherAiRateLimitDocumentId('module', '1'));
   assert.equal(getTeacherAiRateLimitDocumentId('class'), classScope);
 });
 
@@ -143,8 +126,8 @@ test('provider failures release their reservation so the next request can procee
     runTeacherAiAnalysis(
       firestore,
       'teacher-uid',
-      'student',
-      'student-uid',
+      'class',
+      undefined,
       null,
       async () => {
         throw new Error('Provider failed');
@@ -157,8 +140,8 @@ test('provider failures release their reservation so the next request can procee
   const retry = await runTeacherAiAnalysis(
     firestore,
     'teacher-uid',
-    'student',
-    'student-uid',
+    'class',
+    undefined,
     null,
     async () => 'success',
     now,
@@ -232,7 +215,7 @@ test('module scope is isolated by its target identifier', () => {
     getTeacherAiRateLimitDocumentId('module', '1'),
     getTeacherAiRateLimitDocumentId('module', '2'),
   );
-  assert.throws(() => getTeacherAiRateLimitDocumentId('student'), /Target wajib/);
+  assert.throws(() => getTeacherAiRateLimitDocumentId('module'), /Target wajib/);
 });
 
 test('parallel requests cannot exceed the transaction-protected per-scope limit', async () => {
@@ -240,7 +223,7 @@ test('parallel requests cannot exceed the transaction-protected per-scope limit'
   const now = Date.parse('2026-10-30T12:00:00.000Z');
 
   const results = await Promise.all(Array.from({ length: 12 }, () =>
-    consumeTeacherAiRateLimit(firestore, 'teacher-uid', 'student', 'student-uid', now)
+    consumeTeacherAiRateLimit(firestore, 'teacher-uid', 'class', undefined, now)
   ));
 
   assert.equal(results.filter((retryAfter) => retryAfter === 0).length, 5);

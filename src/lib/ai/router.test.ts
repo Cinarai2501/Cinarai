@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AiRouter, AiRouterError, AiRouterTimeoutError } from './router';
+import { AiRouter, AiRouterError, AiRouterNonRetryableError, AiRouterTimeoutError } from './router';
 import { AiProviderError, createAiProviderHttpError } from './provider';
 import type { AiProvider, AiRequestPayload, AiResponse } from './provider';
 
@@ -193,7 +193,7 @@ test('returns a friendly error when every provider fails', async () => {
     () => router.generate({ prompt: 'Halo' }),
     (error: unknown) => {
       assert.ok(error instanceof AiRouterError);
-      assert.match(error.message, /seluruh layanan ai sedang tidak tersedia/i);
+      assert.match(error.message, /semua layanan ai sedang tidak tersedia.*silakan coba lagi/i);
       assert.equal(error.logs.length, 4);
       return true;
     },
@@ -283,7 +283,7 @@ test('throws AiRouterError when all providers time out', async () => {
     () => router.generate({ prompt: 'Halo' }),
     (error: unknown) => {
       assert.ok(error instanceof AiRouterError);
-      assert.match(error.message, /seluruh layanan ai sedang tidak tersedia/i);
+      assert.match(error.message, /semua layanan ai sedang tidak tersedia.*silakan coba lagi/i);
       assert.equal(error.logs.length, 4);
       assert.ok(
         error.logs.every((l) => l.reason?.startsWith('Timeout after')),
@@ -380,20 +380,37 @@ test('round robin rotates three keys for a provider', async () => {
   assert.deepEqual(usedKeys, [1, 2, 3, 1, 2, 3]);
 });
 
-test('a key rate limit immediately falls back to another key of the same provider', async () => {
-  const attempts: number[] = [];
+test('a provider rate limit skips its remaining keys and falls back to the next provider', async () => {
+  const attempts: string[] = [];
   const router = new AiRouter([
-    new StubProvider('gemini', 'rate-limit', 'unused', 0, () => attempts.push(1)),
-    new StubProvider('gemini', 'success', 'alternate key', 0, () => attempts.push(2)),
+    new StubProvider('gemini', 'rate-limit', 'unused', 0, () => attempts.push('gemini-1')),
+    new StubProvider('gemini', 'success', 'must not run', 0, () => attempts.push('gemini-2')),
+    new StubProvider('groq', 'success', 'fallback', 0, () => attempts.push('groq')),
   ], silentLogger);
 
   const response = await router.generate({ prompt: 'Halo' });
 
-  assert.equal(response.content, 'alternate key');
-  assert.deepEqual(attempts, [1, 2]);
+  assert.equal(response.provider, 'groq');
+  assert.equal(response.content, 'fallback');
+  assert.deepEqual(attempts, ['gemini-1', 'groq']);
 });
 
-test('all failed Gemini keys fall back to Groq', async () => {
+test('provider quota and rate-limit failures fall through sequentially to the next available provider', async () => {
+  const attempts: string[] = [];
+  const router = new AiRouter([
+    new StubProvider('gemini', 'quota', 'unused', 0, () => attempts.push('gemini')),
+    new StubProvider('groq', 'rate-limit', 'unused', 0, () => attempts.push('groq')),
+    new StubProvider('openrouter', 'success', 'openrouter success', 0, () => attempts.push('openrouter')),
+    new StubProvider('openai', 'success', 'must not run', 0, () => attempts.push('openai')),
+  ], silentLogger);
+
+  const response = await router.generate({ prompt: 'Halo' });
+
+  assert.equal(response.provider, 'openrouter');
+  assert.deepEqual(attempts, ['gemini', 'groq', 'openrouter']);
+});
+
+test('a rate-limited Gemini key is not retried when Groq is available', async () => {
   const attempts: string[] = [];
   const router = new AiRouter([
     new StubProvider('gemini', 'rate-limit', 'unused', 0, () => attempts.push('gemini-1')),
@@ -404,7 +421,7 @@ test('all failed Gemini keys fall back to Groq', async () => {
   const response = await router.generate({ prompt: 'Halo' });
 
   assert.equal(response.provider, 'groq');
-  assert.deepEqual(attempts, ['gemini-1', 'gemini-2', 'groq']);
+  assert.deepEqual(attempts, ['gemini-1', 'groq']);
 });
 
 test('Gemini and Groq failures fall back to OpenRouter', async () => {
@@ -428,7 +445,7 @@ test('three provider failures fall back to OpenAI', async () => {
     new StubProvider('openai', 'success', 'openai success', 0, () => attempts.push('openai')),
     new StubProvider('openrouter', 'server-error', 'unused', 0, () => attempts.push('openrouter')),
     new StubProvider('groq', 'rate-limit', 'unused', 0, () => attempts.push('groq')),
-    new StubProvider('gemini', 'invalid-key', 'unused', 0, () => attempts.push('gemini')),
+    new StubProvider('gemini', 'server-error', 'unused', 0, () => attempts.push('gemini')),
   ], silentLogger);
 
   const response = await router.generate({ prompt: 'Halo' });
@@ -508,18 +525,31 @@ test('all invalid keys are not retried on later requests', async () => {
   assert.equal(attempts, 2);
 });
 
-test('a provider request never attempts the same key twice', async () => {
-  const attempts: number[] = [];
+test('invalid provider configuration does not fall back to another provider', async () => {
+  const attempts: string[] = [];
   const router = new AiRouter([
-    new StubProvider('openrouter', 'server-error', 'unused', 0, () => attempts.push(1)),
-    new StubProvider('openrouter', 'rate-limit', 'unused', 0, () => attempts.push(2)),
-    new StubProvider('openrouter', 'success', 'third key', 0, () => attempts.push(3)),
+    new StubProvider('gemini', 'invalid-key', 'unused', 0, () => attempts.push('gemini')),
+    new StubProvider('groq', 'success', 'must not run', 0, () => attempts.push('groq')),
+  ], silentLogger);
+
+  await assert.rejects(() => router.generate({ prompt: 'Halo' }), AiRouterNonRetryableError);
+  assert.deepEqual(attempts, ['gemini']);
+});
+
+test('a provider rate limit skips later keys and uses the next provider', async () => {
+  const attempts: string[] = [];
+  const router = new AiRouter([
+    new StubProvider('openrouter', 'server-error', 'unused', 0, () => attempts.push('openrouter-1')),
+    new StubProvider('openrouter', 'rate-limit', 'unused', 0, () => attempts.push('openrouter-2')),
+    new StubProvider('openrouter', 'success', 'must not run', 0, () => attempts.push('openrouter-3')),
+    new StubProvider('openai', 'success', 'openai success', 0, () => attempts.push('openai')),
   ], silentLogger);
 
   const response = await router.generate({ prompt: 'Halo' });
 
-  assert.equal(response.content, 'third key');
-  assert.deepEqual(attempts, [1, 2, 3]);
+  assert.equal(response.provider, 'openai');
+  assert.equal(response.content, 'openai success');
+  assert.deepEqual(attempts, ['openrouter-1', 'openrouter-2', 'openai']);
   assert.equal(new Set(attempts).size, attempts.length);
 });
 
